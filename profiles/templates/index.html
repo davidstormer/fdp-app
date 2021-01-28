@@ -1,0 +1,25 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress profiles_extras %}
+
+{% block extrahead %}{{ block.super }}
+    <script src="{% get_font_awesome_src %}" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/index.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}<div class="breadcrumbs">{{ title }}</div>{% endblock %}
+{% endif %}
+
+{% block content %}
+
+<div class="srcopt first"><a href="{% url 'profiles:officer_search' %}"><i class="fas fa-user officer"></i>{% trans 'Officer' %}</a></div>
+
+<div class="srcopt"><a href="{% url 'profiles:command_search' %}"><i class="fas fa-users command"></i>{% trans 'Command' %}</a></div>
+
+{% endblock %}

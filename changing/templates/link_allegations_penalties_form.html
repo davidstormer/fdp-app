@@ -1,0 +1,176 @@
+{% extends "ajax_base_object_form.html" %}
+{% load i18n admin_urls static compress changing_extras %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {% compress js %}
+    <script src="{% static 'changing/js/link_allegations_penalties.js' %}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'changing/css/link_allegations_penalties.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/collapsible.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:content' %}">{% translate 'Content' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:edit_content' pk=pk %}">{% translate 'Update content' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+{% block content %}
+    <form method="post">{% csrf_token %}
+        {% if form.non_field_errors %}
+        <div>
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <button type="button" class="collapsible">{% translate 'Details' %}</button>
+        <div class="collapsible collapsed">
+            <div>
+                {% include "wizard_form.html" with form=form force_read_only=True %}
+            </div>
+        </div> <!-- div.collapsible for Details -->
+
+        <button type="button" class="collapsible">{% translate 'Identifiers' %}</button>
+        <div class="collapsible collapsed">
+            <div>
+                {{ content_identifier_model_formset.management_form }}
+            </div>
+            {% for nested_form in content_identifier_model_formset %}
+            <div class="identifierform">
+                {% include "inline_wizard_form.html" with form=nested_form is_empty_form=False force_read_only=True %}
+            </div> <!-- div.identifierform -->
+            {% endfor %}
+        </div> <!-- div.collapsible for Identifiers -->
+
+        <button type="button" class="collapsible">{% translate 'Attachments' %}</button>
+        <div class="collapsible collapsed">
+            <div>
+                {{ content_attachment_model_formset.management_form }}
+            </div>
+            {% for nested_form in content_attachment_model_formset %}
+            <div class="attachmentform">
+                {% include "inline_wizard_form.html" with form=nested_form is_empty_form=False force_read_only=True %}
+            </div> <!-- div.attachmentform -->
+            {% endfor %}
+        </div> <!-- div.collapsible for Content Attachments -->
+
+        {% if is_case %}
+        <button type="button" class="collapsible">{% translate 'Case' %}</button>
+        <div class="collapsible collapsed">
+            <div>
+                {{ content_case_model_formset.management_form }}
+            </div>
+            {% for nested_form in content_case_model_formset %}
+            <div class="caseform">
+                {% include "inline_wizard_form.html" with form=nested_form is_empty_form=False force_read_only=True %}
+            </div> <!-- div.caseform -->
+            {% endfor %}
+        </div> <!-- div.collapsible for Content Case -->
+        {% endif %}
+
+        <button type="button" class="collapsible">{% translate 'Incidents' %}</button>
+        <div class="collapsible collapsed">
+            <div>
+                {{ content_incident_model_formset.management_form }}
+            </div>
+            {% for nested_form in content_incident_model_formset %}
+            <div class="incidentform">
+                {% include "inline_wizard_form.html" with form=nested_form is_empty_form=False force_read_only=True %}
+            </div> <!-- div.incidentform -->
+            {% endfor %}
+        </div> <!-- div.collapsible for Content Incidents -->
+
+        <button type="button" class="collapsible">{% translate 'Persons' %}</button>
+        <div class="collapsible collapsed">
+            <div>
+                {{ content_person_model_formset.management_form }}
+            </div>
+            {% for nested_form in content_person_model_formset %}
+            <div class="personform">
+                {% include "inline_wizard_form.html" with form=nested_form is_empty_form=False force_read_only=True %}
+            </div> <!-- div.personform -->
+            {% endfor %}
+        </div> <!-- div.collapsible for Content Persons -->
+
+        <button type="button" class="collapsible expanded">{% translate 'Allegations' %}</button>
+        <div class="collapsible nesting">
+            <div>
+                {{ content_person_allegation_model_formset.management_form }}
+            </div>
+
+            {% for content_person in content_person_list %}
+
+            <button type="button" class="collapsible expanded">{% if content_person.situation_role %}{{ content_person.situation_role }}{% endif %} {% if content_person.person %}{{ content_person.person }}{% else %}{% translate 'Unnamed' %}{% endif %}</button>
+            <div class="collapsible cpa" data-id="{{ content_person.pk }}">
+                {% for nested_form in content_person_allegation_model_formset %}
+                    {% if nested_form.content_person.value|slugify == content_person.pk|slugify %}
+                <div class="allegationform">
+                    {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delallegation" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
+                </div> <!-- div.allegationform -->
+                    {% endif %}
+                {% endfor %}
+                <div id="emptyallegation{{ content_person.pk }}" class="allegationform emptyform">
+                    {% include "inline_wizard_form.html" with form=content_person_allegation_model_formset.empty_form del_icon_class="delallegation" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
+                </div> <!-- div#emptyallegation{{content_person.pk}} -->
+                <div>
+                    <span id="newallegation{{ content_person.pk }}" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another allegation for' %} {% if content_person.situation_role %}{{ content_person.situation_role }}{% endif %}{% if content_person.person %}{{ content_person.person }}{% else %}{% translate 'Unnamed' %}{% endif %}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div> <!-- div.collapsible for Allegations -->
+
+        <button type="button" class="collapsible expanded">{% translate 'Penalties' %}</button>
+        <div class="collapsible nesting">
+            <div>
+                {{ content_person_penalty_model_formset.management_form }}
+            </div>
+
+            {% for content_person in content_person_list %}
+
+            <button type="button" class="collapsible expanded">{% if content_person.situation_role %}{{ content_person.situation_role }}{% endif %} {% if content_person.person %}{{ content_person.person }}{% else %}{% translate 'Unnamed' %}{% endif %}</button>
+            <div class="collapsible cpp" data-id="{{ content_person.pk }}">
+                {% for nested_form in content_person_penalty_model_formset %}
+                    {% if nested_form.content_person.value|slugify == content_person.pk|slugify %}
+                <div class="penaltyform">
+                    {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delpenalty" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
+                </div> <!-- div.penaltyform -->
+                    {% endif %}
+                {% endfor %}
+                <div id="emptypenalty{{ content_person.pk }}" class="penaltyform emptyform">
+                    {% include "inline_wizard_form.html" with form=content_person_penalty_model_formset.empty_form del_icon_class="delpenalty" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
+                </div> <!-- div#emptypenalty{{content_person.pk}} -->
+                <div>
+                    <span id="newpenalty{{ content_person.pk }}" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another penalty for' %} {% if content_person.situation_role %}{{ content_person.situation_role }}{% endif %}{% if content_person.person %}{{ content_person.person }}{% else %}{% translate 'Unnamed' %}{% endif %}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div> <!-- div.collapsible for Penalties -->
+
+        <input type="submit" value="Save">
+
+    </form>
+
+{% endblock %}
+
+{% block onready %}
+    {{ block.super }}
+    // initialize interface elements
+    Fdp.ChangingAllegationsPenalties.init();
+
+{% endblock %}

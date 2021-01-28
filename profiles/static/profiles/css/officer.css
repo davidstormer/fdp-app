@@ -1,0 +1,147 @@
+/* Container for photos slider plug-in */
+/*.photos.slider, .slick-slide { width: 200px; }*/
+.photos.slider { border: 1px solid #000; }
+/* Centered image in photo slider plug-in */
+.slick-center img {
+    margin-left: auto;
+    margin-right: auto;
+}
+/* Display the previous and next buttons for the photos slider plug-in */
+button.slick-prev::before, button.slick-next::before {
+    color: #000;
+}
+/* Paragraph indicating that no data is available in a particular section */
+p.nodata {
+    margin-top: 1em;
+}
+/* Labels in the Identification section */
+label.ident {
+    color: #666;
+    margin-bottom: 1em;
+    font-weight: bold;
+    display: inline-block;
+}
+/* Values for labels in the Identification section */
+span.identval {
+    font-weight: bold;
+}
+/* Simulate labels in identification section without bolding */
+span.labelsim {
+    display: inline-block;
+    margin-bottom: 1em;
+}
+/* Lists within the Identification section */
+ul.ident, li.ident {
+    color: #666;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* Sub-section in the Snapshot section */
+div.snap {
+    margin-bottom: 1em;
+}
+/* Headings for sub-sections in the Snapshot section */
+label.snap {
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #ba2121;
+}
+/* Container providing additional padding for nested collapsible/expandable sections in the Misconduct section */
+div.mispad {
+    padding-left: 2.5em;
+}
+/* Tags in the Misconduct section */
+p.mistags {
+    color: #417690;
+    margin-bottom: 2em;
+}
+/* Top-level heading in the Misconduct section */
+span.mish1 {
+    font-weight: bold;
+    text-transform: uppercase;
+    display: block;
+    color: #417690;
+}
+span.mish1inline {
+    font-weight: bold;
+    text-transform: uppercase;
+    display: inline;
+    color: #417690;
+}
+/* Second-level heading in the Misconduct section */
+span.mish2 { font-weight: bold; }
+/* Lists within the Misconduct Allegations section */
+ul.misall, li.misall{
+}
+/* Penalty within the Misconduct Allegations section */
+strong.misall {
+    color: #ba2121;
+    text-transform: uppercase;
+}
+/* Allegation outcome for a lawsuit */
+p.mislaw {
+    color: #ba2121;
+    font-weight: bold;
+    margin-bottom: 2em;
+}
+/* Container for attachments within the Misconduct section and Other Files section */
+div.misatt, div.othfile {
+    margin-bottom: 2em;
+}
+/* Summary of the incident in the Misconduct section */
+p.missummary {
+    margin-bottom: 2em;
+}
+/* List within the Associates section */
+ul.rel, li.rel {
+    color: #666;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+li.rel { margin-bottom: 1em; }
+/* Other person within Associates section */
+span.othper {
+    font-weight: bold;
+    color: #000;
+}
+/* Relationship within Associates section */
+span.rel {
+    font-weight: bold;
+    color: #ba2121;
+}
+/* Icons within the main profile heading (e.g. download all attachments, expand all, collapse all */
+h2 i { font-size: 200%; }
+/* Text within the main profile heading (e.g. John Smith) */
+h2 span.h2main {
+    margin-right: 2em;
+    float: left;
+    line-height: 3em;
+}
+/* Wrapping container within the main profile heading */
+h2 span.h2wrap {
+    text-align: center;
+    float: left;
+    margin-right: 2em;
+}
+/* Upper case text within main profile heading */
+h2 span.h2upper {
+    font-size: 50%;
+    text-transform: uppercase;
+    display: block;
+}
+/* Expand all, and collapse all sections buttons */
+#i_expandall, #i_collapseall {
+    cursor: pointer;
+    color: #417690;
+}
+/* Hovering over the expand all and collapse all section buttons */
+#i_expandall:focus, #i_collapseall:focus, #i_expandall:hover, #i_collapseall:hover {
+    color: #036;
+}
+/* Warning that a link may not be accurate, e.g. a link between a person and incident is a guess */
+p.warning {
+    font-weight: bold;
+    color: #ba2121;
+}

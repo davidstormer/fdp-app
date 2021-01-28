@@ -1,0 +1,57 @@
+{% extends "base_object_form.html" %}
+{% load i18n admin_urls static compress changing_extras %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {% compress js %}
+    <script src="{% static 'changing/js/attachment.js' %}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'changing/css/attachment.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% trans 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:index' %}">{% trans 'Admin' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:content' %}">{% trans 'Content' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+{% block content %}
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        {% if form.non_field_errors %}
+        <div>
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        <div>
+            {% include "wizard_form.html" with form=form force_read_only=False %}
+        </div>
+        <input class="manualdisplay" type="submit" value="Save">
+    </form>
+
+{% endblock %}
+
+{% block onready %}
+    {{ block.super }}
+    // initialize interface elements
+    Fdp.ChangingAttachment.init(
+        {% if is_editing %}true{% else %}false{% endif %}, /* isEditing */
+        '{{ popup_key }}', /* popupKey */
+        '{{ popup_value }}', /* popupValue */
+        '{{ popup_id_key }}', /* popupIdKey */
+        '{{ popup_field }}' /* popupField */
+    );
+
+{% endblock %}

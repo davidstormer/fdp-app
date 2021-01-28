@@ -1,0 +1,63 @@
+{% load changing_extras %}
+    {% if is_empty_form %}
+                <fieldset class="module aligned">
+                    {% for field in form %}
+                        <div class="form-row {% if field|is_management_field or field.is_hidden %}nevershow{% endif %}" id="f_{{ field.id_for_label }}">
+                            {% if forloop.counter0 == 0 %}
+                            <i class="fas fa-trash {{ del_icon_class }} clickable" data-id="__prefix__"></i>
+                            {% endif %}
+                            <div>
+                                {{ field.errors }}
+                                {{ field.label_tag }} {{ field }}
+                                {% comment 'Exclude help text' %}
+                                {% if field.help_text %}
+                                <div class="help">{{ field.help_text|safe }}</div>
+                                {% endif %}
+                                {% endcomment %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </fieldset>
+    {% else %}
+        {% if force_read_only %}
+                <fieldset class="module aligned" disabled="disabled">
+                    {% for field in form %}
+                        <div class="form-row {% if field|is_management_field or field.is_hidden %}nevershow{% endif %}" id="f_{{ field.id_for_label }}">
+                            <div>
+                                {{ field.errors }}
+                                {{ field.label_tag }} {{ field }}
+                                {% comment 'Exclude help text' %}
+                                {% if field.help_text %}
+                                <div class="help">{{ field.help_text|safe }}</div>
+                                {% endif %}
+                                {% endcomment %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </fieldset>
+        {% else %}
+                {% if form.non_field_errors %}
+                <fieldset class="module aligned">
+                    <div>{{ form.non_field_errors }}</div>
+                </fieldset>
+                {% endif %}
+                <fieldset class="module aligned">
+                    {% for field in form %}
+                        <div class="form-row {% if field|is_management_field or field.is_hidden %}nevershow{% elif field.field|hide_in_html %}hidden{% endif %}" id="f_{{ field.id_for_label }}">
+                            {% if has_delete and forloop.counter0 == 0 %}
+                            <i class="fas fa-trash {{ del_icon_class }} clickable" data-id="{{ parent_counter }}"></i>
+                            {% endif %}
+                            <div>
+                                {{ field.errors }}
+                                {{ field.label_tag }} {{ field }}
+                                {% comment 'Exclude help text' %}
+                                {% if field.help_text %}
+                                <div class="help">{{ field.help_text|safe }}</div>
+                                {% endif %}
+                                {% endcomment %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </fieldset>
+        {% endif %}
+    {% endif %}

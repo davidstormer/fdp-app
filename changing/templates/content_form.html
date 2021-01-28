@@ -1,0 +1,176 @@
+{% extends "ajax_base_object_form.html" %}
+{% load i18n admin_urls static compress changing_extras %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {% compress js %}
+    <script src="{% static 'changing/js/content.js' %}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'changing/css/content.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/collapsible.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:content' %}">{% translate 'Content' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+{% block content %}
+    <form method="post">{% csrf_token %}
+        {% if form.non_field_errors %}
+        <div>
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <button type="button" class="collapsible expanded">{% translate 'Details' %}</button>
+        <div class="collapsible">
+            <div>
+                {% include "wizard_form.html" with form=form force_read_only=False %}
+            </div>
+        </div> <!-- div.collapsible for Details -->
+
+        <button type="button" class="collapsible expanded">{% translate 'Identifiers' %}</button>
+        <div class="collapsible">
+            <div>
+                {{ content_identifier_model_formset.management_form }}
+            </div>
+            {% for nested_form in content_identifier_model_formset %}
+            <div class="identifierform">
+                {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delidentifier" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
+            </div> <!-- div.identifierform -->
+            {% endfor %}
+            <div id="emptyidentifier" class="identifierform emptyform">
+                {% include "inline_wizard_form.html" with form=content_identifier_model_formset.empty_form del_icon_class="delidentifier" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
+            </div> <!-- div#emptyidentifier -->
+            <div>
+                <span id="newidentifier" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another identifier' %}</span>
+            </div>
+        </div> <!-- div.collapsible for Identifiers -->
+
+        <button type="button" class="collapsible expanded">{% translate 'Attachments' %}</button>
+        <div class="collapsible">
+            <div>
+                {{ content_attachment_model_formset.management_form }}
+            </div>
+            {% for nested_form in content_attachment_model_formset %}
+            <div class="attachmentform">
+                {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delattachment" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
+            </div> <!-- div.attachmentform -->
+            {% endfor %}
+            <div id="emptyattachment" class="attachmentform emptyform">
+                {% include "inline_wizard_form.html" with form=content_attachment_model_formset.empty_form del_icon_class="delattachment" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
+            </div> <!-- div#emptyattachment -->
+            <div>
+                <span id="newattachment" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another attachment' %}</span>
+            </div>
+        </div> <!-- div.collapsible for Content Attachments -->
+
+        <button type="button" class="collapsible expanded">{% translate 'Case' %}</button>
+        <div class="collapsible">
+            <div>
+                {{ content_case_model_formset.management_form }}
+            </div>
+            {% for nested_form in content_case_model_formset %}
+            <div class="caseform">
+                {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delcase" has_delete=False parent_counter=forloop.counter0 is_empty_form=False %}
+            </div> <!-- div.caseform -->
+            {% endfor %}
+            <div id="emptycase" class="caseform emptyform">
+                {% include "inline_wizard_form.html" with form=content_case_model_formset.empty_form del_icon_class="delcase" has_delete=False parent_counter=forloop.counter0 is_empty_form=True %}
+            </div> <!-- div#emptycase -->
+            {% comment 'Only one content case can be associated with each content.' %}
+            <div>
+                <span id="newcase" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add case' %}</span>
+            </div>
+            {% endcomment %}
+        </div> <!-- div.collapsible for Content Case -->
+
+        <button type="button" class="collapsible expanded">{% translate 'Persons' %}</button>
+        <div class="collapsible">
+            <div>
+                {{ content_person_model_formset.management_form }}
+            </div>
+            {% for nested_form in content_person_model_formset %}
+            <div class="personform">
+                {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delperson" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
+            </div> <!-- div.personform -->
+            {% endfor %}
+            <div id="emptyperson" class="personform emptyform">
+                {% include "inline_wizard_form.html" with form=content_person_model_formset.empty_form del_icon_class="delperson" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
+            </div> <!-- div#emptyperson -->
+            <div>
+                <span id="newperson" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another person' %}</span>
+            </div>
+        </div> <!-- div.collapsible for Content Persons -->
+
+        <button type="button" class="collapsible expanded">{% translate 'Incidents' %}</button>
+        <div class="collapsible">
+            <div>
+                {{ content_incident_model_formset.management_form }}
+            </div>
+            {% for nested_form in content_incident_model_formset %}
+            <div class="incidentform">
+                {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delincident" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
+            </div> <!-- div.incidentform -->
+            {% endfor %}
+            <div id="emptyincident" class="incidentform emptyform">
+                {% include "inline_wizard_form.html" with form=content_incident_model_formset.empty_form del_icon_class="delincident" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
+            </div> <!-- div#emptyincident -->
+            <div>
+                <span id="newincident" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another incident' %}</span>
+            </div>
+        </div> <!-- div.collapsible for Content Incidents -->
+
+        <input type="submit" value="Save">
+
+    </form>
+
+    <div id="emptynewattachment" class="hidden">
+        <a class="stoppednewlink newattlink" href="#"><i class="fas fa-file-alt newicon"></i>{% translate 'New' %}</a>
+    </div>
+
+    <div id="emptynewincident" class="hidden">
+        <a class="stoppednewlink newinclink" href="#"><i class="fas fa-file-alt newicon"></i>{% translate 'New' %}</a>
+    </div>
+
+{% endblock %}
+
+{% block onready %}
+    {{ block.super }}
+    // localized alternative field labels
+    Fdp.Common.jsonSearchCriteria = "{{ json_search_criteria }}";
+    Fdp.Common.startYearGetParam = "{{ start_year_get_param }}";
+    Fdp.Common.startMonthGetParam = "{{ start_month_get_param }}";
+    Fdp.Common.startDayGetParam = "{{ start_day_get_param }}";
+    Fdp.Common.endYearGetParam = "{{ end_year_get_param }}";
+    Fdp.Common.endMonthGetParam = "{{ end_month_get_param }}";
+    Fdp.Common.endDayGetParam = "{{ end_day_get_param }}";
+    Fdp.Common.hostOnlyGetParam = "{{ for_host_only_get_param }}";
+    Fdp.Common.adminOnlyGetParam = "{{ for_admin_only_get_param }}";
+    Fdp.Common.organizationsGetParam = "{{ for_organizations_get_param }}";
+    // initialize interface elements
+    Fdp.ChangingContent.init(
+        {% if is_editing %}true{% else %}false{% endif %}, /* isEditing */
+        "{% url 'changing:async_get_persons' %}", /* getPersonsUrl */
+        "{% url 'changing:async_get_attachments' %}", /* getAttachmentsUrl */
+        "{% url 'changing:async_get_incidents' %}", /* getIncidentsUrl */
+        "{{ add_attachment_url }}", /* newAttachmentUrl */
+        "{{ add_incident_url }}" /* newIncidentUrl */
+    );
+
+{% endblock %}

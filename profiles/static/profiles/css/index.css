@@ -1,0 +1,19 @@
+/* search option, e.g. officer or command */
+.srcopt {
+ float: left;
+ margin-right: 8em;
+ text-align: center;
+ font-weight: bold;
+}
+.srcopt i {
+    font-size: 300%;
+    display: block;
+}
+.officer { color: #666; }
+.command { color: #E4BF60; }
+
+/* For mobile users (width <= 480px), rearrange search options */
+@media only screen and (max-width: 480px) {
+	.srcopt { display: block; margin-right: 0; float: none; }
+	.srcopt.first { margin-bottom: 4em; }
+}

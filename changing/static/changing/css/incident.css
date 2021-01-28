@@ -1,0 +1,32 @@
+/* container for inline forms */
+div.personincidentform, div.groupingincidentform, div.suggestedpersoncont {
+    border-left: 4px solid #79aec8;
+}
+/* icon to delete inline forms */
+.delperson, .delgrouping {
+    font-size: 150%;
+    color: #ba2121;
+    margin-bottom: 1em;
+}
+/* save button for form */
+input[type="submit"] {
+    margin-top: 2em;
+}
+/* All check boxes for form, e.g. "is guess" */
+.aligned .form-row input[type="checkbox"], input[type="checkbox"] {
+    margin-bottom: -1em;
+}
+/* clickable element that collapses/expands sections */
+button.collapsible {
+    margin-top: 3em;
+}
+/* new location link */
+.newloclink { margin-left: 1em; }
+.newloclink i { margin-right: 0.5em; }
+/* Hovering over an autocomplete suggestion */
+.ui-autocomplete li:hover, .ui-autocomplete li div:hover { background: #FFECBB; }
+/* persons suggested for linking to incidents */
+ul.sgg { list-style: none; }
+ul.sgg li { list-style: none; }
+ul.sgg li i { margin-top: 1em; }
+.suggestedpersoncont i { color: #45A26D; }

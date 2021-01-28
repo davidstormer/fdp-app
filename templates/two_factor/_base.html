@@ -1,0 +1,35 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static compress %}
+
+{% block extrahead %}{{ block.super }}{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/login.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "css/two_factor.css" %}">
+    {% endcompress %}
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} login{% endblock %}
+
+{% block usertools %}{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">{{ site_header|default:_('Full Disclosure Project') }}</h1>
+{% endblock %}
+
+{% block userlinks %}
+    {% if is_admin %}
+        <a href="{% url 'admin:index' %}">{% trans 'View Admin' %}</a> /
+    {% endif %}
+    {% if user.has_usable_password %}
+    <a href="{% url 'admin:password_change' %}">{% trans 'Change password' %}</a> /
+    {% endif %}
+    <a href="{% url 'admin:logout' %}">{% trans 'Log out' %}</a>
+{% endblock %}

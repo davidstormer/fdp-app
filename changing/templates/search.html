@@ -1,0 +1,76 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress changing_extras %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{% get_font_awesome_src %}" crossorigin="anonymous"></script>
+    {% compress js %}
+    <script src="{% static 'changing/js/search.js' %}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/common_search.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'changing/css/search.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+{% block content %}
+
+    <form class="search" action="{% comment %}{% url 'changing:search' %}{% endcomment %}" method="post">
+        {% csrf_token %}
+        <div class="fieldWrapper new {{ css_class }}">
+
+            {% if css_class == 'content' %}
+                <a href="{% url 'changing:add_content' %}"><i class="fas fa-file-alt newicon"></i>{% translate 'New' %}</a>
+            {% elif css_class == 'incident' %}
+                <a href="{% url 'changing:add_incident' %}"><i class="fas fa-balance-scale newicon"></i>{% translate 'New' %}</a>
+            {% elif css_class == 'person' %}
+                <a href="{% url 'changing:add_person' %}"><i class="fas fa-user newicon"></i>{% translate 'New' %}</a>
+            {% elif css_class == 'grouping' %}
+                <a href="{% url 'changing:add_grouping' %}"><i class="fas fa-users newicon"></i>{% translate 'New' %}</a>
+            {% else %}
+                <i class="fas fa-file"></i>
+            {% endif %}
+
+        </div>
+        <div>
+            {{ form.non_field_errors }}
+        </div>
+        <div class="fieldWrapper">
+            <p class="helpmsg">
+                <i class="fas fa-info-circle"></i>
+                {{ help_text }}
+            </p>
+        </div>
+        <div class="fieldWrapper criteria">
+            {{ form.search.errors }}
+            {{ form.search }}
+            {{ form.type }}
+        </div>
+        <div class="fieldWrapper buttons">
+            <input type="submit" value="Search" />
+        </div>
+    </form>
+
+
+{% endblock %}
+
+
+{% block onready %}
+    {{ block.super }}
+    Fdp.ChangingSearch.init();
+{% endblock %}

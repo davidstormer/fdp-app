@@ -1,0 +1,30 @@
+/* container for inline forms */
+div.groupingaliasform, div.groupingrelationshipform  {
+    border-left: 4px solid #79aec8;
+}
+/* icon to delete inline forms */
+.delalias, .delrelationship {
+    font-size: 150%;
+    color: #ba2121;
+    margin-bottom: 1em;
+}
+/* save button for form */
+input[type="submit"] {
+    margin-top: 2em;
+}
+/* All check boxes for form, e.g. "is guess" */
+.aligned .form-row input[type="checkbox"], input[type="checkbox"] {
+    margin-bottom: -1em;
+}
+/* clickable element that collapses/expands sections */
+button.collapsible {
+    margin-top: 3em;
+}
+/* subject grouping search input in the relationship form */
+.subjectname { margin-right: 1em; }
+/* object grouping search input in the relationship form */
+.objectname { margin-left: 1em; }
+/* icons to switch between subject relationship and object relationship */
+i.subjectrelicon, i.objectrelicon { color: #45A26D; cursor: pointer; margin-left: 1em; }
+/* Hovering over an autocomplete suggestion */
+.ui-autocomplete li:hover, .ui-autocomplete li div:hover { background: #FFECBB; }

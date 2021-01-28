@@ -1,0 +1,69 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress %}
+
+{% block extrahead %}{{ block.super }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'fdpuser/css/settings.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% trans 'Home' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+
+{% block content %}
+
+
+    <img class="big" src="{% static 'img/user_big.png' %}">
+    <div class="clear"></div>
+
+    {% if email %}
+    <div class="labelvalue">
+        <label>{% trans 'Email' %}</label> <span>{{ email }}</span>
+    </div>
+    <div class="clear"></div>
+    {% endif %}
+
+    {% if name %}
+    <div class="labelvalue">
+        <label>{% trans 'Name' %}</label> <span>{{ name }}</span>
+    </div>
+    <div class="clear"></div>
+    {% endif %}
+
+    {% if role %}
+    <div class="labelvalue">
+        <label>{% trans 'Role' %}</label> <span>{{ role }}</span>
+    </div>
+    <div class="clear"></div>
+    {% endif %}
+
+    {% if fdp_organization %}
+    <div class="labelvalue">
+        <label>{% trans 'Organization' %}</label> <span>{{ fdp_organization }}</span>
+    </div>
+    <div class="clear"></div>
+    {% endif %}
+
+    <div class="labelvalue">
+        <a href="{% url 'two_factor:profile' %}">{% trans 'Manage Two-Factor Authentication' %}</a>
+    </div>
+    <div class="clear"></div>
+
+    {% if user.has_usable_password and user.has_changeable_password %}
+    <div class="labelvalue">
+        <a href="{% url 'fdpuser:confirm_password_change' %}">{% trans 'Change password' %}</a>
+    </div>
+    <div class="clear"></div>
+    {% endif %}
+
+{% endblock %}

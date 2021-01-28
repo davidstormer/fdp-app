@@ -1,0 +1,33 @@
+{% load changing_extras %}
+    {% if force_read_only %}
+            <fieldset class="module aligned" disabled="disabled">
+                {% for field in form %}
+                    <div class="form-row id="f_{{ field.id_for_label }}">
+                        <div>
+                            {{ field.label_tag }} {{ field }}
+                            {% comment 'Exclude help text' %}
+                            {% if field.help_text %}
+                            <div class="help">{{ field.help_text|safe }}</div>
+                            {% endif %}
+                            {% endcomment %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </fieldset>
+    {% else %}
+            <fieldset class="module aligned">
+                {% for field in form %}
+                    <div class="form-row {% if field.field|hide_in_html or field.is_hidden %}hidden{% endif %}" id="f_{{ field.id_for_label }}">
+                        <div>
+                            {{ field.errors }}
+                            {{ field.label_tag }} {{ field }}
+                            {% comment 'Exclude help text' %}
+                            {% if field.help_text %}
+                            <div class="help">{{ field.help_text|safe }}</div>
+                            {% endif %}
+                            {% endcomment %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </fieldset>
+    {% endif %}

@@ -1,0 +1,8 @@
+{% load i18n %}
+{% spaceless %}
+{% for widget in widget.subwidgets %}
+    {% include widget.template_name %}
+{% endfor %}
+<i class="fas fa-sign-out-alt subjectrelicon"></i>
+<i class="fas fa-sign-in-alt objectrelicon"></i>
+{% endspaceless %}

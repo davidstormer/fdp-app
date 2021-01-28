@@ -1,0 +1,37 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n static compress %}
+
+{% block extrahead %}{{ block.super }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'fdpuser/css/confirm_2fa_reset.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% trans 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'fdpuser:settings' %}">{% trans 'Settings' %}</a>
+    &rsaquo;
+    <a href="{% url 'two_factor:profile' %}">{% trans 'Manage 2FA' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+
+{% block content %}
+<p>{% trans 'Are you sure you wish to reset your two-factor authentication (2FA)?' %}</p>
+<p>{% trans 'If so, the next steps are:' %}</p>
+<ul>
+    <li>{% trans 'Your 2FA will be disabled.' %}</li>
+    <li>{% trans 'You will be logged out.' %}</li>
+    <li>{% trans 'Your password will be reset.' %}</li>
+    <li>{% trans 'A secure password change link will be sent to your email.' %}</li>
+</ul>
+<p><a href="{% url 'fdpuser:reset_2fa' %}">{% trans 'Reset my 2FA' %}</a></p>
+{% endblock %}

@@ -1,0 +1,131 @@
+/* *** GENERAL SEARCHING STYLES *** */
+/* Search box into which search criteria are entered */
+form.search input[name="search"] {
+    width: 20em;
+}
+/* Search button which is pressed to perform the search */
+form.search input[type="submit"] {
+    margin-left: 1em;
+}
+/* Help button which is pressed to display search help */
+form.search span.helpbtn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #999;
+    color: #fff;
+    margin: 2px 0 2px 1em;
+    vertical-align: middle;
+    font-weight: normal;
+    font-size: 13px;
+}
+/* Hovering over the help button which is pressed to display search help */
+form.search span.helpbtn:hover {
+    background-color: #417690;
+}
+
+/* *** GENERAL SEARCH RESULT STYLES *** */
+/* List of search results */
+ul.results {
+    list-style: none;
+    margin: 0 0 2em 0;
+    padding: 0;
+}
+/* List item containing individual search result */
+ul.results li {
+    list-style: none;
+    margin: 0;
+    padding: 1em;
+}
+/* Hovering over the list item containing individual search result */
+ul.results li:hover {
+    background-color: #f9f9f9;
+}
+/* Link within a list item containing individual search result */
+ul.results li a {
+    font-weight: bold;
+}
+/* Text describing number of search results that matched search criteria. */
+div.pagination p.total {
+    margin-left: 1em;
+}
+
+
+/* *** GENERAL LAYOUT STYLES *** */
+/* Clears all floating elements above */
+div.clear { clear: both; }
+/* Container for the aligned label and value pair */
+div.labelvalue {
+    display: inline-block;
+    margin-bottom: 1em;
+}
+/* The value portion of the aligned label and value pair */
+div.labelvalue span {
+    font-weight: bold;
+    margin-left: 3em;
+}
+/* The label portion of the aligned label and value pair */
+div.labelvalue label {
+    float: left;
+    width: 3em;
+}
+/* Large image */
+img.big {
+    width: 64px;
+    height: 64px;
+}
+/* hidden elements */
+.hidden, .nevershow, .emptyform {
+    display: none;
+}
+/* Elements that are hidden and used only to support client-side manipulations, e.g. filterable SELECT OPTIONs. */
+.fake {
+    position: absolute;
+    display: none;
+}
+/* clickable elements that impersonate links */
+.clickable { cursor: pointer; }
+span.clickable { color: #447e9b; }
+span.clickable:hover { color: #036; }
+
+/* Default styling used for DateWithComponentsWidget (i.e. where a date is split into potentially unknown components */
+input.dateyear { width: 4em; }
+input.datemonth, input.dateday { width: 2.5em; }
+span.textyear, span.textmonth, span.textday { margin-right: 1em; }
+span.textyear, span.textmonth, span.textday { margin-left: 1em; }
+/* calendar icon */
+i.calendar { color: #45A26D; margin-left: 0; cursor: pointer; }
+/* calendar icon with padding (e.g. when there is no year component to its right, e.g. for complete date fields) */
+i.calendar.withpadding { margin-right: 1em;}
+/* take the displayed calendar out of the layout flow */
+span.calendar.hasDatepicker { position: absolute; z-index: +1; }
+/* Text indicating that date range should be combined into a single date */
+span.combinedate { margin-left: 1em; font-size: smaller; }
+/* Text indicating that single date should be split into a date range */
+span.splitdate { margin-left: 1em; font-size: smaller; }
+
+/* social authentication disconnect and user logout */
+form.logout { float: right; }
+button.logout {
+    text-transform: uppercase;
+    padding: 0;
+    padding-bottom: 2px;
+    background: transparent;
+    font: inherit;
+    color: #FFF;
+    cursor: pointer;
+    border: 0 none;
+    border-bottom: 1px solid rgba(255,255,255,0.25);
+    line-height: 1em;
+}
+button.logout:focus, button.logout:hover {
+    border-bottom-color: #79aec8;
+    color: #79aec8;
+}
+
+/* Select2 wrapped select elements */
+select.multiselect {
+    width: 40em;
+    min-width: 40em;
+}

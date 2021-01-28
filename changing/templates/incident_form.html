@@ -1,0 +1,123 @@
+{% extends "ajax_base_object_form.html" %}
+{% load i18n admin_urls static compress changing_extras %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {% compress js %}
+    <script src="{% static 'changing/js/incident.js' %}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'changing/css/incident.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/collapsible.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:incidents' %}">{% translate 'Incident' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+{% block content %}
+    <form method="post">{% csrf_token %}
+        {% if form.non_field_errors %}
+        <div>
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <button type="button" class="collapsible expanded">{% translate 'Details' %}</button>
+        <div class="collapsible">
+            <div>
+                {% include "wizard_form.html" with form=form force_read_only=False %}
+            </div>
+        </div> <!-- div.collapsible for Details -->
+
+        <button type="button" class="collapsible expanded">{% translate 'Persons' %}</button>
+        <div class="collapsible">
+            {% if suggested_persons %}
+            <div class="suggestedpersoncont">
+                <div class="form-row module">
+                    <p>{% translate 'These people may be relevant for this incident. Use' %} <i class="fas fa-check-circle sgg"></i> {% translate 'to add them.' %}</p>
+                    <ul class="sgg" id="sggper">
+                        {% for person in suggested_persons %}
+                        <li>
+                            <i class="fas fa-check-circle sgg clickable" data-id="{{ person|get_value:'pk' }}" data-name="{{ person|get_value:'name' }}"></i>
+                            {{ person|get_value:'name' }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+            <div>
+                {{ person_incident_model_formset.management_form }}
+            </div>
+            {% for nested_form in person_incident_model_formset %}
+            <div class="personincidentform">
+                {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delperson" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
+            </div> <!-- div.personincidentform -->
+            {% endfor %}
+            <div id="emptypersonincident" class="personincidentform emptyform">
+                {% include "inline_wizard_form.html" with form=person_incident_model_formset.empty_form del_icon_class="delperson" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
+            </div> <!-- div#emptypersonincident -->
+            <div>
+                <span id="newpersonincident" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another person' %}</span>
+            </div>
+        </div> <!-- div.collapsible for Persons -->
+
+        <button type="button" class="collapsible expanded">{% translate 'Groupings' %}</button>
+        <div class="collapsible">
+            <div>
+                {{ grouping_incident_model_formset.management_form }}
+            </div>
+            {% for nested_form in grouping_incident_model_formset %}
+            <div class="groupingincidentform">
+                {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delgrouping" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
+            </div> <!-- div.groupingincidentform -->
+            {% endfor %}
+            <div id="emptygroupingincident" class="groupingincidentform emptyform">
+                {% include "inline_wizard_form.html" with form=grouping_incident_model_formset.empty_form del_icon_class="delgrouping" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
+            </div> <!-- div#emptygroupingincident -->
+            <div>
+                <span id="newgroupingincident" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another grouping' %}</span>
+            </div>
+        </div> <!-- div.collapsible for Groupings -->
+
+        <input type="submit" value="Save">
+    </form>
+
+    <div id="emptynewlocation" class="hidden">
+        <a class="stoppednewlink newloclink" href="#"><i class="fas fa-file-alt newicon"></i>{% translate 'New' %}</a>
+    </div>
+
+{% endblock %}
+
+{% block onready %}
+    {{ block.super }}
+    Fdp.Common.jsonSearchCriteria = "{{ json_search_criteria }}";
+
+    // initialize interface elements
+    Fdp.ChangingIncident.init(
+        {% if is_editing %}true{% else %}false{% endif %}, /* isEditing */
+        "{% url 'changing:async_get_persons' %}", /* getPersonsUrl */
+        "{% url 'changing:async_get_groupings' %}", /* getGroupingsUrl */
+        "{{ add_location_url }}", /* newLocationUrl */
+        '{{ popup_key }}', /* popupKey */
+        '{{ popup_value }}', /* popupValue */
+        '{{ popup_id_key }}', /* popupIdKey */
+        '{{ popup_field }}' /* popupField */
+    );
+
+{% endblock %}

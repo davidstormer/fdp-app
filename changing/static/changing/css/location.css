@@ -1,0 +1,8 @@
+/* save button for form */
+input[type="submit"] {
+    margin-top: 2em;
+}
+/* All check boxes for form, e.g. "is guess" */
+.aligned .form-row input[type="checkbox"], input[type="checkbox"] {
+    margin-bottom: -1em;
+}

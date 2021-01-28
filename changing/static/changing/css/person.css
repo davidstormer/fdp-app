@@ -1,0 +1,59 @@
+/* container for inline forms */
+div.identifierform, div.persongroupingform, div.persontitleform, div.personpaymentform, div.personaliasform,
+div.personrelationshipform, div.personcontactform  {
+    border-left: 4px solid #79aec8;
+}
+/* icon to delete inline forms */
+.delidentifier, .delgrouping, .deltitle, .delpayment, .delalias, .delrelationship, .delcontact {
+    font-size: 150%;
+    color: #ba2121;
+    margin-bottom: 1em;
+}
+/* save button for form */
+input[type="submit"] {
+    margin-top: 2em;
+}
+/* All check boxes for form, e.g. "is guess", "is_law_enforcement" */
+.aligned .form-row input[type="checkbox"], input[type="checkbox"] {
+    margin-bottom: -1em;
+}
+/* clickable element that collapses/expands sections */
+button.collapsible {
+    margin-top: 3em;
+}
+/* subject person search input in the relationship form */
+.subjectname { margin-right: 1em; }
+/* object person search input in the relationship form */
+.objectname { margin-left: 1em; }
+/* icons to switch between subject relationship and object relationship */
+i.subjectrelicon, i.objectrelicon { color: #45A26D; cursor: pointer; margin-left: 1em; }
+/* county selections filled in on-demand */
+.dynamiccounty { width: 16em; }
+
+
+/* container for the payroll form */
+div.personpaymentform { margin-bottom: 30px; }
+/* column headings and table cells for payroll forms */
+.personpaymentform th, .personpaymentform td { text-align: center; vertical-align: middle; }
+/* numerical inputs in the payroll forms */
+td.form-row div input[type="number"] { width: 5em; }
+/* inputs for payroll forms */
+td.form-row div input, td.form-row div select, .personpaymentform th { font-size: 10px; }
+td.form-row div select { height: 25px; }
+/* calendar icon for payroll forms */
+td.form-row div i.calendar { margin-right: 4px; }
+/* delete icon for payroll forms */
+td.form-row i.delpayment { margin-bottom: 0; font-size: 100%; }
+/* payroll inputs for hours */
+td.form-row.col7 div input[type="number"], td.form-row.col9 div input[type="number"] { width: 4em; }
+/* payroll inputs for starting and ending date components */
+td.form-row div input[type="number"].datemonth, td.form-row div input[type="number"].dateday { width: 3em; }
+td.form-row div input[type="number"].dateyear { width: 4em; }
+/* starting and ending date labels in the payroll forms */
+td.form-row div span.textday, td.form-row div span.textmonth, td.form-row div span.textyear { margin-left: 0; margin-right: 0; }
+/* start and end date table cells in the payroll forms */
+td.form-row.col2 > div, td.form-row.col3 > div { width: 13em; }
+/* payroll table cells */
+td.form-row { padding: 4px; }
+/* Hovering over an autocomplete suggestion */
+.ui-autocomplete li:hover, .ui-autocomplete li div:hover { background: #FFECBB; }

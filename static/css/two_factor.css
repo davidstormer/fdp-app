@@ -1,0 +1,72 @@
+.login form p {
+    padding: 4px 0;
+    float: left;
+    width: 100%;
+    border-bottom: none;
+    line-height: inherit;
+    margin: inherit;
+}
+.login form p label {
+    padding-right: 0.5em;
+    line-height: 2em;
+    font-size: 1em;
+    clear: both;
+    color: #333;
+}
+.login form p input {
+    clear: both;
+    padding: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-top: 0 0 2px 0;
+    vertical-align: middle;
+    font-family: "Roboto", "Lucida Grande", Verdana, Arial, sans-serif;
+    font-weight: normal;
+    font-size: 13px;
+}
+.login form button[type="submit"] {
+    background: #79aec8;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    margin: 2px 0;
+    vertical-align: middle;
+    font-family: "Roboto", "Lucida Grande", Verdana, Arial, sans-serif;
+    font-weight: normal;
+    font-size: 13px;
+}
+.login form button[type="submit"]:hover {
+    background: #609ab6;
+}
+.login .hiddenenter {
+    position: absolute;
+    left:-9999px;
+}
+.login .qrimage {
+    margin: 0 auto;
+    display: block;
+}
+.login .back2falink, .login form button.back2falink[type="submit"] {
+    margin-top: 2em;
+}
+.login div.submit-row.backuptoken {
+    padding-left: 7em;
+}
+
+.login p.nextsection {
+    margin-top: 2em;
+}
+
+.login div.belowlogin {
+    padding-top: 2em;
+}
+.login a.forgotpwd {
+    float: left;
+}
+.login a.laslogin {
+    float: right;
+}

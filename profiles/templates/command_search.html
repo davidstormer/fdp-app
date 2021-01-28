@@ -1,0 +1,49 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress profiles_extras %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{% get_font_awesome_src %}" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/common_search.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/command_search.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Searches' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+
+{% block content %}
+
+    <form class="search" action="{% url 'profiles:command_search' %}" method="post">
+        {% csrf_token %}
+        <div>
+            {{ form.non_field_errors }}
+        </div>
+        <div class="fieldWrapper">
+            <p class="helpmsg">
+                <i class="fas fa-info-circle"></i>
+                {% translate 'Search by name or abbreviation' %}
+            </p>
+        </div>
+        <div class="fieldWrapper criteria">
+            {{ form.search.errors }}
+            {{ form.search }}
+        </div>
+        <div class="fieldWrapper buttons">
+            <input type="submit" value="Search" />
+        </div>
+    </form>
+
+{% endblock %}

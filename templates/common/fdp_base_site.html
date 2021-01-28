@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static compress %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    {% compress js %}
+    <script src="{% static 'js/common.js' %}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/fdp_base_site.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'profiles:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} fdpbody{% endblock %}
+
+{% block userlinks %}
+    <a href="{% url 'fdpuser:settings' %}">{% trans 'Settings' %}</a> /
+    {% if is_admin %}
+        <a href="{% url 'changing:index' %}">{% trans 'Admin' %}</a> /
+    {% endif %}
+    {% if not only_external_auth %}
+        <a href="{% url 'logout' %}">{% trans 'Log out' %}</a>
+    {% else %}
+        {% include "common/fdp_logout.html" %}
+    {% endif %}
+{% endblock %}
+
+{% block endscript %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $( document ).ready(function() {
+            {% block onready %}{% endblock %}
+        });
+    </script>
+{% endblock %}

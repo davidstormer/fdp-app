@@ -1,0 +1,60 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress %}
+
+{% block extrahead %}{{ block.super }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/command_search_results.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Searches' %}</a>
+    &rsaquo;
+    <a href="{% url 'profiles:command_search' %}">{% translate 'Command Search' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+
+{% block content %}
+
+{% if command_list %}
+
+    <ul class="results">
+    {% for grouping in command_list %}
+        <li>
+            <a href="{% url 'profiles:command' grouping.pk %}?{{ back_link_querystring }}">{{ grouping.name }}</a>
+            {% if grouping.code %}&minus; {{ grouping.code }}{% endif %}
+            {% if grouping.aliases %}&minus; {{ grouping.aliases }}{% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+
+    <p>
+        {% if has_more %}
+            {% translate 'These are the top' %}
+            <strong>{{ max_results }} {% translate 'commands' %}</strong>
+            {% translate 'matching your search criteria.' %}
+            {% translate 'If you can not find what you are looking for, then try adding more search criteria.' %}
+        {% else %}
+            <strong>
+                {{ queryset_count }}
+                {% if queryset_count > 1 %}{% translate 'commands' %}{% else %}{% translate 'command' %}{% endif %}
+            </strong>
+            {% translate 'matched your search criteria.' %}
+        {% endif %}
+    </p>
+
+{% else %}
+    <p>{% translate 'No commands matched your search criteria.' %}</p>
+    <p><a href="{% url 'profiles:command_search' %}">{% translate 'Search again' %}</a></p>
+{% endif %}
+
+
+{% endblock %}

@@ -1,0 +1,6 @@
+{% load i18n admin_urls %}
+
+    <form class="logout" action="{% url 'social:disconnect' 'azuread-tenant-oauth2' %}" method="post">
+        {% csrf_token %}
+        <button class="logout">&nbsp;{% trans 'Log out' %}</button>
+    </form>

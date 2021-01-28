@@ -1,0 +1,33 @@
+/* Loading animated GIF displayed while asynchronous (AJAX) request is in progress */
+#loading {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    margin-left: -8px;
+}
+
+/* *** Error, Confirmation and Other Messages  *** */
+/* Dialog displayed for raw error and handled error and confirmation message */
+#rawError, #showError, #showConfirmation, #showHtml { }
+/* Exclamation icon to the left of the raw error title and handled error title */
+#rawError h1 i, #showError h1 i { color: #ba2121; margin-right: 0.5em; }
+/* Question mark icon to the left of the confirmation message title */
+#showConfirmation h1 i, #showHtml h1 i { color: #79aec8; margin-right: 0.5em; }
+/* Clickable details link to display raw error */
+#rawError span.details {
+    color: #447e9b;
+    text-decoration: none;
+    font-size: 13px;
+}
+#rawError span.details:focus, #rawError span.details:hover {
+    color: #036;
+    text-decoration:underline;
+}
+/* Icon to the right of the clickable details link to display raw error */
+#rawError span.details i {
+    margin-left: 0.5em;
+}

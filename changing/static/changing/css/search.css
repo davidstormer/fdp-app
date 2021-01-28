@@ -1,0 +1,13 @@
+#content {
+    width: 100%;
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
+div.content i { color: #45A26D; }
+div.incident i { color: #ba2121; }
+div.person i { color: #666; }
+div.grouping i { color: #E4BF60; }
+
+i.newicon { margin-right: 4px; }

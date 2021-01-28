@@ -1,0 +1,43 @@
+/* *** Collapsible sections *** */
+/* Button clicked to expand and collapse section */
+button.collapsible {
+  cursor: pointer;
+  padding: 1em 0;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  background: transparent;
+  overflow: hidden;
+  font-weight: bold;
+  color: #417690;
+}
+/* Solid line added after content */
+button.collapsible:after {
+  background-color: #417690;
+  content: "";
+  display: inline-block;
+  height: 1px;
+  position: relative;
+  vertical-align: middle;
+  width: 100%;
+  left: 2em;
+  margin-right: -50%;
+}
+/* Pointer is hovering over the button */
+button.collapsible:hover { background-color: #F9F9F9; }
+/* Section that can be expanded and collapsed with the button */
+div.collapsible {
+  display: block;
+}
+/* Nested section that can be expanded and collapsed with the button */
+div.collapsible div.collapsible { }
+/* Adding the Unicode character for "plus" sign (+) */
+button.collapsible:before {
+    content: '\02795';
+    float: left;
+    margin-right: 1em;
+    color: #417690;
+}
+/* Adding the Unicode character for "minus" sign (-) */
+button.collapsible.expanded:before { content: "\2796"; }

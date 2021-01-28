@@ -1,0 +1,32 @@
+/* container for inline forms */
+div.identifierform, div.caseform, div.personform, div.attachmentform, div.incidentform {
+    border-left: 4px solid #79aec8;
+}
+/* icon to delete inline forms */
+.delidentifier, .delperson, .delcase, .delattachment, .delincident {
+    font-size: 150%;
+    color: #ba2121;
+    margin-bottom: 1em;
+}
+/* save button for form */
+input[type="submit"] {
+    margin-top: 2em;
+}
+/* All check boxes for form, e.g. "is guess" */
+.aligned .form-row input[type="checkbox"], input[type="checkbox"] {
+    margin-bottom: -1em;
+}
+/* clickable element that collapses/expands sections */
+button.collapsible {
+    margin-top: 3em;
+}
+/* new attachment link */
+.newattlink { margin-left: 1em; }
+.newattlink i { margin-right: 0.5em; }
+/* new incident link */
+.newinclink { margin-left: 1em; }
+.newinclink i { margin-right: 0.5em; }
+/* input elements containing incident string representations */
+.incidentname { width: 78%; }
+/* containing UL element for autocomplete for incidents */
+.ui-autocomplete.incident { width: 70%; }

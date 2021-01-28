@@ -1,0 +1,55 @@
+/* *** RESPONSIVE GRID *** */
+/*
+    <div class="gridrow gridgroup">
+        <div class="gridcol gridcell_1_of_2"> ... </div>
+        <div class="gridcol gridcell_1_of_2"> ... </div>
+    </div>
+
+
+    OR
+
+
+    <div class="gridrow gridgroup">
+        <div class="gridcol gridcell_1_of_3"> ... </div>
+        <div class="gridcol gridcell_1_of_3"> ... </div>
+        <div class="gridcol gridcell_1_of_3"> ... </div>
+    </div>
+
+*/
+/* Rows in the responsive grid */
+.gridrow {
+	clear: both;
+	padding: 0px;
+	margin: 0px;
+}
+
+/* Columns in the responsive grid */
+.gridcol {
+	display: block;
+	float:left;
+	margin: 1% 0 1% 1.6%;
+}
+.gridcol:first-child { margin-left: 0; }
+
+/* Grouping of cells in a responsive grid row */
+.gridgroup:before,
+.gridgroup:after { content:""; display:table; }
+.gridgroup:after { clear:both;}
+.gridgroup { zoom:1; /* For IE 6/7 */ }
+
+/* One cell stretching to two cells in the row */
+.gridcell_2_of_2, .gridcell_3_of_3 { width: 100%; }
+/* Two cells in a row */
+.gridcell_1_of_2 { width: 49.2%; }
+/* Three cells in a row */
+.gridcell_1_of_3 { width: 32.26%; }
+/* Two cells stretching to three cells in a row */
+.gridcell_2_of_3 { width: 66.13%; }
+
+/* For mobile users (width <= 480px), apply full width */
+@media only screen and (max-width: 480px) {
+	.gridcol { margin: 1% 0 1% 0%; }
+}
+@media only screen and (max-width: 480px) {
+	.gridcell_1_of_2, .gridcell_2_of_2, .gridcell_1_of_3, .gridcell_2_of_3, .gridcell_3_of_3 { width: 100%; }
+}

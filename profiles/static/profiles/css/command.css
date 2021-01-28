@@ -1,0 +1,130 @@
+/* Paragraph indicating that no data is available in a particular section */
+p.nodata {
+    margin-top: 1em;
+}
+/* Labels in the Identification section */
+label.ident {
+    color: #666;
+    margin-bottom: 1em;
+    font-weight: bold;
+    display: inline-block;
+}
+/* Values for labels in the Identification section */
+span.identval {
+    font-weight: bold;
+}
+/* Simulate labels in identification section without bolding */
+span.labelsim {
+    display: inline-block;
+    margin-bottom: 1em;
+}
+/* Lists within the Identification section */
+ul.ident, li.ident {
+    color: #666;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* List within the Officers section */
+ul.off, li.off {
+    color: #666;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+li.off { margin-bottom: 1em; }
+/* Label indicating whether officer is active/inactive */
+.offina {
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #ba2121;
+}
+/* Label indicating name of officer */
+.offnm {}
+/* Label indicating dates for officer */
+.offdt {}
+/* Container providing additional padding for nested collapsible/expandable sections in the Misconduct section */
+div.mispad {
+    padding-left: 2.5em;
+}
+/* Tags in the Misconduct section */
+p.mistags {
+    color: #417690;
+    margin-bottom: 2em;
+}
+/* Top-level heading in the Misconduct section */
+span.mish1 {
+    font-weight: bold;
+    text-transform: uppercase;
+    display: block;
+    color: #417690;
+}
+/* Second-level heading in the Misconduct section */
+span.mish2 { font-weight: bold; }
+/* Lists within the Misconduct Sources section */
+ul.misall, li.misall{ }
+/* Container for attachments within the Misconduct section and Other Files section */
+div.misatt {
+    margin-bottom: 2em;
+}
+/* Summary of the incident in the Misconduct section */
+p.missummary {
+    margin-bottom: 2em;
+}
+/* List within the Relationships section */
+ul.rel, li.rel {
+    color: #666;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+li.rel { margin-bottom: 1em; }
+/* Other grouping within Relationships section */
+span.othgrp {
+    font-weight: bold;
+    color: #000;
+}
+/* Relationship within Relationships section */
+span.rel {
+    font-weight: bold;
+    color: #ba2121;
+}
+/* Icons within the main profile heading (e.g. download all attachments, expand all, collapse all */
+h2 i { font-size: 200%; }
+/* Text within the main profile heading (e.g. John Smith) */
+h2 span.h2main {
+    margin-right: 2em;
+    float: left;
+    line-height: 3em;
+}
+/* Wrapping container within the main profile heading */
+h2 span.h2wrap {
+    text-align: center;
+    float: left;
+    margin-right: 2em;
+}
+/* Upper case text within main profile heading */
+h2 span.h2upper {
+    font-size: 50%;
+    text-transform: uppercase;
+    display: block;
+}
+/* Expand all, and collapse all sections buttons */
+#i_expandall, #i_collapseall {
+    cursor: pointer;
+    color: #417690;
+}
+/* Hovering over the expand all and collapse all section buttons */
+#i_expandall:focus, #i_collapseall:focus, #i_expandall:hover, #i_collapseall:hover {
+    color: #036;
+}
+/* Only first X officers displayed message */
+.moreoff { font-weight: bold; margin-top: 2em; margin-bottom: 2em; }
+/* List within the Summary Allegations section */
+ul.objall, li.objall{
+    color: #666;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+li.objall { margin-bottom: 1em; }

@@ -1,0 +1,30 @@
+/* container for inline forms */
+div.identifierform, div.caseform, div.personform, div.attachmentform, div.incidentform, div.allegationform, div.penaltyform {
+    border-left: 4px solid #79aec8;
+}
+/* icon to delete inline forms */
+.delallegation, .delpenalty {
+    font-size: 150%;
+    color: #ba2121;
+    margin-bottom: 1em;
+}
+/* save button for form */
+input[type="submit"] {
+    margin-top: 2em;
+}
+/* All check boxes for form, e.g. "is guess" */
+.aligned .form-row input[type="checkbox"], input[type="checkbox"] {
+    margin-bottom: -1em;
+}
+/* clickable element that collapses/expands sections */
+button.collapsible {
+    margin-top: 3em;
+}
+/* input elements containing incident string representations */
+.incidentname { width: 78%; }
+/* start off the collapsible sections containing the read-only forms as collapsed  */
+div.collapsible.collapsed { display: none; }
+/* parent element containing nested collapsible elements */
+div.nesting {
+    padding-left: 3em;
+}

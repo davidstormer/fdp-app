@@ -1,0 +1,11 @@
+/* COMMON STYLING FOR JQUERY UI AUTOCOMPLETE TOOL */
+/* containing UL element for autocomplete for incidents (shrink because corresponding input is widened) */
+.ui-autocomplete.incidentac { width: 70%; }
+/* Hovering over any autocomplete suggestion */
+.ui-autocomplete li:hover, .ui-autocomplete li div:hover { background: #FFECBB; }
+/* CSS class that is automatically assigned to the searching element in the autocomplete widget when its status is not OK */
+/* An example is when a user begins to delete text from the searching element, so the ID value in the hidden element is removed */
+.notokac { box-shadow: 0 0 4px 4px #ba2121; }
+/* CSS class that is automatically assigned to the searching element in the autocomplete widget when its status is OK */
+/* An example is when a user selects a record suggested by the widget */
+.okac { box-shadow: 0 0 4px 4px #45A26D; }

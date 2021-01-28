@@ -1,0 +1,14 @@
+{% load i18n %}
+{% spaceless %}
+<span class="calendar"></span><i class="fas fa-calendar-alt calendar"></i>
+{% for widget in widget.subwidgets %}
+    {% if forloop.counter0 == 0 %}
+    <span class="textmonth">{% trans 'Month' %}</span>
+    {% elif forloop.counter0 == 1 %}
+    <span class="textday">{% trans 'Day' %}</span>
+    {% elif forloop.counter0 == 2 %}
+    <span class="textyear">{% trans 'Year' %}</span>
+    {% endif %}
+    {% include widget.template_name %}
+{% endfor %}
+{% endspaceless %}

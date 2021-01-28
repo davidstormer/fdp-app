@@ -1,0 +1,20 @@
+{% load changing_extras %}
+    {% if is_empty_form %}
+        {% if has_delete %}
+            <td class="form-row col0"><i class="fas fa-trash {{ del_icon_class }} clickable" data-id="__prefix__"></i></td>
+        {% endif %}
+        {% for field in form %}
+            <td class="form-row col{{ forloop.counter }} {% if field|is_management_field or field.is_hidden %}nevershow{% endif %}" id="f_{{ field.id_for_label }}">
+                <div> {{ field.errors }} {{ field }} </div>
+            </td>
+        {% endfor %}
+    {% else %}
+        {% if has_delete %}
+            <td class="form-row col0"><i class="fas fa-trash {{ del_icon_class }} clickable" data-id="{{ parent_counter }}"></i></td>
+        {% endif %}
+        {% for field in form %}
+            <td class="form-row col{{ forloop.counter }} {% if field.field|hide_in_html %}hidden{% elif field|is_management_field or field.is_hidden %}nevershow{% endif %}" id="f_{{ field.id_for_label }}">
+                <div> {{ field.errors }} {{ field }}</div>
+            </td>
+        {% endfor %}
+    {% endif %}

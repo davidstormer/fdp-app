@@ -1,0 +1,41 @@
+#id_search {
+    width: 29em;
+}
+div.fieldWrapper.criteria {
+    margin-top: 1.5em;
+    margin-bottom: 2em;
+}
+div.fieldWrapper.buttons {
+    width: 29em;
+    text-align: center;
+}
+div.fieldWrapper.buttons input[type="submit"] {
+    margin-left: 0;
+}
+div.fieldWrapper.new {
+    margin-top: 1em;
+    margin-bottom: 1.5em;
+    font-weight: bold;
+}
+p.helpmsg {
+    font-size: 85%;
+}
+p.helpmsg i {
+    color: #70bf2b;
+}
+
+/* For mobile users (width <= 480px), apply full width */
+@media only screen and (max-width: 480px) {
+	#id_search {
+	    width: 95%;
+	    font-size: 150%;
+    }
+}
+@media only screen and (max-width: 480px) {
+	div.fieldWrapper.buttons { width: 95%; }
+}
+@media only screen and (max-width: 480px) {
+	div.fieldWrapper.buttons input[type="submit"] {
+	    font-size: 150%;
+    }
+}

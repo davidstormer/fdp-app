@@ -1,0 +1,61 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress %}
+
+{% block extrahead %}{{ block.super }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/officer_search_results.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Searches' %}</a>
+    &rsaquo;
+    <a href="{% url 'profiles:officer_search' %}">{% translate 'Officer Search' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+
+{% block content %}
+
+{% if officer_list %}
+
+    <ul class="results">
+    {% for person in officer_list %}
+        <li>
+            <a href="{% url 'profiles:officer' person.pk %}?{{ back_link_querystring }}">{{ person.name }}</a>
+            {% if person.ids %}&minus; {{ person.ids }}{% endif %}
+            {% if person.title %}&minus; {{ person.title }}{% endif %}
+            {% if person.groupings %}&minus; {{ person.groupings }}{% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+
+    <p>
+        {% if has_more %}
+            {% translate 'These are the top' %}
+            <strong>{{ max_results }} {% translate 'officers' %}</strong>
+            {% translate 'matching your search criteria.' %}
+            {% translate 'If you can not find what you are looking for, then try adding more search criteria.' %}
+        {% else %}
+            <strong>
+                {{ queryset_count }}
+                {% if queryset_count > 1 %}{% translate 'officers' %}{% else %}{% translate 'officer' %}{% endif %}
+            </strong>
+            {% translate 'matched your search criteria.' %}
+        {% endif %}
+    </p>
+
+{% else %}
+    <p>{% translate 'No officers matched your search criteria.' %}</p>
+    <p><a href="{% url 'profiles:officer_search' %}">{% translate 'Search again' %}</a></p>
+{% endif %}
+
+
+{% endblock %}

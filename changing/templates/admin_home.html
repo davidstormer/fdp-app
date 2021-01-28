@@ -1,0 +1,60 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress changing_extras %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{% get_font_awesome_src %}" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'changing/css/admin_home.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% trans 'Home' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+{% block content %}
+
+<div class="row">
+    <div class="column content">
+        <a href="{%url 'changing:content' %}"><i class="fas fa-file-alt"></i></a>
+        <h3><a href="{%url 'changing:content' %}">{% trans 'Content' %}</a></h3>
+        <p><strong><i class="fas fa-star"></i>{% trans 'Start here' %}</strong> {% trans 'most of the time, with lawsuits, IAB cases, news articles and more.' %}</p>
+    </div>
+    <div class="column incidents">
+        <a href="{%url 'changing:incidents' %}"><i class="fas fa-balance-scale"></i></a>
+        <h3><a href="{%url 'changing:incidents' %}">{% trans 'Incidents' %}</a></h3>
+        <p>{% trans 'Add and change wrongful arrests, assaults and other violations.' %}</p>
+    </div>
+    <div class="column persons">
+        <a href="{%url 'changing:persons' %}"><i class="fas fa-user"></i></a>
+        <h3><a href="{%url 'changing:persons' %}">{% trans 'Personnel' %}</a></h3>
+        <p>{% trans 'Add and change officers, civilians, legal staff and the links to them.' %}</p>
+    </div>
+    <div class="column groupings">
+        <a href="{%url 'changing:groupings' %}"><i class="fas fa-users"></i></a>
+        <h3><a href="{%url 'changing:groupings' %}">{% trans 'Groupings' %}</a></h3>
+        <p>{% trans 'Add and change police units, defender organizations and other groupings of people.' %}</p>
+    </div>
+    <div class="column advanced">
+        <a href="{%url 'admin:index' %}"><i class="fas fa-database"></i></a>
+        <h3><a href="{%url 'admin:index' %}">{% trans 'Advanced' %}</a></h3>
+        <p>{% trans 'For advanced users only. Manage the database directly, table-by-table.' %}</p>
+    </div>
+    <div class="column profiles">
+        <a href="{%url 'profiles:index' %}"><i class="far fa-address-card"></i></a>
+        <h3><a href="{%url 'profiles:index' %}">{% trans 'Profiles' %}</a></h3>
+        <p>{% trans 'Search for and view officer profiles and more.' %}</p>
+    </div>
+</div>
+
+{% endblock %}

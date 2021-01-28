@@ -1,0 +1,274 @@
+{% extends "common/fdp_ajax_base.html" %}
+{% load i18n admin_urls static compress profiles_extras %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{% get_font_awesome_src %}" crossorigin="anonymous"></script>
+    {% compress js %}
+    <script src="{% static 'profiles/js/commandprofile.js' %}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/responsive_grid.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/collapsible.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/command.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Searches' %}</a>
+    &rsaquo;
+    <a href="{% url 'profiles:command_search' %}">{% translate 'Command Search' %}</a>
+    &rsaquo;
+    <a href="{{ search_results_url }}">{% translate 'Command Search Results' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+
+{% block content %}
+
+    <h2>
+        <span class="h2main">{{ object.name }}</span>
+        {% if has_attachments %}
+        <a href="{% url 'profiles:command_download_all_files' object.pk %}"><span class="h2wrap">
+            <span class="h2lower"><i class="fas fa-file-archive"></i></span>
+            <span class="h2upper">{% translate 'Download' %}</span>
+            <span class="h2upper">{% translate 'All' %}</span>
+        </span></a>
+        {% endif %}
+        <span class="h2wrap" id="i_expandall">
+            <span class="h2lower"><i class="fas fa-plus-square"></i></span>
+            <span class="h2upper">{% translate 'Expand' %}</span>
+            <span class="h2upper">{% translate 'All' %}</span>
+        </span>
+        <span class="h2wrap" id="i_collapseall">
+            <span class="h2lower"><i class="fas fa-minus-square"></i></span>
+            <span class="h2upper">{% translate 'Collapse' %}</span>
+            <span class="h2upper">{% translate 'All' %}</span>
+        </span>
+    </h2>
+
+    <button type="button" class="collapsible expanded">{% translate 'Identification' %}</button>
+    <div class="collapsible">
+        <div class="gridrow gridgroup">
+            <div class="gridcol gridcell_1_of_2">
+                {% if object.command_aliases %}
+                <div>
+                    <label class="ident">{% translate 'Aliases' %}</label>
+                    <span class="identval">{% for alias in object.command_aliases %}{{ alias.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
+                </div>
+                {% endif %}
+                {% if object.code %}
+                <div>
+                    <label class="ident">{% translate 'Code' %}</label> <span class="identval">{{ object.code }}</span>
+                </div>
+                {% endif %}
+                {% if object.address %}
+                <div>
+                    <label class="ident">{% translate 'Address' %}</label> <span class="identval">{{ object.address }}</span>
+                </div>
+                {% endif %}
+            </div> <!-- div.gridcol.gridcell_1_of_2 -->
+            <div class="gridcol gridcell_1_of_2">
+                {% if object.belongs_to_grouping %}
+                <div>
+                    <label class="ident">{% translate 'Belongs to' %}</label> <span class="identval">{{ object.belongs_to_grouping }}</span>
+                </div>
+                {% endif %}
+                {% if object.command_counties %}
+                <div>
+                    <label class="ident">{% if object.command_counties|length > 1 %}{% translate 'Counties' %}{% else %}{% trans 'County' %}{% endif %}</label>
+                    <span class="identval">{% for county in object.command_counties %}{{ county.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
+                </div>
+                {% endif %}
+            </div> <!-- div.gridcol.gridcell_1_of_2 -->
+        </div> <!-- div.gridrow.gridgroup -->
+        {% if object.description %}
+        <div>
+            <strong>{% translate 'Description' %}</strong>
+            <p>{{ object.description }}</p>
+        </div>
+        {% endif %}
+    </div> <!-- div.collapsible -->
+
+    <button type="button" class="collapsible expanded">{% translate 'Relationships' %}</button>
+    <div class="collapsible">
+        {% if object.command_relationships %}
+            <ul class="rel">
+                {% for command_relationship in object.command_relationships %}
+                <li class="rel">
+                    <span class="othgrp"><a href="{% url 'profiles:command' pk=command_relationship.grouping_id %}">{{ command_relationship.grouping }}</a></span>
+                    -
+                    <span class="rel">
+                        {{ command_relationship.relationship }}
+                        {% if command_relationship.num > 1 %}
+                            {{ command_relationship.num }} {% translate 'times' %}
+                        {% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="nodata">{% translate 'No relationships are recorded for this command.' %}</p>
+        {% endif %}
+    </div> <!-- div.collapsible -->
+
+    <button type="button" class="collapsible expanded">{% translate 'Current Members of Group' %}</button>
+    <div class="collapsible">
+        {% if object.command_active_officers %}
+            <ul class="off">
+                {% for person_grouping in object.command_active_officers %}
+                <li class="off">
+                    {% if person_grouping.person.is_law_enforcement %}
+                    <span class="offnm">{{ person_grouping.person }}</span>
+                    {% else %}
+                    <span class="offnm"><a href="{% url 'profiles:officer' pk=person_grouping.person_id %}">{{ person_grouping.person }}</a></span>
+                    {% endif %}
+                    <span class="offdt">{{ person_grouping.as_of_bounding_dates }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% if object.command_active_officers|length == max_person_groupings %}
+                <p class="moreoff">{% translate 'Only first' %} {{ max_person_groupings }} current members are displayed.</p>
+            {% endif %}
+        {% else %}
+            <p class="nodata">{% translate 'No current members are recorded for this command.' %}</p>
+        {% endif %}
+    </div> <!-- div.collapsible -->
+
+
+    <button type="button" class="collapsible expanded">{% translate 'Former Members of Group' %}</button>
+    <div class="collapsible">
+        {% if object.command_inactive_officers %}
+            <ul class="off">
+                {% for person_grouping in object.command_inactive_officers %}
+                <li class="off">
+                    <span class="offina">{% translate 'Inactive' %}</span>
+                    {% if person_grouping.person.is_law_enforcement %}
+                    <span class="offnm">{{ person_grouping.person }}</span>
+                    {% else %}
+                    <span class="offnm"><a href="{% url 'profiles:officer' pk=person_grouping.person_id %}">{{ person_grouping.person }}</a></span>
+                    {% endif %}
+                    <span class="offdt">{{ person_grouping.as_of_bounding_dates }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% if object.command_inactive_officers|length == max_person_groupings %}
+                <p class="moreoff">{% translate 'Only first' %} {{ max_person_groupings }} former members are displayed.</p>
+            {% endif %}
+        {% else %}
+            <p class="nodata">{% translate 'No former members are recorded for this command.' %}</p>
+        {% endif %}
+    </div> <!-- div.collapsible -->
+
+    <button type="button" class="collapsible expanded">{% translate 'Misconduct' %}</button>
+    <div class="collapsible">
+        {% if object.command_misconducts %}
+        {% for command_misconduct in object.command_misconducts %}
+        <div class="mispad">
+            <button type="button" class="collapsible expanded">{% if not command_misconduct.incident.exact_bounding_dates %}{% translate 'On an unknown date' %}{% else %}{{ command_misconduct.incident.exact_bounding_dates|capfirst }}{% endif %}</button>
+            <div class="collapsible">
+                <div class="gridrow gridgroup">
+                    <div class="gridcol gridcell_1_of_2">
+                        {% if command_misconduct.incident.description %}<span class="mish1">{% translate 'Incident Summary' %}</span>{% endif %}
+                        <p class="missummary">{{ command_misconduct.incident.description }}</p>
+                        {% if command_misconduct.incident.command_incident_tags %}
+                        <p class="mistags">
+                            {% for tag in command_misconduct.incident.command_incident_tags %}
+                                {% translate '#' %}{{ tag.name|title|cut:' ' }}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                        {% if command_misconduct.incident.command_other_persons %}
+                        <span class="mish1">{% translate 'Officers Involved' %}</span>
+                        <p class="mispeoples">
+                            {% for other_person in command_misconduct.incident.command_other_persons %}
+                                {% if other_person.is_law_enforcement %}
+                                <a href="{% url 'profiles:officer' pk=other_person.person.pk %}">{{ other_person.person.name }}</a>{% if not forloop.last %},{% endif %}
+                                {% else %}
+                                {{ other_person.person }}{% if not forloop.last %},{% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div> <!-- div.gridcol.gridcell_1_of_2 -->
+                    <div class="gridcol gridcell_1_of_2">
+                        {% if command_misconduct.parsed_command_content_types and command_misconduct.parsed_command_contents %}
+                        <span class="mish1">{% translate 'Sources' %}</span>
+                        <ul class="misall">
+                        {% for command_content_type in command_misconduct.parsed_command_content_types %}
+                            <li class="misall">
+                                {% with content_dict=command_misconduct.parsed_command_contents|get_value:command_content_type %}
+                                    {% with attachments=content_dict|get_value:attachments_key strings=content_dict|get_value:strings_key links=content_dict|get_value:links_key %}
+                                    {% for string in strings %}
+                                        {% if links|get_item:forloop.counter0 %}
+                                            <a href="{{ links|get_item:forloop.counter0 }}"><span class="mish2">{{ string }}</span></a>
+                                        {% else %}
+                                            <span class="mish2">{{ string }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if attachments %}
+                                    <ul class="misall">
+                                    {% for attachment in attachments %}
+                                        <li class="misall">
+                                            {% if attachment.file %}
+                                            <a class="misatt" href="{{ attachment.file.url }}" rel="noopener noreferrer" target="_blank" download><i class="fas fa-file-download"></i>
+                                            {% elif attachment.link %}
+                                            <a class="misatt" href="{{ attachment.link }}"><i class="fas fa-link"></i>
+                                            {% endif %}
+                                            {{ attachment.name }}{% if attachment.file or attachment.link %}</a>{% endif %}
+                                        </li>
+                                    {% endfor %}
+                                    </ul>
+                                    {% endif %}
+                                    {% endwith %}
+                                {% endwith %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div> <!-- div.gridcol.gridcell_1_of_2 -->
+                </div> <!-- div.gridrow.gridgroup -->
+            </div> <!-- div.collapsible -->
+        </div> <!-- div.mispad -->
+        {% endfor %}
+
+        {% else %}
+            <p class="nodata">{% translate 'No misconduct is recorded for this command.' %}</p>
+        {% endif %}
+    </div> <!-- div.collapsible -->
+
+    <button type="button" class="collapsible expanded">{% translate 'Summary of Allegations Against Officers in Command' %}</button>
+    <div class="collapsible">
+        {% if object.command_allegation_counts %}
+        <ul class="objall">
+        {% for allegation in object.command_allegation_counts %}
+            <li class="objall">
+                <span class="objall">{{ allegation.name }}</span>
+                {% if allegation.sum_of_allegation_counts %}
+                    <span class="objallcnt">x {{ allegation.sum_of_allegation_counts }}</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+        {% else %}
+            <p class="nodata">{% translate 'No summary of allegations against officers is available for this command.' %}</p>
+        {% endif %}
+    </div> <!-- div.collapsible -->
+
+
+{% endblock %}
+
+
+
+{% block onready %}
+    {{ block.super }}
+    Fdp.CommandProfile.init();
+{% endblock %}

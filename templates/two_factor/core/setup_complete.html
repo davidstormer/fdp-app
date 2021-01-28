@@ -1,0 +1,25 @@
+{% extends "two_factor/_base_focus.html" %}
+{% load i18n %}
+
+{% block content %}
+  <h1>{% block title %}{% trans "Success!" %}{% endblock %}</h1>
+
+  <p>{% blocktrans %}You've successfully enabled two-factor authentication.{% endblocktrans %}
+
+  {% if not phone_methods %}
+    <p>
+        Now please create <strong><a href="{% url 'two_factor:profile' %}" class="pull-right btn btn-link">{% trans "backup tokens" %}</a></strong>
+        for use when your token generating device is not available.
+    </p>
+  {% else %}
+    <p>{% blocktrans %}However, it might happen that you don't have access to
+      your primary token device. To enable account recovery, add a phone
+      number.{% endblocktrans %}</p>
+
+    <a href="{% url 'two_factor:profile' %}"
+        class="pull-right btn btn-link">{% trans "Back to Profile" %}</a>
+    <p><a href="{% url 'two_factor:phone_create' %}"
+        class="btn btn-success">{% trans "Add Phone Number" %}</a></p>
+  {% endif %}
+
+{% endblock %}
