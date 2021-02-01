@@ -17,7 +17,9 @@ USE_AZURE_SETTINGS = True
 
 
 # External authentication mechanism.
-EXT_AUTH = get_from_environment_var(environment_var='FDP_EXTERNAL_AUTHENTICATION', raise_exception=True)
+EXT_AUTH = get_from_environment_var(
+    environment_var='FDP_EXTERNAL_AUTHENTICATION', raise_exception=False, default_val='none'
+)
 EXT_AUTH = str(EXT_AUTH).lower()
 
 
@@ -149,11 +151,15 @@ TEMPLATES = [TEMPLATE_FIRST_DICT]
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 DATABASES['default'] = {
     'ENGINE': 'django.db.backends.postgresql',
-    'NAME': get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_DATABASE_NAME, raise_exception=True),
+    'NAME': get_from_environment_var(
+        environment_var=ENV_VAR_FOR_FDP_DATABASE_NAME, raise_exception=False, default_val='fdp'
+    ),
     'USER': get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_DATABASE_USER, raise_exception=True),
     'PASSWORD': get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_DATABASE_PASSWORD, raise_exception=True),
     'HOST': get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_DATABASE_HOST, raise_exception=True),
-    'PORT': get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_DATABASE_PORT, raise_exception=True)
+    'PORT': get_from_environment_var(
+        environment_var=ENV_VAR_FOR_FDP_DATABASE_PORT, raise_exception=False, default_val=5432
+    )
 }
 
 
@@ -174,19 +180,24 @@ AZURE_ACCOUNT_KEY = get_from_environment_var(environment_var='FDP_AZURE_STORAGE_
 # The custom domain to use. This can be set in the Azure Portal.
 # For example, www.mydomain.com or mycdn.azureedge.net.
 # It may contain a host:port when using the emulator (AZURE_EMULATED_MODE = True).
-AZURE_CUSTOM_DOMAIN = '{a}.blob.core.windows.net'.format(a=AZURE_ACCOUNT_NAME)
+AZURE_STORAGE_ACCOUNT_SUFFX = get_from_environment_var(
+    environment_var='FDP_AZURE_STORAGE_ACCOUNT_SUFFIX', raise_exception=False, default_val='core.windows.net'
+)
+AZURE_CUSTOM_DOMAIN = '{a}.{s}'.format(a=AZURE_ACCOUNT_NAME, s=AZURE_STORAGE_ACCOUNT_SUFFX)
 # The file storage engine to use when collecting static files with the collectstatic management command.
 # A ready-to-use instance of the storage backend defined in this setting can be found at
 # django.contrib.staticfiles.storage.staticfiles_storage.
 # Default: 'django.contrib.staticfiles.storage.StaticFilesStorage'
-STATICFILES_STORAGE = 'fdp.backends.azure_blob_storage.StaticAzureStorage'
+STATICFILES_STORAGE = 'fdp.backends.azure_storage.StaticAzureStorage'
 # This is where the static files uploaded through Django will be uploaded.
 # The container must be already created, since the storage system will not attempt to create it.
-AZURE_STATIC_CONTAINER = get_from_environment_var(environment_var='FDP_AZURE_STATIC_CONTAINER', raise_exception=True)
+AZURE_STATIC_CONTAINER = get_from_environment_var(
+    environment_var='FDP_AZURE_STATIC_CONTAINER', raise_exception=False, default_val='static'
+)
 # Seconds before a URL expires, set to None to never expire it. Be aware the container must have public read
 # permissions in order to access a URL without expiration date. Default is None
 AZURE_STATIC_URL_EXPIRATION_SECS = get_from_environment_var(
-    environment_var='FDP_AZURE_STATIC_EXPIRY', raise_exception=True
+    environment_var='FDP_AZURE_STATIC_EXPIRY', raise_exception=False, default_val=1200
 )
 # URL to use when referring to static files located in STATIC_ROOT.
 # Example: "/static/" or "http://static.example.com/"
@@ -201,22 +212,17 @@ STATIC_URL = 'https://{d}/{c}/'.format(d=AZURE_CUSTOM_DOMAIN, c=AZURE_STATIC_CON
 # details about usage.
 # Default: None
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-# This setting defines the additional locations the staticfiles app will traverse if the FileSystemFinder finder
-# is enabled, e.g. if you use the collectstatic or findstatic management command or use the static file serving
-# view.
-# This should be set to a list of strings that contain full paths to your additional files directory(ies).
-# Default: [] (Empty list)
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, AZURE_ACCOUNT_NAME, 'static')
-]
+
 
 # Default file storage class to be used for any file-related operations that don’t specify a particular storage
 # system. See Managing files.
 # Default: 'django.core.files.storage.FileSystemStorage'
-DEFAULT_FILE_STORAGE = 'fdp.backends.azure_blob_storage.MediaAzureStorage'
+DEFAULT_FILE_STORAGE = 'fdp.backends.azure_storage.MediaAzureStorage'
 # This is where the media files uploaded through Django will be uploaded.
 # The container must be already created, since the storage system will not attempt to create it.
-AZURE_MEDIA_CONTAINER = get_from_environment_var(environment_var='FDP_AZURE_MEDIA_CONTAINER', raise_exception=True)
+AZURE_MEDIA_CONTAINER = get_from_environment_var(
+    environment_var='FDP_AZURE_MEDIA_CONTAINER', raise_exception=False, default_val='media'
+)
 # URL that handles the media served from MEDIA_ROOT, used for managing stored files. It must end in a slash if
 # set to a non-empty value. You will need to configure these files to be served in both development and
 # production environments.
@@ -227,7 +233,7 @@ MEDIA_URL = 'https://{d}/{c}/'.format(d=AZURE_CUSTOM_DOMAIN, c=AZURE_MEDIA_CONTA
 # Seconds before a URL expires, set to None to never expire it. Be aware the container must have public read
 # permissions in order to access a URL without expiration date. Default is None
 AZURE_MEDIA_URL_EXPIRATION_SECS = get_from_environment_var(
-    environment_var='FDP_AZURE_MEDIA_EXPIRY', raise_exception=True
+    environment_var='FDP_AZURE_MEDIA_EXPIRY', raise_exception=False, default_val=1200
 )
 
 

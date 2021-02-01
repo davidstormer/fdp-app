@@ -25,7 +25,7 @@ if getattr(settings, 'USE_AZURE_SETTINGS', False):
         #: Azure Storage account name
         account_name = settings.AZURE_ACCOUNT_NAME
         #: Azure Storage access key
-        account_key = settings.AZURE_STORAGE_KEY
+        account_key = settings.AZURE_ACCOUNT_KEY
         #: Azure Storage user-uploaded media files container
         azure_container = getattr(settings, 'AZURE_MEDIA_CONTAINER', None)
         #: Number of seconds for URL to expire to media file in Azure Storage
@@ -41,7 +41,7 @@ if getattr(settings, 'USE_AZURE_SETTINGS', False):
         #: Azure Storage account name
         account_name = settings.AZURE_ACCOUNT_NAME
         #: Azure Storage access key
-        account_key = settings.AZURE_STORAGE_KEY
+        account_key = settings.AZURE_ACCOUNT_KEY
         #: Azure Storage static files container
         azure_container = getattr(settings, 'AZURE_STATIC_CONTAINER', None)
         #: Number of seconds for URL to expire to static file in Azure Storage

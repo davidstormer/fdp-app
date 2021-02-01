@@ -65,8 +65,6 @@ DATABASES['default'] = {
 STATIC_URL = '/static/'
 # static files copied to STATIC_ROOT by $ python manage.py collectstatic command
 STATIC_ROOT = ONE_UP_BASE_DIR / 'static'
-# directories in which to look for static files
-STATICFILES_DIRS = (BASE_DIR / 'static',)
 
 
 # Media files (user uploaded files for attachments, etc.)

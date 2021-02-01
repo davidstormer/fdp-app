@@ -38,19 +38,20 @@ ENV_VAR_FOR_FDP_QUERYSTRING_PASSWORD = 'FDP_QUERYSTRING_PASSWORD'
 AAD_EXT_AUTH = 'aad'
 
 
-def get_from_environment_var(environment_var, raise_exception):
+def get_from_environment_var(environment_var, raise_exception, default_val=None):
     """ Retrieves the value of an environment variable that may be used to configure the system.
 
     :param environment_var: Name of environment variable whose value to retrieve.
     :param raise_exception: True if exception should be raised if the environment variable does not exist, false if
-    method should return None.
-    :return: Value of environment variable, or None if raise_exception=False and environment variable does not exist.
+    method should return None. If True, then default_val will be ignored.
+    :param default_val: Default value to return if environment variable does not exist, and raise_exception is False.
+    :return: Value of environment variable or the default_val if it is specified; otherwise None.
     """
     # if environment variable is not defined AND exception is desired
     if raise_exception and environment_var not in os.environ:
         raise ImproperlyConfigured('Environment variable {e} was expected but not found.'.format(e=environment_var))
     # environment variable is defined OR exception was not desired
-    return os.environ.get(environment_var, None)
+    return os.environ.get(environment_var, default_val)
 
 
 def get_from_conf_file(conf_file, raise_exception):
@@ -92,7 +93,7 @@ def get_from_environment_var_or_conf_file(environment_var, conf_file, default_va
     :return: Value retrieved from environment variable or .conf file, or the default value.
     """
     # try the environment variable first
-    val_to_get = get_from_environment_var(environment_var=environment_var, raise_exception=False)
+    val_to_get = get_from_environment_var(environment_var=environment_var, raise_exception=False, default_val=None)
     # environment variable was not defined or empty
     if not val_to_get:
         # try the .conf file second
@@ -257,6 +258,14 @@ USE_TZ = True
 DATE_FORMAT = 'm/d/Y'
 
 SHORT_DATE_FORMAT = 'm/d/Y'
+
+
+# This setting defines the additional locations the staticfiles app will traverse if the FileSystemFinder finder
+# is enabled, e.g. if you use the collectstatic or findstatic management command or use the static file serving
+# view.
+# This should be set to a list of strings that contain full paths to your additional files directory(ies).
+# Default: [] (Empty list)
+STATICFILES_DIRS = (BASE_DIR / 'static',)
 
 
 # backend static file finders
