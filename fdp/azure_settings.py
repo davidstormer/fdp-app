@@ -34,9 +34,33 @@ SECRET_KEY = get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_SECRET_KEY
 DEBUG = False
 
 
-ALLOWED_HOSTS = [
-    get_from_environment_var(environment_var='FDP_ALLOWED_HOST', raise_exception=True)
-]
+DEF_FDP_HOST = get_from_environment_var(environment_var='FDP_ALLOWED_HOST', raise_exception=False, default_val=None)
+if not DEF_FDP_HOST:
+    # Added automatically through Kudu
+    # See: https://github.com/projectkudu/kudu/wiki/Azure-runtime-environment
+    DEF_FDP_HOST = get_from_environment_var(environment_var='WEBSITE_HOSTNAME', raise_exception=False, default_val=None)
+ALLOWED_HOSTS = [DEF_FDP_HOST] if DEF_FDP_HOST else []
+
+
+# A tuple representing a HTTP header/value combination that signifies a request is secure. This controls the behavior
+# of the request object’s is_secure() method. By default, is_secure() determines if a request is secure by confirming
+# that a requested URL uses https://. This method is important for Django’s CSRF protection, and it may be used by your
+# own code or third-party apps. If your Django app is behind a proxy, though, the proxy may be “swallowing” whether the
+# original request uses HTTPS or not. If there is a non-HTTPS connection between the proxy and Django then is_secure()
+# would always return False – even for requests that were made via HTTPS by the end user. In contrast, if there is an
+# HTTPS connection between the proxy and Django then is_secure() would always return True – even for requests that were
+# made originally via HTTP. In this situation, configure your proxy to set a custom HTTP header that tells Django
+# whether the request came in via HTTPS, and set SECURE_PROXY_SSL_HEADER so that Django knows what header to look for.
+# Set a tuple with two elements – the name of the header to look for and the required value.
+# For example: SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# This tells Django to trust the X-Forwarded-Proto header that comes from our proxy, and any time its value is 'https',
+# then the request is guaranteed to be secure (i.e., it originally came in via HTTPS).
+# You should only set this setting if you control your proxy or have some other guarantee that it sets/strips this
+# header appropriately. Note that the header needs to be in the format as used by request.META – all caps and likely
+# starting with HTTP_. (Remember, Django automatically adds 'HTTP_' to the start of x-header  names before making the
+# header available in request.META.) Default value is: None.
+# See: https://docs.microsoft.com/en-us/azure/app-service/configure-language-python#detect-https-session
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # external authentication such as through Azure Active Directory is supported
@@ -181,7 +205,7 @@ AZURE_ACCOUNT_KEY = get_from_environment_var(environment_var='FDP_AZURE_STORAGE_
 # For example, www.mydomain.com or mycdn.azureedge.net.
 # It may contain a host:port when using the emulator (AZURE_EMULATED_MODE = True).
 AZURE_STORAGE_ACCOUNT_SUFFX = get_from_environment_var(
-    environment_var='FDP_AZURE_STORAGE_ACCOUNT_SUFFIX', raise_exception=False, default_val='core.windows.net'
+    environment_var='FDP_AZURE_STORAGE_ACCOUNT_SUFFIX', raise_exception=False, default_val='blob.core.windows.net'
 )
 AZURE_CUSTOM_DOMAIN = '{a}.{s}'.format(a=AZURE_ACCOUNT_NAME, s=AZURE_STORAGE_ACCOUNT_SUFFX)
 # The file storage engine to use when collecting static files with the collectstatic management command.
@@ -197,7 +221,7 @@ AZURE_STATIC_CONTAINER = get_from_environment_var(
 # Seconds before a URL expires, set to None to never expire it. Be aware the container must have public read
 # permissions in order to access a URL without expiration date. Default is None
 AZURE_STATIC_URL_EXPIRATION_SECS = get_from_environment_var(
-    environment_var='FDP_AZURE_STATIC_EXPIRY', raise_exception=False, default_val=1200
+    environment_var='FDP_AZURE_STATIC_EXPIRY', raise_exception=False, default_val=None
 )
 # URL to use when referring to static files located in STATIC_ROOT.
 # Example: "/static/" or "http://static.example.com/"
@@ -278,3 +302,29 @@ AZURE_MEDIA_URL_EXPIRATION_SECS = get_from_environment_var(
 # This is a Python dict and the possible parameters are: content_type, content_encoding, content_language,
 # content_disposition, cache_control, and content_md5.
 # AZURE_OBJECT_PARAMETERS = None
+
+
+# Ensure that URLs for Azure Storage static files container are included in the Content Security Policy (CSP)
+CSP_SCRIPT_SRC = CSP_SCRIPT_SRC + (STATIC_URL,)
+CSP_DEFAULT_SRC = CSP_DEFAULT_SRC + (STATIC_URL,)
+CSP_FONT_SRC = CSP_FONT_SRC + (STATIC_URL,)
+
+
+# Microsoft Azure specific settings for Django-Compressor
+# http://django-compressor.readthedocs.io/en/latest
+# The dotted path to a Django Storage backend to be used to save the compressed files.
+# Django Compressor ships with some additional storage backends:
+# (1) 'compressor.storage.GzipCompressorFileStorage': A subclass of the default storage backend, which will additionally
+# create *.gz files of each of the compressed files.
+# (2) 'compressor.storage.BrotliCompressorFileStorage': A subclass of the default storage backend, which will
+# additionally create *.br files of each of the compressed files. It is using the maximum level of compression (11) so
+# compression speed will be low.
+# Default value is 'compressor.storage.CompressorFileStorage'.
+COMPRESS_STORAGE = STATICFILES_STORAGE
+# Controls the URL that linked files will be read from and compressed files will be written to.
+# Default value is STATIC_URL.
+COMPRESS_URL = STATIC_URL
+# Controls the absolute file path that linked static will be read from and compressed static will be written to when
+# using the default COMPRESS_STORAGE compressor.storage.CompressorFileStorage.
+# Default value is STATIC_ROOT.
+COMPRESS_ROOT = STATIC_ROOT

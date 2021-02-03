@@ -44,3 +44,8 @@ FDP_CONTENT_CHANGING_SEARCH_CLASS = 'ContentChangingSearch'
 FDP_CONTENT_GROUPING_SEARCH_FILE = 'def_grouping'
 # Name of class inheriting from AbstractChangingSearch that defines content changing searches.
 FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
+
+
+#: To enable logging, remove the comments the the below definition.
+# FDP_ERR_LOGGING['handlers']['file']['filename'] = '/home/site/wwwroot/debug.log'
+# LOGGING = FDP_ERR_LOGGING

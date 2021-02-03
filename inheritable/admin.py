@@ -313,7 +313,8 @@ class FdpInheritableAdmin(FdpInheritableBaseAdmin, VersionAdmin):
             queryset=queryset,
             search_term=search_term
         )
-        queryset = queryset.model.filter_for_admin(queryset=queryset, user=request.user)
+        if issubclass(queryset.model, Archivable):
+            queryset = queryset.model.filter_for_admin(queryset=queryset, user=request.user)
         return queryset, use_distinct
 
     def history_view(self, request, object_id, extra_context=None):

@@ -7,6 +7,7 @@ This file is imported and provides definitions for all settings files.
 """
 
 from django.urls import reverse_lazy
+from django.core.validators import URLValidator
 from django.core.exceptions import ImproperlyConfigured
 from pathlib import Path
 import os
@@ -346,6 +347,10 @@ if not FONT_AWESOME_SRC:
     raise ImproperlyConfigured(
         'Font Awesome is not specified in either an environment variable, nor a configuration file'
     )
+else:
+    # validate the Font Awesome link that was provided
+    url_validator = URLValidator()
+    url_validator(FONT_AWESOME_SRC)
 
 
 # List of apps that have models in the admin interface
@@ -576,3 +581,25 @@ DATA_WIZARD = {
 # Added in Django 3.2
 # Default model field for primary keys that are added to models automatically.
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Logging may be enabled in settings.py with: LOGGING = FDP_ERR_LOGGING
+# For more information on Django logging, see: https://docs.djangoproject.com/en/3.1/topics/logging/
+FDP_ERR_LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': '/home/site/wwwroot/debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}

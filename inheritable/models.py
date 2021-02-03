@@ -10,6 +10,7 @@ from django.utils._os import safe_join
 from datetime import date
 from os import path
 from cryptography.fernet import Fernet
+from axes.helpers import get_client_ip_address
 from io import BytesIO
 from zipfile import ZipFile
 from re import match as re_match
@@ -1509,22 +1510,10 @@ class AbstractIpAddressValidator(models.Model):
     def get_ip_address(request):
         """ Retrieve the IP address from the Http request object.
 
-        See: http://help.pythonanywhere.com/pages/WebAppClientIPAddresses/
-
         :param request: Http request object from which to retrieve IP address.
         :return: IP address
         """
-        ip_address = request.META.get(settings.REQUEST_META_IP_ADDRESS)
-        if ip_address is None:
-            ip_address = request.META.get('HTTP_X_FORWARDED_FOR')
-            # multiple IP addresses may be used for HTTP_X_FORWARDED_FOR
-            if ip_address:
-                return ip_address.split(',')[0]
-            else:
-                ip_address = request.META.get('REMOTE_ADDR')
-                return '' if not ip_address else ip_address
-        else:
-            return ip_address
+        return get_client_ip_address(request=request)
 
     class Meta:
         abstract = True
