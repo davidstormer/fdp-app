@@ -4,26 +4,47 @@ from django.conf import settings
 # FDP system is configured for hosting in Microsoft Azure, so use Azure Storage Account for static and media files
 if getattr(settings, 'USE_AZURE_SETTINGS', False):
     from importlib.util import find_spec, module_from_spec
-    # check if django-storage[azure] package is installed
+
+    #: TODO: Defined both here and in base_settings.py. Refactor for a single definition through base_settings.py.
+    def load_python_package_module(module_as_str, err_msg, raise_exception):
+        """ Dynamically loads a module for a Python package.
+
+        :param module_as_str: Fully qualified module as a string, e.g. my_package.my_module.
+        :param err_msg: Exception message if module is not available.
+        :param raise_exception: True if an exception should be raised if the module cannot be loaded, False if None should
+        be returned.
+        :return: Loaded module, or None if raise_exception is False and the module cannot be loaded.
+        """
+        spec_for_module = find_spec(module_as_str)
+        # package for requested module is not installed
+        if not spec_for_module:
+            # exception should be raised
+            if raise_exception:
+                raise Exception(err_msg)
+            # fail silently
+            else:
+                return None
+        # load module in the package
+        module = module_from_spec(spec_for_module)
+        # initialize module
+        spec_for_module.loader.exec_module(module)
+        return module
+
+
+    # load if django-storage[azure] package is installed
     # see: https://django-storages.readthedocs.io/en/latest/backends/azure.html
-    azure_storage_spec = find_spec('storages.backends.azure_storage')
-    # django-storage[azure] package is not installed
-    if not azure_storage_spec:
-        raise Exception('Please install the package: django-storage[azure]')
-    # load azure_storage module in the django-storage[azure] package
-    azure_storage_module = module_from_spec(azure_storage_spec)
-    # initialize azure_storage module
-    azure_storage_spec.loader.exec_module(azure_storage_module)
-    # check if azure-identity package is installed
+    azure_storage_module = load_python_package_module(
+        module_as_str='storages.backends.azure_storage',
+        err_msg='Please install the package: django-storage[azure]',
+        raise_exception=True
+    )
+    # load if azure-identity package is installed
     # see: https://github.com/Azure/azure-sdk-for-python/tree/master/sdk/identity/azure-identity
-    azure_identity_spec = find_spec('azure.identity')
-    # azure-identity package is not installed
-    if not azure_identity_spec:
-        raise Exception('Please install the package: azure-identity')
-    # load azure_identity module in the azure_identity package
-    azure_identity_module = module_from_spec(azure_identity_spec)
-    # initialize azure_identity module
-    azure_identity_spec.loader.exec_module(azure_identity_module)
+    azure_identity_module = load_python_package_module(
+        module_as_str='azure.identity',
+        err_msg='Please install the package: azure-identity',
+        raise_exception=True
+    )
 
 
     class MediaAzureStorage(azure_storage_module.AzureStorage):

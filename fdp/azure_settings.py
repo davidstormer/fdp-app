@@ -10,10 +10,100 @@ Used to define default settings file to configure hosting in a Microsoft Azure e
 
 """
 from .base_settings import *
+from django.core.management.utils import get_random_secret_key
+from base64 import b64encode
+from os import urandom
 
 
 # Specifies that FDP is configured for hosting in Microsoft Azure environment
 USE_AZURE_SETTINGS = True
+
+
+# Name of environment variable for Azure Storage account access key.
+ENV_VAR_FOR_FDP_AZURE_STORAGE_ACCOUNT_KEY = 'FDP_AZURE_STORAGE_ACCOUNT_KEY'
+
+
+class AzureKeyVaultException(Exception):
+    """ Custom class used by the FDP to raise its own exceptions in the context of accessing and interacting with the
+    Azure Key Vault.
+
+    """
+    pass
+
+
+# default is to ignore Azure Key Vault, unless package is installed and vault name is specified
+TRY_AZURE_KEY_VAULT = False
+secret_client = None
+# load if azure-keyvault-secrets package is installed
+# see: https://github.com/Azure/azure-sdk-for-python/tree/master/sdk/keyvault/azure-keyvault-secrets
+azure_keyvault_secrets_module = load_python_package_module(
+    module_as_str='azure.keyvault.secrets',
+    err_msg=None,
+    raise_exception=False
+)
+if azure_keyvault_secrets_module:
+    # Name of the Azure Key Vault
+    AZURE_KEY_VAULT_NAME = get_from_environment_var(
+        environment_var='FDP_AZURE_KEY_VAULT_NAME', raise_exception=False, default_val=None
+    )
+    # Only try Azure Key Vault is package is installed AND vault name is specified
+    TRY_AZURE_KEY_VAULT = False if not AZURE_KEY_VAULT_NAME else True
+    if TRY_AZURE_KEY_VAULT:
+        # load if azure-identity package is installed
+        # see: https://github.com/Azure/azure-sdk-for-python/tree/master/sdk/identity/azure-identity
+        azure_identity_module = load_python_package_module(
+            module_as_str='azure.identity',
+            err_msg='Please install the package: azure-identity',
+            raise_exception=True
+        )
+        credential = azure_identity_module.ManagedIdentityCredential()
+        secret_client = azure_keyvault_secrets_module.SecretClient(
+            vault_url='https://{v}.vault.azure.net'.format(v=AZURE_KEY_VAULT_NAME),
+            credential=credential
+        )
+
+
+def get_from_azure_key_vault(secret_name):
+    """ Attempts to retrieve the contents of a Secret in the Azure Key Vault, and if it does not exist returns None.
+
+    :param secret_name: Name of Secret in Azure Key Vault that should be retrieved.
+    :return: The value stored in the Secret in the Azure Key Vault, or None otherwise.
+    """
+    secret = None
+    # skip access attempt for Azure Key Vault, if vault name wasn't specified or corresponding package wasn't installed
+    if TRY_AZURE_KEY_VAULT:
+        # Secret names cannot have underscores
+        parsed_secret_name = str(secret_name).replace('_', '-')
+        try:
+            azure_key_vault_secret = secret_client.get_secret(parsed_secret_name)
+            secret = azure_key_vault_secret.value
+        except Exception as err:
+            # modules loaded dynamically with find_spec and loader.exec_module have different class definitions than the
+            # modules that define this exception, even if they are from the same source, i.e. azure.core.exceptions
+            # so as a temporary measure, compare string representations of the classes instead of using isinstance(...)
+            err_class = err.__class__.__name__
+            # Occurs if a secret does not exist
+            if err_class == 'ResourceNotFoundError':
+                secret = None
+            # Occurs during deployment to Azure, during the collectstatic step
+            elif err_class == 'ServiceRequestError':
+                raise AzureKeyVaultException(err)
+            # Unexpected error
+            else:
+                raise err
+    return secret
+
+
+def get_random_querystring_password():
+    """ Retrieves a randomized password that can be used to encrypt/decrypt querystrings.
+
+    Password will be 32 bytes and be in base-64 encoding.
+
+    :return: Randomized 32 bytes in base-64 encoding.
+    """
+    random_bytes = urandom(32)
+    token = b64encode(random_bytes)
+    return token
 
 
 # External authentication mechanism.
@@ -26,8 +116,29 @@ EXT_AUTH = str(EXT_AUTH).lower()
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_SECRET_KEY, raise_exception=True)
+# if Django secret key is in Azure Key Vault, then retrieve it
+# attempt to retrieve Django secret key from Azure Key Vault
+try:
+    SECRET_KEY = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_SECRET_KEY)
+# azure.core.exceptions.ServiceRequestError occurred
+# raised during collectstatic command call while deploying
+except AzureKeyVaultException:
+    SECRET_KEY = None
+    # don't try any more Azure Key Vault access
+    TRY_AZURE_KEY_VAULT = False
+# if Django secret key is not in Azure Key Vault, then get it from an environment variable
+if not SECRET_KEY:
+    SECRET_KEY = get_from_environment_var(
+        environment_var=ENV_VAR_FOR_FDP_SECRET_KEY,
+        raise_exception=False,
+        default_val=''
+    )
+    # Django secret key was not in Azure Key Vault or environment variable
+    # Offer randomly generated secret key so that Django can run collectstatic during deployment
+    if not SECRET_KEY:
+        SECRET_KEY = get_random_secret_key()
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -173,13 +284,27 @@ TEMPLATES = [TEMPLATE_FIRST_DICT]
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
+postgres_db_secret_user = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_DATABASE_USER)
+postgres_db_password = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_DATABASE_PASSWORD)
 DATABASES['default'] = {
     'ENGINE': 'django.db.backends.postgresql',
     'NAME': get_from_environment_var(
-        environment_var=ENV_VAR_FOR_FDP_DATABASE_NAME, raise_exception=False, default_val='fdp'
+        environment_var=ENV_VAR_FOR_FDP_DATABASE_NAME,
+        raise_exception=False,
+        default_val='fdp'
     ),
-    'USER': get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_DATABASE_USER, raise_exception=True),
-    'PASSWORD': get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_DATABASE_PASSWORD, raise_exception=True),
+    # if user name is in Azure Key Vault then retrieve it, otherwise try the environment variable
+    'USER': postgres_db_secret_user if postgres_db_secret_user else get_from_environment_var(
+        environment_var=ENV_VAR_FOR_FDP_DATABASE_USER,
+        raise_exception=False,
+        default_val=''
+    ),
+    # if password is in Azure Key Vault then retrieve it, otherwise try the environment variable
+    'PASSWORD': postgres_db_password if postgres_db_password else get_from_environment_var(
+        environment_var=ENV_VAR_FOR_FDP_DATABASE_PASSWORD,
+        raise_exception=False,
+        default_val=''
+    ),
     'HOST': get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_DATABASE_HOST, raise_exception=True),
     'PORT': get_from_environment_var(
         environment_var=ENV_VAR_FOR_FDP_DATABASE_PORT, raise_exception=False, default_val=5432
@@ -189,9 +314,15 @@ DATABASES['default'] = {
 
 # A URL-safe base64-encoded 32-byte key that is used by the Fernet symmetric encryption algorithm
 # Used to encrypt and decrypt query string parameters
-QUERYSTRING_PASSWORD = get_from_environment_var(
-    environment_var=ENV_VAR_FOR_FDP_QUERYSTRING_PASSWORD, raise_exception=True
-)
+# if querystring encryption is in Azure Key Vault, then retrieve it
+QUERYSTRING_PASSWORD = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_QUERYSTRING_PASSWORD)
+# if querystring encryption is not in Azure Key Vault, then retrieve it from environment variable
+if not QUERYSTRING_PASSWORD:
+    QUERYSTRING_PASSWORD = get_from_environment_var(
+        environment_var=ENV_VAR_FOR_FDP_QUERYSTRING_PASSWORD,
+        raise_exception=False,
+        default_val=get_random_querystring_password()
+    )
 
 
 #: Azure Storage for Django: https://django-storages.readthedocs.io/en/latest/backends/azure.html
@@ -200,7 +331,14 @@ QUERYSTRING_PASSWORD = get_from_environment_var(
 # instance: http://azure_account_name.blob.core.windows.net/ would mean: AZURE_ACCOUNT_NAME = "azure_account_name"
 AZURE_ACCOUNT_NAME = get_from_environment_var(environment_var='FDP_AZURE_STORAGE_ACCOUNT_NAME', raise_exception=True)
 # This is the private key that gives Django access to the Windows Azure Account.
-AZURE_ACCOUNT_KEY = get_from_environment_var(environment_var='FDP_AZURE_STORAGE_ACCOUNT_KEY', raise_exception=True)
+# if key is in Azure Key Vault, then retrieve it
+AZURE_ACCOUNT_KEY = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_AZURE_STORAGE_ACCOUNT_KEY)
+# if key is not in Azure Key Vault, then retrieve it from environment variable
+if not AZURE_ACCOUNT_KEY:
+    AZURE_ACCOUNT_KEY = get_from_environment_var(
+        environment_var=ENV_VAR_FOR_FDP_AZURE_STORAGE_ACCOUNT_KEY,
+        raise_exception=True
+    )
 # The custom domain to use. This can be set in the Azure Portal.
 # For example, www.mydomain.com or mycdn.azureedge.net.
 # It may contain a host:port when using the emulator (AZURE_EMULATED_MODE = True).
@@ -328,3 +466,27 @@ COMPRESS_URL = STATIC_URL
 # using the default COMPRESS_STORAGE compressor.storage.CompressorFileStorage.
 # Default value is STATIC_ROOT.
 COMPRESS_ROOT = STATIC_ROOT
+
+
+# reCAPTCHA Private Key
+# if key is in Azure Key Vault, then retrieve it
+secret_recaptcha_private_key = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_RECAPTCHA_PRIVATE_KEY)
+# Azure Key Vault has priority, so overwrite any previous setting (e.g. from environment variable or configuration file)
+if secret_recaptcha_private_key:
+    RECAPTCHA_PRIVATE_KEY = secret_recaptcha_private_key
+
+
+# User name to authenticate sending emails.
+# if user name is in Azure Key Vault, then retrieve it
+secret_email_host_user = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_EMAIL_HOST_USER)
+# Azure Key Vault has priority, so overwrite any previous setting (e.g. from environment variable or configuration file)
+if secret_email_host_user:
+    EMAIL_HOST_USER = secret_email_host_user
+
+
+# Password to authenticate sending emails.
+# if password is in Azure Key Vault, then retrieve it
+secret_email_host_password = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_EMAIL_HOST_PASSWORD)
+# Azure Key Vault has priority, so overwrite any previous setting (e.g. from environment variable or configuration file)
+if secret_email_host_password:
+    EMAIL_HOST_PASSWORD = secret_email_host_password

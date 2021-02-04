@@ -10,6 +10,7 @@ from django.urls import reverse_lazy
 from django.core.validators import URLValidator
 from django.core.exceptions import ImproperlyConfigured
 from pathlib import Path
+from importlib.util import find_spec, module_from_spec
 import os
 
 
@@ -33,6 +34,12 @@ ENV_VAR_FOR_FDP_DATABASE_HOST = 'FDP_DATABASE_HOST'
 ENV_VAR_FOR_FDP_DATABASE_PORT = 'FDP_DATABASE_PORT'
 # Name of environment variable for key used in querystring encryption.
 ENV_VAR_FOR_FDP_QUERYSTRING_PASSWORD = 'FDP_QUERYSTRING_PASSWORD'
+# Name of environment variable for private key used by reCAPTCHA.
+ENV_VAR_FOR_FDP_RECAPTCHA_PRIVATE_KEY = 'FDP_RECAPTCHA_PRIVATE_KEY'
+# Name of environment variable for user name to authenticate sending emails.
+ENV_VAR_FOR_FDP_EMAIL_HOST_USER = 'FDP_EMAIL_HOST_USER'
+# Name of environment variable for password to authenticate sending emails.
+ENV_VAR_FOR_FDP_EMAIL_HOST_PASSWORD = 'FDP_EMAIL_HOST_PASSWORD'
 
 
 # Value indicating that external authentication is supported through Microsoft Azure Active Directory
@@ -104,6 +111,31 @@ def get_from_environment_var_or_conf_file(environment_var, conf_file, default_va
             # use the default value
             val_to_get = default_val
     return val_to_get
+
+
+def load_python_package_module(module_as_str, err_msg, raise_exception):
+    """ Dynamically loads a module for a Python package.
+
+    :param module_as_str: Fully qualified module as a string, e.g. my_package.my_module.
+    :param err_msg: Exception message if module is not available.
+    :param raise_exception: True if an exception should be raised if the module cannot be loaded, False if None should
+    be returned.
+    :return: Loaded module, or None if raise_exception is False and the module cannot be loaded.
+    """
+    spec_for_module = find_spec(module_as_str)
+    # package for requested module is not installed
+    if not spec_for_module:
+        # exception should be raised
+        if raise_exception:
+            raise Exception(err_msg)
+        # fail silently
+        else:
+            return None
+    # load module in the package
+    module = module_from_spec(spec_for_module)
+    # initialize module
+    spec_for_module.loader.exec_module(module)
+    return module
 
 
 # Administrator for site
@@ -498,13 +530,13 @@ EMAIL_HOST = get_from_environment_var_or_conf_file(
 )
 # Username to use for the SMTP server defined in EMAIL_HOST. If empty, Django won’t attempt authentication.
 EMAIL_HOST_USER = get_from_environment_var_or_conf_file(
-    environment_var='FDP_EMAIL_HOST_USER', conf_file='fdp_email_host_user.conf', default_val=''
+    environment_var=ENV_VAR_FOR_FDP_EMAIL_HOST_USER, conf_file='fdp_email_host_user.conf', default_val=''
 )
 # Password to use for the SMTP server defined in EMAIL_HOST.
 # This setting is used in conjunction with EMAIL_HOST_USER when authenticating to the SMTP server.
 # If either of these settings is empty, Django won’t attempt authentication.
 EMAIL_HOST_PASSWORD = get_from_environment_var_or_conf_file(
-    environment_var='FDP_EMAIL_HOST_PASSWORD', conf_file='fdp_em.conf', default_val=''
+    environment_var=ENV_VAR_FOR_FDP_EMAIL_HOST_PASSWORD, conf_file='fdp_em.conf', default_val=''
 )
 # Port to use for the SMTP server defined in EMAIL_HOST.
 EMAIL_PORT = get_from_environment_var_or_conf_file(
@@ -539,7 +571,7 @@ RECAPTCHA_PUBLIC_KEY = get_from_environment_var_or_conf_file(
 )
 # Private reCAPTCHA key
 RECAPTCHA_PRIVATE_KEY = get_from_environment_var_or_conf_file(
-    environment_var='FDP_RECAPTCHA_PRIVATE_KEY', conf_file='fdp_ca.conf', default_val=''
+    environment_var=ENV_VAR_FOR_FDP_RECAPTCHA_PRIVATE_KEY, conf_file='fdp_ca.conf', default_val=''
 )
 # Use the noCAPTCHA (checkmark only)
 NOCAPTCHA = True
