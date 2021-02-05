@@ -150,7 +150,8 @@ if not DEF_FDP_HOST:
     # Added automatically through Kudu
     # See: https://github.com/projectkudu/kudu/wiki/Azure-runtime-environment
     DEF_FDP_HOST = get_from_environment_var(environment_var='WEBSITE_HOSTNAME', raise_exception=False, default_val=None)
-ALLOWED_HOSTS = [DEF_FDP_HOST] if DEF_FDP_HOST else []
+localhost_ip = '127.0.0.1'
+ALLOWED_HOSTS = [DEF_FDP_HOST, localhost_ip] if DEF_FDP_HOST else [localhost_ip]
 
 
 # A tuple representing a HTTP header/value combination that signifies a request is secure. This controls the behavior

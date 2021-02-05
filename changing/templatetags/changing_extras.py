@@ -36,13 +36,3 @@ def get_value(dictionary, key):
     :return: Value retrieved from the dictionary with the key.
     """
     return dictionary.get(key)
-
-
-@register.simple_tag
-def get_font_awesome_src():
-    """ Retrieves the full URL that will be placed into the SRC attribute for the SCRIPT element to load the Font
-    Awesome icon set.
-
-    :return: URL that will be placed into the SRC attirbute for the SCRIPT element.
-    """
-    return settings.FONT_AWESOME_SRC

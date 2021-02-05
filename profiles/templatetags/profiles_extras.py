@@ -25,13 +25,3 @@ def get_item(list_obj, index):
     :return: Item retrieved from the list with the index.
     """
     return list_obj[index]
-
-
-@register.simple_tag
-def get_font_awesome_src():
-    """ Retrieves the full URL that will be placed into the SRC attribute for the SCRIPT element to load the Font
-    Awesome icon set.
-
-    :return: URL that will be placed into the SRC attirbute for the SCRIPT element.
-    """
-    return settings.FONT_AWESOME_SRC

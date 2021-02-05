@@ -7,7 +7,6 @@ This file is imported and provides definitions for all settings files.
 """
 
 from django.urls import reverse_lazy
-from django.core.validators import URLValidator
 from django.core.exceptions import ImproperlyConfigured
 from pathlib import Path
 from importlib.util import find_spec, module_from_spec
@@ -371,18 +370,6 @@ MAX_NAME_LEN = 254
 SITE_HEADER = 'Full Disclosure Project'
 # Standardized text value representing something "unknown" or "not defined" in the database
 UNKNOWN = 'Unknown'
-# Full URL that will be placed into the SRC attribute for the SCRIPT element to load the Font Awesome icon set.
-FONT_AWESOME_SRC = get_from_environment_var_or_conf_file(
-    environment_var='FDP_FONT_AWESOME_SRC', conf_file='fdp_font_awesome_src.conf', default_val=None
-)
-if not FONT_AWESOME_SRC:
-    raise ImproperlyConfigured(
-        'Font Awesome is not specified in either an environment variable, nor a configuration file'
-    )
-else:
-    # validate the Font Awesome link that was provided
-    url_validator = URLValidator()
-    url_validator(FONT_AWESOME_SRC)
 
 
 # List of apps that have models in the admin interface
@@ -455,7 +442,6 @@ CSP_SCRIPT_SRC = (
     'https://ajax.googleapis.com/ajax/libs/jqueryui/',
     'https://cdnjs.cloudflare.com/ajax/libs/vex-js/',
     'https://cdnjs.cloudflare.com/ajax/libs/select2/',
-    FONT_AWESOME_SRC,
 )
 # Disables <base> URIs, preventing attackers from changing the locations of scripts loaded from relative URLs. If
 # your application uses <base> tags, base-uri 'self' is usually also safe.
@@ -472,8 +458,7 @@ CSP_DEFAULT_SRC = (
     'https://ajax.googleapis.com/ajax/libs/jqueryui/',
     'https://cdnjs.cloudflare.com/ajax/libs/vex-js/',
     'https://cdnjs.cloudflare.com/ajax/libs/select2/',
-    'https://kit.fontawesome.com/',
-    'https://ka-f.fontawesome.com/releases/',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/',
     "'self' data:",
 )
 # Defines valid sources that can be used as a HTML <form> action.
@@ -482,7 +467,7 @@ CSP_FORM_ACTION = ("'self'",)
 CSP_FONT_SRC = (
     "'self'",
     'https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/',
-    'https://ka-f.fontawesome.com/releases/'
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/',
 )
 # Causes all violations to the policy to be reported to the supplied URL
 # so you can debug them.

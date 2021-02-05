@@ -1,18 +1,18 @@
 {% extends "common/fdp_ajax_base.html" %}
-{% load static compress changing_extras %}
+{% load static compress %}
 
 {% block extrahead %}
     {{ block.super }}
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-    <script src="{% get_font_awesome_src %}" crossorigin="anonymous"></script>
 {% endblock %}
 
 {% block extrastyle %}
     {{ block.super }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" />
-    <link rel="stylesheet" type="text/css" href="/static/admin/css/forms.css">
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
     {% compress css %}
     <link rel="stylesheet" type="text/css" href="{% static 'changing/css/autocomplete.css' %}">
     {% endcompress %}
