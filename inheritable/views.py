@@ -1,4 +1,6 @@
+from django.shortcuts import redirect
 from django.core.exceptions import NON_FIELD_ERRORS
+from django.core.files.storage import get_storage_class
 from django.http import JsonResponse
 from django.views.generic import TemplateView, FormView, RedirectView, ListView, DetailView, View, CreateView, \
     UpdateView
@@ -177,7 +179,7 @@ class SecuredSyncView(CoreAccessMixin, View):
     """
     @staticmethod
     def serve_static_file(request, path, absolute_base_url, relative_base_url, document_root):
-        """ Serves a static file, e.g. attachment or person photo, requested by the user.
+        """ Default mechanism to serve a static file, e.g. attachment or person photo, requested by the user.
 
         :param request: Http request object through which file was selected.
         :param path: Full path of static file.
@@ -206,6 +208,23 @@ class SecuredSyncView(CoreAccessMixin, View):
             err_cls=Exception
         )
         return serve(request, path, document_root=document_root, show_indexes=False)
+
+    @staticmethod
+    def serve_azure_storage_static_file(name):
+        """ Mechanism for Azure Storage account to serve a static file, e.g. attachment or person photo, requested by
+        the user.
+
+        :param name: Relative path of file including file name and extension.
+        :return: Redirect to an expiring SAS URL for the file.
+        """
+        # class for storage backend used to manage user-uploaded media files
+        media_azure_storage_cls = get_storage_class(settings.DEFAULT_FILE_STORAGE)
+        # instance for storage backend used to manage user-uploaded media files
+        media_azure_storage = media_azure_storage_cls()
+        # expiring URL with SAS
+        sas_expiring_url = media_azure_storage.get_sas_expiring_url(name)
+        # redirect
+        return redirect(sas_expiring_url)
 
 
 class SecuredSyncRedirectView(CoreAccessMixin, RedirectView):

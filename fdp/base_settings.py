@@ -620,3 +620,10 @@ FDP_ERR_LOGGING = {
         },
     },
 }
+
+
+# A URL that handles serving user-uploaded media files for some storage systems such as the Azure Storage account.
+# This setting will be ignored, if the MEDIA_URL setting can be used such as in the local development environment.
+# It must end in a slash if set to a non-empty value.
+# See the Django setting MEDIA_URL for similarities.
+FDP_MEDIA_URL = '/perm/media/'

@@ -347,6 +347,9 @@ AZURE_STORAGE_ACCOUNT_SUFFX = get_from_environment_var(
     environment_var='FDP_AZURE_STORAGE_ACCOUNT_SUFFIX', raise_exception=False, default_val='blob.core.windows.net'
 )
 AZURE_CUSTOM_DOMAIN = '{a}.{s}'.format(a=AZURE_ACCOUNT_NAME, s=AZURE_STORAGE_ACCOUNT_SUFFX)
+# Seconds before a URL expires, set to None to never expire it. Be aware the container must have public read
+# permissions in order to access a URL without expiration date. Default is None
+AZURE_URL_EXPIRATION_SECS = 20
 # The file storage engine to use when collecting static files with the collectstatic management command.
 # A ready-to-use instance of the storage backend defined in this setting can be found at
 # django.contrib.staticfiles.storage.staticfiles_storage.
@@ -396,7 +399,7 @@ MEDIA_URL = 'https://{d}/{c}/'.format(d=AZURE_CUSTOM_DOMAIN, c=AZURE_MEDIA_CONTA
 # Seconds before a URL expires, set to None to never expire it. Be aware the container must have public read
 # permissions in order to access a URL without expiration date. Default is None
 AZURE_MEDIA_URL_EXPIRATION_SECS = get_from_environment_var(
-    environment_var='FDP_AZURE_MEDIA_EXPIRY', raise_exception=False, default_val=1200
+    environment_var='FDP_AZURE_MEDIA_EXPIRY', raise_exception=False, default_val=AZURE_URL_EXPIRATION_SECS
 )
 
 
@@ -411,9 +414,6 @@ AZURE_MEDIA_URL_EXPIRATION_SECS = get_from_environment_var(
 # AZURE_CONNECTION_TIMEOUT_SECS = 20
 # Maximum memory used by a downloaded file before dumping it to disk. Unit is in bytes. Default is 2MB
 # AZURE_BLOB_MAX_MEMORY_SIZE = 2*1024*1024
-# Seconds before a URL expires, set to None to never expire it. Be aware the container must have public read
-# permissions in order to access a URL without expiration date. Default is None
-# AZURE_URL_EXPIRATION_SECS = None
 # Overwrite an existing file when it has the same name as the file being uploaded. Otherwise, rename it.
 # Default is False
 # AZURE_OVERWRITE_FILES = False

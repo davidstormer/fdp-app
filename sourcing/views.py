@@ -14,7 +14,7 @@ class DownloadAttachmentView(SecuredSyncView):
 
         :param request: Http request object.
         :param path: Full path for the attachment file.
-        :return: Attachment file to download.
+        :return: Attachment file to download or link to download attachment.
         """
         if not path:
             raise Exception(_('No attachment path was specified'))
@@ -29,10 +29,15 @@ class DownloadAttachmentView(SecuredSyncView):
             # attachment is not accessible by user
             if file_field_value and not filtered_queryset.filter(file=file_field_value).exists():
                 raise Exception(_('User does not have access to attachment'))
-            return self.serve_static_file(
-                request=request,
-                path=path,
-                absolute_base_url=settings.MEDIA_URL,
-                relative_base_url=AbstractUrlValidator.ATTACHMENT_BASE_URL,
-                document_root=settings.MEDIA_ROOT
-            )
+            # if hosted in Microsoft Azure, storing attachments in an Azure Storage account is required
+            if getattr(settings, 'USE_AZURE_SETTINGS'):
+                return self.serve_azure_storage_static_file(name=file_field_value)
+            # otherwise use default mechanism to serve files
+            else:
+                return self.serve_static_file(
+                    request=request,
+                    path=path,
+                    absolute_base_url=settings.MEDIA_URL,
+                    relative_base_url=AbstractUrlValidator.ATTACHMENT_BASE_URL,
+                    document_root=settings.MEDIA_ROOT
+                )

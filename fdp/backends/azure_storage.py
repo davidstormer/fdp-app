@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.utils.encoding import filepath_to_uri
+from urllib.parse import urljoin
 
 
 # FDP system is configured for hosting in Microsoft Azure, so use Azure Storage Account for static and media files
@@ -38,6 +40,11 @@ if getattr(settings, 'USE_AZURE_SETTINGS', False):
         err_msg='Please install the package: django-storage[azure]',
         raise_exception=True
     )
+    azure_storage_blob_module = load_python_package_module(
+        module_as_str='azure.storage.blob',
+        err_msg='Please ensure that the dependency azure.storage.blob is installed',
+        raise_exception=True
+    )
     # load if azure-identity package is installed
     # see: https://github.com/Azure/azure-sdk-for-python/tree/master/sdk/identity/azure-identity
     azure_identity_module = load_python_package_module(
@@ -64,6 +71,52 @@ if getattr(settings, 'USE_AZURE_SETTINGS', False):
         #: A token credential used to authenticate HTTPS requests. The token value should be updated before its
         # expiration.
         token_credential = azure_identity_module.ManagedIdentityCredential()
+
+        def url(self, name, expire=None):
+            """  Returns an absolute and permanent URL where the file's contents can be accessed directly by a Web
+            browser.
+
+            URL will be for a view that retrieves the expiring link with shared access signature for the file, from the
+            Azure Storage account.
+
+            :param name: Relative path for file including file name and extension.
+            :param expire: Expiration in seconds for file. Will be ignored and default expiration for class used
+            instead.
+            :return: Absolute URL.
+            """
+            url = filepath_to_uri(name)
+            if url is not None:
+                url = url.lstrip('/')
+            return urljoin(settings.FDP_MEDIA_URL, url)
+
+        def get_sas_expiring_url(self, name):
+            """ Retrieves an absolute and temporary URL where the file's contents can be accessed directly by a Web
+            browser.
+
+            URL will be an expiring link with a shared access signature that accesses the Azure Storage account.
+
+            :param name: Relative path for file including file name and extension.
+            :return: Absolute URL.
+            """
+            # relative path of file including name and extension
+            name = self._get_valid_path(name)
+            # link expiration in seconds
+            expire = self.expiration_secs
+            # shared access signature
+            sas_token = self.custom_service.generate_blob_shared_access_signature(
+                self.azure_container,
+                name, permission=azure_storage_blob_module.BlobPermissions.READ,
+                expiry=self._expire_at(expire)
+            )
+            # keyword arguments to generate Blob URL
+            make_blob_url_kwargs = {'sas_token': sas_token}
+            # generate Blob URL
+            return self.custom_service.make_blob_url(
+                container_name=self.azure_container,
+                blob_name=filepath_to_uri(name),
+                protocol=self.azure_protocol,
+                **make_blob_url_kwargs
+            )
 
 
     class StaticAzureStorage(azure_storage_module.AzureStorage):

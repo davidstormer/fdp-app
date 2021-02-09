@@ -113,3 +113,10 @@ QUERYSTRING_PASSWORD = get_from_environment_var_or_conf_file(
 # To bypass the security check that prevents the test keys from being used unknowingly
 # add SILENCED_SYSTEM_CHECKS = [..., 'captcha.recaptcha_test_key_error', ...] to your settings
 SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
+
+
+# A URL that handles serving user-uploaded media files for some storage systems such as the Azure Storage account.
+# This setting will be ignored, if the MEDIA_URL setting can be used such as in the local development environment.
+# It must end in a slash if set to a non-empty value.
+# See the Django setting MEDIA_URL for similarities.
+FDP_MEDIA_URL = MEDIA_URL

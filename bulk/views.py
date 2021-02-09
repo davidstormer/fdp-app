@@ -14,7 +14,7 @@ class DownloadImportFileView(SecuredSyncView):
 
         :param request: Http request object.
         :param path: Full path for the import file.
-        :return: Import file to download.
+        :return: Import file to download or link to download file.
         """
         if not path:
             raise Exception(_('No import file path was specified'))
@@ -30,10 +30,15 @@ class DownloadImportFileView(SecuredSyncView):
             # import file does not exist
             if file_field_value and not unfiltered_queryset.filter(file=file_field_value).exists():
                 raise Exception(_('User does not have access to import file'))
-            return self.serve_static_file(
-                request=request,
-                path=path,
-                absolute_base_url=settings.MEDIA_URL,
-                relative_base_url=AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL,
-                document_root=settings.MEDIA_ROOT
-            )
+            # if hosted in Microsoft Azure, storing import files in an Azure Storage account is required
+            if getattr(settings, 'USE_AZURE_SETTINGS'):
+                return self.serve_azure_storage_static_file(name=file_field_value)
+            # otherwise use default mechanism to serve files
+            else:
+                return self.serve_static_file(
+                    request=request,
+                    path=path,
+                    absolute_base_url=settings.MEDIA_URL,
+                    relative_base_url=AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL,
+                    document_root=settings.MEDIA_ROOT
+                )
