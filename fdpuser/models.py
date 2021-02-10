@@ -621,6 +621,16 @@ class PasswordReset(models.Model):
             ).count() < settings.MAX_PWD_RESET_PER_IP_ADDRESS_PER_DAY
         )
 
+    @staticmethod
+    def logout(request):
+        """ Logs a user out of their account.
+
+        :param request: Http request object.
+        :return: Nothing.
+        """
+        # Logs out user
+        logout(request)
+
     @classmethod
     def invalidate_password_logout(cls, user, request):
         """ Invalidates user's current password and logs user out of their account.
@@ -645,8 +655,8 @@ class PasswordReset(models.Model):
                 except ValidationError:
                     max_tries -= 1
                     password = get_random_string(length=pwd_len)
-        # Logs out user
-        logout(request)
+        # log user out of their account
+        cls.logout(request=request)
         return
 
     class Meta:

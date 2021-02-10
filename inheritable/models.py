@@ -2922,3 +2922,32 @@ class AbstractImport(models.Model):
 
     class Meta:
         abstract = True
+
+
+class AbstractConfiguration(models.Model):
+    """ An abstract definition of methods and constants to interact with and interpret settings.
+
+    This is used to encapsulate logic to check multiple settings at once, for instance if password resets are
+    configured correctly.
+
+    """
+    @staticmethod
+    def can_do_password_reset():
+        """ Checks whether the necessary settings have been configured to enable password resets.
+
+        :return: True if password resets are possible, false otherwise.
+        """
+        # password resets can be performed if in debug mode OR
+        return settings.DEBUG or (
+
+            (
+                # if both public and private reCAPTCHA keys are defined, AND
+                settings.RECAPTCHA_PUBLIC_KEY and settings.RECAPTCHA_PRIVATE_KEY
+            ) and (
+                # if both email host username and password are defined
+                settings.EMAIL_HOST_PASSWORD and settings.EMAIL_HOST_USER
+            )
+        )
+
+    class Meta:
+        abstract = True

@@ -1,10 +1,11 @@
 from django.utils.translation import gettext as _
 from django.core.mail import send_mail, mail_admins
+from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.views import PasswordResetView
 from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
 from django.conf import settings
-from inheritable.models import AbstractIpAddressValidator
+from inheritable.models import AbstractIpAddressValidator, AbstractConfiguration
 from inheritable.views import SecuredSyncTemplateView, SecuredSyncRedirectView
 from .models import PasswordReset, FdpUser
 from .forms import FdpUserPasswordResetForm, FdpUserPasswordResetWithReCaptchaForm
@@ -63,6 +64,18 @@ class ConfirmPasswordChangeTemplateView(SecuredSyncTemplateView):
         })
         return context
 
+    def dispatch(self, request, *args, **kwargs):
+        """ Ensures that required settings are specified for a password change email.
+
+        :param request: Http request object.
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        if not AbstractConfiguration.can_do_password_reset():
+            raise ImproperlyConfigured('Password reset is not supported with this configuration')
+        return super(ConfirmPasswordChangeTemplateView, self).dispatch(request=request, *args, **kwargs)
+
 
 class ConfirmTwoFactorResetTemplateView(SecuredSyncTemplateView):
     """ Page that allows users to confirm that they wish to reset their 2FA.
@@ -106,6 +119,8 @@ class ResetPasswordRedirectView(SecuredSyncRedirectView):
         :param kwargs:
         :return:
         """
+        if not AbstractConfiguration.can_do_password_reset():
+            raise ImproperlyConfigured('Password reset is not supported with this configuration')
         user = request.user
         ip_address = AbstractIpAddressValidator.get_ip_address(request=request)
         # limit hasn't been reached for user or IP address to reset password
@@ -153,6 +168,8 @@ class FdpPasswordResetView(PasswordResetView):
         :param kwargs:
         :return:
         """
+        if not AbstractConfiguration.can_do_password_reset():
+            raise ImproperlyConfigured('Password reset is not supported with this configuration')
         request = self.request
         if request.method == 'POST':
             ip_address = AbstractIpAddressValidator.get_ip_address(request=request)
@@ -172,7 +189,62 @@ class ResetTwoFactorRedirectView(SecuredSyncRedirectView):
     """ Trip to server, redirecting to the login page, resetting the user's password and 2FA.
 
     """
-    pattern_name = 'password_reset_done'
+    # If password resets are configured, then view redirects to password_reset_done view.
+    # If password resets are not configured, then view redirects to logout view.
+    pattern_name = 'password_reset_done' if AbstractConfiguration.can_do_password_reset() else 'logout'
+
+    @staticmethod
+    def __remove_all_2fa_devices(user):
+        """ Removes all 2FA devices for a user.
+
+        :param user: User for which to remove 2FA devices.
+        :return: Nothing.
+        """
+        for device in devices_for_user(user):
+            device.delete()
+
+    @classmethod
+    def __dispatch_with_password_reset(cls, request, form):
+        """ Performs the 2FA reset with password resets configured.
+
+        :param request: Http request object.
+        :param form: Validated password reset form.
+        :return: Nothing.
+        """
+        user = request.user
+        # invalidate current password and log user out of their account
+        PasswordReset.invalidate_password_logout(user=user, request=request)
+        # remove all 2FA devices for user
+        cls.__remove_all_2fa_devices(user=user)
+        # send the password reset link
+        form.save(request=request)
+        # notify user that their 2FA has been reset
+        send_mail(
+            _('FDP 2FA Reset'),
+            _('Your Full Disclosure Project (FDP) Two-Factor Authentication (2FA) has been reset. If you did '
+              'not initiate this reset, please contact {a}.'.format(a=settings.DEFAULT_FROM_EMAIL)),
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+        # notify admins that user has reset their 2FA
+        mail_admins(
+            subject=_('FYI - User resets 2FA'),
+            message=_('User {u} has reset their 2FA.'.format(u=user.email))
+        )
+
+    @classmethod
+    def __dispatch_without_password_reset(cls, request):
+        """ Performs the 2FA reset without password resets configured.
+
+        :param request: Http request object.
+        :return: Nothing.
+        """
+        user = request.user
+        # log user out of their account
+        PasswordReset.logout(request=request)
+        # remove all 2FA devices for user
+        cls.__remove_all_2fa_devices(user=user)
 
     def dispatch(self, request, *args, **kwargs):
         """ Remove 2FA devices, invalidate user's current password, log out user and send email.
@@ -180,34 +252,17 @@ class ResetTwoFactorRedirectView(SecuredSyncRedirectView):
         :param request: Http request object.
         :param args:
         :param kwargs:
-        :return:
+        :return: Redirect response to password reset completed view or logout view.
         """
         user = request.user
         response = super(ResetTwoFactorRedirectView, self).dispatch(request, *args, **kwargs)
         # Create password reset form
         form = FdpUserPasswordResetForm({'email': user.email})
         if form.is_valid():
-            # Invalidate current password
-            PasswordReset.invalidate_password_logout(user=user, request=request)
-            # Remove all 2FA devices
-            for device in devices_for_user(user):
-                device.delete()
-            # Send the password reset link
-            form.save(request=request)
-            # Notify user that their 2FA has been reset
-            send_mail(
-                _('FDP 2FA Reset'),
-                _('Your Full Discloure Project (FDP) Two-Factor Authentication (2FA) has been reset. If you did '
-                  'not initiate this reset, please contact {a}.'.format(a=settings.DEFAULT_FROM_EMAIL)),
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=False,
-            )
-            # Notify admins that user has reset their 2FA
-            mail_admins(
-                subject=_('FYI - User resets 2FA'),
-                message=_('User {u} has reset their 2FA.'.format(u=user.email))
-            )
+            if AbstractConfiguration.can_do_password_reset():
+                self.__dispatch_with_password_reset(request=request, form=form)
+            else:
+                self.__dispatch_without_password_reset(request=request)
             return response
         # something is wrong with the form's configuration
         else:

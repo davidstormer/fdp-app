@@ -21,6 +21,7 @@ from django.views.defaults import page_not_found
 from two_factor.urls import urlpatterns as two_factor__urls
 from two_factor.admin import AdminSiteOTPRequired
 from fdpuser.views import FdpPasswordResetView
+from inheritable.models import AbstractConfiguration
 
 
 # Django Two-Factor Authentication
@@ -46,8 +47,13 @@ urlpatterns = [
 ) + [
     # URL for logging out
     path('account/logout/', view=auth_views.LogoutView.as_view(), name='logout'),
-    # URLs for resetting passwords through a tokenized link
-    path('password/reset/', FdpPasswordResetView.as_view(), name='password_reset'),
+    ] + (
+    # only include URLs for password reset if the configuration supports it
+    [] if not AbstractConfiguration.can_do_password_reset() else [
+        # URLs for resetting passwords through a tokenized link
+        path('password/reset/', FdpPasswordResetView.as_view(), name='password_reset'),
+    ]
+) + [
     path('password/reset/sent/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     path('password/reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(),
          name='password_reset_confirm'),

@@ -1,5 +1,5 @@
 {% extends "common/fdp_base_site.html" %}
-{% load i18n static compress %}
+{% load i18n static compress fdp_extras %}
 
 {% block extrahead %}{{ block.super }}{% endblock %}
 
@@ -30,8 +30,12 @@
 <ul>
     <li>{% trans 'Your 2FA will be disabled.' %}</li>
     <li>{% trans 'You will be logged out.' %}</li>
+{% with has_password_reset=is_password_reset_configured %}
+    {% if has_password_reset %}
     <li>{% trans 'Your password will be reset.' %}</li>
     <li>{% trans 'A secure password change link will be sent to your email.' %}</li>
+    {% endif %}
+{% endwith %}
 </ul>
 <p><a href="{% url 'fdpuser:reset_2fa' %}">{% trans 'Reset my 2FA' %}</a></p>
 {% endblock %}
