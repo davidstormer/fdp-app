@@ -46,6 +46,6 @@ FDP_CONTENT_GROUPING_SEARCH_FILE = 'def_grouping'
 FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
 
 
-#: To enable logging, remove the comments the the below definition.
-# FDP_ERR_LOGGING['handlers']['file']['filename'] = '/home/site/wwwroot/debug.log'
+#: To enable logging, remove the comments from the below assignments.
+# FDP_ERR_LOGGING['handlers']['file']['filename'] = BASE_DIR / 'debug.log'
 # LOGGING = FDP_ERR_LOGGING
