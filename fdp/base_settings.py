@@ -43,6 +43,12 @@ ENV_VAR_FOR_FDP_EMAIL_HOST_PASSWORD = 'FDP_EMAIL_HOST_PASSWORD'
 
 # Value indicating that external authentication is supported through Microsoft Azure Active Directory
 AAD_EXT_AUTH = 'aad'
+# Value indicating that no external authentication is supported, i.e. only Django's authentication backend is used
+NO_EXT_AUTH = 'none'
+
+
+# Default is no external authentication mechanism
+EXT_AUTH = NO_EXT_AUTH
 
 
 def get_from_environment_var(environment_var, raise_exception, default_val=None):

@@ -21,6 +21,12 @@ USE_AZURE_SETTINGS = True
 
 # Name of environment variable for Azure Storage account access key.
 ENV_VAR_FOR_FDP_AZURE_STORAGE_ACCOUNT_KEY = 'FDP_AZURE_STORAGE_ACCOUNT_KEY'
+# Name of environment variable for Azure Active Directory client ID
+ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY = 'FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY'
+# Name of environment variable for Azure Active Directory tenant ID
+ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID = 'FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID'
+# Name of environment variable for Azure Active Directory client secret
+ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_SECRET = 'FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_SECRET'
 
 
 class AzureKeyVaultException(Exception):
@@ -108,7 +114,7 @@ def get_random_querystring_password():
 
 # External authentication mechanism.
 EXT_AUTH = get_from_environment_var(
-    environment_var='FDP_EXTERNAL_AUTHENTICATION', raise_exception=False, default_val='none'
+    environment_var='FDP_EXTERNAL_AUTHENTICATION', raise_exception=False, default_val=NO_EXT_AUTH
 )
 EXT_AUTH = str(EXT_AUTH).lower()
 
@@ -177,106 +183,141 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # external authentication such as through Azure Active Directory is supported
 if EXT_AUTH == AAD_EXT_AUTH:
-    INSTALLED_APPS.append(
-        # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
-        'social_django'
-    )
-    TEMPLATE_CONTEXT_PROCESSORS.extend(
-        [
-            # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
-            'social_django.context_processors.backends',
-            'social_django.context_processors.login_redirect'
-        ]
-    )
-    CSP_FORM_ACTION = CSP_FORM_ACTION + ('https://www.office.com/', 'https://login.microsoftonline.com/',)
-    AUTHENTICATION_BACKENDS.append('social_core.backends.azuread_tenant.AzureADTenantOAuth2')
     # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
-    # Enable JSONB field to store extracted extra data in PostgreSQL
-    SOCIAL_AUTH_POSTGRES_JSONFIELD = True
-    # Custom namespace for URL entries
-    SOCIAL_AUTH_URL_NAMESPACE = 'social'
-    # Authentication workflow is handled by an operations pipeline
-    SOCIAL_AUTH_PIPELINE = (
-        # Get the information we can about the user and return it in a simple
-        # format to create the user instance later. On some cases the details are
-        # already part of the auth response from the provider, but sometimes this
-        # could hit a provider API.
-        'social_core.pipeline.social_auth.social_details',
-        # Get the social uid from whichever service we're authing thru. The uid is
-        # the unique identifier of the given user in the provider.
-        'social_core.pipeline.social_auth.social_uid',
-        # Verifies that the current auth process is valid within the current
-        # project, this is where emails and domains whitelists are applied (if
-        # defined).
-        'social_core.pipeline.social_auth.auth_allowed',
-        # Checks if the current social-account is already associated in the site.
-        'social_core.pipeline.social_auth.social_user',
-        # Make up a username for this person, appends a random string at the end if
-        # there's any collision.
-        'social_core.pipeline.user.get_username',
-        # Send a validation email to the user to verify its email address.
-        # Disabled by default.
-        # 'social_core.pipeline.mail.mail_validation',
-        # Associates the current social details with another user account with
-        # a similar email address. Disabled by default.
-        # 'social_core.pipeline.social_auth.associate_by_email',
-        # Create a user account if we haven't found one yet.
-        # Disabled since it is replaced by customized method to set is_host
-        # and only_external_auth properties.
-        # 'social_core.pipeline.user.create_user',
-        'fdp.pipeline.create_user',
-        # Create the record that associates the social account with the user.
-        'social_core.pipeline.social_auth.associate_user',
-        # Populate the extra_data field in the social record with the values
-        # specified by settings (and the default ones like access_token, etc).
-        'social_core.pipeline.social_auth.load_extra_data',
-        # Update the user record with any changed info from the auth service.
-        'social_core.pipeline.user.user_details',
-    )
-    # Used to set search_fields property for Admin
-    SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['email']
     # Azure Client ID
-    SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY = get_from_environment_var(
-        environment_var='FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY', raise_exception=True
+    SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY = get_from_azure_key_vault(
+        secret_name=ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY
     )
+    if not SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY:
+        SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY = get_from_environment_var(
+            environment_var=ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY,
+            raise_exception=False,
+            default_val=None
+        )
     # Azure Tenant ID
-    SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID = get_from_environment_var(
-        environment_var='FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID', raise_exception=True
+    SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID = get_from_azure_key_vault(
+        secret_name=ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID
     )
-    # Allow the scope that is granted to the access token to be defined as default
-    SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_IGNORE_DEFAULT_SCOPE = False
-    # The auth process finishes with a redirect, by default it’s done to the value of SOCIAL_AUTH_LOGIN_REDIRECT_URL but
-    # can be overridden with next GET argument. If this setting is True, this application will vary the domain of the
-    # final URL and only redirect to it if it’s on the same domain.
-    SOCIAL_AUTH_SANITIZE_REDIRECTS = True
-    # On projects behind a reverse proxy that uses HTTPS, the redirect URIs can have the wrong schema (http:// instead
-    # of https://) if the request lacks the appropriate headers, which might cause errors during the auth process. To
-    # force HTTPS in the final URIs set this setting to True
-    SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
-    # A list of domain names to be white-listed. Any user with an email address on any of the allowed domains will login
-    # successfully, otherwise AuthForbidden is raised.
-    SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS = [
-        get_from_environment_var(environment_var='FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS', raise_exception=True)
-    ]
-    # When disconnecting an account, it is recommended to trigger a token revoke action in the authentication provider,
-    # that way we inform it that the token won’t be used anymore and can be disposed. By default the action is not
-    # triggered because it’s not a common option on every provider, and tokens should be disposed automatically after a
-    # short time.
-    SOCIAL_AUTH_REVOKE_TOKENS_ON_DISCONNECT = True
-    # De-authentication workflow is handled by an operations pipeline
-    SOCIAL_AUTH_DISCONNECT_PIPELINE = (
-        # Verifies that the social association can be disconnected from the current user (ensure that the user login
-        # mechanism is not compromised by this disconnection).
-        # 'social_core.pipeline.disconnect.allowed_to_disconnect',
-        # Collects the social associations to disconnect.
-        'social_core.pipeline.disconnect.get_entries',
-        # Revoke any access_token when possible.
-        'social_core.pipeline.disconnect.revoke_tokens',
-        # Removes the social associations.
-        'social_core.pipeline.disconnect.disconnect',
-        # Forcibly logs out Django user
-        'fdp.pipeline.logout_user',
+    if not SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID:
+        SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID = get_from_environment_var(
+            environment_var=ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID,
+            raise_exception=False,
+            default_val=None
+        )
+    # Azure Client Secret
+    SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_SECRET = get_from_azure_key_vault(
+        secret_name=ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_SECRET
     )
+    if not SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_SECRET:
+        SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_SECRET = get_from_environment_var(
+            environment_var=ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_SECRET,
+            raise_exception=False,
+            default_val=None
+        )
+    # either client or tenant ID, or secret is missing, so cannot support Azure Active Directory
+    if not (
+        SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY and
+        SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID and
+        SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_SECRET
+    ):
+        EXT_AUTH = NO_EXT_AUTH
+    # only continue configuring support for Azure Active Directory, if the client and tenant IDs were retrieved
+    else:
+        INSTALLED_APPS.append(
+            # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+            'social_django'
+        )
+        TEMPLATE_CONTEXT_PROCESSORS.extend(
+            [
+                # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect'
+            ]
+        )
+        CSP_FORM_ACTION = CSP_FORM_ACTION + ('https://www.office.com/', 'https://login.microsoftonline.com/',)
+        # See: https://python-social-auth.readthedocs.io/en/latest/backends/azuread.html
+        # Ensure that the Django default authentication backend 'django.contrib.auth.backends.ModelBackend' is first
+        AUTHENTICATION_BACKENDS.append('social_core.backends.azuread_tenant.AzureADTenantOAuth2')
+        # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+        # Enable JSONB field to store extracted extra data in PostgreSQL
+        SOCIAL_AUTH_POSTGRES_JSONFIELD = True
+        # Custom namespace for URL entries
+        SOCIAL_AUTH_URL_NAMESPACE = 'social'
+        # Authentication workflow is handled by an operations pipeline
+        SOCIAL_AUTH_PIPELINE = (
+            # Get the information we can about the user and return it in a simple
+            # format to create the user instance later. On some cases the details are
+            # already part of the auth response from the provider, but sometimes this
+            # could hit a provider API.
+            'social_core.pipeline.social_auth.social_details',
+            # Get the social uid from whichever service we're authing thru. The uid is
+            # the unique identifier of the given user in the provider.
+            'social_core.pipeline.social_auth.social_uid',
+            # Verifies that the current auth process is valid within the current
+            # project, this is where emails and domains whitelists are applied (if
+            # defined).
+            'social_core.pipeline.social_auth.auth_allowed',
+            # Checks if the current social-account is already associated in the site.
+            'social_core.pipeline.social_auth.social_user',
+            # Make up a username for this person, appends a random string at the end if
+            # there's any collision.
+            'social_core.pipeline.user.get_username',
+            # Send a validation email to the user to verify its email address.
+            # Disabled by default.
+            # 'social_core.pipeline.mail.mail_validation',
+            # Associates the current social details with another user account with
+            # a similar email address. Disabled by default.
+            # 'social_core.pipeline.social_auth.associate_by_email',
+            # Create a user account if we haven't found one yet.
+            # Disabled since it is replaced by customized method to set is_host
+            # and only_external_auth properties.
+            # 'social_core.pipeline.user.create_user',
+            'fdp.pipeline.create_user',
+            # Create the record that associates the social account with the user.
+            'social_core.pipeline.social_auth.associate_user',
+            # Populate the extra_data field in the social record with the values
+            # specified by settings (and the default ones like access_token, etc).
+            'social_core.pipeline.social_auth.load_extra_data',
+            # Update the user record with any changed info from the auth service.
+            'social_core.pipeline.user.user_details',
+        )
+        # Used to set search_fields property for Admin
+        SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['email']
+        # Allow the scope that is granted to the access token to be defined as default
+        SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_IGNORE_DEFAULT_SCOPE = False
+        # The auth process finishes with a redirect, by default it’s done to the value of SOCIAL_AUTH_LOGIN_REDIRECT_URL
+        # but can be overridden with next GET argument. If this setting is True, this application will vary the domain
+        # of the final URL and only redirect to it if it’s on the same domain.
+        SOCIAL_AUTH_SANITIZE_REDIRECTS = True
+        # On projects behind a reverse proxy that uses HTTPS, the redirect URIs can have the wrong schema
+        # (http:// instead of https://) if the request lacks the appropriate headers, which might cause errors during
+        # the auth process. To force HTTPS in the final URIs set this setting to True
+        SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
+        # A list of domain names to be white-listed. Any user with an email address on any of the allowed domains will
+        # login successfully, otherwise AuthForbidden is raised.
+        SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS = [
+            get_from_environment_var(environment_var='FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS', raise_exception=True)
+        ]
+        # When disconnecting an account, it is recommended to trigger a token revoke action in the authentication
+        # provider,  that way we inform it that the token won’t be used anymore and can be disposed. By default the
+        # action is not triggered because it’s not a common option on every provider, and tokens should be disposed
+        # automatically after a short time.
+        SOCIAL_AUTH_REVOKE_TOKENS_ON_DISCONNECT = True
+        # De-authentication workflow is handled by an operations pipeline
+        SOCIAL_AUTH_DISCONNECT_PIPELINE = (
+            # Verifies that the social association can be disconnected from the current user (ensure that the user
+            # login mechanism is not compromised by this disconnection).
+            # Disabled since Azure Active Directory users will always receive NotAllowedToDisconnect exception.
+            # 'social_core.pipeline.disconnect.allowed_to_disconnect',
+            # Collects the social associations to disconnect.
+            'social_core.pipeline.disconnect.get_entries',
+            # Revoke any access_token when possible.
+            'social_core.pipeline.disconnect.revoke_tokens',
+            # Removes the social associations.
+            'social_core.pipeline.disconnect.disconnect',
+            # Forcibly logs out Django user
+            'fdp.pipeline.logout_user',
+        )
 
 
 TEMPLATE_FIRST_DICT['OPTIONS'] = {'context_processors': TEMPLATE_CONTEXT_PROCESSORS}

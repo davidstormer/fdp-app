@@ -1,5 +1,6 @@
 from django.contrib.auth import logout
-from django.http import HttpResponseRedirect
+from django.shortcuts import redirect
+from django.conf import settings
 from fdpuser.models import FdpUser
 from importlib.util import find_spec, module_from_spec
 # check if social-auth-app-django package is installed
@@ -56,4 +57,4 @@ def logout_user(strategy, *args, **kwargs):
     """
     request = strategy.request
     logout(request)
-    return HttpResponseRedirect('https://www.office.com/estslogout')
+    return redirect('https://login.microsoftonline.com/common/oauth2/logout')

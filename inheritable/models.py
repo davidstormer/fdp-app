@@ -2928,9 +2928,14 @@ class AbstractConfiguration(models.Model):
     """ An abstract definition of methods and constants to interact with and interpret settings.
 
     This is used to encapsulate logic to check multiple settings at once, for instance if password resets are
-    configured correctly.
+    configured correctly, or if support for Azure Active Directory is configured correctly.
 
     """
+    #: Value for provider that will define a social authentication record linked to a user authenticated who is
+    #: through Azure Active Directory.
+    #: See: https://python-social-auth.readthedocs.io/en/latest/backends/azuread.html
+    azure_active_directory_provider = 'azuread-tenant-oauth2'
+
     @staticmethod
     def can_do_password_reset():
         """ Checks whether the necessary settings have been configured to enable password resets.
@@ -2948,6 +2953,14 @@ class AbstractConfiguration(models.Model):
                 settings.EMAIL_HOST_PASSWORD and settings.EMAIL_HOST_USER
             )
         )
+
+    @staticmethod
+    def can_do_azure_active_directory():
+        """ Checks whether the necessary settings have been configured to enable support for Azure Active Directory.
+
+        :return: True if Azure Active Directory is supported, false otherwise.
+        """
+        return settings.EXT_AUTH == settings.AAD_EXT_AUTH
 
     class Meta:
         abstract = True

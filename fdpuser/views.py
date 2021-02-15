@@ -3,14 +3,19 @@ from django.core.mail import send_mail, mail_admins
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.views import PasswordResetView
 from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.cache import never_cache
+from django.views.decorators.debug import sensitive_post_parameters
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from inheritable.models import AbstractIpAddressValidator, AbstractConfiguration
 from inheritable.views import SecuredSyncTemplateView, SecuredSyncRedirectView
 from .models import PasswordReset, FdpUser
 from .forms import FdpUserPasswordResetForm, FdpUserPasswordResetWithReCaptchaForm
+from two_factor.views import LoginView
+from two_factor.views.utils import class_view_decorator
 from django_otp import devices_for_user
 from csp.decorators import csp_update, csp_replace
+from time import time
 
 
 class SettingsTemplateView(SecuredSyncTemplateView):
@@ -267,3 +272,82 @@ class ResetTwoFactorRedirectView(SecuredSyncRedirectView):
         # something is wrong with the form's configuration
         else:
             raise Exception('FDPUserPasswordResetForm was not valid')
+
+
+@class_view_decorator(sensitive_post_parameters())
+@class_view_decorator(never_cache)
+class FdpLoginView(LoginView):
+    """ Extends the login view provided by the Django Two-Factor package to ensure that users can be authenticated
+    through an external backend such as Azure Active Directory.
+
+    Overrides the GET method, to allow externally authenticated users to bypass the authentication step.
+
+    For the Django Two-Factor package, see: https://django-two-factor-auth.readthedocs.io/
+
+    """
+    @staticmethod
+    def __check_if_user_externally_authenticated(request):
+        """ Checks if a user is externally authenticated, such as through Azure Active Directory.
+
+        :param request: Http request object.
+        :return: True if user is externally authenticated, false otherwise.
+        """
+        user = getattr(request, 'user', None)
+        # user is defined
+        # AND user is not anonymous
+        # AND user is authenticated
+        # AND user is not superuser
+        # and user is only externally authenticated
+        # and user has at least one social authentication through the Azure Active Directory
+        if user \
+                and (not user.is_anonymous) \
+                and user.is_authenticated \
+                and user.is_active \
+                and (not user.is_superuser) \
+                and user.only_external_auth \
+                and user.social_auth.filter(provider=AbstractConfiguration.azure_active_directory_provider).exists():
+            return True
+        # user is not externally authenticated
+        else:
+            return False
+
+    def get(self, request, *args, **kwargs):
+        """ Overrides default GET method handling for Django Two-Factor package, to allow users to authenticate via
+        an external backend such as Azure Active Directory, then the authentication step
+        (i.e. with the AuthenticationForm) can be skipped.
+
+        For the Django Two-Factor package, see: https://django-two-factor-auth.readthedocs.io/
+
+        Without this change, users who have externally authenticated and have also previously set up their 2FA will
+        be redirected to the login form to enter a username and password.
+
+        :param request: Http request object including potentially already authenticated user.
+        :param args:
+        :param kwargs:
+        :return: Http response.
+        """
+        # run through the default process for the GET method
+        response = super(FdpLoginView, self).get(request=request, *args, **kwargs)
+        # if Azure Active Directory is configured
+        if AbstractConfiguration.can_do_azure_active_directory():
+            # if the user was authenticated via an external backend, such as Azure Active Directory
+            if self.__check_if_user_externally_authenticated(request=request):
+                # following the logic that is defined in the process_step(...) method
+                self.storage.reset()
+                # these properties will be checked, e.g. the user in has_token_step(...) method
+                # retrieve the authenticated user from the HTTP request
+                user = request.user
+                # add the backend property that will be used in the _set_authenticated_user(...) method
+                # use the first backend that is specified in settings
+                # default in Django is: 'django.contrib.auth.backends.ModelBackend'
+                # TODO: Add ability to configure which authentication backend, in case of multiple options
+                user.backend = settings.AUTHENTICATION_BACKENDS[0]
+                self.storage.authenticated_user = user
+                # sets the time of authentication to avoid a session expiry exception
+                self.storage.data['authentication_time'] = int(time())
+                # if 2FA login process includes a token step
+                if self.has_token_step():
+                    # skip password authentication and go directly to token step
+                    return self.render_goto_step('token')
+        # otherwise, follow the default process for the GET method
+        return response
