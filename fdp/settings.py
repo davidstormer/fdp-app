@@ -13,11 +13,11 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 #: To configure hosting in a local development environment, remove the comment from the below import statement.
 #: This should not be used in a production environment.
-from .local_settings import *
+# from .local_settings import *
 
 
 #: To configure hosting in a Microsoft Azure environment, remove the comment from the below import statement.
-# from .azure_settings import *
+from .azure_settings import *
 
 
 # Name of Python file containing class that defines person profile searches.
@@ -47,5 +47,5 @@ FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
 
 
 #: To enable logging, remove the comments from the below assignments.
-# FDP_ERR_LOGGING['handlers']['file']['filename'] = BASE_DIR / 'debug.log'
-# LOGGING = FDP_ERR_LOGGING
+FDP_ERR_LOGGING['handlers']['file']['filename'] = BASE_DIR / 'debug.log'
+LOGGING = FDP_ERR_LOGGING
