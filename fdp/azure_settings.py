@@ -13,7 +13,7 @@ from .base_settings import *
 from django.core.management.utils import get_random_secret_key
 from base64 import b64encode
 from os import urandom
-
+import logging
 
 # Specifies that FDP is configured for hosting in Microsoft Azure environment
 USE_AZURE_SETTINGS = True
@@ -353,6 +353,7 @@ DATABASES['default'] = {
     )
 }
 
+logging.info(DATABASES['default'])
 
 # A URL-safe base64-encoded 32-byte key that is used by the Fernet symmetric encryption algorithm
 # Used to encrypt and decrypt query string parameters
