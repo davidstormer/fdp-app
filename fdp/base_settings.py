@@ -6,6 +6,7 @@ This file is imported and provides definitions for all settings files.
 
 """
 
+from .constants import CONST_AXES_AUTH_BACKEND
 from django.urls import reverse_lazy
 from django.core.exceptions import ImproperlyConfigured
 from pathlib import Path
@@ -49,6 +50,12 @@ NO_EXT_AUTH = 'none'
 
 # Default is no external authentication mechanism
 EXT_AUTH = NO_EXT_AUTH
+
+
+# By default, FDP is configured to support user authentication through the default Django backend and optionally through
+# Azure Active Directory. This setting may be overwritten if the azure_backend_only_settings.py file is imported into
+# the main settings.py file, to enforce user authentication only through Azure Active Directory.
+USE_ONLY_AZURE_AUTH = False
 
 
 def get_from_environment_var(environment_var, raise_exception, default_val=None):
@@ -194,7 +201,9 @@ INSTALLED_APPS = [
 ]
 
 
-MIDDLEWARE = [
+# Will be used in Django's standard MIDDLEWARE setting
+# MIDDLEWARE = FIRST_MIDDLEWARE + OTP_MIDDLEWARE + LAST_MIDDLEWARE
+FIRST_MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -204,11 +213,16 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Django-CSP: https://django-csp.readthedocs.io/en/latest/
     'csp.middleware.CSPMiddleware',
+]
+OTP_MIDDLEWARE = [
     # Django Two-Factor Authentication: https://django-two-factor-auth.readthedocs.io/en/stable/
     'django_otp.middleware.OTPMiddleware',
+]
+LAST_MIDDLEWARE = [
     # Django Axes: https://django-axes.readthedocs.io/en/latest/
     'axes.middleware.AxesMiddleware',
 ]
+MIDDLEWARE = FIRST_MIDDLEWARE + OTP_MIDDLEWARE + LAST_MIDDLEWARE
 
 ROOT_URLCONF = 'fdp.urls'
 
@@ -577,7 +591,7 @@ SILENCED_SYSTEM_CHECKS = []
 # See: https://docs.djangoproject.com/en/3.1/ref/settings/?from=olddocs#authentication-backends
 AUTHENTICATION_BACKENDS = [
     # Django Axes: https://django-axes.readthedocs.io/en/latest/
-    'axes.backends.AxesBackend',
+    CONST_AXES_AUTH_BACKEND,
     # Django's default database-driven authentication
     'django.contrib.auth.backends.ModelBackend',
 ]

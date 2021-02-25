@@ -1,6 +1,5 @@
 from django.contrib.auth import logout
 from django.shortcuts import redirect
-from django.conf import settings
 from fdpuser.models import FdpUser
 from importlib.util import find_spec, module_from_spec
 # check if social-auth-app-django package is installed

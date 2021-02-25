@@ -13,10 +13,10 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import path, include
+from django.urls import path, include, reverse_lazy
+from django.views.generic.base import RedirectView
 from django.views.defaults import page_not_found
 from two_factor.urls import urlpatterns as two_factor__urls
 from two_factor.views import BackupTokensView, ProfileView, QRGeneratorView, SetupCompleteView, SetupView
@@ -32,28 +32,49 @@ from inheritable.models import AbstractConfiguration
 admin.site.__class__ = AdminSiteOTPRequired
 
 
-# If the configuration supports Azure Active Directory, then use the extended login view for the 2FA process
-# to allow users to skip the password authentication step if they have already authenticated via Azure AD
 two_factor_base_route = ''
+# Configuration supports Azure Active Directory as an authentication backend, so use the extended login view for the
+# 2FA process to allow users to skip the password authentication step if they have already authenticated via
+# Azure Active Directory.
 if AbstractConfiguration.can_do_azure_active_directory():
-    # Copied from Django Two-Factor Authentication package /two-factor/urls.py version 1.13
-    # See: https://github.com/Bouke/django-two-factor-auth/
-    two_factor_core_paths = [
-        path('account/login/', FdpLoginView.as_view(), name='login',),
-        path('account/two_factor/setup/', SetupView.as_view(), name='setup',),
-        path('account/two_factor/qrcode/', QRGeneratorView.as_view(), name='qr',),
-        path('account/two_factor/setup/complete/', SetupCompleteView.as_view(), name='setup_complete',),
-        path('account/two_factor/backup/tokens/', BackupTokensView.as_view(), name='backup_tokens',),
-        # Removed view to register a backup phone:  account/two_factor/backup/phone/register/
-        # Removed view to unregister a backup phone: 'account/two_factor/backup/phone/unregister/<int:pk>/
-    ]
-    two_factor_profile_paths = [
-        path('account/two_factor/', ProfileView.as_view(), name='profile',),
-        # Removed view to disable 2FA: account/two_factor/disable/
-    ]
+    login_url_path = 'account/login/'
+    login_url_name = 'login'
+    two_factor_profile_url_path = 'account/two_factor/'
+    two_factor_profile_url_name = 'profile'
+    # Configuration supports only Azure Active Directory as a user authentication backend, so disable 2FA profile view
+    # and redirect login automatically to Azure
+    if AbstractConfiguration.use_only_azure_active_directory():
+        two_factor_core_paths = [
+            path(login_url_path, RedirectView.as_view(url=reverse_lazy('social:begin', args=['azuread-tenant-oauth2'])),
+                 name=login_url_name,),
+        ]
+        two_factor_profile_paths = [
+            path(two_factor_profile_url_path, page_not_found, name=two_factor_profile_url_name,
+                 kwargs={'exception': Exception('This page is disabled')}),
+        ]
+    # Configuration supports both Azure Active Directory and Django as user authentication backends
+    else:
+        # Copied from Django Two-Factor Authentication package /two-factor/urls.py version 1.13
+        # See: https://github.com/Bouke/django-two-factor-auth/
+        two_factor_core_paths = [
+            path(login_url_path, FdpLoginView.as_view(), name=login_url_name,),
+            path('account/two_factor/setup/', SetupView.as_view(), name='setup',),
+            path('account/two_factor/qrcode/', QRGeneratorView.as_view(), name='qr',),
+            path('account/two_factor/setup/complete/', SetupCompleteView.as_view(), name='setup_complete',),
+            path('account/two_factor/backup/tokens/', BackupTokensView.as_view(), name='backup_tokens',),
+            # Removed view to register a backup phone:  account/two_factor/backup/phone/register/
+            # Removed view to unregister a backup phone: 'account/two_factor/backup/phone/unregister/<int:pk>/
+        ]
+        two_factor_profile_paths = [
+            path(two_factor_profile_url_path, ProfileView.as_view(), name=two_factor_profile_url_name,),
+            # Removed view to disable 2FA: account/two_factor/disable/
+        ]
+    # compile authentication and 2FA related URLs
     two_factor_urls_list = [
         path(two_factor_base_route, include((two_factor_core_paths + two_factor_profile_paths, 'two_factor'))),
     ]
+# Configuration supports only the default Django authentication backend, so use the views provided by the
+# Django Two-Factor authentication package.
 else:
     two_factor_urls_list = [
         # The following URL is disabled, so that a user cannot disable their 2FA once it is enabled

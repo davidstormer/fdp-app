@@ -7,7 +7,8 @@ from django.conf import settings
 from django.contrib.auth import logout
 from django.core.mail import mail_admins
 from django.core.validators import validate_ipv46_address, ValidationError
-from inheritable.models import Archivable, AbstractForeignKeyValidator, AbstractIpAddressValidator
+from inheritable.models import Archivable, AbstractForeignKeyValidator, AbstractIpAddressValidator, \
+    AbstractConfiguration
 from datetime import timedelta
 from cspreports.models import CSPReport
 from json import JSONDecodeError, loads as json_loads, dumps as json_dumps
@@ -490,6 +491,31 @@ class FdpUser(AbstractUser):
         """
         accessible_queryset = user.get_accessible_users()
         return queryset.filter(pk__in=accessible_queryset)
+
+    @classmethod
+    def is_user_azure_authenticated(cls, user):
+        """ Checks if a user has been properly authenticated through the Azure Active Directory authentication backend.
+
+        :param user: User whose authentication status should be checked.
+        :return: True if user has been properly authenticated through Azure Active Directory, false otherwise.
+        """
+        # user is defined
+        # AND user is not anonymous
+        # AND user is authenticated
+        # AND user is not superuser
+        # and user is only externally authenticated
+        # and user has at least one social authentication through the Azure Active Directory
+        if user \
+                and (not user.is_anonymous) \
+                and user.is_authenticated \
+                and user.is_active \
+                and (not user.is_superuser) \
+                and user.only_external_auth \
+                and user.social_auth.filter(provider=AbstractConfiguration.azure_active_directory_provider).exists():
+            return True
+        # user is not externally authenticated
+        else:
+            return False
 
     class Meta:
         db_table = '{d}fdp_user'.format(d=settings.DB_PREFIX)

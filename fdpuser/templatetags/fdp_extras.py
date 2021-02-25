@@ -1,4 +1,5 @@
 from django import template
+from django.contrib.auth import get_user_model
 from inheritable.models import AbstractConfiguration
 
 
@@ -22,3 +23,25 @@ def is_password_reset_configured():
     :return: True if the password reset functionality is correctly configured, false otherwise.
     """
     return AbstractConfiguration.can_do_password_reset()
+
+
+@register.simple_tag
+def is_django_2fa_skipped_for_azure():
+    """ Checks whether the 2FA verification in Django can be skipped for users authenticated through Azure Active
+    Directory.
+
+    :return: True if 2FA verification in Django can be skipped for users authenticated through Azure Active Directory,
+    false otherwise.
+    """
+    return AbstractConfiguration.skip_django_2fa_for_azure()
+
+
+@register.simple_tag
+def is_azure_authenticated(user):
+    """ Checks whether a user is authenticated through Azure Active Directory.
+
+    :param user: User whose authentication should be checked.
+    :return: True if user is authenticated through Azure Active Directory, false otherwise.
+    """
+    user_model = get_user_model()
+    return user_model.is_user_azure_authenticated(user=user)

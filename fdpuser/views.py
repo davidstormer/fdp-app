@@ -293,23 +293,7 @@ class FdpLoginView(LoginView):
         :return: True if user is externally authenticated, false otherwise.
         """
         user = getattr(request, 'user', None)
-        # user is defined
-        # AND user is not anonymous
-        # AND user is authenticated
-        # AND user is not superuser
-        # and user is only externally authenticated
-        # and user has at least one social authentication through the Azure Active Directory
-        if user \
-                and (not user.is_anonymous) \
-                and user.is_authenticated \
-                and user.is_active \
-                and (not user.is_superuser) \
-                and user.only_external_auth \
-                and user.social_auth.filter(provider=AbstractConfiguration.azure_active_directory_provider).exists():
-            return True
-        # user is not externally authenticated
-        else:
-            return False
+        return FdpUser.is_user_azure_authenticated(user=user)
 
     def get(self, request, *args, **kwargs):
         """ Overrides default GET method handling for Django Two-Factor package, to allow users to authenticate via
@@ -341,6 +325,8 @@ class FdpLoginView(LoginView):
                 # use the first backend that is specified in settings
                 # default in Django is: 'django.contrib.auth.backends.ModelBackend'
                 # TODO: Add ability to configure which authentication backend, in case of multiple options
+                if len(settings.AUTHENTICATION_BACKENDS) != 3:
+                    raise ImproperlyConfigured('Use of FdpLoginView assumes three authentication backends')
                 user.backend = settings.AUTHENTICATION_BACKENDS[0]
                 self.storage.authenticated_user = user
                 # sets the time of authentication to avoid a session expiry exception

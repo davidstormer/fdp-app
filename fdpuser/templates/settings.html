@@ -54,18 +54,23 @@
     <div class="clear"></div>
     {% endif %}
 
+    {% is_django_2fa_skipped_for_azure as can_skip_django_2fa %}
+    {% is_azure_authenticated user as is_user_azure_authenticated %}
+    {% if can_skip_django_2fa and is_user_azure_authenticated %}
+
+    {% else %}
     <div class="labelvalue">
         <a href="{% url 'two_factor:profile' %}">{% trans 'Manage Two-Factor Authentication' %}</a>
     </div>
     <div class="clear"></div>
+    {% endif %}
 
-    {% with has_password_reset=is_password_reset_configured %}
+    {% is_password_reset_configured as has_password_reset %}
     {% if has_password_reset and user.has_usable_password and user.has_changeable_password %}
     <div class="labelvalue">
         <a href="{% url 'fdpuser:confirm_password_change' %}">{% trans 'Change password' %}</a>
     </div>
     <div class="clear"></div>
     {% endif %}
-    {% endwith %}
 
 {% endblock %}

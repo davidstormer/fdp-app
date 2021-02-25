@@ -2962,5 +2962,27 @@ class AbstractConfiguration(models.Model):
         """
         return settings.EXT_AUTH == settings.AAD_EXT_AUTH
 
+    @classmethod
+    def skip_django_2fa_for_azure(cls):
+        """ Checks whether the Django implemented 2FA verification step can be skipped for users authenticated through
+        Azure Active Directory, since Azure offers its own implementation of 2FA.
+
+        By default all users authenticated through Azure Active Directory skip the Django implemented 2FA step with the
+        assumption that 2FA is already implemented through Azure.
+
+        :return: True if the Django implemented 2FA verification step can be skipped for users authenticated through
+        Azure Active Directory, false otherwise.
+        """
+        return cls.can_do_azure_active_directory() and True
+
+    @classmethod
+    def use_only_azure_active_directory(cls):
+        """ Checks whether the necessary settings have been configured to enforce user authentication only through
+        Azure Active Directory.
+
+        :return: True if user authentication is only through Azure Active Directory, false otherwise.
+        """
+        return cls.can_do_azure_active_directory() and settings.USE_ONLY_AZURE_AUTH
+
     class Meta:
         abstract = True

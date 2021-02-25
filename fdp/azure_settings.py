@@ -9,11 +9,12 @@ Make any customizations in the main settings.py file.
 Used to define default settings file to configure hosting in a Microsoft Azure environment.
 
 """
+from .constants import CONST_AZURE_AUTH_BACKEND
 from .base_settings import *
 from django.core.management.utils import get_random_secret_key
 from base64 import b64encode
 from os import urandom
-import logging
+
 
 # Specifies that FDP is configured for hosting in Microsoft Azure environment
 USE_AZURE_SETTINGS = True
@@ -223,6 +224,8 @@ if EXT_AUTH == AAD_EXT_AUTH:
         EXT_AUTH = NO_EXT_AUTH
     # only continue configuring support for Azure Active Directory, if the client and tenant IDs were retrieved
     else:
+        # Replace Django only 2FA with both Django and Azure 2FA
+        MIDDLEWARE = FIRST_MIDDLEWARE + ['fdp.middleware.azure_middleware.AzureOTPMiddleware'] + LAST_MIDDLEWARE
         INSTALLED_APPS.append(
             # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
             'social_django'
@@ -236,8 +239,8 @@ if EXT_AUTH == AAD_EXT_AUTH:
         )
         CSP_FORM_ACTION = CSP_FORM_ACTION + ('https://www.office.com/', 'https://login.microsoftonline.com/',)
         # See: https://python-social-auth.readthedocs.io/en/latest/backends/azuread.html
-        # Ensure that the Django default authentication backend 'django.contrib.auth.backends.ModelBackend' is first
-        AUTHENTICATION_BACKENDS.append('social_core.backends.azuread_tenant.AzureADTenantOAuth2')
+        # Ensure that the Django default authentication backend 'django.contrib.auth.backends.ModelBackend' is before
+        AUTHENTICATION_BACKENDS.append(CONST_AZURE_AUTH_BACKEND)
         # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
         # Enable JSONB field to store extracted extra data in PostgreSQL
         SOCIAL_AUTH_POSTGRES_JSONFIELD = True
@@ -353,7 +356,6 @@ DATABASES['default'] = {
     )
 }
 
-logging.info(DATABASES['default'])
 
 # A URL-safe base64-encoded 32-byte key that is used by the Fernet symmetric encryption algorithm
 # Used to encrypt and decrypt query string parameters
