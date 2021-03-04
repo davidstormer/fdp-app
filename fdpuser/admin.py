@@ -101,14 +101,22 @@ class FdpUserAdmin(FdpInheritableAdmin, UserAdmin):
         :return: List or tuple of read only field names.
         """
         readonly_fields = super(FdpUserAdmin, self).get_readonly_fields(request=request, obj=obj)
-        is_superuser_field = 'is_superuser'
-        # user is not a host user or super user, so make is host and FDP organization fields read-only
-        # also make is_superuser field read-only
-        if not (request.user.is_host or request.user.is_superuser):
-            return [*readonly_fields, 'is_host', 'fdp_organization', is_superuser_field]
-        # otherwise, just make is_superuser field read-only
+        # these fields are read-only for all users
+        readonly_fields_for_all = [*readonly_fields, 'is_superuser']
+        user = request.user
+        # user is a superuser, so read-only fields are: defaults and is_superuser
+        if user.is_superuser:
+            return readonly_fields_for_all
+        # user is not a super, so read-only fields will include only_external_auth
         else:
-            return [*readonly_fields, is_superuser_field]
+            readonly_fields_for_not_super_user = [*readonly_fields_for_all, 'only_external_auth']
+            # user is not a super user but is a host administrator
+            if user.is_host:
+                return readonly_fields_for_not_super_user
+            # user is not a super user and is not a host administrator (i.e. user is guest administrator), so read-only
+            # fields will also include is_host and FDP organization
+            else:
+                return [*readonly_fields_for_not_super_user, 'is_host', 'fdp_organization']
 
 
 @admin.register(PasswordReset)
