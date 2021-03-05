@@ -1,7 +1,7 @@
 from django.test import Client
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
-from bulk.models import BulkImport, FdpImportFile, FdpImportMapping
+from bulk.models import BulkImport, FdpImportFile, FdpImportMapping, FdpImportRun
 from inheritable.models import AbstractUrlValidator
 from inheritable.tests import AbstractTestCase
 from fdpuser.models import FdpUser, FdpOrganization
@@ -18,6 +18,8 @@ class BulkTestCase(AbstractTestCase):
 
         :return: Nothing.
         """
+        # skip setup and tests unless configuration is compatible
+        super().setUp()
         self._fdp_import_file = FdpImportFile.objects.create(
             file='{b}x.csv'.format(b=AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL)
         )
@@ -74,7 +76,7 @@ class BulkTestCase(AbstractTestCase):
         guest_admin.full_clean()
         guest_admin.save()
         # cycle through all models to test
-        for model_to_test in [BulkImport, FdpImportFile, FdpImportMapping]:
+        for model_to_test in [BulkImport, FdpImportFile, FdpImportMapping, FdpImportRun]:
             meta = getattr(model_to_test, '_meta')
             model_name = meta.model_name
             url = reverse('admin:{app}_{model_to_test}_changelist'.format(app=meta.app_label, model_to_test=model_name))

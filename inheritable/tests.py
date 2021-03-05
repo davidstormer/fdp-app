@@ -3,7 +3,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.util import random_hex
 from django_otp.oath import totp
 from django.utils.translation import ugettext_lazy as _
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.conf import settings
 from fdpuser.models import FdpUser
 from .models import AbstractUrlValidator
@@ -238,7 +238,7 @@ class AbstractTestCase(TestCase):
             _is_admin_accessible_key: True
         },
         {
-            _url_key: reverse('fdpuser:confirm_password_change'),
+            _url_key: reverse_lazy('fdpuser:confirm_password_change'),
             _label: _('Confirm Password Change'),
             _is_anonymous_accessible_key: False,
             _is_staff_accessible_key: True,
@@ -259,7 +259,7 @@ class AbstractTestCase(TestCase):
             _is_admin_accessible_key: True
         },
         {
-            _url_key: reverse('password_reset'),
+            _url_key: reverse_lazy('password_reset'),
             _label: _('Do Password Reset'),
             _is_anonymous_accessible_key: True,
             _is_staff_accessible_key: True,
@@ -280,6 +280,18 @@ class AbstractTestCase(TestCase):
             _is_admin_accessible_key: True
         },
     ]
+
+    def setUp(self):
+        """ Ensures that automated tests are skipped unless configuration is set to local development environment.
+
+        :return: Nothing.
+        """
+        # automated tests will be skipped unless configuration is for local development
+        if not settings.USE_LOCAL_SETTINGS:
+            print(_('Skipping tests in {t}'.format(t=self.__class__.__name__)))
+            self.skipTest(reason=_('Automated tests will only run in a local development environment'))
+        # configuration is for local development
+        super().setUp()
 
     def _create_fdp_user(self, is_host, is_administrator, is_superuser, password=None, email=None, email_counter=None):
         """ Create a FDP user in the test database.
