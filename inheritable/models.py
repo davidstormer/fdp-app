@@ -2942,9 +2942,8 @@ class AbstractConfiguration(models.Model):
 
         :return: True if password resets are possible, false otherwise.
         """
-        # password resets can be performed if in debug mode OR
-        return settings.DEBUG or (
-
+        # password resets can be performed if configured for local development OR reCAPTCHA and email are defined
+        return getattr(settings, 'USE_LOCAL_SETTINGS', False) or (
             (
                 # if both public and private reCAPTCHA keys are defined, AND
                 settings.RECAPTCHA_PUBLIC_KEY and settings.RECAPTCHA_PRIVATE_KEY

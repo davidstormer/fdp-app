@@ -19,7 +19,7 @@ class AbstractTestCase(TestCase):
     #: Dictionary of keyword arguments that can be expanded to specify a guest administrator when creating a user.
     _guest_admin_dict = {'is_host': False, 'is_administrator': True, 'is_superuser': False}
 
-    #: Dictionary of keyword arguments that can be expanded to specify a host administrator when createing a user.
+    #: Dictionary of keyword arguments that can be expanded to specify a host administrator when creating a user.
     _host_admin_dict = {'is_host': True, 'is_administrator': True, 'is_superuser': False}
 
     #: Key indicating whether confidentiable object is restricted to administrator only or not.
@@ -288,7 +288,7 @@ class AbstractTestCase(TestCase):
         """
         # automated tests will be skipped unless configuration is for local development
         if not settings.USE_LOCAL_SETTINGS:
-            print(_('Skipping tests in {t}'.format(t=self.__class__.__name__)))
+            print(_('\nSkipping tests in {t}'.format(t=self.__class__.__name__)))
             self.skipTest(reason=_('Automated tests will only run in a local development environment'))
         # configuration is for local development
         super().setUp()

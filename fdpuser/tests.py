@@ -44,6 +44,8 @@ class FdpUserTestCase(AbstractTestCase):
 
         :return: Nothing.
         """
+        # skip setup and tests unless configuration is compatible
+        super().setUp()
         environ[self._recaptcha] = 'True'
 
     def tearDown(self):

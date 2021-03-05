@@ -75,6 +75,8 @@ class ChangingTestCase(AbstractTestCase):
 
         :return: Nothing.
         """
+        # skip setup and tests unless configuration is compatible
+        super().setUp()
         self.assertTrue(PersonRelationshipType.objects.all().exists())
         self.assertTrue(ContentIdentifierType.objects.all().exists())
         self.assertTrue(Allegation.objects.all().exists())

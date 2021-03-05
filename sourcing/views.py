@@ -30,7 +30,7 @@ class DownloadAttachmentView(SecuredSyncView):
             if file_field_value and not filtered_queryset.filter(file=file_field_value).exists():
                 raise Exception(_('User does not have access to attachment'))
             # if hosted in Microsoft Azure, storing attachments in an Azure Storage account is required
-            if getattr(settings, 'USE_AZURE_SETTINGS'):
+            if getattr(settings, 'USE_AZURE_SETTINGS', False):
                 return self.serve_azure_storage_static_file(name=file_field_value)
             # otherwise use default mechanism to serve files
             else:

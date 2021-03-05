@@ -38,6 +38,8 @@ class CoreTestCase(AbstractTestCase):
 
         :return: Nothing.
         """
+        # skip setup and tests unless configuration is compatible
+        super().setUp()
         self.assertTrue(PersonIdentifierType.objects.all().exists())
         self.assertTrue(Title.objects.all().exists())
         self.assertTrue(Grouping.objects.all().exists())

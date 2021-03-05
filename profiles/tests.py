@@ -170,6 +170,8 @@ class ProfileTestCase(AbstractTestCase):
 
         :return: Nothing.
         """
+        # skip setup and tests unless configuration is compatible
+        super().setUp()
         self.assertTrue(PersonRelationshipType.objects.all().exists())
         self.assertTrue(ContentIdentifierType.objects.all().exists())
 

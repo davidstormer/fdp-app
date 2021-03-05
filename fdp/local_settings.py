@@ -108,6 +108,8 @@ QUERYSTRING_PASSWORD = get_from_environment_var_or_conf_file(
 # Google reCAPTCHA using Django-reCAPTCHA package
 # See: https://github.com/praekelt/django-recaptcha
 # See: https://www.google.com/recaptcha
+del RECAPTCHA_PUBLIC_KEY
+del RECAPTCHA_PRIVATE_KEY
 # Google provides test keys which are set as the default for RECAPTCHA_PUBLIC_KEY and RECAPTCHA_PRIVATE_KEY.
 # These cannot be used in production since they always validate to true and a warning will be shown on the reCAPTCHA.
 # To bypass the security check that prevents the test keys from being used unknowingly
