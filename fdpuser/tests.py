@@ -1,24 +1,34 @@
-from django.test import Client
+from django.test import Client, RequestFactory
 from django.utils.translation import ugettext_lazy as _
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch
 from django.core.files import File
+from django.contrib import admin
+from django.conf import settings
+from django.apps import apps
+from django.views.generic.base import RedirectView
 from .models import FdpUser, PasswordReset, FdpOrganization, FdpCSPReport
 from .forms import FdpUserCreationForm, FdpUserChangeForm
-from bulk.models import BulkImport, FdpImportFile, FdpImportMapping
-from inheritable.tests import AbstractTestCase
+from .views import FdpLoginView
+from bulk.models import BulkImport, FdpImportFile, FdpImportMapping, FdpImportRun
+from bulk.views import DownloadImportFileView
+from inheritable.models import AbstractConfiguration
+from inheritable.tests import AbstractTestCase, local_test_settings_required, azure_test_settings_required, \
+    azure_only_test_settings_required
 from sourcing.models import Attachment, Content, ContentPerson
+from sourcing.views import DownloadAttachmentView
 from core.models import Person
+from core.views import DownloadPersonPhotoView
 from profiles.models import CommandSearch, CommandView, OfficerSearch, OfficerView
 from verifying.models import VerifyContentCase, VerifyPerson, VerifyType
-from django.conf import settings
+from fdp.configuration.abstract.constants import CONST_AZURE_AUTH_APP
+from fdp.urlconf.constants import CONST_TWO_FACTOR_PROFILE_URL_NAME, CONST_LOGIN_URL_NAME
+from unittest.mock import patch as mock_patch
 from os import environ
 from data_wizard.sources.models import FileSource, URLSource
 from axes.models import AccessLog, AccessAttempt
 from two_factor.models import PhoneDevice
-#: TODO
-#: Disabled testing of these models if Django Social Auth is not installed/configured
-#: See https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
-# from social_django.models import Association, Nonce, UserSocialAuth
+from two_factor.views import LoginView
+from two_factor.admin import AdminSiteOTPRequired
 
 
 class FdpUserTestCase(AbstractTestCase):
@@ -38,6 +48,13 @@ class FdpUserTestCase(AbstractTestCase):
 
     (6) Test Guest Admin access to host-only views
 
+    (7) Test login view, 2FA, URL patterns and file serving for local development configuration
+
+    (8) Test login view, 2FA, URL patterns and file serving for Microsoft Azure configuration
+
+    (9) Test login view, 2FA, URL patterns and file serving for Microsoft Azure configuration with only AAD
+    authentication
+
     """
     def setUp(self):
         """ Configure RECPATCHA to be in test mode.
@@ -46,7 +63,14 @@ class FdpUserTestCase(AbstractTestCase):
         """
         # skip setup and tests unless configuration is compatible
         super().setUp()
+        # used to test password resets
         environ[self._recaptcha] = 'True'
+        # create a bulk import file
+        self._add_fdp_import_file()
+        # create a person photo
+        self._add_person_photo()
+        # create an attachment
+        self._add_attachment()
 
     def tearDown(self):
         """ Configure RECAPTCHA to no longer be in test mode.
@@ -61,6 +85,65 @@ class FdpUserTestCase(AbstractTestCase):
 
     #: Suffix for user email for user with incorrect organization.
     __wrong_org_suffix = '_wrong_org'
+
+    def __verify_user_cannot_log_in(self, c, user):
+        """ Verifies that user cannot log in through Django authentication.
+
+        :param c: Instantiated testing client for Django.
+        :param user: User to verify.
+        :return: Http response that is returned by GET request to access homepage.
+        """
+        # except 400 Bad Request, because view is not configured to handle POST request for login
+        response = self._do_django_username_password_authentication(
+            c=c,
+            username=user.email,
+            password=self._password,
+            login_status_code=400,
+            # if not specified, reverse will attempt to convert '/social/login/azu...'
+            override_login_url=reverse('two_factor:{n}'.format(n=CONST_LOGIN_URL_NAME))
+        )
+        # override and try anyway to force a login
+        response.client.force_login(user=user, backend=None)
+        # verify redirect to login screen
+        response = self._do_get(
+            c=response.client,
+            url='/',
+            expected_status_code=302,
+            login_startswith=reverse('two_factor:{n}'.format(n=CONST_LOGIN_URL_NAME))
+        )
+        return response
+
+    def __get_static_file_types(self, callable_name):
+        """ Retrieves a list of dictionaries representing types of static files that can be served by views for download
+        by the user.
+
+        :param callable_name: Name of method is called to serve static files.
+
+        :return: List of dictionaries.
+        """
+        return [
+            {
+                'type': 'bulk import',
+                'path_kwargs': {'path': self._get_fdp_import_file_file_path_for_view()},
+                'view_name': 'bulk:download_import_file',
+                'expected_callable': f'bulk.views.DownloadImportFileView.{callable_name}',
+                'view_class': DownloadImportFileView
+            },
+            {
+                'type': 'person photo',
+                'path_kwargs': {'path': self._get_person_photo_file_path_for_view()},
+                'view_name': 'core:download_person_photo',
+                'expected_callable': f'core.views.DownloadPersonPhotoView.{callable_name}',
+                'view_class': DownloadPersonPhotoView
+            },
+            {
+                'type': 'attachment',
+                'path_kwargs': {'path': self._get_attachment_file_path_for_view()},
+                'view_name': 'sourcing:download_attachment',
+                'expected_callable': f'sourcing.views.DownloadAttachmentView.{callable_name}',
+                'view_class': DownloadAttachmentView
+            }
+        ]
 
     def __check_emails_not_in_response(self, email, response_content):
         """ Checks that email addresses with all three suffixes are not appearing in the string representation of the
@@ -258,6 +341,105 @@ class FdpUserTestCase(AbstractTestCase):
         Attachment.objects.all().delete()
         Person.objects.all().delete()
 
+    @staticmethod
+    def tautology():
+        """ Always returns True.
+
+        Used to dynamically add a callable to the user instance, so that when is_verified() is called by the 2FA
+        middleware, the user is verified.
+
+        :return: Always true.
+        """
+        return True
+
+    def __check_azure_user_skips_2fa(self, has_django_auth_backend):
+        """ Checks authentication steps for a user who is expected to be authenticated through Azure Active Directory.
+
+        :param has_django_auth_backend: True if Django authentication backend is enabled, false if it is disabled.
+        :return: Nothing.
+        """
+        enable_2fa_txt = 'Enable 2FA'
+        azure_user = self._create_fdp_user(email_counter=FdpUser.objects.all().count() + 1, **self._host_admin_dict)
+        c = Client(**self._local_client_kwargs)
+        # force username/password authentication for newly added user, but 2FA is not yet validated
+        c.force_login(user=azure_user, backend=None)
+        # confirm user requires 2FA
+        try:
+            response = self._do_get(c=c, url='/', expected_status_code=403, login_startswith=None)
+            self.assertIn(enable_2fa_txt, str(response.content))
+        # if Django authentication backend is disabled, then NoReverseMatch is expected for the 'setup' pattern name
+        # (since 2FA is not fully configured)
+        except NoReverseMatch as err:
+            self.assertIn('setup', str(err))
+            # exception should only be raised if Django authentication backend is disabled
+            self.assertFalse(has_django_auth_backend)
+        # change user so that they are externally authenticable, and have a social auth link
+        azure_user.only_external_auth = True
+        azure_user.save()
+        user_social_auth_model = apps.get_model(CONST_AZURE_AUTH_APP, 'UserSocialAuth')
+        user_social_auth_model.objects.create(
+            user=azure_user,
+            uid=str(user_social_auth_model.objects.all().count()),
+            provider=AbstractConfiguration.azure_active_directory_provider
+        )
+        # confirm user does not require 2FA
+        response = self._do_get(c=c, url='/', expected_status_code=200, login_startswith=None)
+        self.assertNotIn(enable_2fa_txt, str(response.content))
+        # change user so that they are a superuser
+        azure_user.is_superuser = True
+        azure_user.save()
+        # confirm user cannot log in
+        try:
+            self._do_get(c=c, url='/', expected_status_code=403, login_startswith=None)
+        # if Django authentication backend is disabled, then NoReverseMatch is expected for the 'setup' pattern name
+        # (since 2FA is not fully configured)
+        except NoReverseMatch as err:
+            self.assertIn('setup', str(err))
+            # exception should only be raised if Django authentication backend is disabled
+            self.assertFalse(has_django_auth_backend)
+        # undo superuser change and reconfirm login is still possible
+        azure_user.is_superuser = False
+        azure_user.save()
+        response = self._do_get(c=c, url='/', expected_status_code=200, login_startswith=None)
+        self.assertNotIn(enable_2fa_txt, str(response.content))
+        # change user so that they are inactive
+        azure_user.is_active = False
+        azure_user.save()
+        # confirm user cannot log in
+        self._do_get(
+            c=c,
+            url='/',
+            expected_status_code=302,
+            login_startswith=reverse('two_factor:{n}'.format(n=CONST_LOGIN_URL_NAME))
+        )
+
+    def __check_callable_serving_static(self, user, path_kwargs, view_name, expected_callable, view_class):
+        """ Checks that the expected method is called while serving a static file for download.
+
+        Used to check how bulk import files, person photos and attachments are served for download in different
+        configurations.
+
+        :param user: User requesting to download static file.
+        :param path_kwargs: Dictionary of keyword arguments that can be expanded to define the path where the file
+        exists. Will be passed as a kwargs parameter in reverse(...).
+        :param view_name: Name of view that will be passed as a parameter into reverse(...) to serve file download.
+        :param expected_callable: Method that is expected to be called while serving the static file.
+        :param view_class: Class of view that will render the response while serving the static file.
+        :return: Nothing.
+        """
+        request = RequestFactory().get(reverse(view_name, kwargs=path_kwargs))
+        # add callable to ensure 2FA verification passes
+        setattr(user, 'is_verified', self.tautology)
+        request.user = user
+        with mock_patch(expected_callable) as mocked_callable:
+            # instantiate view
+            download_view = view_class.as_view()
+            # get method for view is called
+            download_view(request, **path_kwargs)
+            # assert that expected method was called during handling of GET request
+            mocked_callable.assert_called_once()
+
+    @local_test_settings_required
     def test_access_to_views(self):
         """ Test access to views:
                 (a) For all user types
@@ -280,7 +462,7 @@ class FdpUserTestCase(AbstractTestCase):
                 fdp_user = None
                 response = None
                 view_label = view_to_test[self._label]
-                client = Client(REMOTE_ADDR='127.0.0.1')
+                client = Client(**self._local_client_kwargs)
                 client.logout()
                 # create user and login for authenticated users
                 if not user_role[self._is_anonymous_key]:
@@ -371,6 +553,7 @@ class FdpUserTestCase(AbstractTestCase):
         self.__delete_data_for_officer_profile()
         print(_('\nSuccessfully finished test for access to views\n\n'))
 
+    @local_test_settings_required
     def test_password_reset_throttling(self):
         """ Test throttling for password reset
                 (a) For all user types based on IP address
@@ -386,7 +569,7 @@ class FdpUserTestCase(AbstractTestCase):
         chng_url = reverse('fdpuser:change_password')
         # test resetting passwords for all user types
         for j, user_role in enumerate(self._user_roles):
-            client = Client(REMOTE_ADDR='127.0.0.1')
+            client = Client(**self._local_client_kwargs)
             client.logout()
             # skip "creating" the anonymous user
             if not user_role[self._is_anonymous_key]:
@@ -486,6 +669,7 @@ class FdpUserTestCase(AbstractTestCase):
         self.assertEqual(FdpUser.objects.all().count(), 0)
         print(_('\nSuccessfully finished test for password reset and password change throttling\n\n'))
 
+    @local_test_settings_required
     def test_guest_admin_user_access(self):
         """ Test guest administrators accessing users for all permutations user roles.
 
@@ -690,6 +874,7 @@ class FdpUserTestCase(AbstractTestCase):
         print(_('\nSuccessfully finished test for guest administrators to '
                 'access users for all permutations of user roles\n\n'))
 
+    @local_test_settings_required
     def test_guest_admin_new_user(self):
         """ Test guest administrators creating new users.
 
@@ -729,6 +914,7 @@ class FdpUserTestCase(AbstractTestCase):
         self.assertEqual(with_org_created_user.fdp_organization, guest_admin_with_org.fdp_organization)
         print(_('\nSuccessfully finished test for guest administrators to create new users\n\n'))
 
+    @local_test_settings_required
     def test_admin_permission_escalation(self):
         """ Test administrators escalating permissions.
 
@@ -781,6 +967,7 @@ class FdpUserTestCase(AbstractTestCase):
         )
         print(_('\nSuccessfully finished test for administrators to escalate permissions\n\n'))
 
+    @local_test_settings_required
     def test_guest_admin_host_only_access(self):
         """ Test guest administrators accessing host-only views.
 
@@ -796,17 +983,21 @@ class FdpUserTestCase(AbstractTestCase):
         # cycle through all models to test
         for model_to_test in [
             PasswordReset, FdpOrganization, FdpCSPReport,
-            BulkImport, FdpImportFile, FdpImportMapping,
+            BulkImport, FdpImportFile, FdpImportMapping, FdpImportRun,
             FileSource, URLSource,
             AccessLog, AccessAttempt,
             PhoneDevice,
             CommandSearch, CommandView, OfficerSearch, OfficerView,
-            #: TODO
-            #: Disabled testing of these models if Django Social Auth is not installed/configured
-            #: See https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
-            # Association, Nonce, UserSocialAuth,
             VerifyContentCase, VerifyPerson, VerifyType
-        ]:
+        ] + (
+            [] if CONST_AZURE_AUTH_APP not in settings.INSTALLED_APPS else [
+                #: Django Social Auth package may not be installed
+                #: See https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+                apps.get_model(CONST_AZURE_AUTH_APP, 'Association'),
+                apps.get_model(CONST_AZURE_AUTH_APP, 'None'),
+                apps.get_model(CONST_AZURE_AUTH_APP, 'UserSocialAuth'),
+            ]
+        ):
             url = reverse(
                 'admin:{app}_{model_to_test}_changelist'.format(
                     app=model_to_test._meta.app_label,
@@ -825,3 +1016,199 @@ class FdpUserTestCase(AbstractTestCase):
                 login_startswith=None
             )
         print(_('\nSuccessfully finished test for guest administrators to access host-only views\n\n'))
+
+    @local_test_settings_required
+    def test_local_dev_configuration(self):
+        """ Test login view, 2FA, URL patterns and file serving for a configuration that is intended for a local
+        development environment.
+
+        :return: Nothing.
+        """
+        print(_('\nStarting test for login view, 2FA, URL patterns and '
+                'file serving for local development configuration'))
+        # test is only relevant for local development configuration
+        self.assertTrue(AbstractConfiguration.is_using_local_configuration())
+        self.assertFalse(AbstractConfiguration.is_using_azure_configuration())
+        print('Checking that view for login is from Django Two-Factor Authentication package')
+        c = Client(**self._local_client_kwargs)
+        # redirect to login expected
+        response = self._do_get(
+            c=c,
+            url='/',
+            expected_status_code=302,
+            login_startswith=reverse('two_factor:{n}'.format(n=CONST_LOGIN_URL_NAME))
+        )
+        # follow redirect
+        response = self._do_get(c=response.client, url=response.url, expected_status_code=200, login_startswith=None)
+        # assert that the default 2FA Login view is used to receive username and password
+        self._assert_class_based_view(response=response, expected_view=LoginView)
+        print('Checking that 2FA is encountered after Django authentication with username and password')
+        host_admin = self._create_fdp_user(email_counter=FdpUser.objects.all().count() + 1, **self._host_admin_dict)
+        user_kwargs = {'username': host_admin.email, 'password': self._password, 'login_status_code': 200}
+        self._create_2fa_record(user=host_admin)
+        response = self._do_django_username_password_authentication(c=response.client, **user_kwargs)
+        # default 2FA Login view is expected for OTP step
+        self._assert_2fa_step_in_login_view(response=response, expected_view=LoginView)
+        print('Checking that social-auth login is not defined')
+        self.assertRaises(
+            NoReverseMatch,
+            reverse,
+            'social:begin',
+            kwargs={'args': [AbstractConfiguration.azure_active_directory_provider]}
+        )
+        for static_file_type in self.__get_static_file_types(callable_name='serve_static_file'):
+            print('Checking that {t} files are served '
+                  'using serve_static_file(...) method'.format(t=static_file_type['type']))
+            self.__check_callable_serving_static(
+                user=host_admin,
+                path_kwargs=static_file_type['path_kwargs'],
+                view_name=static_file_type['view_name'],
+                expected_callable=static_file_type['expected_callable'],
+                view_class=static_file_type['view_class']
+            )
+        print('Checking that users with only_external_auth=True cannot log in with username and password')
+        host_admin.only_external_auth = True
+        host_admin.save()
+        response = self._do_django_username_password_authentication(c=response.client, **user_kwargs)
+        # default 2FA Login view is expected for username/password step
+        self._assert_username_and_password_step_in_login_view(response=response, expected_view=LoginView)
+        print('Checking that 2FA is enforced for the Admin site')
+        self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
+        print(_('\nSuccessfully finished test for '
+                'login view, 2FA, URL patterns and file serving for local development configuration\n\n'))
+
+    @azure_test_settings_required
+    def test_azure_configuration(self):
+        """ Test login view, 2FA, URL patterns and file serving for a configuration that is intended for a
+        Microsoft Azure environment.
+
+        User authentication occurs through BOTH the Django backend and Azure Active Directory.
+
+        Files are served through the Azure mechanism only.
+
+        :return: Nothing.
+        """
+        print(_('\nStarting test for login view, 2FA, URL patterns and '
+                'file serving for Microsoft Azure configuration'))
+        # test is only relevant for Microsoft Azure configuration
+        self.assertFalse(AbstractConfiguration.is_using_local_configuration())
+        self.assertTrue(AbstractConfiguration.is_using_azure_configuration())
+        self.assertTrue(AbstractConfiguration.can_do_azure_active_directory())
+        self.assertFalse(AbstractConfiguration.use_only_azure_active_directory())
+        print('Checking that view for login is from custom extension of Django Two-Factor Authentication package')
+        c = Client(**self._local_client_kwargs)
+        # redirect to login expected
+        response = self._do_get(
+            c=c,
+            url='/',
+            expected_status_code=302,
+            login_startswith=reverse('two_factor:{n}'.format(n=CONST_LOGIN_URL_NAME))
+        )
+        # follow redirect
+        response = self._do_get(c=response.client, url=response.url, expected_status_code=200, login_startswith=None)
+        # assert that the default 2FA Login view is used to receive username and password
+        self._assert_class_based_view(response=response, expected_view=FdpLoginView)
+        print('Checking that 2FA is encountered after Django authentication with username and password')
+        host_admin = self._create_fdp_user(email_counter=FdpUser.objects.all().count() + 1, **self._host_admin_dict)
+        # user is authenticable by Django backend
+        self.assertFalse(FdpUser.is_user_azure_authenticated(user=host_admin))
+        user_kwargs = {'username': host_admin.email, 'password': self._password, 'login_status_code': 200}
+        self._create_2fa_record(user=host_admin)
+        response = self._do_django_username_password_authentication(c=response.client, **user_kwargs)
+        self.assertEqual(response.status_code, 200)
+        # default 2FA Login view is expected for OTP step
+        self._assert_2fa_step_in_login_view(response=response, expected_view=FdpLoginView)
+        print('Checking that social-auth login is defined')
+        self.assertIsNotNone(reverse('social:begin', args=[AbstractConfiguration.azure_active_directory_provider]))
+        for static_file_type in self.__get_static_file_types(callable_name='serve_azure_storage_static_file'):
+            print('Checking that {t} files are served '
+                  'using serve_azure_storage_static_file(...) method'.format(t=static_file_type['type']))
+            self.__check_callable_serving_static(
+                user=host_admin,
+                path_kwargs=static_file_type['path_kwargs'],
+                view_name=static_file_type['view_name'],
+                expected_callable=static_file_type['expected_callable'],
+                view_class=static_file_type['view_class']
+            )
+        print('Checking that users with only_external_auth=True cannot log in with username and password')
+        host_admin.only_external_auth = True
+        host_admin.save()
+        response = self._do_django_username_password_authentication(c=response.client, **user_kwargs)
+        # default 2FA Login view is expected for username/password step
+        self._assert_username_and_password_step_in_login_view(response=response, expected_view=FdpLoginView)
+        print('Checking that 2FA is enforced for the Admin site')
+        self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
+        print('Checking that Azure users skip 2FA step')
+        self.__check_azure_user_skips_2fa(has_django_auth_backend=True)
+        print(_('\nSuccessfully finished test for '
+                'login view, 2FA, URL patterns and file serving for Microsoft Azure configuration\n\n'))
+
+    @azure_only_test_settings_required
+    def test_azure_only_configuration(self):
+        """ Test login view, 2FA, URL patterns and file serving for a configuration that is intended for a
+        Microsoft Azure environment.
+
+        User authentication occurs through ONLY Azure Active Directory.
+
+        Files are served through the Azure mechanism only.
+
+        :return: Nothing.
+        """
+        print(_('\nStarting test for login view, 2FA, URL patterns and '
+                'file serving for "only" Microsoft Azure configuration'))
+        # test is only relevant for "only" Microsoft Azure configuration
+        self.assertFalse(AbstractConfiguration.is_using_local_configuration())
+        self.assertTrue(AbstractConfiguration.is_using_azure_configuration())
+        self.assertTrue(AbstractConfiguration.can_do_azure_active_directory())
+        self.assertTrue(AbstractConfiguration.use_only_azure_active_directory())
+        print('Checking that view for login redirects to social auth with Azure Active Directory provider')
+        c = Client(**self._local_client_kwargs)
+        # redirect to login expected, which is itself a redirect view
+        response = self._do_get(
+            c=c,
+            url='/',
+            expected_status_code=302,
+            login_startswith=reverse('two_factor:{n}'.format(n=CONST_LOGIN_URL_NAME))
+        )
+        # redirect to social auth login expected
+        response = self._do_get(
+            c=response.client,
+            url=response.url,
+            expected_status_code=302,
+            login_startswith=reverse('social:begin', args=[AbstractConfiguration.azure_active_directory_provider])
+        )
+        self._assert_class_based_view(response=response, expected_view=RedirectView)
+        print('Checking that non-Azure users cannot log in')
+        host_admin = self._create_fdp_user(email_counter=FdpUser.objects.all().count() + 1, **self._host_admin_dict)
+        self.assertFalse(FdpUser.is_user_azure_authenticated(user=host_admin))
+        self._create_2fa_record(user=host_admin)
+        response = self.__verify_user_cannot_log_in(c=response.client, user=host_admin)
+        print('Checking that social-auth login is defined')
+        self.assertIsNotNone(reverse('social:begin', args=[AbstractConfiguration.azure_active_directory_provider]))
+        for static_file_type in self.__get_static_file_types(callable_name='serve_azure_storage_static_file'):
+            print('Checking that {t} files are served '
+                  'using serve_azure_storage_static_file(...) method'.format(t=static_file_type['type']))
+            self.__check_callable_serving_static(
+                user=host_admin,
+                path_kwargs=static_file_type['path_kwargs'],
+                view_name=static_file_type['view_name'],
+                expected_callable=static_file_type['expected_callable'],
+                view_class=static_file_type['view_class']
+            )
+        print('Checking that users with only_external_auth=True cannot log in with username and password')
+        host_admin.only_external_auth = True
+        host_admin.save()
+        response = self.__verify_user_cannot_log_in(c=response.client, user=host_admin)
+        print('Checking that Django Two-Factor Authentication profile is not defined')
+        self._do_get(
+            c=response.client,
+            url=reverse('two_factor:{p}'.format(p=CONST_TWO_FACTOR_PROFILE_URL_NAME)),
+            expected_status_code=404,
+            login_startswith=None
+        )
+        print('Checking that 2FA is enforced for the Admin site')
+        self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
+        print('Checking that Azure users skip 2FA step')
+        self.__check_azure_user_skips_2fa(has_django_auth_backend=False)
+        print(_('\nSuccessfully finished test for '
+                'login view, 2FA, URL patterns and file serving for "only" Microsoft Azure configuration\n\n'))

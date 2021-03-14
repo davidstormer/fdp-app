@@ -11,7 +11,7 @@ Used to define default settings file to configure hosting in a local development
 Not intended for use in a production environment.
 
 """
-from .base_settings import *
+from fdp.configuration.abstract.base_settings import *
 
 
 # Specifies that FDP is configured for hosting in a local development environment

@@ -28,7 +28,8 @@
               <ul class="errorlist nonfield">
                 <li>
                   {% translate 'Azure Active Directory users should use the' %}
-                  <a href="{% url 'social:begin' 'azuread-tenant-oauth2' %}">{% translate 'login link' %}</a>
+                  {% azure_ad_provider as azure_provider %}
+                  <a href="{% url 'social:begin' azure_provider %}">{% translate 'login link' %}</a>
                   {% translate 'below' %}
                 </li>
               </ul>
@@ -51,7 +52,8 @@
             {% endif %}
             {% is_azure_active_directory_configured as has_azure_ad_auth %}
             {% if has_azure_ad_auth %}
-            <a class="aadlogin" href="{% url 'social:begin' 'azuread-tenant-oauth2' %}">Login with Azure Active Directory</a>
+            {% azure_ad_provider as aad_provider %}
+            <a class="aadlogin" href="{% url 'social:begin' aad_provider %}">Login with Azure Active Directory</a>
             {% endif %}
             <div style="clear:both;"></div>
           </div>

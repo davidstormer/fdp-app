@@ -9,8 +9,9 @@ Make any customizations in the main settings.py file.
 Used to define default settings file to configure hosting in a Microsoft Azure environment.
 
 """
-from .constants import CONST_AZURE_AUTH_BACKEND
-from .base_settings import *
+from fdp.configuration.abstract.constants import CONST_AZURE_AUTH_BACKEND, CONST_AZURE_OTP_MIDDLEWARE, \
+    CONST_AZURE_AUTH_APP, CONST_AZURE_TEMPLATE_CONTEXT_PROCESSORS
+from fdp.configuration.abstract.base_settings import *
 from django.core.management.utils import get_random_secret_key
 from base64 import b64encode
 from os import urandom
@@ -224,19 +225,10 @@ if EXT_AUTH == AAD_EXT_AUTH:
         EXT_AUTH = NO_EXT_AUTH
     # only continue configuring support for Azure Active Directory, if the client and tenant IDs were retrieved
     else:
-        # Replace Django only 2FA with both Django and Azure 2FA
-        MIDDLEWARE = FIRST_MIDDLEWARE + ['fdp.middleware.azure_middleware.AzureOTPMiddleware'] + LAST_MIDDLEWARE
-        INSTALLED_APPS.append(
-            # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
-            'social_django'
-        )
-        TEMPLATE_CONTEXT_PROCESSORS.extend(
-            [
-                # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect'
-            ]
-        )
+        # Replace Django only 2FA with both Django 2FA and Azure 2FA
+        MIDDLEWARE = FIRST_MIDDLEWARE + CONST_AZURE_OTP_MIDDLEWARE + LAST_MIDDLEWARE
+        INSTALLED_APPS.append(CONST_AZURE_AUTH_APP)
+        TEMPLATE_CONTEXT_PROCESSORS.extend(CONST_AZURE_TEMPLATE_CONTEXT_PROCESSORS)
         CSP_FORM_ACTION = CSP_FORM_ACTION + ('https://www.office.com/', 'https://login.microsoftonline.com/',)
         # See: https://python-social-auth.readthedocs.io/en/latest/backends/azuread.html
         # Ensure that the Django default authentication backend 'django.contrib.auth.backends.ModelBackend' is before

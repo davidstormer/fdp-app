@@ -1,6 +1,7 @@
-{% load i18n admin_urls %}
+{% load i18n admin_urls fdp_extras %}
 
-    <form class="logout" action="{% url 'social:disconnect' 'azuread-tenant-oauth2' %}" method="post">
+    {% azure_ad_provider as aad_provider %}
+    <form class="logout" action="{% url 'social:disconnect' aad_provider %}" method="post">
         {% csrf_token %}
         <button class="logout">&nbsp;{% trans 'Log out' %}</button>
     </form>

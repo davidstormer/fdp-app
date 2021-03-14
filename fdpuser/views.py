@@ -14,6 +14,7 @@ from .forms import FdpUserPasswordResetForm, FdpUserPasswordResetWithReCaptchaFo
 from two_factor.views import LoginView
 from two_factor.views.utils import class_view_decorator
 from django_otp import devices_for_user
+from formtools.wizard.views import normalize_name
 from csp.decorators import csp_update, csp_replace
 from time import time
 
@@ -285,6 +286,25 @@ class FdpLoginView(LoginView):
     For the Django Two-Factor package, see: https://django-two-factor-auth.readthedocs.io/
 
     """
+    def get_prefix(self, request, *args, **kwargs):
+        """ Sets the prefix that is used for the ManagementForm.
+
+        Implementation is taken from formtools.wizard.views.WizardView.get_prefix()
+
+        If get_prefix(...) is not redefined, then prefix generated will be 'fdp_login_view' instead of the
+        expected 'login_view'.
+
+        In some scenarios, such as when performing automated tests, this prefix mismatch invalidates the ManagementForm,
+        and so during a POST request submitted by Django's test client, a SuspiciousOperation may be raised with the
+        message: ManagementForm data is missing or has been tampered with.
+
+        :param request: Http request object.
+        :param args:
+        :param kwargs:
+        :return: Prefix used in ManagementForm.
+        """
+        return normalize_name(LoginView.__name__)
+
     @staticmethod
     def __check_if_user_externally_authenticated(request):
         """ Checks if a user is externally authenticated, such as through Azure Active Directory.

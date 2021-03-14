@@ -6,7 +6,7 @@ This file is imported and provides definitions for all settings files.
 
 """
 
-from .constants import CONST_AXES_AUTH_BACKEND
+from .constants import CONST_AXES_AUTH_BACKEND, CONST_DJANGO_AUTH_BACKEND
 from django.urls import reverse_lazy
 from django.core.exceptions import ImproperlyConfigured
 from pathlib import Path
@@ -15,7 +15,9 @@ import os
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# resolve() .parent (fdp) .parent (fdp) .parent (configuration) .parent (abstract)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+# .parent (root with conf)
 ONE_UP_BASE_DIR = BASE_DIR.parent
 CONF_DIR = ONE_UP_BASE_DIR / 'conf'
 
@@ -134,6 +136,29 @@ def load_python_package_module(module_as_str, err_msg, raise_exception):
     be returned.
     :return: Loaded module, or None if raise_exception is False and the module cannot be loaded.
     """
+    dot = '.'
+    # module_as_str = first_module.second_module.third_module...
+    if dot in module_as_str:
+        # split_modules = [first_module, second_module, third_module, ...]
+        split_modules = module_as_str.split(dot)
+        recombined_modules = ''
+        for split_module in split_modules[:-1]:
+            # recombined_modules = first_module
+            # recombined_modules = first_module.second_module
+            # recombined_modules = first_module.second_module.third_module
+            recombined_modules = split_module if not recombined_modules \
+                else '{r}.{s}'.format(r=recombined_modules, s=split_module)
+            # check for partial module specification
+            spec_for_recombined_modules = find_spec(recombined_modules)
+            # some parent package for request module is not installed
+            if not spec_for_recombined_modules:
+                # exception should be raised
+                if raise_exception:
+                    raise Exception(err_msg)
+                # fail silently
+                else:
+                    return None
+    # check for full module specification
     spec_for_module = find_spec(module_as_str)
     # package for requested module is not installed
     if not spec_for_module:
@@ -593,7 +618,7 @@ AUTHENTICATION_BACKENDS = [
     # Django Axes: https://django-axes.readthedocs.io/en/latest/
     CONST_AXES_AUTH_BACKEND,
     # Django's default database-driven authentication
-    'django.contrib.auth.backends.ModelBackend',
+    CONST_DJANGO_AUTH_BACKEND
 ]
 
 

@@ -1,6 +1,6 @@
 from django.utils.translation import ugettext_lazy as _
 from inheritable.models import AbstractUrlValidator
-from inheritable.tests import AbstractTestCase
+from inheritable.tests import AbstractTestCase, local_test_settings_required
 from fdpuser.models import FdpOrganization, FdpUser
 from core.models import Person
 from supporting.models import ContentIdentifierType, Allegation
@@ -756,6 +756,7 @@ class SourcingTestCase(AbstractTestCase):
         # remove content identifiers with different confidentiality levels
         self.__delete_content_identifiers_related_data()
 
+    @local_test_settings_required
     def test_admin_views(self):
         """ Test for Admin Changelist, Create Instance, Change Instance, Delete Instance and History Views all
         permutations of user roles, confidentiality levels and relevant models.
@@ -776,6 +777,7 @@ class SourcingTestCase(AbstractTestCase):
                 'delete instance and history views for all permutations of user roles, confidentiality levels and '
                 'relevant models\n\n'))
 
+    @local_test_settings_required
     def test_download_attachment_view(self):
         """ Test for Download Attachment View for all permutations of user roles and confidentiality levels.
 

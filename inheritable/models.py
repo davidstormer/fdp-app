@@ -7,6 +7,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
 from django.utils._os import safe_join
+from fdp.configuration.abstract.constants import CONST_AZURE_AD_PROVIDER
 from datetime import date
 from os import path
 from cryptography.fernet import Fernet
@@ -2934,16 +2935,32 @@ class AbstractConfiguration(models.Model):
     #: Value for provider that will define a social authentication record linked to a user authenticated who is
     #: through Azure Active Directory.
     #: See: https://python-social-auth.readthedocs.io/en/latest/backends/azuread.html
-    azure_active_directory_provider = 'azuread-tenant-oauth2'
+    azure_active_directory_provider = CONST_AZURE_AD_PROVIDER
 
     @staticmethod
-    def can_do_password_reset():
+    def is_using_local_configuration():
+        """ Checks whether settings intended for a local development environment have been configured.
+
+        :return: True if settings are intended for a local development environment, false otherwise.
+        """
+        return getattr(settings, 'USE_LOCAL_SETTINGS', False)
+
+    @staticmethod
+    def is_using_azure_configuration():
+        """ Checks whether settings intended for a Microsoft Azure environment have been configured.
+
+        :return: True if settings are intended for a Microsoft Azure environment, false otherwise.
+        """
+        return getattr(settings, 'USE_AZURE_SETTINGS', False)
+
+    @classmethod
+    def can_do_password_reset(cls):
         """ Checks whether the necessary settings have been configured to enable password resets.
 
         :return: True if password resets are possible, false otherwise.
         """
         # password resets can be performed if configured for local development OR reCAPTCHA and email are defined
-        return getattr(settings, 'USE_LOCAL_SETTINGS', False) or (
+        return cls.is_using_local_configuration() or (
             (
                 # if both public and private reCAPTCHA keys are defined, AND
                 settings.RECAPTCHA_PUBLIC_KEY and settings.RECAPTCHA_PRIVATE_KEY

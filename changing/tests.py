@@ -1,6 +1,6 @@
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
-from inheritable.tests import AbstractTestCase
+from inheritable.tests import AbstractTestCase, local_test_settings_required
 from fdpuser.models import FdpOrganization, FdpUser
 from core.models import Person, PersonRelationship, Incident, PersonIncident
 from sourcing.models import Content, ContentPerson, Attachment, ContentIdentifier
@@ -1299,6 +1299,7 @@ class ChangingTestCase(AbstractTestCase):
         # remove attachments with different confidentiality levels
         self.__delete_attachment_views_related_data()
 
+    @local_test_settings_required
     def test_changing_sync_views(self):
         """ Test for synchronous Changing Search Results views, Changing Update views, and Link Allegations/Penalties
         view for all permutations of user roles, confidentiality levels and relevant models.
@@ -1320,6 +1321,7 @@ class ChangingTestCase(AbstractTestCase):
                 'and Link Allegations/Penalties view for all permutations of user roles, confidentiality levels and '
                 'relevant models\n\n'))
 
+    @local_test_settings_required
     def test_changing_async_views(self):
         """ Test for Changing asynchronous views for all permutations of user roles, confidentiality levels and
         relevant models.

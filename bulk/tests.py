@@ -2,8 +2,7 @@ from django.test import Client
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from bulk.models import BulkImport, FdpImportFile, FdpImportMapping, FdpImportRun
-from inheritable.models import AbstractUrlValidator
-from inheritable.tests import AbstractTestCase
+from inheritable.tests import AbstractTestCase, local_test_settings_required
 from fdpuser.models import FdpUser, FdpOrganization
 
 
@@ -20,9 +19,8 @@ class BulkTestCase(AbstractTestCase):
         """
         # skip setup and tests unless configuration is compatible
         super().setUp()
-        self._fdp_import_file = FdpImportFile.objects.create(
-            file='{b}x.csv'.format(b=AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL)
-        )
+        # create a bulk import file
+        self._add_fdp_import_file()
 
     def __check_if_can_download_fdp_import_file(self, fdp_user):
         """ Checks whether an Fdp Import File can be downloaded for a particular user.
@@ -30,7 +28,7 @@ class BulkTestCase(AbstractTestCase):
         :param fdp_user: FDP user downloading Fdp Import File.
         :return: Nothing.
         """
-        client = Client(REMOTE_ADDR='127.0.0.1')
+        client = Client(**self._local_client_kwargs)
         client.logout()
         two_factor = self._create_2fa_record(user=fdp_user)
         # log in user
@@ -43,10 +41,7 @@ class BulkTestCase(AbstractTestCase):
             two_factor_status_code=200,
             will_login_succeed=True
         )
-        file_path = str(self._fdp_import_file.file)
-        if file_path.startswith(AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL):
-            file_path = file_path[len(AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL):]
-        url = reverse('bulk:download_import_file', kwargs={'path': file_path})
+        url = reverse('bulk:download_import_file', kwargs={'path': self._get_fdp_import_file_file_path_for_view()})
         try:
             self._do_get(c=response.client, url=url, expected_status_code=404, login_startswith=None)
         except Exception as err:
@@ -63,6 +58,7 @@ class BulkTestCase(AbstractTestCase):
         else:
             print(_('Fdp Import File download check is successful (exception was raised for guest administrator)'))
 
+    @local_test_settings_required
     def test_bulk_import_host_only_access(self):
         """ Test that only host administrators can access bulk import.
 

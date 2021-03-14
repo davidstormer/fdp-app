@@ -9,7 +9,8 @@ Make any customizations in the main settings.py file.
 Used to enforce user authentication only through the Microsoft Azure Active Directory backend.
 
 """
-from .constants import CONST_AXES_AUTH_BACKEND, CONST_AZURE_AUTH_BACKEND
+from fdp.configuration.abstract.constants import CONST_AXES_AUTH_BACKEND, CONST_AZURE_AUTH_BACKEND, \
+    CONST_AZURE_AD_PROVIDER
 from django.urls import reverse_lazy
 
 
@@ -18,7 +19,7 @@ USE_ONLY_AZURE_AUTH = True
 
 
 #: Always redirect the login URL to the Azure Active Directory login
-LOGIN_URL = reverse_lazy('social:begin', args=['azuread-tenant-oauth2'])
+LOGIN_URL = reverse_lazy('social:begin', args=[CONST_AZURE_AD_PROVIDER])
 
 
 #: Disable Django's default database-driven user authentication

@@ -5,9 +5,90 @@ from django_otp.oath import totp
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse, reverse_lazy
 from django.conf import settings
+from django.apps import apps
 from fdpuser.models import FdpUser
-from .models import AbstractUrlValidator
+from .models import AbstractUrlValidator, AbstractConfiguration
 from json import dumps
+
+
+def local_test_settings_required(func):
+    """ Retrieves a decorator method that allows tests to be skipped unless the necessary settings have been configured
+    for a local development environment.
+
+    :param func: Function that should be skipped unless the necessary settings are configured.
+    :return: Decorator.
+    """
+    def decorator(*args, **kwargs):
+        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a local
+        development environment.
+
+        :param args: Positional arguments for decorated test method.
+        :param kwargs: Keyword arguments for decorated test method.
+        :return: Nothing.
+        """
+        if AbstractConfiguration.is_using_local_configuration():
+            func(*args, **kwargs)
+        else:
+            print('\nSkipped {t}. It requires local test settings and can be run with the command: {c}'.format(
+                t=func.__name__, c='python manage.py test --settings=fdp.configuration.test.test_local_settings'))
+    return decorator
+
+
+def azure_test_settings_required(func):
+    """ Retrieves a decorator method that allows tests to be skipped unless the necessary settings have been configured
+    for a simulated Microsoft Azure hosting environment, including with authentication possible through BOTH Django
+    and Azure Active Directory.
+
+    :param func: Function that should be skipped unless the necessary settings are configured.
+    :return: Decorator.
+    """
+    def decorator(*args, **kwargs):
+        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a simulated
+        Microsoft Azure hosting environment, including with authentication possible through BOTH Django and Azure
+        Active Directory.
+
+        :param args: Positional arguments for decorated test method.
+        :param kwargs: Keyword arguments for decorated test method.
+        :return: Nothing.
+        """
+        if AbstractConfiguration.is_using_azure_configuration() \
+                and AbstractConfiguration.can_do_azure_active_directory() \
+                and not AbstractConfiguration.use_only_azure_active_directory():
+            func(*args, **kwargs)
+        else:
+            print('\nSkipped {t}. It requires Azure test settings and can be run with the command: {c}'.format(
+                t=func.__name__, c='python manage.py test --settings=fdp.configuration.test.test_azure_settings'))
+    return decorator
+
+
+def azure_only_test_settings_required(func):
+    """ Retrieves a decorator method that allows tests to be skipped unless the necessary settings have been configured
+    for a simulated Microsoft Azure hosting environment, including with authentication possible ONLY through Azure
+    Active Directory.
+
+    :param func: Function that should be skipped unless the necessary settings are configured.
+    :return: Decorator.
+    """
+    def decorator(*args, **kwargs):
+        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a simulated
+        Microsoft Azure hosting environment, including with authentication possible through ONLY Azure Active Directory.
+
+        :param args: Positional arguments for decorated test method.
+        :param kwargs: Keyword arguments for decorated test method.
+        :return: Nothing.
+        """
+        if AbstractConfiguration.is_using_azure_configuration() \
+                and AbstractConfiguration.can_do_azure_active_directory() \
+                and AbstractConfiguration.use_only_azure_active_directory():
+            func(*args, **kwargs)
+        else:
+            print(
+                '\nSkipped {t}. It requires Azure only test settings and can be run with the command: {c}'.format(
+                    t=func.__name__,
+                    c='python manage.py test --settings=fdp.configuration.test.test_azure_only_settings'
+                )
+            )
+    return decorator
 
 
 class AbstractTestCase(TestCase):
@@ -16,6 +97,9 @@ class AbstractTestCase(TestCase):
     Provides reusable methods to log in with 2FA support.
 
     """
+    #: Dictionary of keyword argument that can be expanded to initialize an instance of Django's Client(...) model.
+    _local_client_kwargs = {'REMOTE_ADDR': '127.0.0.1'}
+
     #: Dictionary of keyword arguments that can be expanded to specify a guest administrator when creating a user.
     _guest_admin_dict = {'is_host': False, 'is_administrator': True, 'is_superuser': False}
 
@@ -142,6 +226,12 @@ class AbstractTestCase(TestCase):
 
     #: Password used for users that are created.
     _password = 'AdminAdminAdmin'
+
+    #: HTML attributes expected if login view is rendered with the 2FA token verification step.
+    _token_step_attributes = 'name="login_view-current_step" value="token"'
+
+    #: HTML attributes expected if login view is rendered with the username and password verification step.
+    _username_password_step_attributes = 'name="login_view-current_step" value="auth"'
 
     #: Different user roles for FDP and their corresponding properties
     _user_roles = [
@@ -286,12 +376,142 @@ class AbstractTestCase(TestCase):
 
         :return: Nothing.
         """
-        # automated tests will be skipped unless configuration is for local development
-        if not settings.USE_LOCAL_SETTINGS:
+        # automated tests will be skipped unless configuration is for local development or simulating a host environment
+        if not (settings.USE_LOCAL_SETTINGS or getattr(settings, 'USE_TEST_AZURE_SETTINGS', False)):
             print(_('\nSkipping tests in {t}'.format(t=self.__class__.__name__)))
             self.skipTest(reason=_('Automated tests will only run in a local development environment'))
         # configuration is for local development
         super().setUp()
+
+    def _assert_2fa_step_in_login_view(self, response, expected_view):
+        """ Asserts that the 2FA step is rendered in the login view.
+
+        :param response: Http response to check.
+        :param expected_view: Class for view that is expected.
+        :return: Nothing.
+        """
+        self.assertIn(self._token_step_attributes, str(response.content))
+        self._assert_class_based_view(response=response, expected_view=expected_view)
+
+    def _assert_username_and_password_step_in_login_view(self, response, expected_view):
+        """ Asserts that the username/password step is rendered in the login view.
+
+        :param response: Http response to check.
+        :param expected_view: Class for view that is expected.
+        :return: Nothing.
+        """
+        response_content = str(response.content)
+        self.assertIn(self._username_password_step_attributes, response_content)
+        self.assertNotIn(self._token_step_attributes, response_content)
+        self._assert_class_based_view(response=response, expected_view=expected_view)
+
+    @staticmethod
+    def __get_file_path_for_view(instance, field_with_file, base_url):
+        """ Retrieves the file path from instance, so that it can be passed as a parameter and processed through a
+        download view.
+
+        :param instance: Instance that has the file as an attribute.
+        :param field_with_file: Name of attribute storing the file.
+        :param base_url: Base URL through which file is served for download.
+        :return: File path that can be passed as a parameter into a download view.
+        """
+        file_path = str(getattr(instance, field_with_file))
+        if file_path.startswith(base_url):
+            file_path = file_path[len(base_url):]
+        return file_path
+
+    def _add_fdp_import_file(self):
+        """ Creates a bulk import file in the database, and adds a reference to it through the
+        '_fdp_import_file' attribute.
+
+        :return: Nothing.
+        """
+        # loads the model dynamically
+        fdp_import_file_model = apps.get_model('bulk', 'FdpImportFile')
+        # number of import files that exist already
+        num_of_import_files = fdp_import_file_model.objects.all().count()
+        # create the file in the database with a unique name
+        self._fdp_import_file = fdp_import_file_model.objects.create(
+            file='{b}x{i}.csv'.format(
+                b=AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL,
+                i=num_of_import_files + 1
+            )
+        )
+
+    def _get_fdp_import_file_file_path_for_view(self):
+        """ Retrieves the file path of a bulk import file, so that it can be passed as a parameter and processed
+        through a view.
+
+        Uses the '_fdp_import_file' attribute that is added through the _add_fdp_import_file(...) method.
+
+        :return: File path that can be passed as a parameter into a view to download the bulk import file.
+        """
+        return self.__get_file_path_for_view(
+            instance=self._fdp_import_file,
+            field_with_file='file',
+            base_url=AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL
+        )
+
+    def _add_person_photo(self):
+        """ Creates a person photo in the database, and adds a reference to it through the '_person_photo' attribute.
+
+        :return: Nothing.
+        """
+        # loads the model dynamically and adds person
+        person_model = apps.get_model('core', 'Person')
+        person = person_model.objects.create(name='Unnamed', **self._is_law_dict)
+        # loads the model dynamically
+        person_photo_model = apps.get_model('core', 'PersonPhoto')
+        # number of import files that exist already
+        num_of_person_photos = person_photo_model.objects.all().count()
+        # create the person photo file in the database with a unique name
+        self._person_photo = person_photo_model.objects.create(
+            person=person,
+            photo='{b}x{i}.png'.format(b=AbstractUrlValidator.PERSON_PHOTO_BASE_URL, i=num_of_person_photos + 1)
+        )
+
+    def _get_person_photo_file_path_for_view(self):
+        """ Retrieves the file path of a person photo file, so that it can be passed as a parameter and processed
+        through a view.
+
+        Uses the '_person_photo' attribute that is added through the _add_person_photo(...) method.
+
+        :return: File path that can be passed as a parameter into a view to download the person photo file.
+        """
+        return self.__get_file_path_for_view(
+            instance=self._person_photo,
+            field_with_file='photo',
+            base_url=AbstractUrlValidator.PERSON_PHOTO_BASE_URL
+        )
+
+    def _add_attachment(self):
+        """ Creates an attachment in the database, and adds a reference to it through the '_attachment' attribute.
+
+        :return: Nothing.
+        """
+        # loads the model dynamically
+        attachment_model = apps.get_model('sourcing', 'Attachment')
+        # number of attachments that exist already
+        num_of_attachments = attachment_model.objects.all().count()
+        # create the attachment in the database with a unique name
+        self._attachment = attachment_model.objects.create(
+            file='{b}x{i}.txt'.format(b=AbstractUrlValidator.ATTACHMENT_BASE_URL, i=num_of_attachments + 1),
+            name='Unnamed'
+        )
+
+    def _get_attachment_file_path_for_view(self):
+        """ Retrieves the file path of an attachment, so that it can be passed as a parameter and processed
+        through a view.
+
+        Uses the '_attachment' attribute that is added through the _add_attachment(...) method.
+
+        :return: File path that can be passed as a parameter into a view to download the attachment file.
+        """
+        return self.__get_file_path_for_view(
+            instance=self._attachment,
+            field_with_file='file',
+            base_url=AbstractUrlValidator.ATTACHMENT_BASE_URL
+        )
 
     def _create_fdp_user(self, is_host, is_administrator, is_superuser, password=None, email=None, email_counter=None):
         """ Create a FDP user in the test database.
@@ -366,6 +586,26 @@ class AbstractTestCase(TestCase):
         self.assertTrue(TOTPDevice.objects.filter(pk=totp_device.pk, key=key).exists())
         return totp_device
 
+    def _do_django_username_password_authentication(
+            self, c, username, password, login_status_code, override_login_url=None
+    ):
+        """ Performs authentication with a username and password combination through the Django authentication backend.
+
+        :param c: Instantiated client object used to perform authentication.
+        :param username: Username for authentication attempt.
+        :param password: Password for authentication attempt.
+        :param override_login_url: An optional relative path to which the request containing the Django username and
+        password should be submitted. Will be ignored if None.
+        :return: Response returned by authentication attempt.
+        """
+        response = c.post(
+            reverse(settings.LOGIN_URL) if not override_login_url else override_login_url,
+            {'auth-username': username, 'auth-password': password, 'login_view-current_step': 'auth'},
+            follow=True
+        )
+        self.assertEqual(response.status_code, login_status_code)
+        return response
+
     def _do_login(
             self, c, username, password, two_factor, login_status_code, two_factor_status_code, will_login_succeed
     ):
@@ -380,12 +620,12 @@ class AbstractTestCase(TestCase):
         :param will_login_succeed: True if login is expected to succeed, false otherwise.
         :return: Response returned by login attempt or 2FA verification attempt.
         """
-        response = c.post(
-            reverse(settings.LOGIN_URL),
-            {'auth-username': username, 'auth-password': password, 'login_view-current_step': 'auth'},
-            follow=True
+        response = self._do_django_username_password_authentication(
+            c=c,
+            username=username,
+            password=password,
+            login_status_code=login_status_code
         )
-        self.assertEqual(response.status_code, login_status_code)
         if login_status_code == 200:
             if two_factor_status_code is not None and two_factor is not None:
                 offset = 0
@@ -463,7 +703,7 @@ class AbstractTestCase(TestCase):
         :param login_startswith: Url to which response may be redirected. Only used when HTTP status code is 302.
         :return: String representation of the HTTP response.
         """
-        client = Client(REMOTE_ADDR='127.0.0.1')
+        client = Client(**self._local_client_kwargs)
         client.logout()
         two_factor = self._create_2fa_record(user=fdp_user)
         response = self._do_login(
@@ -616,7 +856,7 @@ class AbstractTestCase(TestCase):
                     model_to_test=model_to_test._meta.model_name
                 )
             )
-            client = Client(REMOTE_ADDR='127.0.0.1')
+            client = Client(**self._local_client_kwargs)
             client.logout()
             two_factor = self._create_2fa_record(user=fdp_user)
             # log in user
@@ -681,7 +921,7 @@ class AbstractTestCase(TestCase):
                     model_to_test=model_to_test._meta.model_name
                 )
             )
-            client = Client(REMOTE_ADDR='127.0.0.1')
+            client = Client(**self._local_client_kwargs)
             client.logout()
             two_factor = self._create_2fa_record(user=fdp_user)
             # log in user
@@ -750,7 +990,7 @@ class AbstractTestCase(TestCase):
                 ),
                 args=(model_pk,)
             )
-            client = Client(REMOTE_ADDR='127.0.0.1')
+            client = Client(**self._local_client_kwargs)
             client.logout()
             two_factor = self._create_2fa_record(user=fdp_user)
             # log in user
@@ -824,7 +1064,7 @@ class AbstractTestCase(TestCase):
                     fdp_user=fdp_user,
                     fdp_org=fdp_org
                 )
-                client = Client(REMOTE_ADDR='127.0.0.1')
+                client = Client(**self._local_client_kwargs)
                 client.logout()
                 two_factor = self._create_2fa_record(user=fdp_user)
                 # log in user
@@ -905,7 +1145,7 @@ class AbstractTestCase(TestCase):
                     fdp_user=fdp_user,
                     fdp_org=fdp_org
                 )
-                client = Client(REMOTE_ADDR='127.0.0.1')
+                client = Client(**self._local_client_kwargs)
                 client.logout()
                 two_factor = self._create_2fa_record(user=fdp_user)
                 # log in user
@@ -1004,7 +1244,7 @@ class AbstractTestCase(TestCase):
                     fdp_user=fdp_user,
                     fdp_org=fdp_org
                 )
-                client = Client(REMOTE_ADDR='127.0.0.1')
+                client = Client(**self._local_client_kwargs)
                 client.logout()
                 two_factor = self._create_2fa_record(user=fdp_user)
                 # log in user
@@ -1553,7 +1793,7 @@ class AbstractTestCase(TestCase):
         :param fdp_org: FDP organization that may be added to the data.
         :return: Nothing.
         """
-        client = Client(REMOTE_ADDR='127.0.0.1')
+        client = Client(**self._local_client_kwargs)
         client.logout()
         two_factor = self._create_2fa_record(user=fdp_user)
         # log in user
@@ -1605,7 +1845,7 @@ class AbstractTestCase(TestCase):
         exception is expected.
         :return: Nothing.
         """
-        client = Client(REMOTE_ADDR='127.0.0.1')
+        client = Client(**self._local_client_kwargs)
         client.logout()
         two_factor = self._create_2fa_record(user=fdp_user)
         # log in user
@@ -1701,7 +1941,7 @@ class AbstractTestCase(TestCase):
         when POSTing to the search. Should not include the "search" parameter.
         :return: Nothing.
         """
-        client = Client(REMOTE_ADDR='127.0.0.1')
+        client = Client(**self._local_client_kwargs)
         client.logout()
         two_factor = self._create_2fa_record(user=fdp_user)
         # log in user
@@ -1791,7 +2031,7 @@ class AbstractTestCase(TestCase):
         :param expected_err_str: Error message that is expected when a user attempts to download an inaccessible file.
         :return: Nothing.
         """
-        client = Client(REMOTE_ADDR='127.0.0.1')
+        client = Client(**self._local_client_kwargs)
         client.logout()
         two_factor = self._create_2fa_record(user=fdp_user)
         # log in user
@@ -1815,9 +2055,11 @@ class AbstractTestCase(TestCase):
             )
             instance_pk = id_map_dict[confidential[self._name_key]]
             instance = model_to_download.objects.get(pk=instance_pk)
-            file_path = str(getattr(instance, field_with_file))
-            if file_path.startswith(base_url):
-                file_path = file_path[len(base_url):]
+            file_path = self.__get_file_path_for_view(
+                instance=instance,
+                field_with_file=field_with_file,
+                base_url=base_url
+            )
             url = reverse(view_name, kwargs={'path': file_path})
             try:
                 response = self._do_get(
@@ -1862,7 +2104,7 @@ class AbstractTestCase(TestCase):
         :param admin_only: True if view is only accessible by administrators, false otherwise.
         :return: Nothing.
         """
-        client = Client(REMOTE_ADDR='127.0.0.1')
+        client = Client(**self._local_client_kwargs)
         client.logout()
         two_factor = self._create_2fa_record(user=fdp_user)
         # log in user
@@ -1916,6 +2158,15 @@ class AbstractTestCase(TestCase):
                         a=_('does not appear') if not should_data_appear else _('appears')
                     ))
                 )
+
+    def _assert_class_based_view(self, response, expected_view):
+        """ Asserts that the response was rendered using an expected class-based view.
+
+        :param response: Http response to check.
+        :param expected_view: Class-based view that is expected to have rendered the Http response.
+        :return: Nothing.
+        """
+        self.assertEqual(response.resolver_match.func.__name__, expected_view.as_view().__name__)
 
     class UserRequest:
         """ Dummy class used to simulate a request object when only the user is needed.

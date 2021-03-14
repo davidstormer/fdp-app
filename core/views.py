@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from .models import PersonPhoto
-from inheritable.models import AbstractUrlValidator
+from inheritable.models import AbstractUrlValidator, AbstractConfiguration
 from inheritable.views import SecuredSyncView
 
 
@@ -30,7 +30,7 @@ class DownloadPersonPhotoView(SecuredSyncView):
             if file_field_value and not filtered_queryset.filter(photo=file_field_value).exists():
                 raise Exception(_('User does not have access to person photo'))
             # if hosted in Microsoft Azure, storing person photos in an Azure Storage account is required
-            if getattr(settings, 'USE_AZURE_SETTINGS', False):
+            if AbstractConfiguration.is_using_azure_configuration():
                 return self.serve_azure_storage_static_file(name=file_field_value)
             # otherwise use default mechanism to serve files
             else:

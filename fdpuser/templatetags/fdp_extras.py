@@ -45,3 +45,13 @@ def is_azure_authenticated(user):
     """
     user_model = get_user_model()
     return user_model.is_user_azure_authenticated(user=user)
+
+
+@register.simple_tag
+def azure_ad_provider():
+    """ Retrieves the provider that is used by Django Social Auth package to allow users to authenticate through Azure
+    Active Directory.
+
+    :return: Provider used by Django Social Auth package.
+    """
+    return AbstractConfiguration.azure_active_directory_provider

@@ -13,16 +13,16 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 #: To configure hosting in a local development environment, remove the comment from the below import statement.
 #: This should not be used in a production environment.
-from .local_settings import *
+from .configuration.local.local_settings import *
 
 
 #: To configure hosting in a Microsoft Azure environment, remove the comment from the below import statement.
-# from .azure_settings import *
+# from .configuration.azure.azure_settings import *
 
 
 #: To enforce user authentication only through the Azure Active Directory backend, remove the comment from the below
 # import statement.
-# from .azure_backend_only_settings import *
+# from .configuration.azure.azure_only_settings import *
 
 
 # Name of Python file containing class that defines person profile searches.
