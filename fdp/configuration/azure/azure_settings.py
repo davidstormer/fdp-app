@@ -362,6 +362,14 @@ if not QUERYSTRING_PASSWORD:
     )
 
 
+# Django Data Wizard: https://github.com/wq/django-data-wizard
+# Loads files from Azure Storage with an iterable wrapper, so that they can be processed and imported row-by-row.
+# If not set, a NotImplementedError is raised when creating a new Run.
+# The exception message is: 'This backend doesn't support absolute paths.'
+# Default: 'data_wizard.loaders.FileLoader'
+DATA_WIZARD['LOADER'] = 'fdp.backends.base_storage.FdpDataWizardFileLoader'
+
+
 #: Azure Storage for Django: https://django-storages.readthedocs.io/en/latest/backends/azure.html
 # Package-wide settings
 # This setting is the Windows Azure Storage Account name, which in many cases is also the first part of the url for

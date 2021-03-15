@@ -509,16 +509,6 @@ class AdminAsyncJsonView(AdminAccessMixin, View):
         return post_data
 
     @staticmethod
-    def get_post_file(request, key):
-        """ Retrieve the file that was sent via the POST method aynchronously.
-
-        :param request: Http request object containing the file uploaded via the POST method.
-        :param key: Key used to retrieve uploaded file from the request.FILES dictionary.
-        :return: Dictionary containing uploaded file and identifier to which it should be linked.
-        """
-        return {'file': request.FILES[key], 'id': request.POST['id']}
-
-    @staticmethod
     def render_to_response(json, **response_kwargs):
         """ Render the JSON formatted data as a response.
 
