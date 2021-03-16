@@ -15,7 +15,7 @@ from sourcing.models import Content, ContentIdentifier, ContentCase, ContentPers
     ContentPersonPenalty, Attachment
 from supporting.models import County, GroupingRelationshipType, PersonIdentifierType, Trait, Title, IncidentTag, \
     Location, EncounterReason, State, ContentIdentifierType, ContentCaseOutcome, AllegationOutcome, Allegation, \
-    ContentType
+    ContentType, PersonGroupingType
 from rest_framework.serializers import ModelSerializer, CharField, EmailField
 from rest_framework.fields import empty
 from datetime import datetime
@@ -67,6 +67,10 @@ class FdpModelSerializer(ModelSerializer):
     abstract_exact_date_bounded_excluded_fields = [
         'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
     ]
+
+    #: Fields for AbstractAsOfDateBounded models that should be excluded from the list of mappable target serializer
+    # fields.
+    abstract_as_of_date_bounded_excluded_fields = abstract_exact_date_bounded_excluded_fields + ['as_of']
 
     def create(self, validated_data):
         """ Creates a new record and records its details in the bulk import table.
@@ -428,6 +432,32 @@ class FdpModelSerializer(ModelSerializer):
         else:
             instance = model.objects.get(**filter_dict)
         return instance
+
+    def _validate_date(self, custom_date_field, model_date_field_prefix, model_alt_date_field_prefix=None):
+        """ Validates a date field.
+
+        If validated, splits field into its individual date components.
+
+        :param custom_date_field: Name of custom field that contains full date. An example may be "start_date".
+        :param model_date_field_prefix: Prefix that defines the individual date component fields on the model.
+        An example may be "start" for "start_year", "start_month" and "start_day" component fields.
+        :param model_alt_date_field_prefix: Prefix that defines an alternative collection of individual date component
+        fields on the model. An example may be "end" for "end_year", "end_month", "end_day" component fields. Will be
+        ignored if not defined.
+        :return: Nothing.
+        """
+        date_as_str = self.validated_data.pop(custom_date_field, '')
+        if date_as_str:
+            date_as_date = self._convert_string_to_date(date_str_to_convert=date_as_str)
+            # required components (e.g. starting dates or single dates)
+            self._validated_data['{p}_year'.format(p=model_date_field_prefix)] = date_as_date.year
+            self._validated_data['{p}_month'.format(p=model_date_field_prefix)] = date_as_date.month
+            self._validated_data['{p}_day'.format(p=model_date_field_prefix)] = date_as_date.day
+            # optional alternative components (e.g. ending dates)
+            if model_alt_date_field_prefix:
+                self._validated_data['{p}_year'.format(p=model_alt_date_field_prefix)] = date_as_date.year
+                self._validated_data['{p}_month'.format(p=model_alt_date_field_prefix)] = date_as_date.month
+                self._validated_data['{p}_day'.format(p=model_alt_date_field_prefix)] = date_as_date.day
 
     class FileToValidate:
         """ Dummy class used to simulate a FieldFile object so that validation can be performed on key parts of it
@@ -1098,16 +1128,11 @@ class IncidentAirTableSerializer(FdpModelSerializer):
 
         :return: Nothing.
         """
-        # incident date
-        incident_date_str = self.validated_data.pop('incident_date', '')
-        if incident_date_str:
-            incident_date = self._convert_string_to_date(date_str_to_convert=incident_date_str)
-            self._validated_data['start_year'] = incident_date.year
-            self._validated_data['end_year'] = incident_date.year
-            self._validated_data['start_month'] = incident_date.month
-            self._validated_data['end_month'] = incident_date.month
-            self._validated_data['start_day'] = incident_date.day
-            self._validated_data['end_day'] = incident_date.day
+        self._validate_date(
+            custom_date_field='incident_date',
+            model_date_field_prefix='start',
+            model_alt_date_field_prefix='end'
+        )
 
     def __validate_location(self):
         """ Validates the location field.
@@ -1840,6 +1865,7 @@ class CountyAirTableSerializer(FdpModelSerializer):
         """
         # link in state
         state_by_name_key = 'state_by_name'
+        # remove from initial data, so it is not included in the model validation
         state_by_name = self.initial_data.pop(state_by_name_key, None)
         # state is not defined
         if not (state_by_name or self.initial_data.get('state', None)):
@@ -1859,6 +1885,7 @@ class CountyAirTableSerializer(FdpModelSerializer):
         :param raise_exception: True if an exception should be raised during validation.
         :return: True if record is valid, false if record is invalid.
         """
+        # remove state by name, so it is excluded from the validation
         self.__validate_state()
         # validate record
         return super(CountyAirTableSerializer, self).is_valid(raise_exception=raise_exception)
@@ -1880,3 +1907,158 @@ class CountyAirTableSerializer(FdpModelSerializer):
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = FdpModelSerializer.excluded_fields + ['state']
+
+
+class PersonGroupingAirTableSerializer(FdpModelSerializer):
+    """ Serializer for person-groupings that were defined through the Air Table templates.
+
+    Attributes:
+        :person_by_external_id (str): Person matched by external person ID.
+        :grouping_by_external_id (str): Grouping matched by external grouping ID.
+        :type_by_name (str): Type matched by unique name or added if it does not exist.
+        :start_date (str): Start date for person-grouping.
+        :end_date (str): End date for person-grouping.
+    """
+    person_by_external_id = CharField(
+        required=False,
+        allow_null=True,
+        label=_('Person - match by external person ID')
+    )
+
+    grouping_by_external_id = CharField(
+        required=False,
+        allow_null=True,
+        label=_('Grouping - match by external grouping ID')
+    )
+
+    type_by_name = CharField(
+        required=False,
+        allow_null=True,
+        label=_('Type - match by unique name, or add if it does not exist')
+    )
+
+    start_date = CharField(
+        required=False,
+        allow_null=True,
+        label=_('Start date')
+    )
+
+    end_date = CharField(
+        required=False,
+        allow_null=True,
+        label=_('End date')
+    )
+
+    def __validate_person(self):
+        """ Validates the person field.
+
+        If validated, prepares the corresponding Person instance.
+
+        :return: Nothing.
+        """
+        # parse person matched by external person ID
+        person_external_id_key = 'person_by_external_id'
+        person_by_external_id = self.validated_data.pop(person_external_id_key, None)
+        if person_by_external_id:
+            person = self._match_by_external_id(
+                external_id_to_match=person_by_external_id, model=Person, validated_data_key=None
+            )
+            self.custom_validated_data['person_id'] = person.pk
+        else:
+            raise ValidationError('No external person ID was specified')
+
+    def __validate_grouping(self):
+        """ Validates the grouping field.
+
+        If validated, prepares the corresponding Grouping instance.
+
+        :return: Nothing.
+        """
+        # parse grouping matched by external grouping ID
+        grouping_external_id_key = 'grouping_by_external_id'
+        grouping_by_external_id = self.validated_data.pop(grouping_external_id_key, None)
+        if grouping_by_external_id:
+            grouping = self._match_by_external_id(
+                external_id_to_match=grouping_by_external_id, model=Grouping, validated_data_key=None
+            )
+            self.custom_validated_data['grouping_id'] = grouping.pk
+        else:
+            raise ValidationError('No external grouping ID was specified')
+
+    def __validate_type(self):
+        """ Validates the type by name field.
+
+        If validated, prepares them for the corresponding PersonGroupingType instance.
+
+        :return: Nothing.
+        """
+        # link in type
+        type_by_name_key = 'type_by_name'
+        # remove from initial data, so that is is not included in model validation
+        type_by_name = self.initial_data.pop(type_by_name_key, None)
+        if type_by_name:
+            stripped_type_by_name = str(type_by_name).strip()
+            person_grouping_type = self._add_if_does_not_exist(
+                model=PersonGroupingType,
+                filter_dict={'name__iexact': stripped_type_by_name},
+                add_dict={'name': stripped_type_by_name}
+            )
+            self.custom_validated_data['type_id'] = person_grouping_type.pk
+
+    def __validate_start_date(self):
+        """ Validates the start date field.
+
+        If validated, splits field into its individual date components.
+
+        :return: Nothing.
+        """
+        self._validate_date(custom_date_field='start_date', model_date_field_prefix='start')
+
+    def __validate_end_date(self):
+        """ Validates the end date field.
+
+        If validated, splits field into its individual date components.
+
+        :return: Nothing.
+        """
+        self._validate_date(custom_date_field='end_date', model_date_field_prefix='end')
+
+    def is_valid(self, raise_exception=False):
+        """ Validates for optional custom attributes.
+
+        :param raise_exception: True if an exception should be raised during validation.
+        :return: True if record is valid, false if record is invalid.
+        """
+        # remove type by name, so it is excluded from validation
+        self.__validate_type()
+        # validate record
+        is_valid = super(PersonGroupingAirTableSerializer, self).is_valid(raise_exception=raise_exception)
+        # record is valid
+        if is_valid:
+            self.__validate_person()
+            self.__validate_grouping()
+            self.__validate_start_date()
+            self.__validate_end_date()
+        return is_valid
+
+    def create(self, validated_data):
+        """ Creates a new person grouping and its related data.
+
+        :param validated_data: Dictionary of validated data used to creating new person grouping and its related data.
+        :return: Instance of newly created person grouping.
+        """
+        validated_data['type_id'] = self.custom_validated_data.get('type_id', None)
+        validated_data['person_id'] = self.custom_validated_data.get('person_id', None)
+        validated_data['grouping_id'] = self.custom_validated_data.get('grouping_id', None)
+        # validated data before values are popped from it
+        self.original_validated_data = validated_data.copy()
+        # instance has been added into bulk import table
+        instance = super(PersonGroupingAirTableSerializer, self).create(validated_data=validated_data)
+        return instance
+
+    class Meta:
+        model = PersonGrouping
+        #: Model fields that are excluded here must be passed into the validated_data dictionary through the
+        # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
+        exclude = FdpModelSerializer.excluded_fields + FdpModelSerializer.abstract_as_of_date_bounded_excluded_fields \
+            + ['type', 'person', 'grouping', 'is_inactive', 'description']
