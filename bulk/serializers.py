@@ -8,7 +8,7 @@ from django.conf import settings
 #: TODO: Confidentliaty filtering
 #: TODO from inheritable.models import Confidentiable
 from .models import BulkImport
-from inheritable.models import AbstractFileValidator, AbstractUrlValidator
+from inheritable.models import AbstractFileValidator, AbstractUrlValidator, AbstractConfiguration
 from core.models import Grouping, GroupingAlias, GroupingRelationship, Person, PersonAlias, PersonContact, \
     PersonIdentifier, PersonTitle, PersonGrouping, Incident, PersonIncident, PersonPhoto
 from sourcing.models import Content, ContentIdentifier, ContentCase, ContentPerson, ContentPersonAllegation, \
@@ -18,6 +18,7 @@ from supporting.models import County, GroupingRelationshipType, PersonIdentifier
     ContentType, PersonGroupingType
 from rest_framework.serializers import ModelSerializer, CharField, EmailField
 from rest_framework.fields import empty
+from reversion.revisions import create_revision
 from datetime import datetime
 from json import dumps as json_dumps
 from re import compile as re_compile
@@ -72,13 +73,15 @@ class FdpModelSerializer(ModelSerializer):
     # fields.
     abstract_as_of_date_bounded_excluded_fields = abstract_exact_date_bounded_excluded_fields + ['as_of']
 
-    def create(self, validated_data):
-        """ Creates a new record and records its details in the bulk import table.
+    def __create(self, validated_data, external_id):
+        """ Creates a new record, and stores its details in the bulk import table.
 
-        :param validated_data: Dictionary of validated data to import.
+        :param validated_data: Dictionary of validated data to import. The 'external_id' key and its value have already
+        been popped from it.
+        :param external_id: A unique identifier for the record outside of FDP that can be used reference it in future
+        imports.
         :return: Instance of newly created record.
         """
-        external_id = validated_data.pop('external_id', 'Undefined')
         instance = super(FdpModelSerializer, self).create(validated_data=validated_data)
         self_meta = getattr(self, 'Meta')
         model_class = self_meta.model
@@ -94,6 +97,26 @@ class FdpModelSerializer(ModelSerializer):
         bulk_import.full_clean()
         bulk_import.save()
         return instance
+
+    def create(self, validated_data):
+        """ Creates a new record and stores its details in the bulk import table.
+
+        :param validated_data: Dictionary of validated data to import.
+        :return: Instance of newly created record.
+        """
+        external_id = validated_data.pop('external_id', 'Undefined')
+        # versioning is turned of for the records to be imported
+        if AbstractConfiguration.disable_versioning_for_data_wizard_imports():
+            # disable versioning to improve performance
+            # If manage_manually=True, versions will not be saved when a model’s save() method is called. This allows
+            # version control to be switched off for a given revision block.
+            # If atomic=True, the revision block will be wrapped in a transaction.atomic().
+            # see: https://django-reversion.readthedocs.io/en/stable/views.html#decorators
+            with create_revision(manage_manually=True, atomic=False):
+                return self.__create(validated_data=validated_data, external_id=external_id)
+        # versioning is turned on for the records to be imported
+        else:
+            return self.__create(validated_data=validated_data, external_id=external_id)
 
     def update(self, instance, validated_data):
         """ Update is disabled.
