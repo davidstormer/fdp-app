@@ -576,13 +576,8 @@ class AbstractTestCase(TestCase):
         :param user: User for which to create record.
         :return: Returns 2FA verifying record.
         """
-        key = random_hex(20).encode().decode('ascii')
-        totp_device = TOTPDevice.objects.create(
-            name='default', key=key, step=30, t0=0, digits=settings.TWO_FACTOR_TOTP_DIGITS,
-            tolerance=1, drift=0, last_t=-1, user=user
-        )
-        totp_device.full_clean()
-        totp_device.save()
+        key = random_hex()
+        totp_device = user.totpdevice_set.create(name='default', key=key)
         self.assertTrue(TOTPDevice.objects.filter(pk=totp_device.pk, key=key).exists())
         return totp_device
 
@@ -628,13 +623,9 @@ class AbstractTestCase(TestCase):
         )
         if login_status_code == 200:
             if two_factor_status_code is not None and two_factor is not None:
-                offset = 0
-                token = totp(
-                    two_factor.bin_key, two_factor.step, two_factor.t0, two_factor.digits, two_factor.drift + offset
-                )
                 response = self._do_2fa(
                     c=response.client,
-                    token=token,
+                    token=totp(two_factor.bin_key),
                     expected_status_code=two_factor_status_code,
                     expected_path_info=reverse('profiles:index') if will_login_succeed
                     else reverse(settings.LOGIN_URL)
