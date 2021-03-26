@@ -643,7 +643,7 @@ DATA_WIZARD = {
 DISABLE_REVERSION_FOR_DATA_WIZARD = True
 # The number of seconds in between each asynchronous GET request to check for the status of importing records through
 # the Django Data Wizard package.
-DATA_WIZARD_STATUS_CHECK_SECONDS = 30
+DATA_WIZARD_STATUS_CHECK_SECONDS = 3
 
 
 # Added in Django 3.2
