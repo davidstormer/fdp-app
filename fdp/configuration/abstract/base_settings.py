@@ -638,6 +638,12 @@ DATA_WIZARD = {
     # Wizard 1.1.0, this backend is the default unless you have configured Celery.
     'BACKEND': 'data_wizard.backends.threading',
 }
+# Set to True to disable record versioning by the Django-Reversion package when importing records through the Django
+# Data Wizard package. See: https://django-reversion.readthedocs.io/en/stable/
+DISABLE_REVERSION_FOR_DATA_WIZARD = True
+# The number of seconds in between each asynchronous GET request to check for the status of importing records through
+# the Django Data Wizard package.
+DATA_WIZARD_STATUS_CHECK_SECONDS = 3
 
 
 # Added in Django 3.2

@@ -3000,5 +3000,28 @@ class AbstractConfiguration(models.Model):
         """
         return cls.can_do_azure_active_directory() and settings.USE_ONLY_AZURE_AUTH
 
+    @staticmethod
+    def disable_versioning_for_data_wizard_imports():
+        """ Checks whether the necessary settings have been configured to disable record versioning when importing
+        through the Django Data Wizard package in the Bulk Import app.
+
+        Versioning can be disabled to improve performance while importing records.
+
+        :return: True if versioning of records should be disabled.
+        """
+        return getattr(settings, 'DISABLE_REVERSION_FOR_DATA_WIZARD', False)
+
+    @staticmethod
+    def num_of_secs_between_data_wizard_import_status_checks():
+        """ Checks the necessary settings to retrieve the number of seconds that should elapse between asynchronous GET
+        requests to check for the status of importing records through the Django Data Wizard package in the Bulk Import
+        app.
+
+        Increasing the number of seconds can improve performance while importing records.
+
+        :return: Number of seconds.
+        """
+        return getattr(settings, 'DATA_WIZARD_STATUS_CHECK_SECONDS', 1)
+
     class Meta:
         abstract = True
