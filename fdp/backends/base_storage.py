@@ -5,6 +5,7 @@ from itertable.util import guess_type, PARSERS, make_iter
 from itertable.mappers import TupleMapper
 from itertable.exceptions import ParseFailed
 from io import StringIO, BytesIO, TextIOWrapper
+from pathlib import Path
 
 
 class FdpIterableFileLoader(IterableFileLoader):
@@ -55,6 +56,13 @@ def load_fdp_import_file(filename, mapper=TupleMapper, options={}):
     :return: Loaded file wrapped as an iterable.
     """
     mimetype = guess_type(filename)
+    # MIME type was not recognized but filename is defined
+    if mimetype is None and filename:
+        file_extension = Path(filename).suffix.lower()
+        # MIME type for .xlsx (Microsoft Excel 2007+ spreadsheet) files may not be defined in some environments
+        if file_extension == '.xlsx':
+            mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    # no appropriate parser for file
     if mimetype not in PARSERS:
         raise ParseFailed("Could not determine parser for %s" % mimetype)
     parser = PARSERS[mimetype]
