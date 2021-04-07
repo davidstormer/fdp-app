@@ -637,6 +637,9 @@ DATA_WIZARD = {
     # The threading backend leverages the Django cache to pass results back to the status API. As of Django Data
     # Wizard 1.1.0, this backend is the default unless you have configured Celery.
     'BACKEND': 'data_wizard.backends.threading',
+    # Always map IDs (skip manual mapping). Unknown IDs will be passed on as-is to the serializer, which will cause
+    # per-row errors unless using natural keys.
+    'IDMAP': 'data_wizard.idmap.always',
 }
 # Set to True to disable record versioning by the Django-Reversion package when importing records through the Django
 # Data Wizard package. See: https://django-reversion.readthedocs.io/en/stable/

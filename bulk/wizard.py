@@ -1,7 +1,7 @@
 from data_wizard import register as data_wizard_register
 from .serializers import GroupingAirTableSerializer, PersonAirTableSerializer, IncidentAirTableSerializer, \
     ContentAirTableSerializer, AllegationAirTableSerializer, CountyAirTableSerializer, \
-    PersonGroupingAirTableSerializer, PersonTitleAirTableSerializer
+    PersonGroupingAirTableSerializer, PersonTitleAirTableSerializer, PersonPaymentAirTableSerializer
 
 
 # Register models for Django Data Wizard: https://github.com/wq/django-data-wizard
@@ -15,3 +15,4 @@ data_wizard_register('{p}Allegation Air Table v1'.format(p=def_prefix), Allegati
 data_wizard_register('{p}County Air Table v1'.format(p=def_prefix), CountyAirTableSerializer)
 data_wizard_register('{p}Person-Grouping Air Table v1'.format(p=def_prefix), PersonGroupingAirTableSerializer)
 data_wizard_register('{p}Person-Title Air Table v1'.format(p=def_prefix), PersonTitleAirTableSerializer)
+data_wizard_register('{p}Person-Payment Air Table v1'.format(p=def_prefix), PersonPaymentAirTableSerializer)
