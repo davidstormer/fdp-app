@@ -15,6 +15,7 @@ All releases will be logged in this file.
 
 ### Changed
 - Security: Update Django from version 3.1.3 to 3.1.7
+- Move settings.py to settings_example.py to prevent clobbering of custom configurations on pulls and resets.
 
 ## [1.0.0] - 2021-03-18
 First formal release, including recent changes since initial code base was established with first instance.
