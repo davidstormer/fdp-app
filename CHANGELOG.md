@@ -2,16 +2,19 @@
 
 All releases will be logged in this file.
 
-## [1.1.0-rc.1] - 2021-03-30
+## [1.1.0] - 2021-03-30
 
 ### Added
-- In bulk importer: Add person-title serializer. Split date into individual components for person-grouping serializer. Add is_inactive and as_of field support for person-grouping serializer.
+- Bulk importer: Add person-title serializer.
+- Bulk importer: Split date into individual. components for person-grouping serializer. Add is_inactive and as_of field support for person-grouping serializer.
+- Bulk importer: Add person payment serializer.
 
 ### Fixed
-- Performance improvements for bulk import tool
+- Bulk importer: Performance improvements (disable versioning of records, set UI progress status poll time from 1/2 to 30 seconds).
+- Bulk importer: Fix missing MIME type support for xlsx files when server doesn't have it (i.e. Azure).
 
 ### Changed
-- Update Django from version 3.1.3 to 3.1.7
+- Security: Update Django from version 3.1.3 to 3.1.7
 
 ## [1.0.0] - 2021-03-18
 First formal release, including recent changes since initial code base was established with first instance.
