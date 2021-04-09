@@ -2,7 +2,13 @@
 
 All releases will be logged in this file.
 
-## [1.1.0] - 2021-03-30
+## [1.1.1] - 2021-04-09
+Bug fix release
+
+### Fixed
+- Fix 500 error on content search (/changing/content/) with search queries that look like hyphenated dates (e.g. 01-01 or 01-01-01)
+
+## [1.1.0] - 2021-04-08
 
 ### Added
 - Bulk importer: Add person-title serializer.
