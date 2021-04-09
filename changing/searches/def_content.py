@@ -88,7 +88,7 @@ class ContentChangingSearch(AbstractChangingSearch):
         # build the query to check against content case dates
         content_case_dates_check = AbstractSearchValidator.get_date_components_check_sql(
             dates_to_check=dates,
-            table='{content}'.format(content=Content.get_db_table()),
+            table='{content_case}'.format(content_case=ContentCase.get_db_table()),
             is_and=False,
             fail_on_default=True
         )
