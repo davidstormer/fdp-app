@@ -54,3 +54,10 @@ FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
 #: To enable logging, remove the comments from the below assignments.
 # FDP_ERR_LOGGING['handlers']['file']['filename'] = BASE_DIR / 'debug.log'
 # LOGGING = FDP_ERR_LOGGING
+
+# DEBUG SETTING
+# Don't limit number of parameters in post/get requests
+# https://docs.djangoproject.com/en/2.2/ref/settings/#data-upload-max-number-fields
+# Resolves 400 error when submitting bulk change and clicking "Select all XYZ [objects]"
+# https://stackoverflow.com/questions/55921865/django-admin-deleting-all-records-bad-request-400
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None
