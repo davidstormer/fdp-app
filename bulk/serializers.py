@@ -10,12 +10,12 @@ from django.conf import settings
 from .models import BulkImport
 from inheritable.models import AbstractFileValidator, AbstractUrlValidator, AbstractConfiguration, AbstractDateValidator
 from core.models import Grouping, GroupingAlias, GroupingRelationship, Person, PersonAlias, PersonContact, \
-    PersonIdentifier, PersonTitle, PersonGrouping, Incident, PersonIncident, PersonPhoto
+    PersonIdentifier, PersonTitle, PersonGrouping, Incident, PersonIncident, PersonPhoto, PersonPayment
 from sourcing.models import Content, ContentIdentifier, ContentCase, ContentPerson, ContentPersonAllegation, \
     ContentPersonPenalty, Attachment
 from supporting.models import County, GroupingRelationshipType, PersonIdentifierType, Trait, Title, IncidentTag, \
     Location, EncounterReason, State, ContentIdentifierType, ContentCaseOutcome, AllegationOutcome, Allegation, \
-    ContentType, PersonGroupingType
+    ContentType, PersonGroupingType, LeaveStatus
 from rest_framework.serializers import ModelSerializer, CharField, EmailField
 from rest_framework.fields import empty
 from reversion.revisions import create_revision
@@ -27,6 +27,7 @@ from urllib.parse import urlparse
 from os.path import exists as path_exists, basename as path_basename, dirname as path_dirname
 from os import makedirs as os_makedirs
 from errno import EEXIST
+from decimal import Decimal, InvalidOperation
 
 
 class FdpModelSerializer(ModelSerializer):
@@ -38,6 +39,12 @@ class FdpModelSerializer(ModelSerializer):
             :external_id (str): Unique identifier for record outside of FDP.
 
     """
+    #: Key in original_validated_data dictionary indicating that no validated data is recorded.
+    no_validated_data_key = 'note'
+
+    #: Value in original_validated_data dictionary indicating that no validated data is recorded.
+    no_validated_data_value = str(_('No validated data was recorded.'))
+
     def __init__(self, instance=None, data=empty, **kwargs):
         """ Initialize the attribute that will store the validated data dictionary before it is modified.
 
@@ -49,7 +56,7 @@ class FdpModelSerializer(ModelSerializer):
         :param kwargs:
         """
         super(FdpModelSerializer, self).__init__(instance=instance, data=data, **kwargs)
-        self.original_validated_data = {'note': str(_('No validated data was recorded.'))}
+        self.original_validated_data = {self.no_validated_data_key: self.no_validated_data_value}
         self.custom_validated_data = {}
 
     external_id = CharField(
@@ -104,6 +111,9 @@ class FdpModelSerializer(ModelSerializer):
         :param validated_data: Dictionary of validated data to import.
         :return: Instance of newly created record.
         """
+        # validated data has not yet been recorded
+        if self.original_validated_data.get(self.no_validated_data_key, '') == self.no_validated_data_value:
+            self.original_validated_data = validated_data.copy()
         external_id = validated_data.pop('external_id', 'Undefined')
         # versioning is turned of for the records to be imported
         if AbstractConfiguration.disable_versioning_for_data_wizard_imports():
@@ -527,6 +537,132 @@ class FdpModelSerializer(ModelSerializer):
             # replace the individual date component
             self.initial_data[date_component_field] = int_date_component
 
+    def __handle_declared_field_conflict(self, foreign_key_field):
+        """ Handles the potential conflict that can occur when fields declared in the serializer class use the name of
+        a field that is defined in the model class and so override it.
+
+        In such situation, validation from the field declared in the serializer class is used.
+
+        To address this, declared fields that conflict with model fields are removed before validation.
+
+        :param foreign_key_field: Name of field defined in the model class.
+        :return: Nothing.
+        """
+        # fields declared in the serializer class that override the fields declared in the model class
+        # (i.e. if both have the same name)
+        # will create a conflict during validation
+        # (i.e. validation from the declared field is used)
+        # in that case, remove the declared field
+        if foreign_key_field in self._declared_fields:
+            self._declared_fields.pop(foreign_key_field)
+
+    def _validate_foreign_key_by_external_id(self, foreign_key_field, foreign_key_model, raise_exception):
+        """ Validates the value intended for a foreign key field, retrieved through its external ID.
+
+        Examples may be: "person" for an instance of a person title, etc.
+
+        Retrieves model instance that is used as the foreign key value through the corresponding external ID, and if
+        validated, places it into the initial data dictionary.
+
+        If validation fails and raise_exception is False, then converts foreign key value to None.
+
+        If validation fails and raise_exception is True, then raises a ValidationError.
+
+        :param foreign_key_field: Name of field containing foreign key to validate.
+        :param foreign_key_model: Model whose instances are linked to through the foreign key.
+        :param raise_exception: True if exception should be raised when foreign key is not valid, false if foreign key
+         should be set to None if not valid.
+        :return: Nothing.
+        """
+        # only validates for foreign key value if it is part of initial data
+        if foreign_key_field in self.initial_data:
+            self.__handle_declared_field_conflict(foreign_key_field=foreign_key_field)
+            # retrieve the external ID
+            external_id = self.initial_data.pop(foreign_key_field)
+            # standardize undefined value
+            if not external_id:
+                external_id = None
+            if external_id:
+                try:
+                    # use the bulk import table to retrieve the model instance based on its external ID
+                    instance = self._match_by_external_id(
+                        external_id_to_match=external_id,
+                        model=foreign_key_model,
+                        validated_data_key=None
+                    )
+                except ValidationError as err:
+                    # exception is expected
+                    if raise_exception:
+                        raise err
+                    else:
+                        instance = None
+            else:
+                if raise_exception:
+                    raise ValidationError('No external ID for {f} was specified'.format(f=foreign_key_field))
+                else:
+                    instance = None
+            self.initial_data[foreign_key_field] = None if not instance else instance.pk
+
+    def _validate_foreign_key_by_name(self, foreign_key_field, foreign_key_model, create_unknown, raise_exception):
+        """ Validates the value intended for a foreign key field, retrieved by name and added if it does not exist.
+
+        Examples may be: "type" for an instance of a person grouping, etc.
+
+        Retrieves or adds model instance that is used as the foreign key value via its name, and if validated, places it
+        into the initial data dictionary.
+
+        If validation fails and raise_exception is False, then converts foreign key value to None.
+
+        If validation fails and raise_exception is True, then raises a ValidationError.
+
+        :param foreign_key_field: Name of field containing foreign key to validate.
+        :param foreign_key_model: Model whose instances are linked to through the foreign key.
+        :param create_unknown: True if a model instance with "unknown" as its name should be created if the value of
+        the foreign key field is not defined, false if a None value should be assigned to the foreign key field.
+        :param raise_exception: True if exception should be raised when foreign key is not valid, false if foreign key
+         should be set to an unknown value if not valid.
+        :return: Nothing.
+        """
+        # only validates for foreign key value if it is specified in the initial data
+        if foreign_key_field in self.initial_data:
+            self.__handle_declared_field_conflict(foreign_key_field=foreign_key_field)
+            # retrieve the by name
+            by_name = self.initial_data.pop(foreign_key_field)
+            # standardize undefined value
+            by_name = str(by_name).strip() if by_name else None
+            # name by which to reference model instance for foreign key is defined
+            if by_name:
+                try:
+                    # retrieve the model instance based on its name, or add it to the table
+                    instance = self._add_if_does_not_exist(
+                        model=foreign_key_model,
+                        filter_dict={'name__iexact': by_name},
+                        add_dict={'name': by_name}
+                    )
+                except ValidationError as err:
+                    # exception is expected
+                    if raise_exception:
+                        raise err
+                    else:
+                        instance = None
+            # name by which to reference model instance for foreign key is not defined
+            else:
+                # if exception is expected and no unknown model instance should be created in cases of unknown
+                if raise_exception and not create_unknown:
+                    raise ValidationError('No "by name" field for {f} was specified'.format(f=foreign_key_field))
+                else:
+                    instance = None
+            # value for foreign key is undefined and an unknown model instance is expected to be created
+            if instance is None and create_unknown:
+                # retrieve the model instance based on its name, or add it to the table
+                unknown_name = 'Unknown'
+                instance = self._add_if_does_not_exist(
+                    model=foreign_key_model,
+                    filter_dict={'name__iexact': unknown_name},
+                    add_dict={'name': unknown_name}
+                )
+            self.initial_data[foreign_key_field] = None if not instance else instance.pk
+
     def _validate_checkbox_field(self, unvalidated_checkbox_field, validated_checkbox_field):
         """ Validates a checkbox field.
 
@@ -538,6 +674,58 @@ class FdpModelSerializer(ModelSerializer):
         is_checked_str = self.validated_data.pop(unvalidated_checkbox_field, '')
         if is_checked_str and is_checked_str.lower() == 'checked':
             self._validated_data[validated_checkbox_field] = True
+
+    def _validate_decimal(self, decimal_field, validator, raise_exception):
+        """ Validates a decimal field.
+
+        Examples may be: "base salary", "regular hours", etc.
+
+        If validated, places decimal back into the initial data dictionary for further model and field specific
+        validation.
+
+        If validation fails and raise_exception is False, then converts decimal to the unknown value.
+
+        If validation fails and raise_exception is True, then raises a ValidationError.
+
+        :param decimal_field: Name of field containing decimal value to validate.
+        :param validator: Method to call to perform field-specific validation, such as checking if in acceptable range.
+        :param raise_exception: True if exception should be raised, when decimal value cannot be cast as
+        a decimal, false if decimal value should be set to the unknown value in such case.
+        :return: Nothing.
+        """
+        # only validate decimal field if it was specified
+        if decimal_field in self.initial_data:
+            untyped_decimal_value = self.initial_data[decimal_field]
+            # standardize undefined decimal value
+            if not untyped_decimal_value:
+                decimal_value = None
+            # otherwise decimal value is defined
+            else:
+                try:
+                    # strip out all characters except digits and decimals
+                    str_decimal_value = ''.join(filter(lambda x: x.isdigit() or x == '.', str(untyped_decimal_value)))
+                    # attempt to convert
+                    decimal_value = Decimal(str_decimal_value)
+                except (ValueError, InvalidOperation):
+                    # exception is expected
+                    if raise_exception:
+                        raise ValidationError(
+                            _('{v} is not a valid {f}'.format(v=untyped_decimal_value, f=decimal_field))
+                        )
+                    else:
+                        decimal_value = None
+            if validator is not None and decimal_value is not None:
+                # perform additional validation (e.g. checking if in acceptable range)
+                try:
+                    validator(decimal_value)
+                except ValidationError as err:
+                    # exception is expected
+                    if raise_exception:
+                        raise err
+                    else:
+                        decimal_value = None
+            # replace the decimal value
+            self.initial_data[decimal_field] = decimal_value
 
     class FileToValidate:
         """ Dummy class used to simulate a FieldFile object so that validation can be performed on key parts of it
@@ -654,7 +842,7 @@ class AbstractAsOfDateBoundedModelSerializer(FdpModelSerializer):
         self._validate_checkbox_field(unvalidated_checkbox_field='as_of_checkbox', validated_checkbox_field='as_of')
 
     def is_valid(self, raise_exception=False):
-        """ Split the string representing aliases into a list of aliases.
+        """ Validate the individual date components.
 
         :param raise_exception: True if an exception should be raised during validation.
         :return: True if record is valid, false if record is invalid.
@@ -689,6 +877,50 @@ class AbstractAsOfDateBoundedModelSerializer(FdpModelSerializer):
         if is_valid:
             self.__validate_as_of_checkbox()
         return is_valid
+
+
+class AbstractPersonLinkModelSerializer(FdpModelSerializer):
+    """ Abstract serializer from which all model serializers inherit for models that include a foreign key to the
+    person model.
+
+    Examples include the Person Grouping Air Table serializer, the Person Title Air Table serializer and the Person
+    Payment Air Table serializer.
+
+    Attributes:
+        :person (str): Person matched by external person ID.
+    """
+    person = CharField(
+        required=False,
+        allow_null=True,
+        label=_('Person - match by external person ID')
+    )
+
+    #: Fields that should be excluded from the list of mappable target serializer fields.
+    excluded_fields = FdpModelSerializer.excluded_fields
+
+    def __validate_person_foreign_key(self):
+        """ Validates the value of the person foreign key field through its external ID that provides an indirect link
+        to the instance through the Bulk Import table.
+
+        :return: Nothing.
+        """
+        self._validate_foreign_key_by_external_id(
+            foreign_key_field='person',
+            foreign_key_model=Person,
+            raise_exception=True
+        )
+
+    def is_valid(self, raise_exception=False):
+        """ Validate the person foreign key field.
+
+        :param raise_exception: True if an exception should be raised during validation.
+        :return: True if record is valid, false if record is invalid.
+        """
+        # retrieve a person instance using the external ID found in the Bulk Import table, and place the model
+        # instance into the self.initial_data
+        self.__validate_person_foreign_key()
+        # perform additional validation such as model specific validation
+        return super(AbstractPersonLinkModelSerializer, self).is_valid(raise_exception=raise_exception)
 
 
 class GroupingAirTableSerializer(AbstractModelWithAliasesSerializer):
@@ -887,7 +1119,7 @@ class GroupingAirTableSerializer(AbstractModelWithAliasesSerializer):
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = FdpModelSerializer.excluded_fields + [
-            'belongs_to_grouping', 'cease_date', 'code', 'counties', 'description', 'inception_date', 'is_inactive'
+            'belongs_to_grouping', 'cease_date', 'counties', 'description', 'inception_date', 'is_inactive'
         ]
 
 
@@ -901,7 +1133,7 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         :email_number (str): Email for person contact.
         :identifier_type (str): Type for person identifier, matched by unique name or added if it does not exist.
         :identifier (str): Identifier for person identifier.
-        :title_by_name (str): Title which person holds, matched by unique title name or added if it does not exist.
+        :person_title (str): Title which person holds, matched by unique title name or added if it does not exist.
         :unsplit_traits (str): Trait names separated by commas.
         :unsplit_groupings (str): External grouping IDs separated by commas.
         :unsplit_person_photos (str): Person photo links separated by commas, from which to download without
@@ -943,7 +1175,7 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         label=_('Identifier for person identifier')
     )
 
-    title_by_name = CharField(
+    person_title = CharField(
         required=False,
         allow_null=True,
         label=_('Title held by person - match by unique title name, or add if does not exist')
@@ -1069,10 +1301,10 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         :return: Nothing.
         """
         # parse title to which person is linked, matched by unique title name, add if it does not exist
-        title_by_name_key = 'title_by_name'
-        title_by_name = self.validated_data.pop(title_by_name_key, None)
-        if title_by_name:
-            self._validated_data[self.__title_instance_name_key] = str(title_by_name).strip()
+        person_title_key = 'person_title'
+        person_title = self.validated_data.pop(person_title_key, None)
+        if person_title:
+            self._validated_data[self.__title_instance_name_key] = str(person_title).strip()
 
     def __validate_traits(self):
         """ Validates the traits field.
@@ -1259,7 +1491,7 @@ class IncidentAirTableSerializer(FdpModelSerializer):
     Attributes:
         :incident_date (str): Incident date.
         :location_by_name (str): Incident location matched by unique name or added if it does not exist.
-        :encounter_by_name (str): Encounter reason matched by unique name or added if it does not exist.
+        :encounter_reason (str): Encounter reason matched by unique name or added if it does not exist.
         :unsplit_incident_tags (str): Incident tag names separated by commas, add if any do not exist.
         :unsplit_persons (str): External person IDs separated by commas.
 
@@ -1276,7 +1508,7 @@ class IncidentAirTableSerializer(FdpModelSerializer):
         label=_('Incident location - match by unique name, or add if it does not exist')
     )
 
-    encounter_by_name = CharField(
+    encounter_reason = CharField(
         required=False,
         allow_null=True,
         label=_('Encounter reason - match by unique name, or add if it does not exist')
@@ -1296,9 +1528,6 @@ class IncidentAirTableSerializer(FdpModelSerializer):
 
     #: Key used to reference in the _validated_data dictionary, name of location instance to which incident is linked.
     __location_instance_name_key = 'location_instance'
-
-    #: Key used to reference in the _validated_data dictionary, name of encounter instance to which incident is linked.
-    __encounter_instance_name_key = 'encounter_instance'
 
     #: Key used to reference in the _validated_data dictionary, the list of tags to add for a incident.
     __split_incident_tags_key = 'split_incident_tags'
@@ -1331,19 +1560,6 @@ class IncidentAirTableSerializer(FdpModelSerializer):
         location_by_name = self.validated_data.pop(location_by_name_key, None)
         if location_by_name:
             self._validated_data[self.__location_instance_name_key] = str(location_by_name).strip()
-
-    def __validate_encounter_reason(self):
-        """ Validates the encounter reason field.
-
-        If validated, prepares it for the corresponding Encounter Reason instance.
-
-        :return: Nothing.
-        """
-        # encounter reason to which incident is linked, matched by unique name, added if it does not exist
-        encounter_by_name_key = 'encounter_by_name'
-        encounter_by_name = self.validated_data.pop(encounter_by_name_key, None)
-        if encounter_by_name:
-            self._validated_data[self.__encounter_instance_name_key] = str(encounter_by_name).strip()
 
     def __validate_incident_tags(self):
         """ Validates the incident tags field.
@@ -1392,13 +1608,20 @@ class IncidentAirTableSerializer(FdpModelSerializer):
         :return: True if record is valid, false if record is invalid.
         """
         self._convert_null_to_blank(field_name='description')
+        # validate the given the encounter reason by its name, and add it as a model instance if it does not already
+        # exist, and then place the value into self.initial_data
+        self._validate_foreign_key_by_name(
+            foreign_key_field='encounter_reason',
+            foreign_key_model=EncounterReason,
+            create_unknown=False,
+            raise_exception=False
+        )
         # validate record
         is_valid = super(IncidentAirTableSerializer, self).is_valid(raise_exception=raise_exception)
         # record is valid
         if is_valid:
             self.__validate_incident_date()
             self.__validate_location()
-            self.__validate_encounter_reason()
             self.__validate_incident_tags()
             self.__validate_persons()
         return is_valid
@@ -1413,7 +1636,6 @@ class IncidentAirTableSerializer(FdpModelSerializer):
         self.original_validated_data = validated_data.copy()
         # pop custom fields from validated data
         location_name = validated_data.pop(self.__location_instance_name_key, '')
-        encounter_name = validated_data.pop(self.__encounter_instance_name_key, '')
         split_incident_tags = validated_data.pop(self.__split_incident_tags_key, [])
         split_person_ids = validated_data.pop(self.__split_persons_key, [])
         # instance has been added into bulk import table
@@ -1437,16 +1659,6 @@ class IncidentAirTableSerializer(FdpModelSerializer):
                 add_dict={'address': location_name, 'county': county}
             )
             instance.location = location
-            instance.full_clean()
-            instance.save()
-        # optionally link encounter reason
-        if encounter_name:
-            encounter_reason = self._add_if_does_not_exist(
-                model=EncounterReason,
-                filter_dict={'name__iexact': encounter_name},
-                add_dict={'name': encounter_name}
-            )
-            instance.encounter_reason = encounter_reason
             instance.full_clean()
             instance.save()
         # optionally link incident tags
@@ -1474,7 +1686,7 @@ class IncidentAirTableSerializer(FdpModelSerializer):
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = FdpModelSerializer.excluded_fields + FdpModelSerializer.confidentiable_excluded_fields \
             + FdpModelSerializer.abstract_exact_date_bounded_excluded_fields \
-            + ['encounter_reason', 'location', 'location_type', 'tags']
+            + ['location', 'location_type', 'tags']
 
 
 class ContentAirTableSerializer(FdpModelSerializer):
@@ -1486,7 +1698,7 @@ class ContentAirTableSerializer(FdpModelSerializer):
         :case_opened_date (str): Case opened date.
         :case_closed_date (str): Case closed date.
         :outcome_by_name (str): Case outcome matched by unique name, added if it does not exist.
-        :content_type_by_name (str): Content type matched by unique name, added if it does not exist.
+        :type (str): Content type matched by unique name, added if it does not exist.
         :unsplit_incidents (str): External incident IDs separated by commas.
         :unsplit_persons (str): External person IDs separated by commas.
         :unsplit_attachment_files (str): Attachment file links separated by commas, from which to download without
@@ -1523,7 +1735,7 @@ class ContentAirTableSerializer(FdpModelSerializer):
         label=_('Case outcome - match by unique name, add if it does not exist')
     )
 
-    content_type_by_name = CharField(
+    type = CharField(
         required=False,
         allow_null=True,
         label=_('Content type - match by unique name, add if it does not exist')
@@ -1561,9 +1773,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
 
     #: Key used to reference in the _validated_data dictionary, name of case outcome inst. to which content is linked.
     __outcome_key = 'outcome'
-
-    #: Key used to reference in the _validated_data dictionary, name of content type inst. to which content is linked.
-    __type_key = 'content_type'
 
     #: Key used to reference in the _validated_data dictionary, the list of incidents to add for a content.
     __split_incidents_key = 'split_incidents'
@@ -1634,19 +1843,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
         outcome_by_name = self.validated_data.pop(outcome_by_name_key, None)
         if outcome_by_name:
             self._validated_data[self.__outcome_key] = outcome_by_name
-
-    def __validate_content_type(self):
-        """ Validates the content type field.
-
-        If validated, prepares it for the corresponding Content Type instance.
-
-        :return: Nothing.
-        """
-        # parse content type by unique name
-        content_type_by_name_key = 'content_type_by_name'
-        content_type_by_name = self.validated_data.pop(content_type_by_name_key, None)
-        if content_type_by_name:
-            self._validated_data[self.__type_key] = content_type_by_name
 
     def __validate_incidents(self):
         """ Validates the incidents field.
@@ -1725,11 +1921,15 @@ class ContentAirTableSerializer(FdpModelSerializer):
         :return: True if record is valid, false if record is invalid.
         """
         self._convert_null_to_blank(field_name='description')
-        # content must have a name
-        content_name_field = 'name'
-        content_name = self.initial_data.get(content_name_field, '')
-        if not content_name:
-            self.initial_data[content_name_field] = str(_('Unnamed'))
+        self._convert_null_to_blank(field_name='name')
+        # validate the given the content type by its name, and add it as a model instance if it does not already
+        # exist, and then place the value into self.initial_data
+        self._validate_foreign_key_by_name(
+            foreign_key_field='type',
+            foreign_key_model=ContentType,
+            create_unknown=False,
+            raise_exception=False
+        )
         # validate record
         is_valid = super(ContentAirTableSerializer, self).is_valid(raise_exception=raise_exception)
         # record is valid
@@ -1738,7 +1938,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
             self.__validate_case_opened_date()
             self.__validate_case_closed_date()
             self.__validate_case_outcome()
-            self.__validate_content_type()
             self.__validate_incidents()
             self.__validate_persons()
             self.__validate_attachment_files()
@@ -1758,21 +1957,11 @@ class ContentAirTableSerializer(FdpModelSerializer):
         identifier_type = validated_data.pop(self.__identifier_type_key, None)
         identifier = validated_data.pop(self.__identifier_key, '')
         outcome = validated_data.pop(self.__outcome_key, '')
-        content_type = validated_data.pop(self.__type_key, '')
         split_incident_ids = validated_data.pop(self.__split_incidents_key, [])
         split_person_ids = validated_data.pop(self.__split_persons_key, [])
         split_attachment_file_paths = validated_data.pop(self.__split_attachment_files_key, [])
         # instance has been added into bulk import table
         instance = super(ContentAirTableSerializer, self).create(validated_data=validated_data)
-        # optionally link in content type
-        if content_type:
-            instance.type = self._add_if_does_not_exist(
-                model=ContentType,
-                filter_dict={'name__iexact': content_type},
-                add_dict={'name': content_type}
-            )
-            instance.full_clean()
-            instance.save()
         # optionally create content identifier
         if identifier and identifier_type:
             content_identifier_type = self._add_if_does_not_exist(
@@ -1836,7 +2025,7 @@ class ContentAirTableSerializer(FdpModelSerializer):
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = FdpModelSerializer.excluded_fields + FdpModelSerializer.confidentiable_excluded_fields + [
-            'attachments', 'incidents', 'link', 'publication_date', 'type'
+            'attachments', 'incidents', 'link', 'publication_date'
         ]
 
 
@@ -1846,8 +2035,8 @@ class AllegationAirTableSerializer(FdpModelSerializer):
     Attributes:
         :content_external_id (str): Content external ID to which allegation is linked.
         :person_external_id (str): Person external ID to which allegation is linked.
-        :allegation_by_name (str): Allegation matched by unique name or added if it does not exist.
-        :outcome_by_name (str): Allegation outcome matched by unique name or added if it does not exist.
+        :allegation (str): Allegation matched by unique name or added if it does not exist.
+        :allegation_outcome (str): Allegation outcome matched by unique name or added if it does not exist.
         :penalty (str): Penalty linked to the same content-person as the allegation.
     """
     content_external_id = CharField(
@@ -1862,13 +2051,13 @@ class AllegationAirTableSerializer(FdpModelSerializer):
         label=_('External ID for person that is linked to allegation')
     )
 
-    allegation_by_name = CharField(
+    allegation = CharField(
         required=False,
         allow_null=True,
         label=_('Allegation - match by unique name, or add if it does not exist')
     )
 
-    outcome_by_name = CharField(
+    allegation_outcome = CharField(
         required=False,
         allow_null=True,
         label=_('Allegation outcome - match by unique name, or add if it does not exist')
@@ -1879,10 +2068,6 @@ class AllegationAirTableSerializer(FdpModelSerializer):
         allow_null=True,
         label=_('Penalty linked to same content and person as allegation')
     )
-
-    #: Key used to reference in the _validated_data dictionary, ID of allegation outcome inst. to which
-    # content-person-allegation is linked.
-    __outcome_key = 'outcome'
 
     #: Key used to reference in the _validated_data dictionary, penalty that is linked to the same content-person.
     __penalty_key = 'penalty'
@@ -1922,40 +2107,6 @@ class AllegationAirTableSerializer(FdpModelSerializer):
             content_person = content_person_qs.get(content=content, person=person)
             self.custom_validated_data['content_person_id'] = content_person.pk
 
-    def __validate_allegation(self):
-        """ Validates the allegation field.
-
-        If validated, prepares it for the corresponding Allegation instance.
-
-        :return: Nothing.
-        """
-        # link in allegation
-        allegation_by_name_key = 'allegation_by_name'
-        allegation_by_name = self.initial_data.pop(allegation_by_name_key, None)
-        if not allegation_by_name:
-            raise ValidationError(_('Allegation not specified'))
-        else:
-            stripped_allegation_by_name = str(allegation_by_name).strip()
-            allegation = self._add_if_does_not_exist(
-                model=Allegation,
-                filter_dict={'name__iexact': stripped_allegation_by_name},
-                add_dict={'name': stripped_allegation_by_name}
-            )
-            self.custom_validated_data['allegation_id'] = allegation.pk
-
-    def __validate_outcome(self):
-        """ Validates the Allegation Outcome by name field.
-
-        If validated, prepares it for the corresponding Allegation Outcome instance.
-
-        :return: Nothing.
-        """
-        # parse allegation outcome by unique name
-        outcome_by_name_key = 'outcome_by_name'
-        outcome_by_name = self.validated_data.pop(outcome_by_name_key, None)
-        if outcome_by_name:
-            self._validated_data[self.__outcome_key] = str(outcome_by_name).strip()
-
     def __validate_penalty(self):
         """ Validates the Penalty field.
 
@@ -1976,12 +2127,26 @@ class AllegationAirTableSerializer(FdpModelSerializer):
         :return: True if record is valid, false if record is invalid.
         """
         self.__validate_content_person()
-        self.__validate_allegation()
+        # validate the given the allegation by its name, and add it as a model instance if it does not already
+        # exist, and then place the value into self.initial_data
+        self._validate_foreign_key_by_name(
+            foreign_key_field='allegation',
+            foreign_key_model=Allegation,
+            create_unknown=True,
+            raise_exception=True
+        )
+        # validate the given the allegation outcome by its name, and add it as a model instance if it does not already
+        # exist, and then place the value into self.initial_data
+        self._validate_foreign_key_by_name(
+            foreign_key_field='allegation_outcome',
+            foreign_key_model=AllegationOutcome,
+            create_unknown=False,
+            raise_exception=False
+        )
         # validate record
         is_valid = super(AllegationAirTableSerializer, self).is_valid(raise_exception=raise_exception)
         # record is valid
         if is_valid:
-            self.__validate_outcome()
             self.__validate_penalty()
         return is_valid
 
@@ -1993,23 +2158,12 @@ class AllegationAirTableSerializer(FdpModelSerializer):
         :return: Instance of newly created content-person-allegation.
         """
         validated_data['content_person_id'] = self.custom_validated_data.get('content_person_id', None)
-        validated_data['allegation_id'] = self.custom_validated_data.get('allegation_id', None)
         # validated data before values are popped from it
         self.original_validated_data = validated_data.copy()
         # pop custom fields from validated data
-        outcome = validated_data.pop(self.__outcome_key, '')
         penalty = validated_data.pop(self.__penalty_key, '')
         # instance has been added into bulk import table
         instance = super(AllegationAirTableSerializer, self).create(validated_data=validated_data)
-        # optionally link allegation outcome
-        if outcome:
-            instance.allegation_outcome = self._add_if_does_not_exist(
-                model=AllegationOutcome,
-                filter_dict={'name__iexact': outcome},
-                add_dict={'name': outcome}
-            )
-            instance.full_clean()
-            instance.save()
         # optionally create a penalty
         if penalty:
             content_person_penalty = ContentPersonPenalty(
@@ -2024,45 +2178,20 @@ class AllegationAirTableSerializer(FdpModelSerializer):
         model = ContentPersonAllegation
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
-        exclude = FdpModelSerializer.excluded_fields + [
-            'content_person', 'allegation', 'allegation_outcome', 'description', 'allegation_count'
-        ]
+        exclude = FdpModelSerializer.excluded_fields + ['content_person', 'description', 'allegation_count']
 
 
 class CountyAirTableSerializer(FdpModelSerializer):
     """ Serializer for counties that were defined through the Air Table templates.
 
     Attributes:
-        :state_by_name (str): State matched by unique name or added if it does not exist.
+        :state (str): State matched by unique name or added if it does not exist.
     """
-    state_by_name = CharField(
+    state = CharField(
         required=False,
         allow_null=True,
         label=_('State - match by unique name, or add if it does not exist')
     )
-
-    def __validate_state(self):
-        """ Validates the state by name field.
-
-        If validated, prepares them for the corresponding State instance.
-
-        :return: Nothing.
-        """
-        # link in state
-        state_by_name_key = 'state_by_name'
-        # remove from initial data, so it is not included in the model validation
-        state_by_name = self.initial_data.pop(state_by_name_key, None)
-        # state is not defined
-        if not (state_by_name or self.initial_data.get('state', None)):
-            raise ValidationError(_('State not specified'))
-        else:
-            stripped_state_by_name = str(state_by_name).strip()
-            state = self._add_if_does_not_exist(
-                model=State,
-                filter_dict={'name__iexact': stripped_state_by_name},
-                add_dict={'name': stripped_state_by_name}
-            )
-            self.custom_validated_data['state_id'] = state.pk
 
     def is_valid(self, raise_exception=False):
         """ Validates for optional custom attributes.
@@ -2070,52 +2199,39 @@ class CountyAirTableSerializer(FdpModelSerializer):
         :param raise_exception: True if an exception should be raised during validation.
         :return: True if record is valid, false if record is invalid.
         """
-        # remove state by name, so it is excluded from the validation
-        self.__validate_state()
+        # validate the given the state by its name, and add it as a model instance if it does not already
+        # exist, and then place the value into self.initial_data
+        self._validate_foreign_key_by_name(
+            foreign_key_field='state',
+            foreign_key_model=State,
+            create_unknown=True,
+            raise_exception=True
+        )
         # validate record
         return super(CountyAirTableSerializer, self).is_valid(raise_exception=raise_exception)
-
-    def create(self, validated_data):
-        """ Creates a new county and its related data.
-
-        :param validated_data: Dictionary of validated data used to creating new county and its related data.
-        :return: Instance of newly created county.
-        """
-        validated_data['state_id'] = self.custom_validated_data.get('state_id', None)
-        # validated data before values are popped from it
-        self.original_validated_data = validated_data.copy()
-        # instance has been added into bulk import table
-        return super(CountyAirTableSerializer, self).create(validated_data=validated_data)
 
     class Meta:
         model = County
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
-        exclude = FdpModelSerializer.excluded_fields + ['state']
+        exclude = FdpModelSerializer.excluded_fields
 
 
-class PersonGroupingAirTableSerializer(AbstractAsOfDateBoundedModelSerializer):
+class PersonGroupingAirTableSerializer(AbstractAsOfDateBoundedModelSerializer, AbstractPersonLinkModelSerializer):
     """ Serializer for person-groupings that were defined through the Air Table templates.
 
     Attributes:
-        :person_by_external_id (str): Person matched by external person ID.
-        :grouping_by_external_id (str): Grouping matched by external grouping ID.
-        :type_by_name (str): Type matched by unique name or added if it does not exist.
+        :grouping (str): Grouping matched by external grouping ID.
+        :type (str): Type matched by unique name or added if it does not exist.
         :is_inactive_checkbox (str): Is inactive checkbox.
     """
-    person_by_external_id = CharField(
-        required=False,
-        allow_null=True,
-        label=_('Person - match by external person ID')
-    )
-
-    grouping_by_external_id = CharField(
+    grouping = CharField(
         required=False,
         allow_null=True,
         label=_('Grouping - match by external grouping ID')
     )
 
-    type_by_name = CharField(
+    type = CharField(
         required=False,
         allow_null=True,
         label=_('Type - match by unique name, or add if it does not exist')
@@ -2137,157 +2253,53 @@ class PersonGroupingAirTableSerializer(AbstractAsOfDateBoundedModelSerializer):
             validated_checkbox_field='is_inactive'
         )
 
-    def __validate_person(self):
-        """ Validates the person field.
-
-        If validated, prepares the corresponding Person instance.
-
-        :return: Nothing.
-        """
-        # parse person matched by external person ID
-        person_external_id_key = 'person_by_external_id'
-        person_by_external_id = self.validated_data.pop(person_external_id_key, None)
-        if person_by_external_id:
-            person = self._match_by_external_id(
-                external_id_to_match=person_by_external_id, model=Person, validated_data_key=None
-            )
-            self.custom_validated_data['person_id'] = person.pk
-        else:
-            raise ValidationError('No external person ID was specified')
-
-    def __validate_grouping(self):
-        """ Validates the grouping field.
-
-        If validated, prepares the corresponding Grouping instance.
-
-        :return: Nothing.
-        """
-        # parse grouping matched by external grouping ID
-        grouping_external_id_key = 'grouping_by_external_id'
-        grouping_by_external_id = self.validated_data.pop(grouping_external_id_key, None)
-        if grouping_by_external_id:
-            grouping = self._match_by_external_id(
-                external_id_to_match=grouping_by_external_id, model=Grouping, validated_data_key=None
-            )
-            self.custom_validated_data['grouping_id'] = grouping.pk
-        else:
-            raise ValidationError('No external grouping ID was specified')
-
-    def __validate_type(self):
-        """ Validates the type by name field.
-
-        If validated, prepares them for the corresponding PersonGroupingType instance.
-
-        :return: Nothing.
-        """
-        # link in type
-        type_by_name_key = 'type_by_name'
-        # remove from initial data, so that is is not included in model validation
-        type_by_name = self.initial_data.pop(type_by_name_key, None)
-        if type_by_name:
-            stripped_type_by_name = str(type_by_name).strip()
-            person_grouping_type = self._add_if_does_not_exist(
-                model=PersonGroupingType,
-                filter_dict={'name__iexact': stripped_type_by_name},
-                add_dict={'name': stripped_type_by_name}
-            )
-            self.custom_validated_data['type_id'] = person_grouping_type.pk
-
     def is_valid(self, raise_exception=False):
         """ Validates for optional custom attributes.
 
         :param raise_exception: True if an exception should be raised during validation.
         :return: True if record is valid, false if record is invalid.
         """
-        # remove type by name, so it is excluded from validation
-        self.__validate_type()
+        # validate the grouping by its external ID, and if validated, place the value into self.initial_data
+        self._validate_foreign_key_by_external_id(
+            foreign_key_field='grouping',
+            foreign_key_model=Grouping,
+            raise_exception=True
+        )
+        # validate the given the type by its name, and add it as a model instance if it does not already
+        # exist, and then place the value into self.initial_data
+        self._validate_foreign_key_by_name(
+            foreign_key_field='type',
+            foreign_key_model=PersonGroupingType,
+            create_unknown=False,
+            raise_exception=False
+        )
         # validate record
         is_valid = super(PersonGroupingAirTableSerializer, self).is_valid(raise_exception=raise_exception)
         # record is valid
         if is_valid:
-            self.__validate_person()
-            self.__validate_grouping()
             self.__validate_is_inactive_checkbox()
         return is_valid
-
-    def create(self, validated_data):
-        """ Creates a new person grouping and its related data.
-
-        :param validated_data: Dictionary of validated data used to creating new person grouping and its related data.
-        :return: Instance of newly created person grouping.
-        """
-        validated_data['type_id'] = self.custom_validated_data.get('type_id', None)
-        validated_data['person_id'] = self.custom_validated_data.get('person_id', None)
-        validated_data['grouping_id'] = self.custom_validated_data.get('grouping_id', None)
-        # validated data before values are popped from it
-        self.original_validated_data = validated_data.copy()
-        # instance has been added into bulk import table
-        instance = super(PersonGroupingAirTableSerializer, self).create(validated_data=validated_data)
-        return instance
 
     class Meta:
         model = PersonGrouping
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
-        exclude = AbstractAsOfDateBoundedModelSerializer.excluded_fields + ['type', 'person', 'grouping', 'is_inactive', 'description']
+        exclude = list(set(AbstractAsOfDateBoundedModelSerializer.excluded_fields +
+                           AbstractPersonLinkModelSerializer.excluded_fields +
+                           ['is_inactive', 'description']))
 
 
-class PersonTitleAirTableSerializer(AbstractAsOfDateBoundedModelSerializer):
+class PersonTitleAirTableSerializer(AbstractAsOfDateBoundedModelSerializer, AbstractPersonLinkModelSerializer):
     """ Serializer for person-titles that were defined through the Air Table templates.
 
     Attributes:
-        :person_by_external_id (str): Person matched by external person ID.
-        :title_by_name (str): Title matched by unique name or added if it does not exist.
+        :title (str): Title matched by unique name or added if it does not exist.
     """
-    person_by_external_id = CharField(
-        required=False,
-        allow_null=True,
-        label=_('Person - match by external person ID')
-    )
-
-    title_by_name = CharField(
+    title = CharField(
         required=False,
         allow_null=True,
         label=_('Title - match by unique name, or add if it does not exist')
     )
-
-    def __validate_person(self):
-        """ Validates the person field.
-
-        If validated, prepares the corresponding Person instance.
-
-        :return: Nothing.
-        """
-        # parse person matched by external person ID
-        person_external_id_key = 'person_by_external_id'
-        person_by_external_id = self.validated_data.pop(person_external_id_key, None)
-        if person_by_external_id:
-            person = self._match_by_external_id(
-                external_id_to_match=person_by_external_id, model=Person, validated_data_key=None
-            )
-            self.custom_validated_data['person_id'] = person.pk
-        else:
-            raise ValidationError('No external person ID was specified')
-
-    def __validate_title(self):
-        """ Validates the title by name field.
-
-        If validated, prepares them for the corresponding Title instance.
-
-        :return: Nothing.
-        """
-        # link in title
-        title_by_name_key = 'title_by_name'
-        # remove from initial data, so that is is not included in model validation
-        title_by_name = self.initial_data.pop(title_by_name_key, None)
-        if title_by_name:
-            stripped_title_by_name = str(title_by_name).strip()
-            title = self._add_if_does_not_exist(
-                model=Title,
-                filter_dict={'name__iexact': stripped_title_by_name},
-                add_dict={'name': stripped_title_by_name}
-            )
-            self.custom_validated_data['title_id'] = title.pk
 
     def is_valid(self, raise_exception=False):
         """ Validates for optional custom attributes.
@@ -2295,31 +2307,83 @@ class PersonTitleAirTableSerializer(AbstractAsOfDateBoundedModelSerializer):
         :param raise_exception: True if an exception should be raised during validation.
         :return: True if record is valid, false if record is invalid.
         """
-        # remove title by name, so it is excluded from validation
-        self.__validate_title()
+        # validate the given the title by its name, and add it as a model instance if it does not already
+        # exist, and then place the value into self.initial_data
+        self._validate_foreign_key_by_name(
+            foreign_key_field='title',
+            foreign_key_model=Title,
+            create_unknown=True,
+            raise_exception=True
+        )
         # validate record
-        is_valid = super(PersonTitleAirTableSerializer, self).is_valid(raise_exception=raise_exception)
-        # record is valid
-        if is_valid:
-            self.__validate_person()
-        return is_valid
-
-    def create(self, validated_data):
-        """ Creates a new person title and its related data.
-
-        :param validated_data: Dictionary of validated data used to creating new person title and its related data.
-        :return: Instance of newly created person title.
-        """
-        validated_data['title_id'] = self.custom_validated_data.get('title_id', None)
-        validated_data['person_id'] = self.custom_validated_data.get('person_id', None)
-        # validated data before values are popped from it
-        self.original_validated_data = validated_data.copy()
-        # instance has been added into bulk import table
-        instance = super(PersonTitleAirTableSerializer, self).create(validated_data=validated_data)
-        return instance
+        return super(PersonTitleAirTableSerializer, self).is_valid(raise_exception=raise_exception)
 
     class Meta:
         model = PersonTitle
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
-        exclude = AbstractAsOfDateBoundedModelSerializer.excluded_fields + ['title', 'person', 'description']
+        exclude = list(set(AbstractAsOfDateBoundedModelSerializer.excluded_fields +
+                           AbstractPersonLinkModelSerializer.excluded_fields +
+                           ['description']))
+
+
+class PersonPaymentAirTableSerializer(AbstractAsOfDateBoundedModelSerializer, AbstractPersonLinkModelSerializer):
+    """ Serializer for person payments that were defined through the Air Table templates.
+
+    Attributes:
+        :leave_status (str): Leave status matched by unique name or added if it does not exist.
+        :county (str): County matched by external county ID.
+    """
+    leave_status = CharField(
+        required=False,
+        allow_null=True,
+        label=_('Leave status - match by unique name, or add if it does not exist')
+    )
+
+    county = CharField(
+        required=False,
+        allow_null=True,
+        label=_('County - match by external county ID')
+    )
+
+    def is_valid(self, raise_exception=False):
+        """ Validates for optional custom attributes.
+
+        :param raise_exception: True if an exception should be raised during validation.
+        :return: True if record is valid, false if record is invalid.
+        """
+        # description can be blank but not None
+        self._convert_null_to_blank(field_name='description')
+        # validate the given the leave status by its name, and add it as a model instance if it does not already
+        # exist, and then place the value into self.initial_data
+        self._validate_foreign_key_by_name(
+            foreign_key_field='leave_status',
+            foreign_key_model=LeaveStatus,
+            create_unknown=False,
+            raise_exception=False
+        )
+        # validate the county by its external ID, and if validated, place the value into self.initial_data
+        self._validate_foreign_key_by_external_id(
+            foreign_key_field='county',
+            foreign_key_model=County,
+            raise_exception=False
+        )
+        # validate decimals
+        raise_exception = False
+        v_dict = {'raise_exception': raise_exception, 'validator': None}
+        self._validate_decimal(decimal_field='base_salary', **v_dict)
+        self._validate_decimal(decimal_field='regular_hours', **v_dict)
+        self._validate_decimal(decimal_field='regular_hours_gross_pay', **v_dict)
+        self._validate_decimal(decimal_field='overtime_hours', **v_dict)
+        self._validate_decimal(decimal_field='overtime_pay', **v_dict)
+        self._validate_decimal(decimal_field='total_other_pay', **v_dict)
+        # validate record
+        return super(PersonPaymentAirTableSerializer, self).is_valid(raise_exception=raise_exception)
+
+    class Meta:
+        model = PersonPayment
+        #: Model fields that are excluded here must be passed into the validated_data dictionary through the
+        # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
+        exclude = list(set(AbstractAsOfDateBoundedModelSerializer.excluded_fields +
+                           AbstractPersonLinkModelSerializer.excluded_fields +
+                           []))
