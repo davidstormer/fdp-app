@@ -11,11 +11,6 @@ var Fdp = (function (fdpDef, $, w, d) {
 	var changingPersonDef = {};
 
     /**
-     * A dummy value for an ID attribute that matches NO elements in the HTML. Used as a placeholder parameter for getConfigureFormFunc(...).
-     */
-    var _ignoredId = "ignoredXYZ";
-
-    /**
 	 * True when an existing person is being edited, false when a new person is being created. Set when page is initialized.
 	 */
 	var _isEditing = false;
@@ -29,12 +24,6 @@ var Fdp = (function (fdpDef, $, w, d) {
 	 * URL to which asynchronous requests are sent to retrieve a filtered list of persons.
 	 */
 	var _getPersonsUrl = null;
-
-    /**
-	 * Retrieves the Checkbox element used to specify whether the person belongs to law enforcement or not.
-	 * @returns {Object} Checkbox element used to specify whether the person belongs to law enforcement or not. Will be wrapped in JQuery object.
-	 */
-	var _getIsLawEnforcementCheckbox = function () { return $("#id_is_law_enforcement"); };
 
     /**
 	 * Retrieves the container element in which the birth date range start field exists.
@@ -71,74 +60,6 @@ var Fdp = (function (fdpDef, $, w, d) {
 	 * @returns {Object} Single birth date field. Will be wrapped in JQuery object.
 	 */
     var _getBirthDateInput = function () { return (_getBirthDateContainer()).find("input"); };
-
-    /**
-	 * Sets the classes for labels corresponding to form fields.
-	 */
-    function _setLabelClasses() {
-        // the grouping SELECT element for person groupings
-        $("input.groupingname").each(function (i, elem) {
-            var select = $(elem);
-            var label = select.prev("label");
-            label.addClass("grouping");
-        });
-        // the title SELECT element for person titles
-        $("select.title").each(function (i, elem) {
-            var select = $(elem);
-            var label = select.prev("label");
-            label.addClass("title");
-        });
-    };
-
-    /**
-	 * Called when any of the form templates are selected to be displayed.
-	 */
-    function _onCompleteForTemplate() {
-        // container to remove still exists (this is the first time the template is rendered)
-        var containerToDelete = $("#cust_personselectcont");
-        if (containerToDelete.length > 0) {
-            // hide container and then delete it
-            Fdp.Common.fadeOut(
-                containerToDelete, /* elemToFadeOut */
-                function () { containerToDelete.remove(); } /* onCompleteFunc */
-            );
-        }
-        var manualDisplayClass = ".manualdisplay"
-        var isLawEnforcementCheckbox = _getIsLawEnforcementCheckbox();
-        var isLawEnforcement = isLawEnforcementCheckbox.is(":checked");
-        var cls = "";
-        isLawEnforcementCheckbox.off("change");
-        isLawEnforcementCheckbox.one("change", function () {
-            var innerIsLawEnforcement = $(this).is(":checked");
-            Fdp.Common.getConfigureFormFunc(
-                innerIsLawEnforcement.toString(), /* selectedId */
-                _ignoredId, /* fieldFieldName */
-                _onCompleteForTemplate /* defaultOnComplete */
-            )();
-        });
-
-        // law enforcement was selected
-        if (isLawEnforcement === true) {
-            cls = ".manualdisplaylaw";
-        }
-        // not law enforcement was selected
-        else if (isLawEnforcement === false) {
-            cls = ".manualdisplaynotlaw";
-        }
-        // hide all elements that are no form fields or inline forms, but were displayed for the previous selection
-        Fdp.Common.fadeOut(
-            $(manualDisplayClass + ":not(" + cls + ")"), /* elemToFadeOut */
-            null /* onCompleteFunc */
-        );
-
-        // display all elements that are not form fields or inline forms
-        Fdp.Common.fadeIn(
-            $(manualDisplayClass + cls), /* elemToFadeIn */
-            null /* onCompleteFunc */
-        );
-        // determines which birth date related fields to show / hide
-        _showOrHideBirthDateFields();
-    };
 
     /**
 	 * Called to hide the birth date range.
@@ -818,18 +739,6 @@ var Fdp = (function (fdpDef, $, w, d) {
     };
 
     /**
-     * Localized alternative labels for form fields.
-     */
-    changingPersonDef.Command = "";
-    changingPersonDef.Commands = "";
-    changingPersonDef.Organization = "";
-    changingPersonDef.Organizations = "";
-    changingPersonDef.Rank = "";
-    changingPersonDef.Ranks = "";
-    changingPersonDef.Title = "";
-    changingPersonDef.Titles = "";
-
-    /**
      * Initializes interactivity for interface elements for adding and editing person through the data management tool. Should be called when DOM is ready.
      * @param {boolean} isEditing - True if person already exists, and we are editing it, false otherwise.
      * @param {string} getGroupingsUrl - URL to which asynchronous requests are sent to retrieve a filtered list of groupings.
@@ -841,94 +750,8 @@ var Fdp = (function (fdpDef, $, w, d) {
         _getGroupingsUrl = getGroupingsUrl;
         _getPersonsUrl = getPersonsUrl;
 
-        var isLawEnforcementCheckbox = _getIsLawEnforcementCheckbox();
-        var lawEnforcementTemplateId = "1";
-        var notLawEnforcementTemplateId = "2";
-        var trueBool = true;
-        var falseBool = false;
-
         // disable enter key for page
         Fdp.Common.disableEnterKey();
-
-        // set classes for labels corresponding to form fields
-        _setLabelClasses();
-
-        // map law enforcement persons to law enforcement template
-        Fdp.Common.formTemplateMap[trueBool.toString()] = lawEnforcementTemplateId;
-        // map not law enforcement persons to not law enforcement template
-        Fdp.Common.formTemplateMap[falseBool.toString()] = notLawEnforcementTemplateId;
-        // fields to display for each template
-        Fdp.Common.createFormTemplateFieldMap(
-            lawEnforcementTemplateId, /* key */
-            [
-                "is_law_enforcement",
-                "name",
-                "traits",
-                "for_admin_only",
-                "for_host_only",
-                "fdp_organizations"
-            ], /* fields */
-            [
-                "identifierform",
-                "persongroupingform",
-                "persontitleform",
-                "personpaymentform",
-                "personaliasform",
-                "personrelationshipform"
-            ], /* inlineForms */
-            _onCompleteForTemplate, /* onCompleteFunc */
-            null, /* optionsDict */
-            {
-                "label.grouping": changingPersonDef.Command, /* labelText */
-                "button.cmds": [changingPersonDef.Commands, false], /* [labelText, hasColon] */
-                "button.tls": [changingPersonDef.Ranks, false], /* [labelText, hasColon] */
-                "span.cmd": [String(changingPersonDef.Command).toLowerCase(), false], /* [labelText, hasColon] */
-                "span.tle": [String(changingPersonDef.Rank).toLowerCase(), false], /* [labelText, hasColon] */
-                "label.title": changingPersonDef.Rank /* labelText */
-            } /* labelsDict */
-        );
-        Fdp.Common.createFormTemplateFieldMap(
-            notLawEnforcementTemplateId, /* key */
-            [
-                "is_law_enforcement",
-                "name",
-                "for_admin_only",
-                "for_host_only",
-                "fdp_organizations"
-            ], /* fields */
-            [
-                "identifierform",
-                "persongroupingform",
-                "persontitleform",
-                "personaliasform",
-                "personrelationshipform",
-                "personcontactform"
-            ], /* inlineForms */
-            _onCompleteForTemplate, /* onCompleteFunc */
-            null, /* optionsDict */
-            {
-                "label.grouping": changingPersonDef.Organization, /* labelText */
-                "button.cmds": [changingPersonDef.Organizations, false] /* [labelText, hasColon] */,
-                "button.tls": [changingPersonDef.Titles, false], /* [labelText, hasColon] */
-                "span.cmd": [String(changingPersonDef.Organization).toLowerCase(), false], /* [labelText, hasColon] */
-                "span.tle": [String(changingPersonDef.Title).toLowerCase(), false], /* [labelText, hasColon] */
-                "label.title": changingPersonDef.Title /* labelText */
-            } /* labelsDict */
-
-        );
-
-        // initializes the configurable form
-        // changing the section in the top-level SELECT element that configures the form
-        var firstSelect = $("#cust_personselect");
-        firstSelect.one("change", function () {
-            var innerIsLawEnforcement = (this.value == "true");
-            isLawEnforcementCheckbox.prop("checked", innerIsLawEnforcement);
-            Fdp.Common.getConfigureFormFunc(
-                innerIsLawEnforcement.toString(), /* selectedId */
-                _ignoredId, /* fieldFieldName */
-                _onCompleteForTemplate /* defaultOnComplete */
-            )();
-        });
 
         // initialize adding new and removing existing identifiers
         _initIdentifierForms();
@@ -973,15 +796,8 @@ var Fdp = (function (fdpDef, $, w, d) {
             );
         });
 
-        // We are editing an existing person
-        if (_isEditing === true) {
-            var isLawEnforcement = isLawEnforcementCheckbox.is(":checked");
-            Fdp.Common.getConfigureFormFunc(
-                isLawEnforcement.toString(), /* selectedId */
-                _ignoredId, /* fieldFieldName */
-                _onCompleteForTemplate /* defaultOnComplete */
-            )();
-        }
+        // initialize display of exact vs. range for birth date
+        _showOrHideBirthDateFields()
 
 	};
 
