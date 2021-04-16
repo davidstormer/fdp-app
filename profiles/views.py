@@ -814,7 +814,6 @@ class CommandSearchResultsListView(SecuredSyncListView):
             SELECT
                 A."id",
                 A."name",
-                A."code",
                 MAX(A."score"),
                 (
                     SELECT string_agg(ZGA."name", ', ')
@@ -828,11 +827,10 @@ class CommandSearchResultsListView(SecuredSyncListView):
                 SELECT
                     "{grouping}"."id",
                     "{grouping}"."name" AS "name",
-                    "{grouping}"."code" AS "code",
                     {sql_score}
                 {sql_from}
             ) A
-            GROUP BY A."id", A."name", A."code"
+            GROUP BY A."id", A."name"
             ORDER BY MAX(A."score") DESC
             LIMIT {max};
         """.format(

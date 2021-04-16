@@ -74,22 +74,6 @@ class GroupingProfileSearch(AbstractProfileSearch):
                 grouping_alias=GroupingAlias.get_db_table(),
                 score=self._get_primary_alias_score(alias=pairing)
             )
-        # build the query to check against grouping codes
-        grouping_code_check = AbstractSearchValidator.get_partial_check_sql(
-            num_of_checks=num_of_terms,
-            lhs_of_check='"{grouping}"."code"'.format(grouping=Grouping.get_db_table()),
-            is_and=False,
-            fail_on_default=True
-        )
-        # calculating grouping code score
-        grouping_code_whens = '' if pairings else AbstractSearchValidator.EMPTY_WHEN_INT
-        for pairing in pairings:
-            grouping_code_whens += """
-                WHEN "{grouping}"."code" ILIKE \'%%\' || %s || \'%%\' THEN {score}
-            """.format(
-                grouping=Grouping.get_db_table(),
-                score=self._get_primary_name_score(name=pairing)
-            )
         # FROM portion of the SQL query to retrieve groupings matching search criteria
         prefix = self.temp_table_prefix
         suffix = self.unique_table_suffix
@@ -129,11 +113,10 @@ class GroupingProfileSearch(AbstractProfileSearch):
         SELECT
             "id" AS "id",
             CASE {grouping_name_whens} ELSE 0 END 
-            + CASE {grouping_code_whens} ELSE 0 END
             AS "score"
         FROM "{grouping}" 
         WHERE ("{grouping}".{active_filter}) 
-        AND (({grouping_name_check}) OR ({grouping_code_check}));            
+        AND ({grouping_name_check});            
 
         {create_temp_table_sql} "{tmp_grouping_alias_score}" ("id" INTEGER NOT NULL, "score" INTEGER NOT NULL)
         {on_commit_temp_table_sql} INSERT INTO "{tmp_grouping_alias_score}" ("id", "score")
@@ -149,19 +132,15 @@ class GroupingProfileSearch(AbstractProfileSearch):
             grouping_alias=GroupingAlias.get_db_table(),
             grouping_name_whens=grouping_name_whens,
             grouping_name_check=grouping_name_check,
-            grouping_code_whens=grouping_code_whens,
-            grouping_code_check=grouping_code_check,
             grouping_alias_whens=grouping_alias_whens,
             grouping_alias_check=grouping_alias_check,
         )
         # TEMP TABLE PARAMS
         # grouping_name_whens                       pairings
-        # grouping_code_whens                       pairings
         # grouping_name_checks                      terms
-        # grouping_code_checks                      terms
         # grouping_alias_whens                      pairings
         # grouping_alias_checks                     terms
-        temp_table_params = pairings + pairings + terms + terms + pairings + terms
+        temp_table_params = pairings + terms + pairings + terms
         return temp_table_query, sql_from_query, temp_table_params, from_params
 
     def define_sql_query_score(self):
