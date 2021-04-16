@@ -65,11 +65,6 @@
                     <span class="identval">{% for alias in object.command_aliases %}{{ alias.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
                 </div>
                 {% endif %}
-                {% if object.code %}
-                <div>
-                    <label class="ident">{% translate 'Code' %}</label> <span class="identval">{{ object.code }}</span>
-                </div>
-                {% endif %}
                 {% if object.address %}
                 <div>
                     <label class="ident">{% translate 'Address' %}</label> <span class="identval">{{ object.address }}</span>
