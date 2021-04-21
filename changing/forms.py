@@ -330,7 +330,7 @@ class PersonIdentifierModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_identifier_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'identifiers'
@@ -408,11 +408,11 @@ class PersonGroupingModelForm(AbstractWizardModelForm):
 
     grouping_name = forms.CharField(
         required=False,
-        label=_('Grouping'),
+        label=_('Command'),
     )
 
     #: Fields to show in the form
-    fields_to_show = ['grouping_name'] + person_grouping_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'persongroupings'
@@ -496,7 +496,7 @@ class PersonTitleModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_title_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'titles'
@@ -581,7 +581,7 @@ class PersonPaymentModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_payment_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'payments'
@@ -653,7 +653,7 @@ class PersonAliasModelForm(AbstractWizardModelForm):
 
     """
     #: Fields to show in the form
-    fields_to_show = PersonAlias.form_fields
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'aliases'
@@ -733,7 +733,7 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_relationship_form_fields.copy()
+    fields_to_show = []
 
     #: Key in cleaned data dictionary indicating the person for whom the relationship form is saved.
     for_person_key = '_for_person'
@@ -809,7 +809,7 @@ class PersonContactModelForm(AbstractWizardModelForm):
 
     """
     #: Fields to show in the form
-    fields_to_show = PersonContact.form_fields
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'contacts'
@@ -848,7 +848,7 @@ class PersonModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_form_fields.copy()
+    fields_to_show = []
 
     def __init__(self, *args, **kwargs):
         """ Set the single known birth date, if one exists.

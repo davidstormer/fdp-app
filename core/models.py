@@ -1379,6 +1379,7 @@ class Grouping(Archivable, Descriptable):
 
     Attributes:
         :name (str): Name of grouping.
+        :code (str): Code for grouping.
         :phone_number (str): Phone number for grouping.
         :email (str): Email address for grouping.
         :address (str): Full address for grouping.
@@ -1394,6 +1395,15 @@ class Grouping(Archivable, Descriptable):
         help_text=_('Name of grouping'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('name')
+    )
+
+    code = models.CharField(
+        null=False,
+        blank=True,
+        default='',
+        help_text=_('Code for grouping'),
+        max_length=50,
+        verbose_name=_('code')
     )
 
     phone_number = models.CharField(
@@ -1469,7 +1479,7 @@ class Grouping(Archivable, Descriptable):
 
     #: Fields to display in the model form.
     form_fields = [
-        'name', 'phone_number', 'email', 'address', 'is_inactive', 'inception_date', 'cease_date', 'counties',
+        'name', 'code', 'phone_number', 'email', 'address', 'is_inactive', 'inception_date', 'cease_date', 'counties',
         'description', 'belongs_to_grouping', 'belongs_to_grouping_name'
     ]
 
@@ -1745,7 +1755,7 @@ class Grouping(Archivable, Descriptable):
     class Meta:
         db_table = '{d}grouping'.format(d=settings.DB_PREFIX)
         verbose_name = _('grouping')
-        unique_together = ('name', 'address')
+        unique_together = ('name', 'code', 'address')
         ordering = ['name']
 
 

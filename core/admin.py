@@ -116,12 +116,12 @@ class GroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for groupings of people.
 
     """
-    _list_display = ['name', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_display
+    _list_display = ['name', 'code', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     list_filter = ['counties', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_filter
-    search_fields = ['name', 'phone_number', 'email', 'address']
-    ordering = ['name']
+    search_fields = ['name', 'code', 'phone_number', 'email', 'address']
+    ordering = ['name', 'code']
 
 
 @admin.register(GroupingAlias)
@@ -133,8 +133,8 @@ class GroupingAliasAdmin(FdpInheritableAdmin, ArchivableAdmin):
     list_display = _list_display
     list_display_links = _list_display
     list_filter = [] + ArchivableAdmin.list_filter
-    search_fields = ['name', 'grouping__name']
-    ordering = ['grouping__name', 'name']
+    search_fields = ['name', 'grouping__name', 'grouping__code']
+    ordering = ['grouping__name', 'grouping__code', 'name']
 
 
 @admin.register(GroupingRelationship)
