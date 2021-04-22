@@ -15,7 +15,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 #: This should not be used in a production environment.
 # from .configuration.local.local_settings import *
 
-
+# This one
 #: To configure hosting in a Microsoft Azure environment, remove the comment from the below import statement.
 from .configuration.azure.azure_settings import *
 
