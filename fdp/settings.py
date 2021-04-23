@@ -51,5 +51,23 @@ FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
 
 
 #: To enable logging, remove the comments from the below assignments.
-FDP_ERR_LOGGING['handlers']['file']['filename'] = '/home/site/wwwroot/debug.log'
-LOGGING = FDP_ERR_LOGGING
+#FDP_ERR_LOGGING['handlers']['file']['filename'] = '/home/site/wwwroot/debug.log'
+#LOGGING = FDP_ERR_LOGGING
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/home/site/wwwroot/django_debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
