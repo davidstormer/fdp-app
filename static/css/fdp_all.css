@@ -1,0 +1,21 @@
+/* *** GENERAL LAYOUT STYLES *** */
+/* social authentication disconnect and user logout */
+form.logout { float: right; }
+button.logout {
+    text-transform: uppercase;
+    padding: 0;
+    padding-bottom: 2px;
+    background: transparent;
+    font: inherit;
+    color: #FFF;
+    cursor: pointer;
+    border: 0 none;
+    border-bottom: 1px solid rgba(255,255,255,0.25);
+    line-height: 1em;
+}
+button.logout:focus, button.logout:hover {
+    border-bottom-color: #79aec8;
+    color: #79aec8;
+}
+/* element in which number of minutes or seconds before session expiry are kept */
+#sessiontoexpirespan { font-weight:bold; }

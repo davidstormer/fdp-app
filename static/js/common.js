@@ -16,6 +16,62 @@ var Fdp = (function (fdpDef, $, w, d) {
 	 */
 	var _openedWindows = {};
 
+    /**
+     * True if user's browser supports local storage, false otherwise.
+     */
+    var _isLocalStorageCompatible = true;
+
+	/**
+	 * Number of milliseconds that a full user session is expected to remain open without any renewal.
+	 */
+	var _fullSessionMilliseconds = 0;
+
+    /**
+     * Handle of the asynchronous session expiry check that is returned by setTimeout(...).
+     */
+    var _sessionExpiryAsyncCheckHandle = null;
+
+    /**
+     * When set to true and the modal dialogue for session expiry is closed, an asynchronous session expiry check is
+     * scheduled for approximately _minBeforeSessionExpiryToNotify minutes before the session is expected to expire.
+     */
+    var _checkBackAfterFullSession = true;
+
+	/**
+	 * Name of HTML5 data-* attribute storing whether the user's session should be renewed or not.
+	 */
+	var _doSessionRenewDataAttr = "dorenew";
+
+	/**
+	 * Name of HTML5 data-* attribute storing the previous version of the webpage title, i.e. the contents of the <title /> element.
+	 */
+	var _pageTitleDataAttr = "pagetitle";
+
+	/**
+	 * HTML element that stores the previous version of the webpage title as an HTML5 data-* attribute.
+	 */
+    var _pageTitleSaveElem = "body";
+
+	/**
+	 * Key in Local Storage that stores the timestamp when the user's session is expected to expire.
+	 */
+	var _sessionExpiryKey = "fdpsessionexpiry";
+
+	/**
+	 * Number of minutes before an expected user session expiry to notify the user.
+	 */
+	var _minBeforeSessionExpiryToNotify = 3;
+
+	/**
+	 * ID of span element that contains the number of minutes or seconds until session expiry.
+	 */
+	var _sessionExpirySpanElemId = "sessiontoexpirespan";
+
+	/**
+	 * ID of paragaph element that contains the number of minutes or seconds until session expiry.
+	 */
+    var _sessionExpiryParagraphElemId = "sessiontoexpirep"
+
 	/**
 	 * Speed of CSS transitions in milliseconds, e.g. slide up, slide down, etc.
 	 */
@@ -50,6 +106,87 @@ var Fdp = (function (fdpDef, $, w, d) {
         };
     }
 
+    /*
+     * Submits an asynchronous request to the server to renew the user's session to avoid it expiring.
+     */
+    function _renewUserSession() {
+        var ajaxData = {};
+        var ajaxUrl = commonDef.makeAbsolute(Fdp.Common.asyncRenewSessionUrl /* url */ );
+        commonDef.ajax(
+            ajaxUrl, /* ajaxUrl */
+            ajaxData, /* ajaxData */
+            true, /* doStringify */
+            function (data, type) {
+                //user's session is renewed so do nothing more
+            }, /* onSuccess */
+            false /* isForm */
+        );
+    };
+
+    /**
+     * Retrieves the expected session expiry represented in the form of milliseconds from midnight January 1, 1970.
+     * @param {number} expectedSessionAgeMilliseconds - Number of milliseconds that the session is expected to remain active.
+     */
+    function _getExpectedExpiry(expectedSessionAgeMilliseconds) {
+        // current date and time represented in milliseconds from midnight January 1, 1970
+        var currentDate = Date.now();
+
+        // expected date and time that user's session will expire
+        var expectedExpiry = (new Date(currentDate + expectedSessionAgeMilliseconds)).valueOf();
+
+        return expectedExpiry;
+    };
+
+    /**
+     * Stops and clears out any previously running asynchronous session expiry check.
+     */
+    function _clearSessionExpiryAsyncCheck() {
+        if (_sessionExpiryAsyncCheckHandle !== null) {
+            clearTimeout(_sessionExpiryAsyncCheckHandle);
+            _sessionExpiryAsyncCheckHandle = null;
+        }
+    };
+
+    /**
+     * Saves the current webpage title as an HTML5 data-* attribute in the body of the document.
+     */
+    function _savePageTitle() {
+        $(_pageTitleSaveElem).data(_pageTitleDataAttr, $(d).prop("title"));
+    };
+
+    /**
+     * Reverts the current webpage title to its previous version that is saved as an HTML5 data-* attribute in the body of the document.
+     */
+    function _revertPageTitle() {
+        $(d).prop("title", $(_pageTitleSaveElem).data(_pageTitleDataAttr));
+    };
+
+    /**
+     * Change the title for the webpage, i.e. the contents of the <title /> element.
+     * @param {string} newTitle - New title for webpage.
+     */
+    function _changePageTitle(newTitle) {
+        $(d).prop("title", newTitle);
+    };
+
+    /**
+     * Retrieves a newly created element that represents a question mark icon using the Font Awesome icon library.
+     * @returns {Object} Element representing a question mark icon. Will be wrapped in JQuery object.
+     * @see {@link https://fontawesome.com/}
+     */
+    function _makeQuestionMarkIconElem() {
+        return $("<i />", {class: "fas fa-question-circle"});
+    };
+
+    /**
+     * Retrieves a newly created element that represents an exclamation mark icon using the Font Awesome icon library.
+     * @returns {Object} Element representing an exclamation mark icon. Will be wrapped in JQuery object.
+     * @see {@link https://fontawesome.com/}
+     */
+    function _makeExclamationMarkIconElem() {
+        return $("<i />", {class: "fas fa-exclamation-circle"});
+    };
+
     /**
      * Checks whether a string represents a complete HTML page. This is a weak check, and only used for suspected Django error pages.
      * @param {string} html - String to check that may represent a complete HTML page.
@@ -58,6 +195,354 @@ var Fdp = (function (fdpDef, $, w, d) {
     function _isHtml(html) {
         // weak check only verifies that <html> element is exists somewhere in string
         return (html.indexOf("<html") !== -1);
+    };
+
+    /**
+     * Checks whether the user's browser supports local storage, and displays a browser unsupported message if not.
+     * @returns {boolean} True if browser supports local storage, false otherwise.
+     */
+    function _checkLocalStorageCompatibility() {
+        // browser supports local storage
+        if (typeof(Storage) !== "undefined") {
+          return true;
+        }
+        // browser does not support local storage
+        else {
+          commonDef.showUnsupportedBrowser();
+          return false;
+        }
+    };
+
+    /**
+     * Retrieves the timestamp for the user's expected session expiry from the local storage.
+     * @returns {number} Timestamp for the user's expected session expiry represented in milliseconds from midnight January 1, 1970, or null if one does not exist.
+     */
+    function _getSessionExpiry() {
+        var expiryTimestamp = localStorage.getItem(_sessionExpiryKey);
+        // no session expiry stored
+        if ((!expiryTimestamp) || (expiryTimestamp === "")) {
+            return null;
+        }
+        // some session expiry was stored (as string)
+        else {
+            var parsedExpiryTimestamp = (new Date(Number(expiryTimestamp))).valueOf();
+            // if timestamp is defined, the it will be represented as milliseconds from midnight January 1, 1970
+            // invalid dates will result in valueOf(...) returning NaN
+            return (isNaN(parsedExpiryTimestamp)) ? null : parsedExpiryTimestamp;
+        }
+    };
+
+    /**
+     * Stores the timestamp for the user's expected session expiry in the local storage.
+     * @param {number} expiryTimestamp - Timestamp for the user's expected session expiry represented in milliseconds from midnight January 1, 1970.
+     */
+    function _setSessionExpiry(expiryTimestamp) {
+        var asDate = new Date(expiryTimestamp);
+        var asStr = String(asDate.valueOf());
+        localStorage.setItem(_sessionExpiryKey, asStr);
+    };
+
+    /**
+     * Schedules an asynchronous session expiry check in the future.
+     * @param {number} expectedSessionAgeMilliseconds - Number of milliseconds that the user's session is expected to remain open.
+     * @param {number} isAlreadyClosed - True when scheduling of the session expiry check is called from within the vex modal dialogue onclose callback, false otherwise.
+     */
+    function _scheduleSessionExpiryCheck(expectedSessionAgeMilliseconds, isAlreadyClosed) {
+
+        // number of milliseconds before the user's session expiry that the user should be notified
+        var millisecondsBeforeSessionExpiryToNotify = _minBeforeSessionExpiryToNotify * 60 * 1000;
+
+        // session is expected to remain open for longer than
+        // the number of milliseconds before an expected user session expiry to notify the user
+        if (expectedSessionAgeMilliseconds > millisecondsBeforeSessionExpiryToNotify) {
+            var millisecondsToWait = expectedSessionAgeMilliseconds - millisecondsBeforeSessionExpiryToNotify;
+            _clearSessionExpiryAsyncCheck();
+            _sessionExpiryAsyncCheckHandle = setTimeout(
+                _getSessionExpiryCheckFunc(
+                    millisecondsBeforeSessionExpiryToNotify, /* sessionAgeMilliseconds */
+                    false /* isSessionAgeUnknown */
+                ) /* function */,
+                millisecondsToWait /* milliseconds */
+            );
+            // isAlreadyClosed is True when scheduling of the session expiry check is called from within
+            // the vex modal dialogue onclose callback, so no need to call _hideSessionExpiry(...)
+            if (isAlreadyClosed !== true) {
+                _checkBackAfterFullSession = false;
+                _hideSessionExpiry();
+            }
+        }
+        // reached the time before the session expiry, where the user should be notified
+        else {
+            _showSessionExpiry(expectedSessionAgeMilliseconds /* millisecondsLeft */);
+        }
+    };
+
+    /**
+     * Retrieves function to call when the modal dialogue that notifies a user about their session expiry, is hidden.
+     * @returns {function} Function to call when modal dialogue is hidden.
+     */
+    function _getOnHideSessionExpiryFunc() {
+        /**
+         * Called when modal dialogue that notifies a user about their session expiry, is hidden.
+         */
+        return function () {
+            // revert to the original webpage title
+            _revertPageTitle();
+            // modal dialogue was closed by clicking off of it, or using the OK button
+            // so schedule a session expiry check for later
+            if (_checkBackAfterFullSession === true) {
+                // clear any current asynchronous session expiry checks
+                _clearSessionExpiryAsyncCheck();
+                // schedule a session expiry check for the future, using the full session period as a marker
+                _sessionExpiryAsyncCheckHandle = setTimeout(
+                    _getSessionExpiryCheckFunc(
+                        0, /* sessionAgeMilliseconds */
+                        true /* isSessionAgeUnknown */
+                    ), /* function */
+                    _fullSessionMilliseconds /* milliseconds */
+                );
+            }
+            // revert to default value
+            _checkBackAfterFullSession = true;
+        };
+    };
+
+    /**
+     * Retrieves function that initializes the interface elements and adds event handlers when the session expiry notification is displayed for the user.
+     * @param {number} millisecondsLeft - Number of milliseconds that are left until the user session expires.
+     * @param {boolean} initOkButtonOnClick - True if an event handler should be attached to the OK button on the dialogue that optionally submits an asynchronous request to renew the user's session.
+     * @returns {function} Function to initialize interface elements and add corresponding event handlers.
+     */
+    function _getOnShowSessionExpiryFunc(millisecondsLeft, initOkButtonOnClick) {
+        /**
+         * Initializes the interface elements and add event handlers when the session expiry notification is displayed for the user.
+         * It may take several milliseconds for the modal dialogue to be added into the DOM, wait to initialize it until it can be accessed via JQuery.
+         */
+        return function () {
+            // total number of milliseconds waited
+            var millisecondsWaited = 0;
+            // every X milliseconds to check again if the OK button on the modal dialogue is now added to the DOM
+            var incrementToWait = 2;
+            // handle that will be used to end loop that was started with setInterval(...)
+            var loopHandle = null;
+            /**
+             * Function that will loop in X millisecond increments and each time attempt to initialize the interface elements if they have been added to the DOM.
+             * Once initialized, function will end its own loop with clearInterval(...).
+             */
+            function initWhenAddedToDom() {
+                // add to total number of milliseconds waited
+                millisecondsWaited += incrementToWait;
+                // Wrap OK button on modal dialogue in JQuery object
+                var okButton = $(".vex-dialog-button-primary");
+                // OK button is now added to DOM and is accessible via JQuery
+                if (okButton.length > 0) {
+                    // stop waiting loop and initialize the modal dialogue
+                    clearInterval(loopHandle);
+                    // optionally add an event handler to the OK button that checks whether the user's session should be renewed and sends the corresponding asynchronous request
+                    if (initOkButtonOnClick === true) {
+                        okButton.one("click", function () {
+                            _checkBackAfterFullSession = false;
+                            // OK button that was pressed
+                            var pressedOkButton = $(this);
+                            // OK button is configured to renew user's session
+                            if (pressedOkButton.data(_doSessionRenewDataAttr) === true) {
+                                _renewUserSession();
+                            }
+                        });
+                    }
+                    // value stored in HTML5 data-* attribute about whether the OK button will renew the session or or not
+                    var curDoSessionRenewDataAttr = okButton.data(_doSessionRenewDataAttr);
+                    // number of seconds and minutes that are left until session expires
+                    var secondsLeft = Math.floor(millisecondsLeft / 1000);
+                    var minutesLeft = Math.floor(secondsLeft / 60);
+                    // element that stores changing text, e.g. 10 seconds, 5 seconds, ...
+                    var sessionExpiryElem = $("#" + _sessionExpirySpanElemId);
+                    // session has not yet expired
+                    if (secondsLeft > 0) {
+                        // if the OK button is not already configured to renew the session, then do so now
+                        if (curDoSessionRenewDataAttr !== true) { okButton.data(_doSessionRenewDataAttr, true); }
+                        var checkBackMilliseconds;
+                        // there is more than a minute left, so display the number of minutes left
+                        if (millisecondsLeft > (60 * 1000)) {
+                            // check back every 30 seconds
+                            var checkBackSeconds = 30;
+                            // number of milliseconds that the current time to wait is off the synchronized 30 second time to wait
+                            var unsyncedMilliseconds = millisecondsLeft % (checkBackSeconds * 1000)
+                            // if synchronized then use the default 30 second period to wait and check back
+                            // otherwise use the remainder so that the next check back will then be synchronized with the default 30 second period
+                            checkBackMilliseconds = (unsyncedMilliseconds === 0) ? (checkBackSeconds * 1000) : unsyncedMilliseconds;
+                            sessionExpiryElem.text(
+                                minutesLeft + " "
+                                    + ((minutesLeft === 1) ? Fdp.Common.locSessionExpiryMinute : Fdp.Common.locSessionExpiryMinutes)
+                            );
+                        }
+                        // there is less than a minute left, so display the number of seconds left
+                        else {
+                            // check back every 5 seconds
+                            var checkBackSeconds = 5;
+                            // number of milliseconds that the current time to wait is off the synchronized 5 second time to wait
+                            var unsyncedMilliseconds = millisecondsLeft % (checkBackSeconds * 1000)
+                            // if synchronized then use the default 5 second period to wait and check back
+                            // otherwise use the remainder so that the next check back will then be synchronized with the default 5 second period
+                            checkBackMilliseconds = (unsyncedMilliseconds === 0) ? (checkBackSeconds * 1000) : unsyncedMilliseconds;
+                            sessionExpiryElem.text(
+                                secondsLeft + " "
+                                    + ((secondsLeft === 1) ? Fdp.Common.locSessionExpirySecond : Fdp.Common.locSessionExpirySeconds)
+                            );
+                        }
+                        // number of milliseconds after which session expiry should again be checked
+                        var timeoutWait = checkBackMilliseconds - millisecondsWaited;
+                        if (timeoutWait < 0) { timeoutWait = 0; }
+                        // number of milliseconds that the session is expected to have left during the next check
+                        var sessionAgeMilliseconds = millisecondsLeft - checkBackMilliseconds;
+                        if (sessionAgeMilliseconds < 0) { sessionAgeMilliseconds = 0; }
+                        // create the next check
+                        _clearSessionExpiryAsyncCheck();
+                        _sessionExpiryAsyncCheckHandle = setTimeout(
+                            _getSessionExpiryCheckFunc(
+                                sessionAgeMilliseconds, /* sessionAgeMilliseconds */
+                                false /* isSessionAgeUnknown */
+                            ), /* function */
+                            timeoutWait /* milliseconds */
+                        );
+                    }
+                    // session has expired
+                    else {
+                        // if the OK button is configured to renew the session, then disable that configuration
+                        if (curDoSessionRenewDataAttr === true) {okButton.data(_doSessionRenewDataAttr, false); }
+                        // change webpage title
+                        _changePageTitle(commonDef.locSessionExpiredTitle + " | FDP" /* newTitle */);
+                        // update entire paragraph element on dialogue
+                        var p = $("#" + _sessionExpiryParagraphElemId);
+                        // change paragraph to session has expired message
+                        p.html(Fdp.Common.locSessionExpiredMessage);
+                        // change heading text and icon on dialogue to expired session
+                        $("#" + _htmlDialogId + " h1").html(commonDef.locSessionExpiredTitle).prepend(_makeExclamationMarkIconElem());
+                    } // session has expired
+                } // OK button is now added to DOM
+            }; // function looping in X millisecond increments to initialize interface elements
+            // start loop that attempts to initialize
+            loopHandle = setInterval(initWhenAddedToDom, incrementToWait);
+        }; // function defining loop and its start
+    };
+
+    /**
+     * Shows a modal message to the user notifying them that their user session is about to expire.
+     * @param {number} millisecondsLeft - Number of milliseconds that are left until the user session expires.
+     */
+    function _showSessionExpiry(millisecondsLeft) {
+        // session expiry message is already displayed
+        if ($("#" + _sessionExpiryParagraphElemId).is(":visible") === true) {
+            // update specific on dialogue
+            _getOnShowSessionExpiryFunc(
+                millisecondsLeft /* millisecondsLeft */,
+                false /* initOkButtonOnClick */
+            )();
+        }
+        // session expiry message is not currently displayed
+        else {
+            // change webpage title, previous title was saved in Fdp.Common.initSessionExpiryCheck(...)
+            _changePageTitle(commonDef.locSessionExpiryTitle + " | FDP" /* newTitle */);
+            // show modal dialogue
+            var p = $("<p />", { id: _sessionExpiryParagraphElemId });
+            p.append(commonDef.locSessionExpiryMessage);
+            p.append($("<span />", { id: _sessionExpirySpanElemId }));
+            p.append(commonDef.locSessionRenewMessage);
+            commonDef.showHtmlMessage(
+                commonDef.noStatus, /* status */
+                commonDef.locSessionExpiryTitle, /* title */
+                p, /* html */
+                _getOnShowSessionExpiryFunc(
+                    millisecondsLeft /* millisecondsLeft */,
+                    true /* initOkButtonOnClick */
+                ), /* onShowFunc */
+                _getOnHideSessionExpiryFunc() /* onCloseFunc */
+            );
+        }
+    };
+
+    /**
+     * Hides the modal message to the user notifying them that their user session is about to expire.
+     */
+    function _hideSessionExpiry() {
+        // session expiry message is displayed
+        if ($("#" + _sessionExpiryParagraphElemId).is(":visible") === true) {
+            // close the top modal dialogue that is assumed to be for the session expiry
+            vex.closeTop();
+        }
+        // no dialogue to close
+        else {
+            // revert to default value
+            _checkBackAfterFullSession = true;
+        }
+    };
+
+    /**
+     * Retrieves a function to check the user's expected session expiry.
+     * @param {number} sessionAgeMilliseconds - Number of milliseconds that are expected to be left until the user session expires.
+     * @param {boolean} isSessionAgeUnknown - True if the session age is not known, and so the value in sessionAgeMilliseconds will be ignored.
+     Will be true if we waited a full session length period to check session expiry again, after the dialogue was closed without renewing the session.
+     * @returns {function} Function to check the user's expected session expiry.
+     */
+    function _getSessionExpiryCheckFunc(sessionAgeMilliseconds, isSessionAgeUnknown) {
+
+        // local copy of milliseconds after which user's session is expected to expire
+        var expectedSessionAgeMilliseconds = sessionAgeMilliseconds;
+        // local copy of whether session age is not known
+        var isExpectedSessionAgeUnknown = isSessionAgeUnknown;
+
+        /**
+         * Checks the user's expected session expiry and either schedules another check for later on or displays a warning.
+         */
+        return function () {
+
+            var expectedExpiry;
+
+            // the session age is not known
+            if (isExpectedSessionAgeUnknown === true) {
+                expectedExpiry = null;
+                sessionAgeMilliseconds = 0;
+            }
+            // the session age is known and is the time remaining until the session expires
+            else {
+                // retrieve the timestamp when the user's session is expected to expire in the form of milliseconds from
+                // midnight January 1, 1970.
+                expectedExpiry = _getExpectedExpiry(sessionAgeMilliseconds /* expectedSessionAgeMilliseconds */);
+            }
+
+            // timestamp that was previously stored as the user's expected session expiry
+            var previousExpiry = _getSessionExpiry();
+
+            // the session age is not known, so use the previous recorded session age
+            if (isExpectedSessionAgeUnknown === true) {
+                // no session age was previously recorded
+                if (previousExpiry === null) {
+                    _clearSessionExpiryAsyncCheck();
+                    alert("The remaining session time is not known and is not saved in local storage. Session expiry checks will now stop until the page is reloaded.");
+                    return;
+                }
+                // convert session age that was previously recorded
+                else {
+                    var currentExpiry = _getExpectedExpiry(0 /* expectedSessionAgeMilliseconds */);
+                    expectedSessionAgeMilliseconds = previousExpiry - currentExpiry;
+                }
+            }
+            // session age that was passed in was known, so compare with previous recorded session age
+            else {
+                // previous session expiry is later than current session expiry
+                if ((previousExpiry !== null) && (expectedExpiry !== null) && (expectedExpiry < previousExpiry)) {
+                    // use the previously set expected session expiry, it may have been set in another window or tab
+                    // add the difference to the current session age
+                    expectedSessionAgeMilliseconds += previousExpiry - expectedExpiry;
+                }
+            }
+
+            // schedule a session expiry check for later
+            _scheduleSessionExpiryCheck(
+                expectedSessionAgeMilliseconds, /* expectedSessionAgeMilliseconds */
+                (isSessionAgeUnknown === true) ? true : false /* isAlreadyClosed */
+            );
+        };
     };
 
     /**
@@ -252,7 +737,22 @@ var Fdp = (function (fdpDef, $, w, d) {
                 title: commonDef.locLoading
 	        });
 	    $("body").append(img);
-        $(d).ajaxStart(function () { img.fadeIn(_speed); }).ajaxStop(function () { img.fadeOut(_speed); });
+        $(d).ajaxStart(function () {
+            img.fadeIn(_speed);
+        }).ajaxStop(function () {
+            // user's browser supports local storage
+            if (_isLocalStorageCompatible === true) {
+                // update session expiry
+                // retrieve the timestamp when the user's session is expected to expire in the form of milliseconds from
+                // midnight January 1, 1970.
+                var expectedExpiry = _getExpectedExpiry(_fullSessionMilliseconds /* expectedSessionAgeMilliseconds */);
+                // save the current expected session expiry
+                // assuming that all user sessions are the same length, and so this is the most recent
+                _setSessionExpiry(expectedExpiry /* expiryTimestamp */);
+            }
+            // fade out AJAX spinner
+            img.fadeOut(_speed);
+        });
 	};
 
     /**
@@ -526,9 +1026,7 @@ var Fdp = (function (fdpDef, $, w, d) {
             .append(
                 $("<div />", { id: "showError" })
                     .append(
-                        $("<h1 />", { text: title }).prepend(
-                            $("<i />", {class: "fas fa-exclamation-circle"})
-                        )
+                        $("<h1 />", { text: title }).prepend(_makeExclamationMarkIconElem())
                     )
                     .append(
                         $("<p />", {text: message })
@@ -547,9 +1045,7 @@ var Fdp = (function (fdpDef, $, w, d) {
             .append(
                 $("<div />", { id: "rawError" })
                     .append(
-                        $("<h1 />", { text: commonDef.locRawErrorTitle }).prepend(
-                            $("<i />", {class: "fas fa-exclamation-circle"})
-                        )
+                        $("<h1 />", { text: commonDef.locRawErrorTitle }).prepend(_makeExclamationMarkIconElem())
                     ).append(
                         $("<p />", {text: commonDef.locRawErrorMessage })
                     ).append(
@@ -591,9 +1087,7 @@ var Fdp = (function (fdpDef, $, w, d) {
             .append(
                 $("<div />", { id: "showConfirmation" })
                     .append(
-                        $("<h1 />", { text: title }).prepend(
-                            $("<i />", {class: "fas fa-question-circle"})
-                        )
+                        $("<h1 />", { text: title }).prepend(_makeQuestionMarkIconElem())
                     )
                     .append(
                         $("<p />", {text: message })
@@ -616,15 +1110,14 @@ var Fdp = (function (fdpDef, $, w, d) {
      * @param {string} title - Localized title for the HTML message.
      * @param {Object} html - Html elements, wrapped in JQuery objects to add to message box.
      * @param {function} onShowFunc - Function to call when the HTML message is displayed. Passed no parameters.
+     * @param {function} onCloseFunc - Function to call when the HTML message is closed. Passed no parameters.
      */
-	commonDef.showHtmlMessage = function (status, title, html, onShowFunc) {
+	commonDef.showHtmlMessage = function (status, title, html, onShowFunc, onCloseFunc) {
         var div = $("<div />")
             .append(
                 $("<div />", { id: _htmlDialogId })
                     .append(
-                        $("<h1 />", { text: title }).prepend(
-                            $("<i />", {class: "fas fa-question-circle"})
-                        )
+                        $("<h1 />", { text: title }).prepend(_makeQuestionMarkIconElem())
                     )
                     .append(
                         html
@@ -636,6 +1129,11 @@ var Fdp = (function (fdpDef, $, w, d) {
                 afterOpen: function ($vexContent) {
                     if (onShowFunc) {
                         onShowFunc();
+                    }
+                },
+                afterClose: function ($vexContent) {
+                    if (onCloseFunc) {
+                        onCloseFunc();
                     }
                 }
             }
@@ -1048,6 +1546,43 @@ var Fdp = (function (fdpDef, $, w, d) {
             // adds styling to search box, to indicate previous successful selection
             commonDef.showAutocompleteOk(searchInputElem /* searchInputElem */);
         }
+    };
+
+    /**
+     * Initializes a check that runs in the background and lets the user know if their session is close to expiring.
+     * @param {number} sessionAge - Number of seconds more that a session is expected to remain open.
+     */
+    commonDef.initSessionExpiryCheck = function (sessionAge) {
+
+            // browser does not support local storage, so unsupported message is displayed and session expiry check is disabled
+            if (_checkLocalStorageCompatibility() !== true) {
+                _isLocalStorageCompatible = false;
+                return;
+            }
+
+            // number of milliseconds that the user's session is expected to remain open
+            var sessionAgeMilliseconds = sessionAge * 1000;
+
+            // save the expected full user session if no renewal occurs
+            _fullSessionMilliseconds = sessionAgeMilliseconds;
+
+            // retrieve the timestamp when the user's session is expected to expire in the form of milliseconds from
+            // midnight January 1, 1970.
+            var expectedExpiry = _getExpectedExpiry(sessionAgeMilliseconds /* expectedSessionAgeMilliseconds */);
+
+            // save the current expected session expiry
+            // assuming that all user sessions are the same length, and so this is the most recent
+            _setSessionExpiry(expectedExpiry /* expiryTimestamp */);
+
+            // save the webpage title, because session expiry may change it
+            _savePageTitle();
+
+            // retrieve the function to check for the user's session expiry and immediately call
+            _getSessionExpiryCheckFunc(
+                sessionAgeMilliseconds, /* sessionAgeMilliseconds */
+                false /* isSessionAgeUnknown */
+            )();
+
     };
 
     // Define Fdp.Common
