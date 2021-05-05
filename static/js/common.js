@@ -37,6 +37,11 @@ var Fdp = (function (fdpDef, $, w, d) {
      */
     var _checkBackAfterFullSession = true;
 
+    /**
+     * JQuery selector used to identify the primary button (i.e. OK) that appears on modal dialogues displayed to the user.
+     */
+    var _okButtonSelector = ".vex-dialog-button-primary";
+
 	/**
 	 * Name of HTML5 data-* attribute storing whether the user's session should be renewed or not.
 	 */
@@ -78,6 +83,11 @@ var Fdp = (function (fdpDef, $, w, d) {
 	var _speed = 400;
 
 	/**
+	 * ID of icon that is displayed to the user to indicate successful completion of an asynchronous request, i.e. AJAX.
+	 */
+	var _checkMarkId = "ajaxdone";
+
+	/**
 	 * ID of message dialogue container containing raw HTML.
 	 */
 	var _htmlDialogId = "showHtml";
@@ -117,7 +127,31 @@ var Fdp = (function (fdpDef, $, w, d) {
             ajaxData, /* ajaxData */
             true, /* doStringify */
             function (data, type) {
-                //user's session is renewed so do nothing more
+                // create check mark icon that is displayed temporarily to indicate that session was successfully renewed
+                var i = _makeCheckMarkIconElem(true /* addUniqueId */);
+                // add icon to DOM
+                $("body").prepend(i);
+                // wait until loading image has been faded out
+                setTimeout(
+                    function () {
+                        // fade in the check mark icon
+                        i.fadeIn(_speed);
+                        // wait a few seconds to begin fading out the check mark icon
+                        setTimeout(function () {
+                                // fade out check mark icon
+                                i.fadeOut(
+                                    _speed,
+                                    function () {
+                                        // remove the check mark icon once it has completely faded out
+                                        $("#" + _checkMarkId).remove();
+                                    }
+                                );
+                            }, /* function */
+                            2000 /* milliseconds */
+                        );
+                    }, /* function */
+                    _speed /* milliseconds */
+                );
             }, /* onSuccess */
             false /* isForm */
         );
@@ -185,6 +219,18 @@ var Fdp = (function (fdpDef, $, w, d) {
      */
     function _makeExclamationMarkIconElem() {
         return $("<i />", {class: "fas fa-exclamation-circle"});
+    };
+
+    /**
+     * Retrieves a newly created element that represents a check mark icon using the Font Awesome icon library.
+     * @param {boolean} addUniqueId - True if the ID attribute for the element should be assigned a unique identifier, false otherwise.
+     * @returns {Object} Element representing an check mark icon. Will be wrapped in JQuery object.
+     * @see {@link https://fontawesome.com/}
+     */
+    function _makeCheckMarkIconElem(addUniqueId) {
+        var classValue = "fas fa-check-square";
+        var opts = (addUniqueId === true) ? {class: classValue, id: _checkMarkId} : {class: classValue};
+        return $("<i />", opts);
     };
 
     /**
@@ -333,7 +379,7 @@ var Fdp = (function (fdpDef, $, w, d) {
                 // add to total number of milliseconds waited
                 millisecondsWaited += incrementToWait;
                 // Wrap OK button on modal dialogue in JQuery object
-                var okButton = $(".vex-dialog-button-primary");
+                var okButton = $(_okButtonSelector);
                 // OK button is now added to DOM and is accessible via JQuery
                 if (okButton.length > 0) {
                     // stop waiting loop and initialize the modal dialogue
@@ -355,12 +401,14 @@ var Fdp = (function (fdpDef, $, w, d) {
                     // number of seconds and minutes that are left until session expires
                     var secondsLeft = Math.floor(millisecondsLeft / 1000);
                     var minutesLeft = Math.floor(secondsLeft / 60);
-                    // element that stores changing text, e.g. 10 seconds, 5 seconds, ...
+                    // element that stores changing text, e.g. 10 seconds, 9 seconds, ...
                     var sessionExpiryElem = $("#" + _sessionExpirySpanElemId);
                     // session has not yet expired
                     if (secondsLeft > 0) {
                         // if the OK button is not already configured to renew the session, then do so now
                         if (curDoSessionRenewDataAttr !== true) { okButton.data(_doSessionRenewDataAttr, true); }
+                        // button says renew session
+                        okButton.text(commonDef.locSessionExpiryButton);
                         var checkBackMilliseconds;
                         // there is more than a minute left, so display the number of minutes left
                         if (millisecondsLeft > (60 * 1000)) {
@@ -371,24 +419,24 @@ var Fdp = (function (fdpDef, $, w, d) {
                             // if synchronized then use the default 30 second period to wait and check back
                             // otherwise use the remainder so that the next check back will then be synchronized with the default 30 second period
                             checkBackMilliseconds = (unsyncedMilliseconds === 0) ? (checkBackSeconds * 1000) : unsyncedMilliseconds;
-                            sessionExpiryElem.text(
-                                minutesLeft + " "
-                                    + ((minutesLeft === 1) ? Fdp.Common.locSessionExpiryMinute : Fdp.Common.locSessionExpiryMinutes)
-                            );
+                            var minTxt = minutesLeft + " "
+                                    + ((minutesLeft === 1) ? Fdp.Common.locSessionExpiryMinute : Fdp.Common.locSessionExpiryMinutes);
+                            sessionExpiryElem.text(minTxt);
+                            _changePageTitle(minTxt  + " " + commonDef.locSessionUntilExpiryMessage + commonDef.locSessionSuffix /* newTitle */);
                         }
                         // there is less than a minute left, so display the number of seconds left
                         else {
-                            // check back every 5 seconds
-                            var checkBackSeconds = 5;
-                            // number of milliseconds that the current time to wait is off the synchronized 5 second time to wait
+                            // check back every 1 second
+                            var checkBackSeconds = 1;
+                            // number of milliseconds that the current time to wait is off the synchronized 1 second time to wait
                             var unsyncedMilliseconds = millisecondsLeft % (checkBackSeconds * 1000)
-                            // if synchronized then use the default 5 second period to wait and check back
-                            // otherwise use the remainder so that the next check back will then be synchronized with the default 5 second period
+                            // if synchronized then use the default 1 second period to wait and check back
+                            // otherwise use the remainder so that the next check back will then be synchronized with the default 1 second period
                             checkBackMilliseconds = (unsyncedMilliseconds === 0) ? (checkBackSeconds * 1000) : unsyncedMilliseconds;
-                            sessionExpiryElem.text(
-                                secondsLeft + " "
-                                    + ((secondsLeft === 1) ? Fdp.Common.locSessionExpirySecond : Fdp.Common.locSessionExpirySeconds)
-                            );
+                            var secTxt = secondsLeft + " "
+                                    + ((secondsLeft === 1) ? Fdp.Common.locSessionExpirySecond : Fdp.Common.locSessionExpirySeconds);
+                            sessionExpiryElem.text(secTxt);
+                            _changePageTitle(secTxt  + " " + commonDef.locSessionUntilExpiryMessage + commonDef.locSessionSuffix /* newTitle */);
                         }
                         // number of milliseconds after which session expiry should again be checked
                         var timeoutWait = checkBackMilliseconds - millisecondsWaited;
@@ -409,9 +457,18 @@ var Fdp = (function (fdpDef, $, w, d) {
                     // session has expired
                     else {
                         // if the OK button is configured to renew the session, then disable that configuration
-                        if (curDoSessionRenewDataAttr === true) {okButton.data(_doSessionRenewDataAttr, false); }
+                        if (curDoSessionRenewDataAttr === true) {
+                            // remove configuration to renew session
+                            okButton.data(_doSessionRenewDataAttr, false);
+                            // remove previous event handlers
+                            okButton.off("click");
+                            // redirect to login
+                            okButton.one("click", function () { commonDef.reloadWindow(w /* windowElem */); });
+                        }
+                        // button says renew session
+                        okButton.text(commonDef.locSessionExpiredButton);
                         // change webpage title
-                        _changePageTitle(commonDef.locSessionExpiredTitle + " | FDP" /* newTitle */);
+                        _changePageTitle(commonDef.locSessionExpiredTitle + commonDef.locSessionSuffix /* newTitle */);
                         // update entire paragraph element on dialogue
                         var p = $("#" + _sessionExpiryParagraphElemId);
                         // change paragraph to session has expired message
@@ -1032,7 +1089,7 @@ var Fdp = (function (fdpDef, $, w, d) {
                         $("<p />", {text: message })
                     )
             );
-	    vex.dialog.alert({ unsafeMessage: div.html()});
+	    vex.dialog.alert({ unsafeMessage: div.html(), showCloseButton: true });
 	};
 
     /**
@@ -1061,7 +1118,7 @@ var Fdp = (function (fdpDef, $, w, d) {
                             )
                     )
             );
-	    vex.dialog.alert( { unsafeMessage: div.html() } );
+	    vex.dialog.alert( { unsafeMessage: div.html(), showCloseButton: true } );
 	    // add on click event to display full error details
 	    var clickable = $("#" + txtId);
 	    clickable.on("click", function () {
@@ -1095,6 +1152,7 @@ var Fdp = (function (fdpDef, $, w, d) {
             );
 	    vex.dialog.confirm(
 	        {
+	            showCloseButton: true,
 	            unsafeMessage: div.html(),
 	            callback: function (value) {
 	                if (value === true) { onConfirmFunc(); }
@@ -1125,6 +1183,7 @@ var Fdp = (function (fdpDef, $, w, d) {
             );
         vex.dialog.alert(
             {
+                showCloseButton: true,
                 unsafeMessage: div.html(),
                 afterOpen: function ($vexContent) {
                     if (onShowFunc) {
@@ -1583,6 +1642,15 @@ var Fdp = (function (fdpDef, $, w, d) {
                 false /* isSessionAgeUnknown */
             )();
 
+    };
+
+    /**
+     * Reloads a window using the URL already loaded in it.
+     * @param {Object} windowElem - JavaScript object representing window.
+     */
+    commonDef.reloadWindow = function (windowElem) {
+        // true to force a reload from the web server (and not from cache)
+        windowElem.location.reload(true /* forceReload */);
     };
 
     // Define Fdp.Common

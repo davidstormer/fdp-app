@@ -9,6 +9,17 @@
     margin-top: -8px;
     margin-left: -8px;
 }
+/* check mark that is optionally displayed when an asynchronous request (i.e. AJAX) completes successfully */
+#ajaxdone {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    color: #70bf2b;
+    font-size: 400%;
+    margin-top: -24px;
+    margin-left: -24px;
+}
 
 /* *** Error, Confirmation and Other Messages  *** */
 /* Dialog displayed for raw error and handled error and confirmation message */
@@ -30,4 +41,10 @@
 /* Icon to the right of the clickable details link to display raw error */
 #rawError span.details i {
     margin-left: 0.5em;
+}
+/* disables pulsing when focus event triggered on buttons on modal dialogue */
+.vex.vex-theme-default .vex-dialog-button-primary.vex-dialog-button.vex-first:focus,
+.vex.vex-theme-default .vex-dialog-button-secondary.vex-dialog-button.vex-last:focus {
+    -webkit-animation: none;
+    animation: none;
 }

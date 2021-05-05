@@ -126,6 +126,10 @@
         {% if user.is_authenticated %} $( document ).ready(function() { {% endif %}
             {% block onready %}
                 {% if user.is_authenticated %}
+                Fdp.Common.locSessionExpiryButton = "{% trans 'Renew' %}";
+                Fdp.Common.locSessionExpiredButton = "{% trans 'Log in' %}";
+                Fdp.Common.locSessionUntilExpiryMessage = "{% trans 'until expiry' %}";
+                Fdp.Common.locSessionSuffix = "{% trans ' | FDP System' %}";
                 Fdp.Common.locSessionExpiredTitle = "{% trans 'Expired Session' %}";
                 Fdp.Common.locSessionExpiryTitle = "{% trans 'Renew Session' %}";
                 Fdp.Common.locSessionRenewMessage = "{% trans '. Would you like to renew it?' %}";
