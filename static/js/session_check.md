@@ -81,9 +81,9 @@ The dialogue is already visible:
 
 The session is confirmed to still be active.
 
-Wait for 5 seconds via setTimeout(...), then another 5 seconds, and so on until no time is left.
+Wait for 1 second via setTimeout(...), then another 1 second, and so on until no time is left.
 
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=55000, isSessionAgeUnknown=false)();
+    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=59000, isSessionAgeUnknown=false)();
     ...
     _getSessionExpiryCheckFunc(sessionAgeMilliseconds=0, isSessionAgeUnknown=false)();
     ...
@@ -105,7 +105,7 @@ If the user presses the OK button after its one-time event handler has been atta
 
     _checkBackAfterFullSession = false;
 
-If the HTML5 data-* attribute on the OK button is set to true to indicate that the session is still active:
+If the variable _doSessionRenew is set to true, the OK button is configured to request a renewal of the user's session:
 
     _renewUserSession()
 	

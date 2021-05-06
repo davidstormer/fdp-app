@@ -17,9 +17,19 @@ var Fdp = (function (fdpDef, $, w, d) {
 	var _openedWindows = {};
 
     /**
+     * A cached concatenation of commonDef.locSessionUntilExpiryMessage and commonDef.locSessionSuffix that comprises part of the localized text in the session expiry message.
+     */
+    var _cachedLocSessionUntilExpiryMessageWithSuffix = "";
+
+    /**
      * True if user's browser supports local storage, false otherwise.
      */
     var _isLocalStorageCompatible = true;
+
+    /**
+     * True if a session renewal should be requested when the OK button is pressed on the session expiry modal dialogue, false otherwise.
+     */
+    var _doSessionRenew = false;
 
 	/**
 	 * Number of milliseconds that a full user session is expected to remain open without any renewal.
@@ -41,11 +51,6 @@ var Fdp = (function (fdpDef, $, w, d) {
      * JQuery selector used to identify the primary button (i.e. OK) that appears on modal dialogues displayed to the user.
      */
     var _okButtonSelector = ".vex-dialog-button-primary";
-
-	/**
-	 * Name of HTML5 data-* attribute storing whether the user's session should be renewed or not.
-	 */
-	var _doSessionRenewDataAttr = "dorenew";
 
 	/**
 	 * Name of HTML5 data-* attribute storing the previous version of the webpage title, i.e. the contents of the <title /> element.
@@ -296,7 +301,7 @@ var Fdp = (function (fdpDef, $, w, d) {
     function _scheduleSessionExpiryCheck(expectedSessionAgeMilliseconds, isAlreadyClosed) {
 
         // number of milliseconds before the user's session expiry that the user should be notified
-        var millisecondsBeforeSessionExpiryToNotify = _minBeforeSessionExpiryToNotify * 60 * 1000;
+        var millisecondsBeforeSessionExpiryToNotify = _minBeforeSessionExpiryToNotify * 60000;
 
         // session is expected to remain open for longer than
         // the number of milliseconds before an expected user session expiry to notify the user
@@ -386,32 +391,29 @@ var Fdp = (function (fdpDef, $, w, d) {
                     clearInterval(loopHandle);
                     // optionally add an event handler to the OK button that checks whether the user's session should be renewed and sends the corresponding asynchronous request
                     if (initOkButtonOnClick === true) {
+                        // button says renew session
+                        okButton.text(commonDef.locSessionExpiryButton);
+                        // when clicking on button, the session is renewed
                         okButton.one("click", function () {
                             _checkBackAfterFullSession = false;
-                            // OK button that was pressed
-                            var pressedOkButton = $(this);
                             // OK button is configured to renew user's session
-                            if (pressedOkButton.data(_doSessionRenewDataAttr) === true) {
+                            if (_doSessionRenew === true) {
                                 _renewUserSession();
                             }
                         });
                     }
-                    // value stored in HTML5 data-* attribute about whether the OK button will renew the session or or not
-                    var curDoSessionRenewDataAttr = okButton.data(_doSessionRenewDataAttr);
-                    // number of seconds and minutes that are left until session expires
-                    var secondsLeft = Math.floor(millisecondsLeft / 1000);
-                    var minutesLeft = Math.floor(secondsLeft / 60);
+                    // value indicating whether the OK button will renew the session or not
+                    var curDoSessionRenew = _doSessionRenew;
                     // element that stores changing text, e.g. 10 seconds, 9 seconds, ...
                     var sessionExpiryElem = $("#" + _sessionExpirySpanElemId);
                     // session has not yet expired
-                    if (secondsLeft > 0) {
+                    if (millisecondsLeft > 0) {
                         // if the OK button is not already configured to renew the session, then do so now
-                        if (curDoSessionRenewDataAttr !== true) { okButton.data(_doSessionRenewDataAttr, true); }
-                        // button says renew session
-                        okButton.text(commonDef.locSessionExpiryButton);
+                        if (curDoSessionRenew !== true) { _doSessionRenew = true; }
                         var checkBackMilliseconds;
                         // there is more than a minute left, so display the number of minutes left
-                        if (millisecondsLeft > (60 * 1000)) {
+                        if (millisecondsLeft > 60000) {
+                            var minutesLeft = Math.ceil(millisecondsLeft / 60000);
                             // check back every 30 seconds
                             var checkBackSeconds = 30;
                             // number of milliseconds that the current time to wait is off the synchronized 30 second time to wait
@@ -422,21 +424,21 @@ var Fdp = (function (fdpDef, $, w, d) {
                             var minTxt = minutesLeft + " "
                                     + ((minutesLeft === 1) ? Fdp.Common.locSessionExpiryMinute : Fdp.Common.locSessionExpiryMinutes);
                             sessionExpiryElem.text(minTxt);
-                            _changePageTitle(minTxt  + " " + commonDef.locSessionUntilExpiryMessage + commonDef.locSessionSuffix /* newTitle */);
+                            _changePageTitle(minTxt  + _cachedLocSessionUntilExpiryMessageWithSuffix /* newTitle */);
                         }
                         // there is less than a minute left, so display the number of seconds left
                         else {
-                            // check back every 1 second
-                            var checkBackSeconds = 1;
+                            // number of seconds and minutes that are left until session expires
+                            var secondsLeft = Math.ceil(millisecondsLeft / 1000);
                             // number of milliseconds that the current time to wait is off the synchronized 1 second time to wait
-                            var unsyncedMilliseconds = millisecondsLeft % (checkBackSeconds * 1000)
+                            var unsyncedMilliseconds = millisecondsLeft % 1000;
                             // if synchronized then use the default 1 second period to wait and check back
                             // otherwise use the remainder so that the next check back will then be synchronized with the default 1 second period
-                            checkBackMilliseconds = (unsyncedMilliseconds === 0) ? (checkBackSeconds * 1000) : unsyncedMilliseconds;
+                            checkBackMilliseconds = (unsyncedMilliseconds === 0) ? 1000 : unsyncedMilliseconds;
                             var secTxt = secondsLeft + " "
                                     + ((secondsLeft === 1) ? Fdp.Common.locSessionExpirySecond : Fdp.Common.locSessionExpirySeconds);
                             sessionExpiryElem.text(secTxt);
-                            _changePageTitle(secTxt  + " " + commonDef.locSessionUntilExpiryMessage + commonDef.locSessionSuffix /* newTitle */);
+                            _changePageTitle(secTxt + _cachedLocSessionUntilExpiryMessageWithSuffix /* newTitle */);
                         }
                         // number of milliseconds after which session expiry should again be checked
                         var timeoutWait = checkBackMilliseconds - millisecondsWaited;
@@ -457,9 +459,9 @@ var Fdp = (function (fdpDef, $, w, d) {
                     // session has expired
                     else {
                         // if the OK button is configured to renew the session, then disable that configuration
-                        if (curDoSessionRenewDataAttr === true) {
+                        if (curDoSessionRenew === true) {
                             // remove configuration to renew session
-                            okButton.data(_doSessionRenewDataAttr, false);
+                            _doSessionRenew = false;
                             // remove previous event handlers
                             okButton.off("click");
                             // redirect to login
@@ -478,8 +480,14 @@ var Fdp = (function (fdpDef, $, w, d) {
                     } // session has expired
                 } // OK button is now added to DOM
             }; // function looping in X millisecond increments to initialize interface elements
-            // start loop that attempts to initialize
-            loopHandle = setInterval(initWhenAddedToDom, incrementToWait);
+            // OK button is now added to DOM and is accessible via JQuery
+            if ($(_okButtonSelector).length > 0) {
+                // subtract because it is added back in function initWhenAddedToDom(...)
+                millisecondsWaited -= incrementToWait;
+                initWhenAddedToDom();
+            }
+            // OK button is not yet added to DOM, so start loop that attempts to initialize
+            else { loopHandle = setInterval(initWhenAddedToDom, incrementToWait); }
         }; // function defining loop and its start
     };
 
@@ -498,8 +506,6 @@ var Fdp = (function (fdpDef, $, w, d) {
         }
         // session expiry message is not currently displayed
         else {
-            // change webpage title, previous title was saved in Fdp.Common.initSessionExpiryCheck(...)
-            _changePageTitle(commonDef.locSessionExpiryTitle + " | FDP" /* newTitle */);
             // show modal dialogue
             var p = $("<p />", { id: _sessionExpiryParagraphElemId });
             p.append(commonDef.locSessionExpiryMessage);
@@ -547,7 +553,6 @@ var Fdp = (function (fdpDef, $, w, d) {
         var expectedSessionAgeMilliseconds = sessionAgeMilliseconds;
         // local copy of whether session age is not known
         var isExpectedSessionAgeUnknown = isSessionAgeUnknown;
-
         /**
          * Checks the user's expected session expiry and either schedules another check for later on or displays a warning.
          */
@@ -575,7 +580,11 @@ var Fdp = (function (fdpDef, $, w, d) {
                 // no session age was previously recorded
                 if (previousExpiry === null) {
                     _clearSessionExpiryAsyncCheck();
-                    alert("The remaining session time is not known and is not saved in local storage. Session expiry checks will now stop until the page is reloaded.");
+                    commonDef.showError(
+                        commonDef.noStatus, /* status */
+                        commonDef.locErrorTitle, /* title */
+                        "The remaining session time is not known and is not saved in local storage. Session expiry checks will now stop until the page is reloaded." /* message */
+                    );
                     return;
                 }
                 // convert session age that was previously recorded
@@ -1628,6 +1637,9 @@ var Fdp = (function (fdpDef, $, w, d) {
             // retrieve the timestamp when the user's session is expected to expire in the form of milliseconds from
             // midnight January 1, 1970.
             var expectedExpiry = _getExpectedExpiry(sessionAgeMilliseconds /* expectedSessionAgeMilliseconds */);
+
+            // cached concatenation used in the session expiry message
+            _cachedLocSessionUntilExpiryMessageWithSuffix = " " + commonDef.locSessionUntilExpiryMessage + commonDef.locSessionSuffix;
 
             // save the current expected session expiry
             // assuming that all user sessions are the same length, and so this is the most recent
