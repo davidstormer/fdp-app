@@ -398,6 +398,16 @@ var Fdp = (function (fdpDef, $, w, d) {
                             _checkBackAfterFullSession = false;
                             // OK button is configured to renew user's session
                             if (_doSessionRenew === true) {
+                                // clear any previously scheduled session expiry check
+                                _clearSessionExpiryAsyncCheck();
+                                // check session expiry again in 5 seconds
+                                _sessionExpiryAsyncCheckHandle = setTimeout(
+                                    _getSessionExpiryCheckFunc(
+                                        millisecondsLeft - millisecondsWaited, /* sessionAgeMilliseconds */
+                                        false /* isSessionAgeUnknown */
+                                    ), /* function */
+                                    5000 /* milliseconds */
+                                );
                                 _renewUserSession();
                             }
                         });

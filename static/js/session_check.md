@@ -107,9 +107,13 @@ If the user presses the OK button after its one-time event handler has been atta
 
 If the variable _doSessionRenew is set to true, the OK button is configured to request a renewal of the user's session:
 
-    _renewUserSession()
+    _renewUserSession();
+
+While renewing the user's session, wait for 5 seconds via setTimeout(...) to give the asynchronous session renewal request a chance to complete:
+
+    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=..., isSessionAgeUnknown=false)();
 	
-Then, regardless of whether the session is active or expired:
+Then, regardless of whether the session was active or expired when the OK button was pressed:
 
     _getOnHideSessionExpiryFunc()();
 
