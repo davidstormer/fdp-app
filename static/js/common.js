@@ -622,6 +622,22 @@ var Fdp = (function (fdpDef, $, w, d) {
     };
 
     /**
+     * Sets in local storage the timestamp based on a full session length from the current timestamp, for when the user's session is expected to expire.
+     */
+    function _setSessionExpiryToCurrent() {
+        // user's browser supports local storage
+        if (_isLocalStorageCompatible === true) {
+            // update session expiry
+            // retrieve the timestamp when the user's session is expected to expire in the form of milliseconds from
+            // midnight January 1, 1970.
+            var expectedExpiry = _getExpectedExpiry(_fullSessionMilliseconds /* expectedSessionAgeMilliseconds */);
+            // save the current expected session expiry
+            // assuming that all user sessions are the same length, and so this is the most recent
+            _setSessionExpiry(expectedExpiry /* expiryTimestamp */);
+        }
+    };
+
+    /**
      * Builds a very basic complete HTML page.
      * @param {string} content - Content to place into the BODY element of the Html page.
      * @returns {string} A basic complete HTML page with content included.
@@ -791,10 +807,15 @@ var Fdp = (function (fdpDef, $, w, d) {
     /**
      * Ensures that the CSRF tokens are sent with each request using an unsafe method, and that loading animation is displayed appropriately.
      * @param {boolean} sendCsrf - True if CSRF token should be sent during asynchronous requests, false otherwise.
-     * @see {@link https://docs.djangoproject.com/en/2.1/ref/csrf/#setting-the-token-on-the-ajax-request|Django}
+     * @see {@link https://docs.djangoproject.com/en/2.2/ref/csrf/#setting-the-token-on-the-ajax-request|Django}
      */
 	commonDef.initAjax = function (sendCsrf) {
         if (sendCsrf === true) {
+            // TODO: This approach is deprecated by JQuery. See: https://api.jquery.com/jquery.ajaxsetup/
+            // TODO: This follows the Django 2.2 recommendation and is now a deprecated approach.
+            // See: https://docs.djangoproject.com/en/2.2/ref/csrf/#setting-the-token-on-the-ajax-request
+            // The Django 3.2 recommendation references the Fetch() API.
+            // See: https://docs.djangoproject.com/en/3.2/ref/csrf/#setting-the-token-on-the-ajax-request
             // ensure CSRF tokens sent during requests
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -816,19 +837,21 @@ var Fdp = (function (fdpDef, $, w, d) {
         $(d).ajaxStart(function () {
             img.fadeIn(_speed);
         }).ajaxStop(function () {
-            // user's browser supports local storage
-            if (_isLocalStorageCompatible === true) {
-                // update session expiry
-                // retrieve the timestamp when the user's session is expected to expire in the form of milliseconds from
-                // midnight January 1, 1970.
-                var expectedExpiry = _getExpectedExpiry(_fullSessionMilliseconds /* expectedSessionAgeMilliseconds */);
-                // save the current expected session expiry
-                // assuming that all user sessions are the same length, and so this is the most recent
-                _setSessionExpiry(expectedExpiry /* expiryTimestamp */);
-            }
+            // update the session expiry
+            _setSessionExpiryToCurrent();
             // fade out AJAX spinner
             img.fadeOut(_speed);
         });
+	};
+
+    /**
+     * Called from Django Data Wizard package to set in local storage the timestamp based on a full session length from the current timestamp,
+     * for when the user's session is expected to expire.
+     * Used to keep the client-side session expiry checking mechanism accurate.
+     */
+	commonDef.setSessionExpiryToCurrent = function () {
+        // update the session expiry
+        _setSessionExpiryToCurrent();
 	};
 
     /**
