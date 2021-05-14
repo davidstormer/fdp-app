@@ -17,5 +17,5 @@ button.logout:focus, button.logout:hover {
     border-bottom-color: #79aec8;
     color: #79aec8;
 }
-/* element in which number of minutes or seconds before session expiry are kept */
-#sessiontoexpirespan { font-weight:bold; }
+/* element appearing on the modal dialogue that contains the exact time remaining until a user's session will expire */
+#sessiontoexpirytime { font-weight:bold; }

@@ -174,7 +174,7 @@ progress.timer = function ($progress, url, $status) {
       }
 
       // Fix for FDP to ensure that session expiry timestamp in local storage is updated for client-side checks
-      Fdp.Common.setSessionExpiryToCurrent();
+      Fdp.Common.updateSessionExpiry();
 
     }).catch(function (err) {
       if ($status) {

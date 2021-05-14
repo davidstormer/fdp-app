@@ -1,138 +1,71 @@
-# Code trace to check user session expiry in the FDP system
+# Client-side code trace to check for user session expiry in the FDP system
 
 ## Synchronous page load
 
-Variable initialized:
+Initialization on synchronous page loads is performed by a call from the *onready* template block in the *base.html* template:
 
-    _checkBackAfterFullSession=true;
+    Fdp.Common.initSessionExpiryCheck(... /* sessionAge */);
 
-In this example, session checks are initialize with 4 minute sessions and with notifications starting at 3 minutes to expiry:
+During initialization, the expected session expiry is placed into both local storage and a variable through:
 
-    Fdp.Common.initSessionExpiryCheck(sessionAge=240);
+    _updateSessionExpiry();
+
+Since local storage is shared between windows, a new value will overwrite any existing value with the assumption that the newest value is the most current excepted session expiry.
+
+Next, an event listener is added to listen for changes made to the local storage by other windows.
+
+    _addSessionExpiryUpdateListener();
+
+A loop of continuous checks is started, scheduled to run every second using *setInterval(...)* and to call:
+
+    _checkSessionExpiry(); 
+
+During each check, the flag *_checkLocalStorageForSessionExpiry* is used to determine if the variable containing the expected session expiry is considered to be current, or if the value in the local storage has been changed, possibly through another window. This flag is kept up-to-date through the event listener *_addSessionExpiryUpdateListener(...)*.
+
+Once the most current expected session expiry is known, the Document Object Model (DOM) is optionally manipulated to communicate to the user about the state of their user session: 
+
+    _changeDomForSessionExpiry();
+
+This function uses a series of variables to keep track of its DOM manipulations, including *_isSessionExpiryDialogueDisplayed* and *_isSessionExpiryInCountdown*.
+
+## DOM Manipulation
+
+The *_showModalDialogueForSessionExpiry(...)* function displays the modal dialogue to the user indicating either that their session is about to expire or that it has already expired. In this function, a check is made to see if DOM manipulations are paused, in cases such as to allow an asynchronous session renewal to complete: 
+
+    if (_neverShowSessionExpiry !== true) {...}
+
+The callback function used after the modal dialogue is displayed implements a loop using *setInterval(...)* to allow time for the DOM manipulation to complete so that the dialogue is accessible:
+
+    // DOM manipulation is complete
+    if ($(_okButtonSelector).length > 0) { ... }
+    // DOM manipulation is not yet complete
+    else {
+        ...
+        var loopHandle = null;
+        ...
+        function waitForOkButton(){
+            // DOM manipulation is complete
+            if ($(_okButtonSelector).length > 0) {
+                clearInterval(loopHandle);
+                ...
+            }
+        };
+        loopHandle = setInterval(waitForOkButton, ...);
+
+Depending on the context in which the modal dialogue is displayed and its contents customized, the primary button, i.e. the OK button, on it, may have an event handler attached to it that reloads the page forcing a login, or renews the user's session asynchronously. 
+
+## Asynchronous requests
+
+With every asynchronous request, the user's session is updated on the server. To keep the client-side session expiry synchronized:
+
     ...
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=240000, isSessionAgeUnknown=false)();
-    ...
-    _scheduleSessionExpiryCheck(expectedSessionAgeMilliseconds=240000, isAlreadyClosed=false); 
+    ajaxStop(function () {
+    ...        
+        _updateSessionExpiry();
+        ...
 
-Control statement succeeds for 4 minutes is greater than 3 minutes:
+## Django Data Wizard package
 
-    _checkBackAfterFullSession=false;
-    ...
-    _hideSessionExpiry();
-	
-If the dialogue is visible, then:
+Asynchronous requests made through the Django Data Wizard package via the *Fetch()* API do not by default update the client-side known session expiry. To address this, a call is made in *data_wizard_progress.js*:
 
-    _getOnHideSessionExpiryFunc()();		
-    _checkBackAfterFullSession=true;
-
-If the dialogue is not visible, then:
-
-    _checkBackAfterFullSession=true;			
-
-Wait for 1 minute via setTimeout(...).
-
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=180000, isSessionAgeUnknown=false)();
-    ...
-    _scheduleSessionExpiryCheck(expectedSessionAgeMilliseconds=180000, isAlreadyClosed=false); 
-
-Control statement fails for 3 minutes is greater than 3 minutes:
-
-    _showSessionExpiry(millisecondsLeft=180000);
-
-The dialogue is not yet visible, so display the dialogue:
-
-    _getOnShowSessionExpiryFunc(millisecondsLeft=180000, initOkButtonOnClick=true)();
-
-Add the one-time event handler to the OK button, and the session is confirmed to still be active.
-
-Wait for 30 seconds via setTimeout(...).
-
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=150000, isSessionAgeUnknown=false)();
-    ...
-    _scheduleSessionExpiryCheck(expectedSessionAgeMilliseconds=150000, isAlreadyClosed=false);
-
-Control statement fails for 2 minutes and 30 seconds is greater than 3 minutes:
-
-    _showSessionExpiry(millisecondsLeft=150000);
-
-The dialogue is already visible:
-
-    _getOnShowSessionExpiryFunc(millisecondsLeft=150000, initOkButtonOnClick=false)();
-
-The session is confirmed to still be active.
-
-Wait for 30 seconds via setTimeout(...), then another 30 seconds, and so on until only a minute is left.
-	
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=120000, isSessionAgeUnknown=false)();
-    ...
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=90000, isSessionAgeUnknown=false)();
-    ...
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=60000, isSessionAgeUnknown=false)();
-    ...
-    _scheduleSessionExpiryCheck(expectedSessionAgeMilliseconds=60000, isAlreadyClosed=false);
-
-Control statement fails for 1 minute is greater than 3 minutes:
-
-    _showSessionExpiry(millisecondsLeft=60000);
-
-The dialogue is already visible:
-
-    _getOnShowSessionExpiryFunc(millisecondsLeft=60000, initOkButtonOnClick=false)();
-
-The session is confirmed to still be active.
-
-Wait for 1 second via setTimeout(...), then another 1 second, and so on until no time is left.
-
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=59000, isSessionAgeUnknown=false)();
-    ...
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=0, isSessionAgeUnknown=false)();
-    ...
-    _scheduleSessionExpiryCheck(expectedSessionAgeMilliseconds=0, isAlreadyClosed=false);
-
-Control statement fails for 0 seconds is greater than 3 minutes:
-
-    _showSessionExpiry(millisecondsLeft=0);
-
-The dialogue is already visible:
-
-    _getOnShowSessionExpiryFunc(millisecondsLeft=0, initOkButtonOnClick=false)();
-
-The session is confirmed to have expired.
-	
-## Pressing OK
-
-If the user presses the OK button after its one-time event handler has been attached:
-
-    _checkBackAfterFullSession = false;
-
-If the variable _doSessionRenew is set to true, the OK button is configured to request a renewal of the user's session:
-
-    _renewUserSession();
-
-While renewing the user's session, wait for 5 seconds via setTimeout(...) to give the asynchronous session renewal request a chance to complete:
-
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=..., isSessionAgeUnknown=false)();
-	
-Then, regardless of whether the session was active or expired when the OK button was pressed:
-
-    _getOnHideSessionExpiryFunc()();
-
-Control statement fails for false is true.
-
-    _checkBackAfterFullSession = true;
-
-## Closing dialogue without pressing OK
-
-If the user closes the dialogue without pressing the OK button:
-
-    _getOnHideSessionExpiryFunc()();
-
-Control statement succeeds for true is true.
-
-    _checkBackAfterFullSession = true;
-
-Wait for a full session length via setTimeout(...) and then restart session expiry checks:
-
-    _getSessionExpiryCheckFunc(sessionAgeMilliseconds=0, isSessionAgeUnknown=true)();
-    ...
-    _scheduleSessionExpiryCheck(expectedSessionAgeMilliseconds=..., isAlreadyClosed=true);
+    Fdp.Common.updateSessionExpiry();
