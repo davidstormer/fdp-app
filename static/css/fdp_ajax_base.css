@@ -8,6 +8,7 @@
     height: 16px;
     margin-top: -8px;
     margin-left: -8px;
+    z-index: 16777271;
 }
 /* check mark that is optionally displayed when an asynchronous request (i.e. AJAX) completes successfully */
 #ajaxdone {
@@ -19,6 +20,7 @@
     font-size: 400%;
     margin-top: -24px;
     margin-left: -24px;
+    z-index: 16777271;
 }
 
 /* *** Error, Confirmation and Other Messages  *** */

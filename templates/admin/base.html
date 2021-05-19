@@ -70,7 +70,7 @@
                 <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a> /
                 {% endif %}
                 {% if not user.only_external_auth %}
-                    <a href="{% url 'admin:logout' %}">{% translate 'Log out' %}</a>
+                    <a class="onlogout" href="{% url 'admin:logout' %}">{% translate 'Log out' %}</a>
                 {% else %}
                     {% include "common/fdp_logout.html" %}
                 {% endif %}
@@ -128,7 +128,6 @@
                 {% if user.is_authenticated %}
                 Fdp.Common.locSessionExpiryButton = "{% trans 'Renew' %}";
                 Fdp.Common.locSessionExpiredButton = "{% trans 'Log in' %}";
-                Fdp.Common.locSessionUntilExpiryMessage = "{% trans 'until expiry' %}";
                 Fdp.Common.locSessionSuffix = "{% trans ' | FDP System' %}";
                 Fdp.Common.locSessionExpiredTitle = "{% trans 'Expired Session' %}";
                 Fdp.Common.locSessionExpiryTitle = "{% trans 'Renew Session' %}";

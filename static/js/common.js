@@ -91,6 +91,13 @@ var Fdp = (function (fdpDef, $, w, d) {
     var _isSessionExpiryInCountdown = false;
 
     /**
+     * True if the user's session was active when the modal dialogue was closed.
+     * False if the user's session was inactive (i.e. expired) when the modal dialogue was closed.
+     * null if this variable is not relevant.
+     */
+    var _isSessionActiveWhenClosed = null;
+
+    /**
      * The value representing the title of the page, i.e. the contents of the <title> element, saved before this page title may be changed by session expiry checks.
      */
     var _previousPageTitle = "";
@@ -109,11 +116,6 @@ var Fdp = (function (fdpDef, $, w, d) {
      * JQuery selector used to identify the primary button (i.e. OK) that appears on modal dialogues displayed to the user.
      */
     var _okButtonSelector = ".vex-dialog-button-primary";
-
-    /**
-     * A cached concatenation of two localized strings that will be appended to the page title to reflect a countdown to the user's session expiry.
-     */
-    var _cachedSessionExpiringPageTitleSuffix = "";
 
     /**
      * Polyfill for .endsWith(...) for Internet Explorer.
@@ -164,19 +166,22 @@ var Fdp = (function (fdpDef, $, w, d) {
     function _addSessionExpiryUpdateListener() {
         $(w).on("storage", function (e) {
             _checkLocalStorageForSessionExpiry = true;
+            // clear the saved state of the session when the modal dialogue was last closed
+            _isSessionActiveWhenClosed = null;
         });
     };
 
     /**
      * Updates the timestamp in local storage that represents when the user's session is expected to expire.
+     * @param {boolean} isLogout - True if session expiry update is called in the context of a logout, false otherwise. If true, session expiry will be set to the current date/time.
      */
-    function _updateSessionExpiry() {
+    function _updateSessionExpiry(isLogout) {
 
         // current date and time represented in milliseconds from midnight January 1, 1970
         var currentDate = Date.now();
 
         // expected date and time that user's session will expire, represented in milliseconds from midnight January 1, 1970
-        var sessionExpiry = (new Date(currentDate + _sessionLengthMilliseconds)).valueOf();
+        var sessionExpiry = (new Date(currentDate + ((isLogout === true) ? 0 : _sessionLengthMilliseconds))).valueOf();
 
         // cache the expected session expiry
         _cachedSessionExpiry = sessionExpiry;
@@ -187,6 +192,9 @@ var Fdp = (function (fdpDef, $, w, d) {
 
         // session has been updated, so show session expiry messages again
         _neverShowSessionExpiry = false;
+
+        // clear the saved state of the session when the modal dialogue was last closed
+        _isSessionActiveWhenClosed = null;
     };
 
     /*
@@ -239,10 +247,45 @@ var Fdp = (function (fdpDef, $, w, d) {
     };
 
     /**
+     * Adds an event handler that listens for the user to log out and updates the session expiry in the local storage accordingly.
+     */
+    function _addOnLogout() {
+        // user has "clicked" the logout anchor <a> element or button <button> element
+        $(".onlogout").one("click", function (e) {
+            // stop the session expiry checks
+            _stopSessionExpiryChecks();
+            // set the session expiry timestamp in local storage to the current timestamp
+            _updateSessionExpiry(true /* isLogout */);
+            // continue event propagation
+            return true;
+        });
+    };
+
+    /**
+     * Pauses the changes that would have otherwise been made to the DOM to reflect status of the user's session.
+     * Used after pressing "renew session" or "log in" to avoid dialogues being displayed while processing the request.
+     */
+    function _pauseDomChangesForSessionExpiry() {
+            // don't show session expiry checks for 10 seconds
+            _neverShowSessionExpiry = true;
+            setTimeout(
+                function () {
+                    _neverShowSessionExpiry = false;
+                    // clear the saved state of the session when the modal dialogue was last closed
+                    _isSessionActiveWhenClosed = null;
+                } /* function */,
+                10000 /* milliseconds */
+            );
+    };
+
+    /**
      * Displays the modal dialogue used to communicate with the user about session expiry.
      * @param {function} onShowFunc - Function to call when the modal dialogue has been displayed. Will be passed no parameters.
      */
     function _showModalDialogueForSessionExpiry(onShowFunc) {
+
+        // clear the saved state of the session when the modal dialogue was last closed
+        _isSessionActiveWhenClosed = null;
 
         // only display the session expiry if it is allowed
         if (_neverShowSessionExpiry !== true) {
@@ -295,7 +338,10 @@ var Fdp = (function (fdpDef, $, w, d) {
         // remove any previous event handlers when pressing OK button
         okButton.off("click");
         // add event handler that redirects to login when pressing OK button
-        okButton.one("click", function () { commonDef.reloadWindow(w /* windowElem */); });
+        okButton.one("click", function () {
+            _pauseDomChangesForSessionExpiry();
+            commonDef.reloadWindow(w /* windowElem */);
+        });
         // change OK button text to "log in" or similar
         okButton.text(commonDef.locSessionExpiredButton);
 
@@ -331,9 +377,7 @@ var Fdp = (function (fdpDef, $, w, d) {
             okButton.off("click");
             // add event handler that renews session when pressing OK button
             okButton.one("click", function () {
-                // don't show session expiry checks for 10 seconds
-                _neverShowSessionExpiry = true;
-                setTimeout(function () { _neverShowSessionExpiry = false;} /* function */, 10000 /* milliseconds */)
+                _pauseDomChangesForSessionExpiry();
                 _renewSession();
             });
             // change OK button text to "renew" or similar
@@ -348,6 +392,9 @@ var Fdp = (function (fdpDef, $, w, d) {
 
             // change heading text and icon on dialogue to renew session
             $("#" + _htmlDialogId + " h1").html(commonDef.locSessionExpiryTitle).prepend(_makeQuestionMarkIconElem());
+
+            // update the page title
+            _changePageTitle(commonDef.locSessionExpiryTitle + commonDef.locSessionSuffix /* title */);
 
             // update the countdown
             _updateDomForSessionExpiryCountdown(millisecondsLeft /* millisecondsLeft */);
@@ -369,9 +416,6 @@ var Fdp = (function (fdpDef, $, w, d) {
         // text that is similar to "<x> seconds"
         var secondsLeftAsText = secondsLeft + " " + ((secondsLeft === 1) ? Fdp.Common.locSessionExpirySecond : Fdp.Common.locSessionExpirySeconds);
 
-        // update the page title
-        _changePageTitle(secondsLeftAsText + _cachedSessionExpiringPageTitleSuffix /* title */);
-
         // update the countdown displayed on modal dialogue
         $("#" + _sessionExpiryTimeElemId).text(secondsLeftAsText);
 
@@ -384,6 +428,8 @@ var Fdp = (function (fdpDef, $, w, d) {
     function _revertDomForSessionExpiry(closeDialogue) {
         // dialogue will no longer be displayed
         _isSessionExpiryDialogueDisplayed = false;
+        // temporarily save whether the session was active, i.e. countdown to expiry, or if it was inactive, i.e. already expired
+        var isSessionExpiryInCountdown = _isSessionExpiryInCountdown;
         // dialogue will not show a countdown
         _isSessionExpiryInCountdown = false;
 
@@ -391,6 +437,10 @@ var Fdp = (function (fdpDef, $, w, d) {
         // do not close if this function was called during a close event on the modal dialogue
         if (closeDialogue === true) {
             vex.closeTop();
+        }
+        // otherwise dialogue was closed manually
+        else {
+            _isSessionActiveWhenClosed = isSessionExpiryInCountdown;
         }
 
         // revert the title of the page
@@ -415,7 +465,12 @@ var Fdp = (function (fdpDef, $, w, d) {
                 // no else {...} statement, since dialogue is already displayed and is already in expired state
             }
             // modal dialogue is not yet displayed
-            else { _showModalDialogueForSessionExpiry(_changeDomForSessionExpired /* onShowFunc */); }
+            else {
+                // if the previous time that the dialogue was closed (without renewal) the session was not already expired
+                if (_isSessionActiveWhenClosed !== false) {
+                    _showModalDialogueForSessionExpiry(_changeDomForSessionExpired /* onShowFunc */);
+                }
+            }
         }
         // session will expire in 3 minutes or less
         else if ((millisecondsLeft > 0) && (millisecondsLeft <= 180000)) {
@@ -428,9 +483,12 @@ var Fdp = (function (fdpDef, $, w, d) {
             }
             // modal dialogue is not yet displayed
             else {
-                _showModalDialogueForSessionExpiry(
-                    _getChangeDomForSessionExpiryCountdownFunc(millisecondsLeft /* millisecondsLeft */) /* onShowFunc */
-                );
+                // if the previous time that the dialogue was closed (without renewal) the session was not active
+                if (_isSessionActiveWhenClosed !== true) {
+                    _showModalDialogueForSessionExpiry(
+                        _getChangeDomForSessionExpiryCountdownFunc(millisecondsLeft /* millisecondsLeft */) /* onShowFunc */
+                    );
+                }
             }
         }
         // session will expire in more than 3 minutes
@@ -720,7 +778,7 @@ var Fdp = (function (fdpDef, $, w, d) {
             img.fadeIn(_speed);
         }).ajaxStop(function () {
             // update the session expiry
-            _updateSessionExpiry();
+            _updateSessionExpiry(false /* isLogout */);
             // fade out AJAX spinner
             img.fadeOut(_speed);
         });
@@ -734,7 +792,7 @@ var Fdp = (function (fdpDef, $, w, d) {
         // if the browser is compatible with accessing local storage
         if (_cachedIsLocalStorageCompatible === true) {
             // update the session expiry
-            _updateSessionExpiry();
+            _updateSessionExpiry(false /* isLogout */);
         }
 	};
 
@@ -1550,12 +1608,9 @@ var Fdp = (function (fdpDef, $, w, d) {
         // cache the title of the page, since session expiry checks may change it
         _previousPageTitle = $(d).prop("title");
 
-        // cache the localized suffix that will be appended to the page title to reflect a countdown to the user's session expiry
-        _cachedSessionExpiringPageTitleSuffix = " " + commonDef.locSessionUntilExpiryMessage + commonDef.locSessionSuffix;
-
         // synchronous page load, so update the session expiry in the local storage
         // called before adding the event listener for updates to local storage, to prevent duplication of local storage updates
-        _updateSessionExpiry();
+        _updateSessionExpiry(false /* isLogout */);
 
         // add event listener for updates to local storage
         _addSessionExpiryUpdateListener();
@@ -1589,6 +1644,9 @@ var Fdp = (function (fdpDef, $, w, d) {
                 1000 /* milliseconds */
             );
         }
+
+        // adds an event handler listening for the user to log out and then updates the session expiry in local storage accordingly
+        _addOnLogout();
     };
 
     /**

@@ -20,7 +20,7 @@
         <a href="{% url 'changing:index' %}">{% trans 'Admin' %}</a> /
     {% endif %}
     {% if not only_external_auth %}
-        <a href="{% url 'logout' %}">{% trans 'Log out' %}</a>
+        <a class="onlogout" href="{% url 'logout' %}">{% trans 'Log out' %}</a>
     {% else %}
         {% include "common/fdp_logout.html" %}
     {% endif %}
