@@ -1,4 +1,4 @@
-from django.urls import re_path
+from django.urls import re_path, path
 from django.conf import settings
 from inheritable.models import AbstractUrlValidator
 from . import views
@@ -15,5 +15,6 @@ urlpatterns = [
         ),
         view=views.DownloadImportFileView.as_view(),
         name='download_import_file'
-    )
+    ),
+    path('datawizard/serializer_mappings', view=views.DownloadImportFileView.as_view(), name='view_serializer_mappings')
 ]
