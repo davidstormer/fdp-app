@@ -1,6 +1,6 @@
 from django import template
 from django.contrib.auth import get_user_model
-from inheritable.models import AbstractConfiguration
+from inheritable.models import AbstractConfiguration, AbstractUrlValidator
 
 
 register = template.Library()
@@ -55,3 +55,16 @@ def azure_ad_provider():
     :return: Provider used by Django Social Auth package.
     """
     return AbstractConfiguration.azure_active_directory_provider
+
+
+@register.simple_tag
+def get_abstract_url_validator_attr(attr_to_get):
+    """ Retrieves an attribute from the AbstractUrlValidator class that is used to encapsulate constants and methods
+    used to validate URLs.
+
+    Used to standardize keys and variables when working with AJAX on the client-side.
+
+    :param attr_to_get: Name of attribute to retrieve.
+    :return: Value of attribute.
+    """
+    return getattr(AbstractUrlValidator, attr_to_get)

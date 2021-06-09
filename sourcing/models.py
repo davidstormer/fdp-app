@@ -5,7 +5,8 @@ from django.db.models import Q, Prefetch
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, AbstractKnownInfo, \
-    AbstractFileValidator, Confidentiable, AbstractUrlValidator, AbstractExactDateBounded, Linkable
+    AbstractFileValidator, Confidentiable, AbstractUrlValidator, AbstractExactDateBounded, Linkable, \
+    AbstractConfiguration
 from supporting.models import ContentType, Court, ContentIdentifierType, ContentCaseOutcome, \
     AttachmentType, SituationRole, Allegation, AllegationOutcome
 from fdpuser.models import FdpOrganization
@@ -42,8 +43,14 @@ class Attachment(Confidentiable, Descriptable):
         upload_to='{b}%Y/%m/%d/%H/%M/%S/'.format(b=AbstractUrlValidator.ATTACHMENT_BASE_URL),
         blank=True,
         null=False,
-        help_text=_('Uploaded file as the attachment. Should be less than {s}MB. Ignore if linking an attachment '
-                    'via the web.'.format(s=AbstractFileValidator.MAX_ATTACHMENT_MB_SIZE)),
+        help_text=_(
+            'Uploaded file as the attachment. Should be less than {s}MB. '
+            'Ignore if linking an attachment via the web.'.format(
+                s=AbstractFileValidator.get_megabytes_from_bytes(
+                    num_of_bytes=AbstractConfiguration.max_attachment_file_bytes()
+                )
+            )
+        ),
         validators=[
             AbstractFileValidator.validate_attachment_file_size,
             AbstractFileValidator.validate_attachment_file_extension
