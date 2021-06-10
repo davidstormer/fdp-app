@@ -115,9 +115,9 @@ For hosting in Microsoft Azure, it is recommended that the most sensitive settin
 | | | FDP_AZURE_STATIC_EXPIRY | `None` | Seconds for static file expiration. |
 | | | FDP_AZURE_MEDIA_CONTAINER | `'media'` | Name for media files container. |
 | | | FDP_AZURE_MEDIA_EXPIRY | `20` | Seconds for media file expiration. |
-| | FDP-SOCIAL-AUTH-AZUREAD-TENANTOAUTH2-KEY | | | Azure Active Directory client ID. Only checked if `'aad'` was specified for Azure Active Directory. |
-| | FDP-SOCIAL-AUTH-AZUREAD-TENANTOAUTH2-TENANT-ID | | | Azure Active Directory tenant ID. Only checked if `'aad'` was specified for Azure Active Directory. |
-| | FDP-SOCIAL-AUTH-AZUREAD-TENANTOAUTH2-SECRET | | | Azure Active Directory client secret. Only checked if `'aad'` was specified for Azure Active Directory. |
+| | FDP-SOCIAL-AUTH-AZUREAD-TENANT-OAUTH2-KEY | | | Azure Active Directory client ID. Only checked if `'aad'` was specified for Azure Active Directory. |
+| | FDP-SOCIAL-AUTH-AZUREAD-TENANT-OAUTH2-TENANT-ID | | | Azure Active Directory tenant ID. Only checked if `'aad'` was specified for Azure Active Directory. |
+| | FDP-SOCIAL-AUTH-AZUREAD-TENANT-OAUTH2-SECRET | | | Azure Active Directory client secret. Only checked if `'aad'` was specified for Azure Active Directory. |
 | | | FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS | | Azure Active Directory domain. Only checked if `'aad'` was specified for Azure Active Directory. |
 | | | FDP_FROM_EMAIL | `'webmaster@localhost'` | `FROM` email address for system. |
 | | | FDP_EMAIL_HOST | `'localhost'` | Host used to send emails. |
