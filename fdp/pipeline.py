@@ -4,7 +4,7 @@ from fdpuser.models import FdpUser
 from importlib.util import find_spec, module_from_spec
 from uuid import uuid4
 # check if social-auth-app-django package is installed
-# see: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+# see: https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
 social_core_pipeline_user_spec = find_spec('social_core.pipeline.user')
 social_core_utils_spec = find_spec('social_core.utils')
 # social-auth-app-django package is not installed
