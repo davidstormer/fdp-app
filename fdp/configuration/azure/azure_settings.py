@@ -185,7 +185,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # external authentication such as through Azure Active Directory is supported
 if EXT_AUTH == AAD_EXT_AUTH:
-    # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+    # Django Social Auth: https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
     # Azure Client ID
     SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY = get_from_azure_key_vault(
         secret_name=ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY
@@ -233,7 +233,7 @@ if EXT_AUTH == AAD_EXT_AUTH:
         # See: https://python-social-auth.readthedocs.io/en/latest/backends/azuread.html
         # Ensure that the Django default authentication backend 'django.contrib.auth.backends.ModelBackend' is before
         AUTHENTICATION_BACKENDS.append(CONST_AZURE_AUTH_BACKEND)
-        # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+        # Django Social Auth: https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
         # Enable JSONB field to store extracted extra data in PostgreSQL
         SOCIAL_AUTH_POSTGRES_JSONFIELD = True
         # Custom namespace for URL entries
@@ -259,7 +259,7 @@ if EXT_AUTH == AAD_EXT_AUTH:
             # Disabled since it is replaced by a customized method that enforces case insensitivity
             # during username comparisons.
             # 'social_core.pipeline.user.get_username',
-            'fdp.pipeline.user.get_username',
+            'fdp.pipeline.get_username',
             # Send a validation email to the user to verify its email address.
             # Disabled by default.
             # 'social_core.pipeline.mail.mail_validation',
