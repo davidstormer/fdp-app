@@ -7,7 +7,7 @@ from django.db.models.expressions import RawSQL, Subquery, OuterRef
 from django.apps import apps
 from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, AbstractPhoneValidator, \
     AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractAsOfDateBounded, Confidentiable, \
-    AbstractFileValidator, AbstractUrlValidator, Linkable, AbstractConfiguration
+    AbstractFileValidator, AbstractUrlValidator, Linkable
 from supporting.models import State, Trait, PersonRelationshipType, Location, PersonIdentifierType, County, \
     Title, GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
     PersonIncidentTag, LeaveStatus, SituationRole, TraitType
@@ -901,9 +901,7 @@ class PersonPhoto(Archivable, Descriptable):
         null=False,
         help_text=_(
             'Photo representing person. Should be less than {s}MB.'.format(
-                s=AbstractFileValidator.get_megabytes_from_bytes(
-                    num_of_bytes=AbstractConfiguration.max_person_photo_file_bytes()
-                )
+                s=AbstractFileValidator.MAX_PHOTO_MB_SIZE
             )
         ),
         validators=[

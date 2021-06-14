@@ -992,7 +992,7 @@ class FdpUserTestCase(AbstractTestCase):
         ] + (
             [] if CONST_AZURE_AUTH_APP not in settings.INSTALLED_APPS else [
                 #: Django Social Auth package may not be installed
-                #: See https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
+                #: See https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
                 apps.get_model(CONST_AZURE_AUTH_APP, 'Association'),
                 apps.get_model(CONST_AZURE_AUTH_APP, 'None'),
                 apps.get_model(CONST_AZURE_AUTH_APP, 'UserSocialAuth'),

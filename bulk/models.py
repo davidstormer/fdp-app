@@ -155,7 +155,7 @@ class IsHostAdminUser(BasePermission):
         :param view: Ignored.
         :return: True if user is an administrator and belongs to a host organization, false otherwise.
         """
-        return bool(request.user and request.user.is_authenticated and request.user.has_import_access)
+        return bool(request.user and request.user.has_import_access)
 
 
 class FdpImportFile(FileSource):

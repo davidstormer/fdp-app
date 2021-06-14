@@ -97,6 +97,44 @@ class ContextDataMixin:
         return context
 
 
+class AsyncContextDataMixin:
+    """ Mixin that allows for adding additional context data such as localized labels and JSON parameter names
+    for an asynchronously rendered page.
+
+    """
+    @staticmethod
+    def _add_async_context(context):
+        """ Adds context data such as localized labels and JSON parameter names for an asynchronously rendered
+        page.
+
+        :param context: Dictionary containing some context data, into which localized labels and JSON parameters
+        are added.
+        :return: Expanded context data dictionary.
+        """
+        context['localized_error'] = _('Error')
+        context['localized_cnf_tle'] = _('Are you sure?')
+        context['localized_err_tle'] = _('There was a problem...')
+        context['localized_browser_unsupported'] = _('Your Internet browser is not supported. Please use an updated '
+                                                     'version of Mozilla Firefox or Google Chrome.')
+        context['localized_popup_error'] = _('This popup window is disconnected from the window where it was created. '
+                                             'Please close both windows and try again.')
+        context['localized_loading'] = _('Loading')
+        context['localized_raw_err_tle'] = _('Something unexpected happened...')
+        context['localized_raw_err_dtl'] = _('Error details')
+        context['localized_raw_err_msg'] = _('Please open the link below to see the error details.')
+        context['localized_save'] = _('Save')
+        context['localized_cancel'] = _('Cancel')
+        context['localized_click_to_edit'] = _('Click to edit')
+        context['json_is_error'] = AbstractUrlValidator.JSON_ERR_PARAM
+        context['json_is_empty'] = AbstractUrlValidator.JSON_EMP_PARAM
+        context['json_is_data'] = AbstractUrlValidator.JSON_DAT_PARAM
+        context['json_is_html'] = AbstractUrlValidator.JSON_HTM_PARAM
+        context['json_error'] = AbstractUrlValidator.JSON_ERR_DAT_PARAM
+        context['json_data'] = AbstractUrlValidator.JSON_DAT_DAT_PARAM
+        context['json_html'] = AbstractUrlValidator.JSON_HTM_DAT_PARAM
+        return context
+
+
 class PopupContextMixin:
     """ Mixing that allows for adding additional / optional context data in scenarios where a view is rendered as a
     popup.
@@ -109,6 +147,8 @@ class PopupContextMixin:
         :param context: Dictionary containing some context data, into which parameter names are added.
         :return: Expanded context data dictionary.
         """
+        context['localized_browser_unsupported'] = _('Your Internet browser is not supported. Please use an updated '
+                                                     'version of Mozilla Firefox or Google Chrome.')
         context['localized_popup_error'] = _('This popup window is disconnected from the window where it was created. '
                                              'Please close both windows and try again.')
         context['popup_key'] = AbstractUrlValidator.GET_POPUP_PARAM
@@ -235,6 +275,24 @@ class AdminSyncTemplateView(AdminAccessMixin, ContextDataMixin, TemplateView):
         return self._add_context(context)
 
 
+class AdminAsyncTemplateView(AdminSyncTemplateView, AsyncContextDataMixin):
+    """ Admin only synchronously rendered view rendering a template that also supports asynchronous requests.
+
+    Log is in required, and users must be able to view admin only data.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as parameter names and localized messages for asynchronous requests.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_async_context(context)
+
+
 class SecuredSyncFormView(CoreAccessMixin, ContextDataMixin, FormView):
     """ Secure synchronously rendered view rendering a form.
 
@@ -335,6 +393,24 @@ class AdminSyncCreateView(AdminAccessMixin, ContextDataMixin, RevisionMixin, Cre
         return super(AdminSyncCreateView, self).form_valid(form=form)
 
 
+class AdminAsyncCreateView(AdminSyncCreateView, AsyncContextDataMixin):
+    """ Admin only synchronously rendered view to create an object, and also supporting asynchronous requests.
+
+    Log is in required, and users must be able to view admin only data.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as parameter names and localized messages for asynchronous requests.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_async_context(context)
+
+
 class AdminSyncUpdateView(AdminAccessMixin, ContextDataMixin, RevisionMixin, UpdateView):
     """ Admin only synchronously rendered view to update an object.
 
@@ -392,15 +468,32 @@ class AdminSyncUpdateView(AdminAccessMixin, ContextDataMixin, RevisionMixin, Upd
         return super(AdminSyncUpdateView, self).form_valid(form=form)
 
 
-class SecuredAsyncJsonView(CoreAccessMixin, View):
-    """  Secure view accepting asynchronous requests from which all secure views accepting asynchronous requests
-    inherit.
+class AdminAsyncUpdateView(AdminSyncUpdateView, AsyncContextDataMixin):
+    """ Admin only synchronously rendered view to update an object, and also supporting asynchronous requests.
 
-    Log is in required, and users must be able to view core data.
+    Log is in required, and users must be able to view admin only data.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as parameter names and localized messages for asynchronous requests.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_async_context(context)
+
+
+class AdminAsyncJsonView(AdminAccessMixin, View):
+    """  Admin only view accepting asynchronous requests from which all views accepting asynchronous requests inherit.
+
+    Log is in required, and users must be ale to view admin only data.
 
     Only POST request methods accepted.
 
-    See: https://docs.djangoproject.com/en/3.2/topics/class-based-views/mixins/#more-than-just-html
+    See: https://docs.djangoproject.com/en/2.1/topics/class-based-views/mixins/#more-than-just-html
 
     """
     http_method_names = ['post']
@@ -468,17 +561,3 @@ class SecuredAsyncJsonView(CoreAccessMixin, View):
         str_err = str(err)
         json = JsonError(error='{b} {e}{d}'.format(b=b, e=str_err, d='' if str_err.endswith('.') else '.'))
         return json
-
-
-class AdminAsyncJsonView(AdminAccessMixin, SecuredAsyncJsonView):
-    """  Admin only view accepting asynchronous requests from which all admin-only views accepting asynchronous requests
-    inherit.
-
-    Log is in required, and users must be ale to view admin only data.
-
-    Only POST request methods accepted.
-
-    See: https://docs.djangoproject.com/en/3.2/topics/class-based-views/mixins/#more-than-just-html
-
-    """
-    pass

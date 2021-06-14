@@ -7,8 +7,8 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from django.utils.decorators import method_decorator
 from django.conf import settings
-from inheritable.models import AbstractIpAddressValidator, AbstractConfiguration, JsonData
-from inheritable.views import SecuredSyncTemplateView, SecuredSyncRedirectView, SecuredAsyncJsonView
+from inheritable.models import AbstractIpAddressValidator, AbstractConfiguration
+from inheritable.views import SecuredSyncTemplateView, SecuredSyncRedirectView
 from .models import PasswordReset, FdpUser
 from .forms import FdpUserPasswordResetForm, FdpUserPasswordResetWithReCaptchaForm
 from two_factor.views import LoginView
@@ -357,24 +357,3 @@ class FdpLoginView(LoginView):
                     return self.render_goto_step('token')
         # otherwise, follow the default process for the GET method
         return response
-
-
-class AsyncRenewSessionView(SecuredAsyncJsonView):
-    """ Asynchronously renews a user's session to avoid it expiring.
-
-    See function _renewUserSession(...) in static/js/common.js for the client-side script submitting the request.
-
-    """
-    def post(self, request, *args, **kwargs):
-        """ Asynchronously renews a user's session to avoid it expiring.
-
-        :param request: Http request object through which asynchronous request was submitted.
-        :param args: Ignored.
-        :param kwargs: Ignored.
-        :return: JSON formatted response containing a True boolean value.
-        """
-        try:
-            json = JsonData(data=True)
-        except Exception as err:
-            json = self.jsonify_error(err=err, b=_('Could not renew session. Please reload the page.'))
-        return self.render_to_response(json=json)

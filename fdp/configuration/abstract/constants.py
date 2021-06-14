@@ -22,12 +22,12 @@ CONST_AZURE_OTP_MIDDLEWARE = ['fdp.middleware.azure_middleware.AzureOTPMiddlewar
 
 
 #: Name of Django app to add into INSTALLED_APPS setting to support authentication through Azure Active Directory.
-#: Django Social Auth: https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
+#: Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
 CONST_AZURE_AUTH_APP = 'social_django'
 
 
 #: Additional context processors to add into TEMPLATES setting to support authentication through Azure Active Directory.
-#: Django Social Auth: https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
+#: Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
 CONST_AZURE_TEMPLATE_CONTEXT_PROCESSORS = [
     'social_django.context_processors.backends',
     'social_django.context_processors.login_redirect'
@@ -43,33 +43,3 @@ CONST_AZURE_AUTH_BACKEND = 'social_core.backends.azuread_tenant.AzureADTenantOAu
 #: through Azure Active Directory.
 #: See: https://python-social-auth.readthedocs.io/en/latest/backends/azuread.html
 CONST_AZURE_AD_PROVIDER = 'azuread-tenant-oauth2'
-
-
-#: Value for the default maximum number of bytes that a user-uploaded file can have for an instance of the Attachment
-# model.
-CONST_MAX_ATTACHMENT_FILE_BYTES = 104857600
-
-
-#: Value for the maximum number of bytes that a user-uploaded file can have for an instance of the Person Photo model.
-CONST_MAX_PERSON_PHOTO_FILE_BYTES = 2097152
-
-
-#: A list of tuples that define the types of user-uploaded files that are supported for an instance of the Attachment
-# model. Each tuple has two items: the first is a user-friendly short description of the supported file type; the second
-# is the expected extension of the supported file type.
-CONST_SUPPORTED_ATTACHMENT_FILE_TYPES = [
-    ('Adobe PDF', 'pdf'), ('Microsoft Word 97-2003', 'doc'), ('Microsoft Word 2007+', 'docx'), ('Text file', 'txt'),
-    ('Rich-text format', 'rtf'), ('JPG image file', 'jpg'), ('JPEG image file', 'jpeg'), ('PNG image file', 'png'),
-    ('GIF image file', 'gif'), ('BMP image file', 'bmp'), ('TIFF image file', 'tiff'), ('TIF image file', 'tif'),
-    ('Microsoft Excel 97-2003', 'xls'), ('Microsoft Excel 2007+', 'xlsx'), ('Comma-separated value file', 'csv'),
-    ('Microsoft PowerPoint 97-2003', 'ppt'), ('Microsoft PowerPoint 2007+', 'pptx'),
-    ('Apple Quicktime video file', 'mov'), ('MPEG-4 video file', 'mp4'), ('Open Web Media file', 'webm'),
-]
-
-#: A list of tuples that define the types of user-uploaded files that are supported for an instance of the Person Photo
-# model. Each tuple has two items: the first is a user-friendly short description of the supported file type; the second
-# is the expected extension of the supported file type.
-CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES = [
-    ('JPG image file', 'jpg'), ('JPEG image file', 'jpeg'), ('PNG image file', 'png'),
-    ('GIF image file', 'gif'), ('BMP image file', 'bmp'), ('TIFF image file', 'tiff'), ('TIF image file', 'tif')
-]

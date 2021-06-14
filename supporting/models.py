@@ -643,7 +643,7 @@ class EncounterReason(Archivable):
 
     class Meta:
         db_table = '{d}encounter_reason'.format(d=settings.DB_PREFIX)
-        verbose_name = _('encounter reason')
+        verbose_name = _('encounter resaon')
         ordering = ['name']
 
 

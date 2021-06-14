@@ -10,8 +10,8 @@ from django.forms import formsets
 from inheritable.models import Archivable, AbstractImport, AbstractSql, AbstractUrlValidator, AbstractSearchValidator, \
     JsonData, Confidentiable
 from inheritable.forms import DateWithComponentsField
-from inheritable.views import AdminSyncTemplateView, AdminSyncFormView, AdminSyncCreateView, AdminSyncUpdateView, \
-    AdminAsyncJsonView, PopupContextMixin
+from inheritable.views import AdminSyncTemplateView, AdminSyncFormView, AdminAsyncCreateView, AdminAsyncUpdateView, \
+    AdminAsyncJsonView, PopupContextMixin, AdminSyncCreateView, AdminAsyncTemplateView
 from fdpuser.models import FdpOrganization
 from sourcing.models import Attachment, Content, ContentIdentifier, ContentPerson, ContentPersonAllegation, \
     ContentPersonPenalty
@@ -882,7 +882,7 @@ class AbstractGroupingView:
             )
 
 
-class GroupingCreateView(AdminSyncCreateView, AbstractGroupingView):
+class GroupingCreateView(AdminAsyncCreateView, AbstractGroupingView):
     """ Page through which new grouping can be added.
 
     """
@@ -934,7 +934,7 @@ class GroupingCreateView(AdminSyncCreateView, AbstractGroupingView):
         return self.form_invalid(form=form)
 
 
-class GroupingUpdateView(AdminSyncUpdateView, AbstractGroupingView):
+class GroupingUpdateView(AdminAsyncUpdateView, AbstractGroupingView):
     """ Page through which existing grouping can be updated.
 
     """
@@ -1370,7 +1370,7 @@ class AbstractPersonView:
             photo_forms.save()
 
 
-class PersonCreateView(AdminSyncCreateView, AbstractPersonView):
+class PersonCreateView(AdminAsyncCreateView, AbstractPersonView):
     """ Page through which new person can be added.
 
     """
@@ -1441,7 +1441,7 @@ class PersonCreateView(AdminSyncCreateView, AbstractPersonView):
         return self.form_invalid(form=form)
 
 
-class PersonUpdateView(AdminSyncUpdateView, AbstractPersonView):
+class PersonUpdateView(AdminAsyncUpdateView, AbstractPersonView):
     """ Page through which existing person can be updated.
 
     """
@@ -1759,7 +1759,7 @@ class AbstractIncidentView(AbstractPopupView):
             grouping_forms.save()
 
 
-class IncidentCreateView(AdminSyncCreateView, AbstractIncidentView):
+class IncidentCreateView(AdminAsyncCreateView, AbstractIncidentView):
     """ Page through which new incident can be added.
 
     """
@@ -1854,7 +1854,7 @@ class IncidentCreateView(AdminSyncCreateView, AbstractIncidentView):
         return self.form_invalid(form=form)
 
 
-class IncidentUpdateView(AdminSyncUpdateView, AbstractIncidentView):
+class IncidentUpdateView(AdminAsyncUpdateView, AbstractIncidentView):
     """ Page through which existing incident can be updated.
 
     """
@@ -2090,7 +2090,7 @@ class LocationCreateView(AdminSyncCreateView, AbstractLocationView):
         return context
 
 
-class ClosePopupTemplateView(AdminSyncTemplateView):
+class ClosePopupTemplateView(AdminAsyncTemplateView):
     """ Page that closes the popup window and passes data back to the window opener.
 
     """
@@ -2240,7 +2240,7 @@ class AbstractContentView:
             incident_forms.save()
 
 
-class ContentCreateView(AdminSyncCreateView, AbstractContentView):
+class ContentCreateView(AdminAsyncCreateView, AbstractContentView):
     """ Page through which new content can be added.
 
     """
@@ -2304,7 +2304,7 @@ class ContentCreateView(AdminSyncCreateView, AbstractContentView):
         return self.form_invalid(form=form)
 
 
-class ContentUpdateView(AdminSyncUpdateView, AbstractContentView):
+class ContentUpdateView(AdminAsyncUpdateView, AbstractContentView):
     """ Page through which existing content can be updated.
 
     """
@@ -2692,7 +2692,7 @@ class AllegationPenaltyLinkUpdateView(ContentUpdateView):
         if self.__validate_content_person_allegation_formset(allegation_forms=allegation_forms) \
                 and self.__validate_content_person_penalty_formset(penalty_forms=penalty_forms):
             self.__save_forms(allegation_forms=allegation_forms, penalty_forms=penalty_forms)
-            return super(AdminSyncUpdateView, self).form_valid(form)
+            return super(AdminAsyncUpdateView, self).form_valid(form)
         return self.form_invalid(form=form)
 
     def __save_forms(self, allegation_forms, penalty_forms):
