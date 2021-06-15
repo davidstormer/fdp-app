@@ -16,5 +16,5 @@ urlpatterns = [
         view=views.DownloadImportFileView.as_view(),
         name='download_import_file'
     ),
-    path('datawizard/serializer_mappings', view=views.DownloadImportFileView.as_view(), name='view_serializer_mappings')
+    path('datawizard/import-templates', view=views.ShowImportTemplates.as_view(), name='show_import_templates')
 ]

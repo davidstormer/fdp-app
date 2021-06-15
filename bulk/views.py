@@ -46,7 +46,8 @@ class DownloadImportFileView(SecuredSyncView):
                     document_root=settings.MEDIA_ROOT
                 )
 
-class DownloadImportFileView(SecuredSyncView):
+
+class ShowImportTemplates(SecuredSyncView):
     def get(self, request):
         """ Print serializer mappings
 
