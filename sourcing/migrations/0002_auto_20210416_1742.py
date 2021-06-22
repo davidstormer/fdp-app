@@ -20,4 +20,3 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(condition=models.Q(models.Q(_negated=True, link__iexact='')), fields=('link',), name='uq_content_link'),
         ),
     ]
-# Keep
