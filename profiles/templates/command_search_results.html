@@ -30,6 +30,7 @@
     {% for grouping in command_list %}
         <li>
             <a href="{% url 'profiles:command' grouping.pk %}?{{ back_link_querystring }}">{{ grouping.name }}</a>
+            {% if grouping.code %}&minus; {{ grouping.code }}{% endif %}
             {% if grouping.aliases %}&minus; {{ grouping.aliases }}{% endif %}
         </li>
     {% endfor %}

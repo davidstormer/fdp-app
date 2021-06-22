@@ -1176,7 +1176,7 @@ class GroupingAirTableSerializer(AbstractModelWithAliasesSerializer):
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = FdpModelSerializer.excluded_fields + [
-            'belongs_to_grouping', 'cease_date', 'counties', 'description', 'inception_date', 'is_inactive'
+            'belongs_to_grouping', 'cease_date', 'code', 'counties', 'description', 'inception_date', 'is_inactive'
         ]
 
 
@@ -1978,7 +1978,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
         :return: True if record is valid, false if record is invalid.
         """
         self._convert_null_to_blank(field_name='description')
-        self._convert_null_to_blank(field_name='name')
         # validate the given the content type by its name, and add it as a model instance if it does not already
         # exist, and then place the value into self.initial_data
         self._validate_foreign_key_by_name(
@@ -1987,6 +1986,11 @@ class ContentAirTableSerializer(FdpModelSerializer):
             create_unknown=False,
             raise_exception=False
         )
+        # content must have a name
+        content_name_field = 'name'
+        content_name = self.initial_data.get(content_name_field, '')
+        if not content_name:
+            self.initial_data[content_name_field] = str(_('Unnamed'))
         # validate record
         is_valid = super(ContentAirTableSerializer, self).is_valid(raise_exception=raise_exception)
         # record is valid
