@@ -6,12 +6,12 @@ from django.utils.translation import gettext as _
 from inheritable.models import AbstractDateValidator
 from inheritable.forms import AbstractWizardModelForm, DateWithComponentsField, DateWithCalendarInput, \
     RelationshipField, AbstractWizardInlineFormSet, AbstractWizardModelFormSet, DateWithCalendarAndSplitInput, \
-    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField
+    DateWithCalendarAndCombineInput, PopupForm
 from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPerson, Attachment, \
     ContentPersonAllegation, ContentPersonPenalty
 from core.models import Grouping, GroupingAlias, GroupingRelationship, Person, PersonAlias, PersonIdentifier, \
     PersonGrouping, PersonTitle, PersonRelationship, PersonContact, PersonPayment, Incident, PersonIncident, \
-    GroupingIncident, PersonPhoto
+    GroupingIncident
 from supporting.models import County, GroupingRelationshipType, PersonRelationshipType, Location
 
 
@@ -128,21 +128,19 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
         :primary_key (int): Id used to update record.
     """
     grouping_relationship_started = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('Start date'),
         fields=()  # ignored
     )
 
     grouping_relationship_ended = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('End date'),
         fields=()  # ignored
     )
 
     grouping_relationship = RelationshipField(
-        # Note that required=True will be overwritten in __init__(...), the field label will be styled as if required,
-        # and custom validation on the individual field components will be used.
-        required=True,
+        required=False,
         label=_('Relationship'),
         queryset=deferred_get_grouping_relationship_types,
         fields=()  # ignored
@@ -236,7 +234,7 @@ class GroupingModelForm(AbstractWizardModelForm):
     Fields:
         :belongs_to_grouping_name (str): Name of the top-level grouping to which this grouping belongs.
     """
-    belongs_to_grouping_name = AsyncSearchCharField(
+    belongs_to_grouping_name = forms.CharField(
         required=False,
         label=_('Belongs to'),
     )
@@ -320,19 +318,19 @@ class PersonIdentifierModelForm(AbstractWizardModelForm):
         :identifier_ended (date): Date that person identifier ended, potentially with unknown date components.
     """
     identifier_started = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('Start date'),
         fields=()  # ignored
     )
 
     identifier_ended = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('End date'),
         fields=()  # ignored
     )
 
     #: Fields to show in the form
-    fields_to_show = person_identifier_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'identifiers'
@@ -397,24 +395,24 @@ class PersonGroupingModelForm(AbstractWizardModelForm):
         :grouping_name (str): Name of the grouping to which the person is linked. Used for autocomplete search.
     """
     person_grouping_started = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('Start date'),
         fields=()  # ignored
     )
 
     person_grouping_ended = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('End date'),
         fields=()  # ignored
     )
 
-    grouping_name = AsyncSearchCharField(
-        required=True,
-        label=_('Grouping'),
+    grouping_name = forms.CharField(
+        required=False,
+        label=_('Command'),
     )
 
     #: Fields to show in the form
-    fields_to_show = ['grouping_name'] + person_grouping_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'persongroupings'
@@ -486,19 +484,19 @@ class PersonTitleModelForm(AbstractWizardModelForm):
         :person_title_ended (date): Date that person title ended, potentially with unknown date components.
     """
     person_title_started = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('Start date'),
         fields=()  # ignored
     )
 
     person_title_ended = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('End date'),
         fields=()  # ignored
     )
 
     #: Fields to show in the form
-    fields_to_show = person_title_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'titles'
@@ -583,7 +581,7 @@ class PersonPaymentModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_payment_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'payments'
@@ -655,7 +653,7 @@ class PersonAliasModelForm(AbstractWizardModelForm):
 
     """
     #: Fields to show in the form
-    fields_to_show = PersonAlias.form_fields
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'aliases'
@@ -709,21 +707,19 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
         :primary_key (int): Id used to update record.
     """
     person_relationship_started = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('Start date'),
         fields=()  # ignored
     )
 
     person_relationship_ended = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('End date'),
         fields=()  # ignored
     )
 
     person_relationship = RelationshipField(
-        # Note that required=True will be overwritten in __init__(...), the field label will be styled as if required,
-        # and custom validation on the individual field components will be used.
-        required=True,
+        required=False,
         label=_('Relationship'),
         queryset=deferred_get_person_relationship_types,
         fields=()  # ignored
@@ -737,7 +733,7 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_relationship_form_fields.copy()
+    fields_to_show = []
 
     #: Key in cleaned data dictionary indicating the person for whom the relationship form is saved.
     for_person_key = '_for_person'
@@ -813,7 +809,7 @@ class PersonContactModelForm(AbstractWizardModelForm):
 
     """
     #: Fields to show in the form
-    fields_to_show = PersonContact.form_fields
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'contacts'
@@ -831,33 +827,6 @@ class PersonContactModelForm(AbstractWizardModelForm):
         model = PersonContact
         fields = PersonContact.form_fields
         fields_order = PersonContact.form_fields
-
-
-class PersonPhotoModelForm(AbstractWizardModelForm):
-    """ Form used to create new and edit existing instances of person photo model.
-
-    Fields:
-
-    """
-    #: Fields to show in the form
-    fields_to_show = PersonPhoto.form_fields
-
-    #: Prefix to use for form`
-    prefix = 'photos'
-
-    #: Extra parameter when creating a person photo formset
-    formset_extra = 0
-
-    #: Can delete (forms) parameter when creating a person photo formset
-    formset_can_delete = True
-
-    #: Can order (forms) parameter when creating a person photo formset
-    formset_can_order = False
-
-    class Meta:
-        model = PersonPhoto
-        fields = PersonPhoto.form_fields
-        fields_order = PersonPhoto.form_fields
 
 
 #: Known birth date are added to person
@@ -879,7 +848,7 @@ class PersonModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_form_fields.copy()
+    fields_to_show = []
 
     def __init__(self, *args, **kwargs):
         """ Set the single known birth date, if one exists.
@@ -1019,18 +988,6 @@ PersonContactModelFormSet = forms.inlineformset_factory(
 )
 
 
-#: Form connecting the person photo to person
-PersonPhotoModelFormSet = forms.inlineformset_factory(
-    Person,
-    PersonPhoto,
-    form=PersonPhotoModelForm,
-    formset=AbstractWizardInlineFormSet,
-    extra=PersonPhotoModelForm.formset_extra,
-    can_delete=PersonPhotoModelForm.formset_can_delete,
-    can_order=PersonPhotoModelForm.formset_can_order,
-)
-
-
 #: Incident started and incident ended fields are added to incident
 incident_form_fields = Incident.form_fields.copy()
 incident_form_fields.insert(2, 'incident_started')
@@ -1046,13 +1003,13 @@ class IncidentModelForm(AbstractWizardModelForm, PopupForm):
 
     """
     incident_started = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('Incident started'),
         fields=()  # ignored
     )
 
     incident_ended = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('Incident ended'),
         fields=()  # ignored
     )
@@ -1126,8 +1083,8 @@ class PersonIncidentModelForm(AbstractWizardModelForm):
     Fields:
         :person_name (str): Name of the person to which the incident is linked. Used for autocomplete search.
     """
-    person_name = AsyncSearchCharField(
-        required=True,
+    person_name = forms.CharField(
+        required=False,
         label=_('Person'),
     )
 
@@ -1174,8 +1131,8 @@ class GroupingIncidentModelForm(AbstractWizardModelForm):
     Fields:
         :grouping_name (str): Name of the grouping to which the incident is linked. Used for autocomplete search.
     """
-    grouping_name = AsyncSearchCharField(
-        required=True,
+    grouping_name = forms.CharField(
+        required=False,
         label=_('Grouping'),
     )
 
@@ -1363,13 +1320,13 @@ class ContentCaseModelForm(AbstractWizardModelForm):
         :case_closed (date): Date that case for content case was closed, potentially with unknown date components.
     """
     case_opened = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('Case opened'),
         fields=()  # ignored
     )
 
     case_closed = DateWithComponentsField(
-        required=True,
+        required=False,
         label=_('Case closed'),
         fields=()  # ignored
     )
@@ -1450,8 +1407,8 @@ class ContentPersonModelForm(AbstractWizardModelForm):
     Fields:
         :person_name (str): Name of the person to which the content is linked. Used for autocomplete search.
     """
-    person_name = AsyncSearchCharField(
-        required=True,
+    person_name = forms.CharField(
+        required=False,
         label=_('Person'),
     )
 
@@ -1501,8 +1458,8 @@ class ContentAttachmentModelForm(AbstractWizardModelForm):
     Fields:
         :attachment_name (str): Name of the attachment to which the content is linked. Used for autocomplete search.
     """
-    attachment_name = AsyncSearchCharField(
-        required=True,
+    attachment_name = forms.CharField(
+        required=False,
         label=_('Attachment'),
     )
 
@@ -1549,8 +1506,8 @@ class ContentIncidentModelForm(AbstractWizardModelForm):
     Fields:
         :incident_name (str): Name of the incident to which the content is linked. Used for autocomplete search.
     """
-    incident_name = AsyncSearchCharField(
-        required=True,
+    incident_name = forms.CharField(
+        required=False,
         label=_('Incident'),
     )
 
