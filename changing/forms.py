@@ -11,7 +11,7 @@ from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPers
     ContentPersonAllegation, ContentPersonPenalty
 from core.models import Grouping, GroupingAlias, GroupingRelationship, Person, PersonAlias, PersonIdentifier, \
     PersonGrouping, PersonTitle, PersonRelationship, PersonContact, PersonPayment, Incident, PersonIncident, \
-    GroupingIncident, PersonPhoto
+    GroupingIncident
 from supporting.models import County, GroupingRelationshipType, PersonRelationshipType, Location
 
 
@@ -330,7 +330,7 @@ class PersonIdentifierModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_identifier_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'identifiers'
@@ -408,11 +408,11 @@ class PersonGroupingModelForm(AbstractWizardModelForm):
 
     grouping_name = forms.CharField(
         required=False,
-        label=_('Grouping'),
+        label=_('Command'),
     )
 
     #: Fields to show in the form
-    fields_to_show = ['grouping_name'] + person_grouping_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'persongroupings'
@@ -496,7 +496,7 @@ class PersonTitleModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_title_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'titles'
@@ -581,7 +581,7 @@ class PersonPaymentModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_payment_form_fields.copy()
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'payments'
@@ -653,7 +653,7 @@ class PersonAliasModelForm(AbstractWizardModelForm):
 
     """
     #: Fields to show in the form
-    fields_to_show = PersonAlias.form_fields
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'aliases'
@@ -733,7 +733,7 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_relationship_form_fields.copy()
+    fields_to_show = []
 
     #: Key in cleaned data dictionary indicating the person for whom the relationship form is saved.
     for_person_key = '_for_person'
@@ -809,7 +809,7 @@ class PersonContactModelForm(AbstractWizardModelForm):
 
     """
     #: Fields to show in the form
-    fields_to_show = PersonContact.form_fields
+    fields_to_show = []
 
     #: Prefix to use for form
     prefix = 'contacts'
@@ -827,33 +827,6 @@ class PersonContactModelForm(AbstractWizardModelForm):
         model = PersonContact
         fields = PersonContact.form_fields
         fields_order = PersonContact.form_fields
-
-
-class PersonPhotoModelForm(AbstractWizardModelForm):
-    """ Form used to create new and edit existing instances of person photo model.
-
-    Fields:
-
-    """
-    #: Fields to show in the form
-    fields_to_show = PersonPhoto.form_fields
-
-    #: Prefix to use for form`
-    prefix = 'photos'
-
-    #: Extra parameter when creating a person photo formset
-    formset_extra = 0
-
-    #: Can delete (forms) parameter when creating a person photo formset
-    formset_can_delete = True
-
-    #: Can order (forms) parameter when creating a person photo formset
-    formset_can_order = False
-
-    class Meta:
-        model = PersonPhoto
-        fields = PersonPhoto.form_fields
-        fields_order = PersonPhoto.form_fields
 
 
 #: Known birth date are added to person
@@ -875,7 +848,7 @@ class PersonModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = person_form_fields.copy()
+    fields_to_show = []
 
     def __init__(self, *args, **kwargs):
         """ Set the single known birth date, if one exists.
@@ -1012,18 +985,6 @@ PersonContactModelFormSet = forms.inlineformset_factory(
     extra=PersonContactModelForm.formset_extra,
     can_delete=PersonContactModelForm.formset_can_delete,
     can_order=PersonContactModelForm.formset_can_order,
-)
-
-
-#: Form connecting the person photo to person
-PersonPhotoModelFormSet = forms.inlineformset_factory(
-    Person,
-    PersonPhoto,
-    form=PersonPhotoModelForm,
-    formset=AbstractWizardInlineFormSet,
-    extra=PersonPhotoModelForm.formset_extra,
-    can_delete=PersonPhotoModelForm.formset_can_delete,
-    can_order=PersonPhotoModelForm.formset_can_order,
 )
 
 
