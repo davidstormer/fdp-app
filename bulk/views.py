@@ -3,9 +3,6 @@ from django.conf import settings
 from inheritable.models import AbstractUrlValidator, AbstractConfiguration
 from inheritable.views import SecuredSyncView
 from .models import FdpImportFile
-from django.http import HttpResponse
-from pprint import pformat
-from data_wizard import registry
 
 
 class DownloadImportFileView(SecuredSyncView):
@@ -45,22 +42,3 @@ class DownloadImportFileView(SecuredSyncView):
                     relative_base_url=AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL,
                     document_root=settings.MEDIA_ROOT
                 )
-
-
-class ShowImportTemplates(SecuredSyncView):
-    def get(self, request):
-        """ Print serializer mappings
-
-        :param request: Http request object.
-        :return: Listing of registered serializers and their field mappings
-        """
-        user = request.user
-        # verify that user has import access
-        if not user.has_import_access:
-            raise Exception(_('Access is denied to import file'))
-        output_text = "<pre>"
-        for serializer in registry.get_serializers():
-            output_text += f"\n\n\n############## '{serializer['name']}' {serializer['class_name']}  ##############\n"
-            output_text += pformat(dict(serializer['serializer']().get_fields()))
-
-        return HttpResponse(output_text)

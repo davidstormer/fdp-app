@@ -23,7 +23,7 @@ from .forms import WizardSearchForm, GroupingModelForm, GroupingAliasModelFormSe
     GroupingIncidentModelFormSet, LocationModelForm, ContentIdentifierModelFormSet, ContentCaseModelFormSet, \
     ContentPersonModelFormSet, ContentModelForm, ContentAttachmentModelFormSet, AttachmentModelForm, \
     ContentIncidentModelFormSet, ContentPersonAllegationModelFormSet, ContentPersonPenaltyModelFormSet, \
-    ContentPersonAllegationModelForm, ContentPersonPenaltyModelForm, ReadOnlyContentModelForm
+    ContentPersonAllegationModelForm, ContentPersonPenaltyModelForm, ReadOnlyContentModelForm, PersonPhotoModelFormSet
 from core.models import Person, PersonIdentifier, Grouping, GroupingAlias, GroupingRelationship, Incident, \
     PersonGrouping, PersonRelationship, PersonIncident, GroupingIncident
 from abc import abstractmethod
@@ -1158,6 +1158,7 @@ class AbstractPersonView:
     _aliases_key = 'person_alias_model_formset'
     _relationships_key = 'person_relationship_model_formset'
     _contacts_key = 'person_contact_model_formset'
+    _photos_key = 'person_photo_model_formset'
     _identifiers_dict = {'prefix': 'identifiers'}
     _groupings_dict = {'prefix': 'persongroupings'}
     _titles_dict = {'prefix': 'titles'}
@@ -1165,6 +1166,7 @@ class AbstractPersonView:
     _aliases_dict = {'prefix': 'aliases'}
     _relationships_dict = {'prefix': 'relationships'}
     _contacts_dict = {'prefix': 'contacts'}
+    _photos_dict = {'prefix': 'photos'}
 
     @staticmethod
     def _get_success_url():
@@ -1275,10 +1277,10 @@ class AbstractPersonView:
             return False
 
     def _update_context_with_formsets(
-            self, context, post_data, identifiers_dict, groupings_dict, titles_dict, payments_dict, aliases_dict,
-            relationships_dict, contacts_dict, user
+            self, context, post_data, files_data, identifiers_dict, groupings_dict, titles_dict, payments_dict,
+            aliases_dict, relationships_dict, contacts_dict, photos_dict, user
     ):
-        """ Updates the context dictionary with the inline formsets for person identifiers.
+        """ Updates the context dictionary with the inline formsets for persons.
 
         :param context: Existing context dictionary to update.
         :param post_data: POST data submitted through request that includes inline formsets. Will be None if request
@@ -1290,18 +1292,11 @@ class AbstractPersonView:
         :param aliases_dict: Dictionary of keyword arguments to pass into aliases formset initialization.
         :param relationships_dict: Dictionary of keyword arguments to pass into relationships formset initialization.
         :param contacts_dict: Dictionary of keyword arguments to pass into contacts formset initialization.
+        :param photos_dict: Dictionary of keyword arguments to pass into photos formset initialization.
         :param user: User requesting view.
         :return: Nothing.
         """
         context.update({
-            'command': _('Command'),
-            'commands': _('Commands'),
-            'organization': _('Organization'),
-            'organizations': _('Organizations'),
-            'ranks': _('Ranks'),
-            'rank': _('Rank'),
-            'titles': _('Titles'),
-            'title_txt': _('Title'),
             'person': _('Person'),
             'json_search_criteria': AbstractUrlValidator.JSON_SRCH_CRT_PARAM,
             'counties': County.active_objects.all(),
@@ -1328,11 +1323,14 @@ class AbstractPersonView:
             self._contacts_key: PersonContactModelFormSet(
                 **contacts_dict
             ) if not post_data else PersonContactModelFormSet(post_data, **contacts_dict),
+            self._photos_key: PersonPhotoModelFormSet(
+                **photos_dict
+            ) if not post_data else PersonPhotoModelFormSet(post_data, files_data, **photos_dict),
         })
 
     def _save_forms(
             self, form, identifier_forms, grouping_forms, title_forms, payment_forms, alias_forms,
-            relationship_forms, contact_forms
+            relationship_forms, contact_forms, photo_forms
     ):
         """ Save the person form, and the corresponding inline forms.
 
@@ -1344,6 +1342,7 @@ class AbstractPersonView:
         :param alias_forms: Inline person alias forms to save.
         :param relationship_forms: Inline person relationship forms to save.
         :param contact_forms: Inline person contact forms to save.
+        :param photo_forms: Inline person photo forms to save.
         :return: Nothing.
         """
         with transaction.atomic():
@@ -1356,6 +1355,7 @@ class AbstractPersonView:
             payment_forms.instance = self.object
             alias_forms.instance = self.object
             contact_forms.instance = self.object
+            photo_forms.instance = self.object
             # save data collected through inline forms
             identifier_forms.save()
             grouping_forms.save()
@@ -1367,6 +1367,7 @@ class AbstractPersonView:
                 instance=self.object
             )
             contact_forms.save()
+            photo_forms.save()
 
 
 class PersonCreateView(AdminAsyncCreateView, AbstractPersonView):
@@ -1398,6 +1399,7 @@ class PersonCreateView(AdminAsyncCreateView, AbstractPersonView):
         self._update_context_with_formsets(
             context=context,
             post_data=self.request.POST,
+            files_data=self.request.FILES,
             identifiers_dict=self._identifiers_dict,
             groupings_dict=self._groupings_dict,
             titles_dict=self._titles_dict,
@@ -1405,6 +1407,7 @@ class PersonCreateView(AdminAsyncCreateView, AbstractPersonView):
             aliases_dict=self._aliases_dict,
             relationships_dict=self._relationships_dict,
             contacts_dict=self._contacts_dict,
+            photos_dict=self._photos_dict,
             user=self.request.user
         )
         return context
@@ -1423,14 +1426,16 @@ class PersonCreateView(AdminAsyncCreateView, AbstractPersonView):
         alias_forms = context[self._aliases_key]
         relationship_forms = context[self._relationships_key]
         contact_forms = context[self._contacts_key]
+        photo_forms = context[self._photos_key]
         forms_are_valid = identifier_forms.is_valid() and grouping_forms.is_valid() and title_forms.is_valid() \
-            and payment_forms.is_valid() and alias_forms.is_valid() and contact_forms.is_valid()
+            and payment_forms.is_valid() and alias_forms.is_valid() and contact_forms.is_valid() \
+            and photo_forms.is_valid()
         if forms_are_valid:
             if self._validate_relationship_formset(relationship_forms=relationship_forms, user=self.request.user):
                 self._save_forms(
                     form=form, identifier_forms=identifier_forms, grouping_forms=grouping_forms,
                     title_forms=title_forms, payment_forms=payment_forms, alias_forms=alias_forms,
-                    relationship_forms=relationship_forms, contact_forms=contact_forms
+                    relationship_forms=relationship_forms, contact_forms=contact_forms, photo_forms=photo_forms
                 )
                 return super(PersonCreateView, self).form_valid(form)
         return self.form_invalid(form=form)
@@ -1465,6 +1470,7 @@ class PersonUpdateView(AdminAsyncUpdateView, AbstractPersonView):
         self._update_context_with_formsets(
             context=context,
             post_data=self.request.POST,
+            files_data=self.request.FILES,
             identifiers_dict={'instance': self.object, **self._identifiers_dict},
             groupings_dict={'instance': self.object, **self._groupings_dict},
             titles_dict={'instance': self.object, **self._titles_dict},
@@ -1472,6 +1478,7 @@ class PersonUpdateView(AdminAsyncUpdateView, AbstractPersonView):
             aliases_dict={'instance': self.object, **self._aliases_dict},
             relationships_dict={**self._relationships_dict},
             contacts_dict={'instance': self.object, **self._contacts_dict},
+            photos_dict={'instance': self.object, **self._photos_dict},
             user=self.request.user
         )
         return context
@@ -1490,14 +1497,16 @@ class PersonUpdateView(AdminAsyncUpdateView, AbstractPersonView):
         alias_forms = context[self._aliases_key]
         relationship_forms = context[self._relationships_key]
         contact_forms = context[self._contacts_key]
+        photo_forms = context[self._photos_key]
         forms_are_valid = identifier_forms.is_valid() and grouping_forms.is_valid() and title_forms.is_valid() \
-            and payment_forms.is_valid() and alias_forms.is_valid() and contact_forms.is_valid()
+            and payment_forms.is_valid() and alias_forms.is_valid() and contact_forms.is_valid() \
+            and photo_forms.is_valid()
         if forms_are_valid:
             if self._validate_relationship_formset(relationship_forms=relationship_forms, user=self.request.user):
                 self._save_forms(
                     form=form, identifier_forms=identifier_forms, grouping_forms=grouping_forms,
                     title_forms=title_forms, payment_forms=payment_forms, alias_forms=alias_forms,
-                    relationship_forms=relationship_forms, contact_forms=contact_forms
+                    relationship_forms=relationship_forms, contact_forms=contact_forms, photo_forms=photo_forms
                 )
                 return super(PersonUpdateView, self).form_valid(form)
         return self.form_invalid(form=form)
