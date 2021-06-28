@@ -6,7 +6,7 @@ All releases will be logged in this file.
 Bulk importer changes
 
 ### Added
-- Bulk importer: Add page showing importer "serializer" templates and fields at datawizard/serializer_mappings
+- Bulk importer: Add page showing importer "serializer" templates and fields at /datawizard/import-templates
 - Bulk importer: Add bulk importer "serializers" for handling content-person links, content identifiers, attachments, person-incident links
 - Bulk importer: Update content serializer to take comma separated external attachment IDs for creating links
 
