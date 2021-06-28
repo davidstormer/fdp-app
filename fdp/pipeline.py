@@ -20,6 +20,23 @@ social_core_utils_module = module_from_spec(social_core_utils_spec)
 social_core_utils_spec.loader.exec_module(social_core_utils_module)
 
 
+def social_details(backend, details, response, *args, **kwargs):
+    #: TODO: Only added for debugging. Please remove.
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error('-----------------')
+    logger.error('-------DETAILS----------')
+    logger.error(details)
+    logger.error('-------RESPONSE_CONTENT----------')
+    logger.error(response.content)
+    logger.error('-------RESPONSE----------')
+    logger.error(response)
+    logger.error('-------SOCIAL_DETAILS----------')
+    logger.error(dict(backend.get_user_details(response), **details))
+    logger.error('-----------------')
+    return {'details': dict(backend.get_user_details(response), **details)}
+
+
 def get_username(strategy, details, backend, user=None, *args, **kwargs):
     """ Generate a username for this user, and append a random string at the end if there is any collision.
 

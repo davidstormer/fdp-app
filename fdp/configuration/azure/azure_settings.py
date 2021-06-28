@@ -244,7 +244,9 @@ if EXT_AUTH == AAD_EXT_AUTH:
             # format to create the user instance later. On some cases the details are
             # already part of the auth response from the provider, but sometimes this
             # could hit a provider API.
-            'social_core.pipeline.social_auth.social_details',
+            #: TODO: Only added for debugging. Please remove.
+            'fdp.pipeline.social_details',
+            # 'social_core.pipeline.social_auth.social_details',
             # Get the social uid from whichever service we're authing thru. The uid is
             # the unique identifier of the given user in the provider.
             'social_core.pipeline.social_auth.social_uid',
@@ -265,7 +267,7 @@ if EXT_AUTH == AAD_EXT_AUTH:
             # 'social_core.pipeline.mail.mail_validation',
             # Associates the current social details with another user account with
             # a similar email address. Disabled by default.
-            'social_core.pipeline.social_auth.associate_by_email',
+            # 'social_core.pipeline.social_auth.associate_by_email',
             # Create a user account if we haven't found one yet.
             # Disabled since it is replaced by customized method to set is_host
             # and only_external_auth properties.
