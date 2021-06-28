@@ -244,9 +244,7 @@ if EXT_AUTH == AAD_EXT_AUTH:
             # format to create the user instance later. On some cases the details are
             # already part of the auth response from the provider, but sometimes this
             # could hit a provider API.
-            #: TODO: Only added for debugging. Please remove.
-            'fdp.pipeline.social_details',
-            # 'social_core.pipeline.social_auth.social_details',
+            'social_core.pipeline.social_auth.social_details',
             # Get the social uid from whichever service we're authing thru. The uid is
             # the unique identifier of the given user in the provider.
             'social_core.pipeline.social_auth.social_uid',
