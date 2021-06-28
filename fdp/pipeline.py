@@ -27,8 +27,6 @@ def social_details(backend, details, response, *args, **kwargs):
     logger.error('-----------------')
     logger.error('-------DETAILS----------')
     logger.error(details)
-    logger.error('-------RESPONSE_CONTENT----------')
-    logger.error(response.content)
     logger.error('-------RESPONSE----------')
     logger.error(response)
     logger.error('-------SOCIAL_DETAILS----------')
