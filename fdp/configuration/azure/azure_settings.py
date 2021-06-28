@@ -265,7 +265,7 @@ if EXT_AUTH == AAD_EXT_AUTH:
             # 'social_core.pipeline.mail.mail_validation',
             # Associates the current social details with another user account with
             # a similar email address. Disabled by default.
-            # 'social_core.pipeline.social_auth.associate_by_email',
+            'social_core.pipeline.social_auth.associate_by_email',
             # Create a user account if we haven't found one yet.
             # Disabled since it is replaced by customized method to set is_host
             # and only_external_auth properties.
