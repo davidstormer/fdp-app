@@ -56,10 +56,3 @@ FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
 #: To enable logging, remove the comments from the below assignments.
 FDP_ERR_LOGGING['handlers']['file']['filename'] = BASE_DIR / 'debug.log'
 LOGGING = FDP_ERR_LOGGING
-
-
-#: WARNING! This is intended only to test the 4 minute session expiry checks.
-# Please remove before committing to production.
-SESSION_COOKIE_AGE = 240
-
-# Test
