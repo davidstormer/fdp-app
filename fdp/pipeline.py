@@ -119,9 +119,17 @@ def create_user(strategy, details, backend, user=None, *args, **kwargs):
     # only externally authenticable
     fields.update({'is_host': True, 'only_external_auth': True})
 
+    # email is required and is assumed to be unique for each user
+    # it is retrieved with the 'upn' key from the response dictionary during the firs step fo the social authentication
+    # pipeline: social_core.pipeline.social_auth.social_details
+    email = fields.get('email', None)
+    if not email:
+        raise Exception('The user\'s email is missing. If the user is a guest in Azure Active Directory, then an '
+                        'optional claim for upn may need to be configured in the directory.')
+
     # check if user already exists, since email must be unique
     # tokens may have been removed
-    e = FdpUser.objects.get_case_insensitive_username_filter_dict(username=fields['email'])
+    e = FdpUser.objects.get_case_insensitive_username_filter_dict(username=email)
     return {
         'is_new': True,
         'user': strategy.create_user(**fields) if not FdpUser.objects.filter(**e).exists() else FdpUser.objects.get(**e)
