@@ -18,57 +18,11 @@ from django.utils.safestring import mark_safe
 
 
 class FdpCSPReport(CSPReport):
-    """ A proxy model for the CSP Report model, to handle the JSONDecodeError that is raised by attempting to convert
-    a string containing b'...' byte array.
+    """ A proxy model for the CSP Report model.
 
-    The error can be replicated if the admin is registeted with CSPReport instead of the proxy model, and the model has
-    some records in the database. Then navigating to the admin page will raise similar:
-
-    JSONDecodeError at /admin/cspreports/cspreport/
-
-    Expecting value: line 1 column 1 (char 0)
-
-    Exception Type: 	JSONDecodeError
-
-    Expecting value: line 1 column 1 (char 0)
-
-    Exception Location: 	/usr/lib/python3.6/json/decoder.py in raw_decode, line 357
-
-    The substance of the exception occurs in the CspReport model on line 25 of the data property:
-
-       data = self._data = json.loads(self.json)
+    See: https://github.com/adamalton/django-csp-reports
 
     """
-    def __parse_json(self):
-        """ Parses the JSON that is stored as bytes but in string format in the database, i.e. " b'...'  "
-
-        :return: String format for JSON.
-        """
-        return literal_eval(self.json).decode()
-
-    @property
-    def data(self):
-        """ Returns self.json loaded as a python object.
-
-        Overrides original .data property by parsing the string containing bytes.
-
-        """
-        try:
-            return CSPReport.data.fget()
-        except JSONDecodeError:
-            data = self._data = json_loads(self.__parse_json())
-            return data
-
-    def json_as_html_x(self):
-        """ Print out self.json in a nice way.
-
-        Replicates the original .json_as_html() callable, by parsing the string containing bytes.
-
-        """
-        return mark_safe(
-            json_dumps(json_loads(self.__parse_json()), indent=4, sort_keys=True, separators=(',', ': '))
-        )
-
     class Meta:
         proxy = True
         verbose_name = _('CSP Report')
