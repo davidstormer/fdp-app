@@ -122,7 +122,7 @@
 </div>
 <!-- END Container -->
 {% block endscript %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ request.csp_nonce }}">
         {% if user.is_authenticated %} $( document ).ready(function() { {% endif %}
             {% block onready %}
                 {% if user.is_authenticated %}

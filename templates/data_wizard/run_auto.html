@@ -9,10 +9,10 @@
 <h2>Processing</h2>
 {% endblock %}
 {% include "data_wizard/progress.html" %}
-<ul class="messagelist" style="margin-top:1em;">
+<ul class="messagelist" id="csprunautomessagelist">
   <li id="status">Loading...</li>
 </ul>
-<div class="submit-row" style="display:none;">
+<div class="submit-row" id="csprunautohidden">
   {% include "data_wizard/back.html" %}
 </div>
 {% endblock %}
