@@ -83,23 +83,14 @@ class FdpUserManager(BaseUserManager):
     # serialize manager and make available in migrations
     use_in_migrations = True
 
-    def get_case_insensitive_username_filter_dict(self, username):
-        """ Retrieves a dictionary of keyword arguments that can be expanded to filter a queryset of users.
-        Return value from method can be expanded, for example, into a queryset's filter(...) or get(...) methods.
-        :param username: Username for which to filter the queryset.
-        :return: Dictionary of keyword arguments.
-        """
-        case_insensitive_username_field = '{u}__iexact'.format(u=self.model.USERNAME_FIELD)
-        return {case_insensitive_username_field: username}
-
     def get_by_natural_key(self, username):
         """ Retrieves case insensitive username (email).
 
         :param username: Username entered by user.
         :return: Case insensitive username.
         """
-        filter_dict = self.get_case_insensitive_username_filter_dict(username=username)
-        return self.get(**filter_dict)
+        case_insensitive_username_field = '{u}__iexact'.format(u=self.model.USERNAME_FIELD)
+        return self.get(**{case_insensitive_username_field: username})
 
     def __create_user(self, email, password, **kwargs):
         """ Creates a FDP user.
