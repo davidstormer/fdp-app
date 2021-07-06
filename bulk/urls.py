@@ -1,4 +1,4 @@
-from django.urls import re_path, path
+from django.urls import re_path
 from django.conf import settings
 from inheritable.models import AbstractUrlValidator
 from . import views
@@ -15,6 +15,5 @@ urlpatterns = [
         ),
         view=views.DownloadImportFileView.as_view(),
         name='download_import_file'
-    ),
-    path('datawizard/import-templates', view=views.ShowImportTemplates.as_view(), name='show_import_templates')
+    )
 ]

@@ -186,13 +186,9 @@ class FdpModelSerializer(ModelSerializer):
         # TODO:     user = self.context['request'].user
         # TODO:     qs = qs.filter_for_confidential_by_user(user=user)
         # could not exactly match a single record
-        if qs.count() < 1:
+        if qs.count() != 1:
             raise ValidationError(
-                _('No {m} found with the name {n}'.format(m=model.__name__, n=name_to_match))
-            )
-        elif qs.count() > 1:
-            raise ValidationError(
-                _('More than one {m} found with the name {n}'.format(m=model.__name__, n=name_to_match))
+                _('There is not exactly one {m} with the name {n}'.format(m=model.__name__, n=name_to_match))
             )
         # matched exactly with a single record
         else:
@@ -228,25 +224,15 @@ class FdpModelSerializer(ModelSerializer):
         qs = BulkImport.objects.filter(pk_imported_from=external_id_to_match, table_imported_to=model.get_db_table())
         qs = qs.filter(pk_imported_to__in=model_qs)
         # could not exactly match a single record
-        if qs.count() < 1:
+        if qs.count() != 1:
             raise ValidationError(
                 _(
-                    'No instances of {m} found with the external ID {n}'.format(
+                    'There is not exactly one {m} with the external ID {n}'.format(
                         m=model.__name__,
                         n=external_id_to_match
                     )
                 )
             )
-        elif qs.count() > 1:
-            raise ValidationError(
-                _(
-                    'More than one {m} found with the external ID {n}'.format(
-                        m=model.__name__,
-                        n=external_id_to_match
-                    )
-                )
-            )
-
         # matched exactly with a single record
         else:
             # model instance matched by unique external ID
@@ -272,6 +258,96 @@ class FdpModelSerializer(ModelSerializer):
         :return: Formatted phone number.
         """
         return ''.join(filter(str.isdigit, str(unformatted_phone_number)))
+
+    @staticmethod
+    def __is_whitelisted_url(url):
+        """ Checks whether the starting portion of the URL has been whitelisted.
+
+        :param url: Url to check.
+        :return: True if starting portion of URL has been whitelisted, false otherwise.
+        """
+        # convert to lowercase and remove superfluous whitespace
+        url_to_verify = url.strip().lower()
+        # list of whitelisted URLs
+        whitelisted_urls = AbstractConfiguration.whitelisted_django_data_wizard_urls()
+        # cycle through whitelisted URLs
+        for whitelisted_url in whitelisted_urls:
+            if url_to_verify.startswith(whitelisted_url.strip().lower()):
+                return True
+        return False
+
+    @staticmethod
+    def __is_local_access(netloc):
+        """ Checks whether the netloc component retrieve by Python's parse.urlparse() method is attempting local access.
+
+        :param netloc: Netloc component to check.
+        :return: True if netloc component is attempting local access, false otherwise.
+        """
+        # convert to lowercase and remove superfluous whitespace
+        netloc_to_verify = netloc.strip().lower()
+        # cycle through all variations of local access that are not already covered in __is_private_ip() method
+        for prefix in ['localhost']:
+            if netloc_to_verify.startswith(prefix):
+                return True
+        return False
+
+    @staticmethod
+    def __is_private_ip(ip_address):
+        """ Checks whether an IP address is private.
+
+        See: https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
+
+        :param ip_address: IP address to check.
+        :return: True if IP address is private, false otherwise.
+        """
+        is_private = False
+        # Build the list of IP prefix for V4 and V6 addresses
+        ip_prefix = []
+        # Add prefix for loopback addresses
+        ip_prefix.append("127.")
+        ip_prefix.append("0.")
+        # Add IP V4 prefix for private addresses
+        # See https://en.wikipedia.org/wiki/Private_network
+        ip_prefix.append("10.")
+        ip_prefix.append("172.16.")
+        ip_prefix.append("172.17.")
+        ip_prefix.append("172.18.")
+        ip_prefix.append("172.19.")
+        ip_prefix.append("172.20.")
+        ip_prefix.append("172.21.")
+        ip_prefix.append("172.22.")
+        ip_prefix.append("172.23.")
+        ip_prefix.append("172.24.")
+        ip_prefix.append("172.25.")
+        ip_prefix.append("172.26.")
+        ip_prefix.append("172.27.")
+        ip_prefix.append("172.28.")
+        ip_prefix.append("172.29.")
+        ip_prefix.append("172.30.")
+        ip_prefix.append("172.31.")
+        ip_prefix.append("192.168.")
+        ip_prefix.append("169.254.")
+        # Add IP V6 prefix for private addresses
+        # See https://en.wikipedia.org/wiki/Unique_local_address
+        # See https://en.wikipedia.org/wiki/Private_network
+        # See https://simpledns.com/private-ipv6
+        ip_prefix.append("fc")
+        ip_prefix.append("fd")
+        ip_prefix.append("fe")
+        ip_prefix.append("ff")
+        ip_prefix.append("::1")
+        # Verify the provided IP address
+        # Remove whitespace characters from the beginning/end of the string
+        # and convert it to lower case
+        # Lower case is for preventing any IPV6 case bypass using mixed case
+        # depending on the source used to get the IP address
+        ip_to_verify = ip_address.strip().lower()
+        # Perform the check against the list of prefix
+        for prefix in ip_prefix:
+            if ip_to_verify.startswith(prefix):
+                is_private = True
+                break
+        return is_private
 
     @staticmethod
     def _get_links_from_string(str_with_links):
@@ -348,6 +424,15 @@ class FdpModelSerializer(ModelSerializer):
         for i, download_link in enumerate(links, start=0):
             # parse the download link
             parsed_url = urlparse(download_link)
+            # check for private ip address
+            if cls.__is_private_ip(ip_address=parsed_url.netloc):
+                raise ValidationError(_('Private IP addresses are not allowed.'))
+            # check for access to local interface
+            if cls.__is_local_access(netloc=parsed_url.netloc):
+                raise ValidationError(_('Local access is not allowed'))
+            # check if in the whitelist
+            if not cls.__is_whitelisted_url(url=f'{parsed_url.scheme}://{parsed_url.netloc}/{parsed_url.path}'):
+                raise ValidationError(_('URL is not whitelisted, see markdown file for settings documentation'))
             # name of file in download link
             filename = path_basename(parsed_url.path)
             # create an instance of a dummy file, so that the default validator can be used (e.g. to validate its file
@@ -1176,7 +1261,7 @@ class GroupingAirTableSerializer(AbstractModelWithAliasesSerializer):
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = FdpModelSerializer.excluded_fields + [
-            'belongs_to_grouping', 'cease_date', 'code', 'counties', 'description', 'inception_date', 'is_inactive'
+            'belongs_to_grouping', 'cease_date', 'counties', 'description', 'inception_date', 'is_inactive'
         ]
 
 
@@ -1978,6 +2063,7 @@ class ContentAirTableSerializer(FdpModelSerializer):
         :return: True if record is valid, false if record is invalid.
         """
         self._convert_null_to_blank(field_name='description')
+        self._convert_null_to_blank(field_name='name')
         # validate the given the content type by its name, and add it as a model instance if it does not already
         # exist, and then place the value into self.initial_data
         self._validate_foreign_key_by_name(
@@ -1986,11 +2072,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
             create_unknown=False,
             raise_exception=False
         )
-        # content must have a name
-        content_name_field = 'name'
-        content_name = self.initial_data.get(content_name_field, '')
-        if not content_name:
-            self.initial_data[content_name_field] = str(_('Unnamed'))
         # validate record
         is_valid = super(ContentAirTableSerializer, self).is_valid(raise_exception=raise_exception)
         # record is valid
@@ -2163,10 +2244,8 @@ class AllegationAirTableSerializer(FdpModelSerializer):
             raise ValidationError(_('Content-person link could not be made for allegation'))
         else:
             content_person_qs = ContentPerson.objects.filter(content=content, person=person)
-            if content_person_qs.count() > 1:
-                raise ValidationError(_('More than one content-person links found for allegation'))
-            if content_person_qs.count() < 1:
-                raise ValidationError(_('No content-person link found for allegation'))
+            if not content_person_qs.count() == 1:
+                raise ValidationError(_('A single content-person link could not be found for allegation'))
             content_person = content_person_qs.get(content=content, person=person)
             self.custom_validated_data['content_person_id'] = content_person.pk
 
