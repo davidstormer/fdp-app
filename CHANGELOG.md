@@ -2,6 +2,12 @@
 
 All releases will be logged in this file.
 
+## [1.2.1] - 2021-07-06
+Bug fix release
+
+### Fixed
+- Address issues caused by Django username case sensitivity and Azure Active Directory case *in*sensitivity.
+
 ## [1.2.0] - 2021-06-22
 Bulk importer changes
 
