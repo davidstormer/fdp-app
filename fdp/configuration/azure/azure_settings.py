@@ -256,7 +256,10 @@ if EXT_AUTH == AAD_EXT_AUTH:
             'social_core.pipeline.social_auth.social_user',
             # Make up a username for this person, appends a random string at the end if
             # there's any collision.
-            'social_core.pipeline.user.get_username',
+            # Disabled since it is replaced by a customized method that enforces case insensitivity
+            # during username comparisons.
+            # 'social_core.pipeline.user.get_username',
+            'fdp.pipeline.get_username',
             # Send a validation email to the user to verify its email address.
             # Disabled by default.
             # 'social_core.pipeline.mail.mail_validation',
