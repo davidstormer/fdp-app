@@ -1,4 +1,4 @@
-{% extends "base_object_form.html" %}
+{% extends "ajax_base_object_form.html" %}
 {% load i18n admin_urls static compress changing_extras %}
 
 {% block extrahead %}
@@ -30,21 +30,29 @@
 {% endblock %}
 {% endif %}
 {% block content %}
-    <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <form method="post">{% csrf_token %}
         {% if form.non_field_errors %}
         <div>
             {{ form.non_field_errors }}
         </div>
         {% endif %}
 
-        <button type="button" class="collapsible expanded">{% translate 'Details' %}</button>
+        <button type="button" class="collapsible expanded hidden manualdisplay manualdisplaylaw manualdisplaynotlaw">{% translate 'Details' %}</button>
         <div class="collapsible">
+            <div id="cust_personselectcont" class="aligned">
+                <label for="cust_personselect">{% translate 'Person is' %}</label>
+                <select id="cust_personselect">
+                    <option value="" selected>{% translate '---------' %}</option>
+                    <option value="true">{% translate 'Law enforcement' %}</option>
+                    <option value="false">{% translate 'Not law enforcement' %}</option>
+                </select>
+            </div>
             <div>
                 {% include "wizard_form.html" with form=form force_read_only=False %}
             </div>
         </div> <!-- div.collapsible for Details -->
 
-        <button type="button" class="collapsible expanded">{% translate 'Identifiers' %}</button>
+        <button type="button" class="collapsible expanded hidden manualdisplay manualdisplaylaw manualdisplaynotlaw">{% translate 'Identifiers' %}</button>
         <div class="collapsible">
             <div>
                 {{ person_identifier_model_formset.management_form }}
@@ -57,30 +65,12 @@
             <div id="emptyidentifier" class="identifierform emptyform">
                 {% include "inline_wizard_form.html" with form=person_identifier_model_formset.empty_form del_icon_class="delidentifier" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
             </div> <!-- div#emptyidentifier -->
-            <div>
+            <div class="hidden manualdisplay manualdisplaylaw manualdisplaynotlaw">
                 <span id="newidentifier" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another identifier' %}</span>
             </div>
         </div> <!-- div.collapsible for Identifiers -->
 
-        <button type="button" class="collapsible expanded">{% translate 'Photos' %}</button>
-        <div class="collapsible">
-            <div>
-                {{ person_photo_model_formset.management_form }}
-            </div>
-            {% for nested_form in person_photo_model_formset %}
-            <div class="personphotoform">
-                {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delphoto" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
-            </div> <!-- div.personphotoform -->
-            {% endfor %}
-            <div id="emptypersonphoto" class="personphotoform emptyform">
-                {% include "inline_wizard_form.html" with form=person_photo_model_formset.empty_form del_icon_class="delphoto" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
-            </div> <!-- div#emptypersonphoto -->
-            <div>
-                <span id="newpersonphoto" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another photo' %}</span>
-            </div>
-        </div> <!-- div.collapsible for Photos -->
-
-        <button type="button" class="collapsible expanded">{% translate 'Contact' %}</button>
+        <button type="button" class="collapsible expanded hidden manualdisplay manualdisplaynotlaw">{% translate 'Contact' %}</button>
         <div class="collapsible">
             <div>
                 {{ person_contact_model_formset.management_form }}
@@ -93,12 +83,12 @@
             <div id="emptypersoncontact" class="personcontactform emptyform">
                 {% include "inline_wizard_form.html" with form=person_contact_model_formset.empty_form del_icon_class="delcontact" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
             </div> <!-- div#emptypersoncontact -->
-            <div>
+            <div class="hidden manualdisplay manualdisplaynotlaw">
                 <span id="newpersoncontact" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another contact' %}</span>
             </div>
         </div> <!-- div.collapsible for Contact -->
 
-        <button type="button" class="collapsible expanded">{% translate 'Groupings' %}</button>
+        <button type="button" class="collapsible expanded hidden manualdisplay manualdisplaylaw manualdisplaynotlaw cmds">{% translate 'Commands' %}</button>
         <div class="collapsible">
             <div>
                 {{ person_grouping_model_formset.management_form }}
@@ -111,12 +101,12 @@
             <div id="emptypersongrouping" class="persongroupingform emptyform">
                 {% include "inline_wizard_form.html" with form=person_grouping_model_formset.empty_form del_icon_class="delgrouping" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
             </div> <!-- div#emptypersongrouping -->
-            <div>
-                <span id="newpersongrouping" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another grouping' %}</span>
+            <div class="hidden manualdisplay manualdisplaylaw manualdisplaynotlaw">
+                <span id="newpersongrouping" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another' %} <span class="cmd">{% translate 'command' %}</span></span>
             </div>
-        </div> <!-- div.collapsible for Groupings -->
+        </div> <!-- div.collapsible for Commands -->
 
-        <button type="button" class="collapsible expanded">{% translate 'Titles' %}</button>
+        <button type="button" class="collapsible expanded hidden manualdisplay manualdisplaylaw manualdisplaynotlaw tls">{% translate 'Titles' %}</button>
         <div class="collapsible">
             <div>
                 {{ person_title_model_formset.management_form }}
@@ -129,12 +119,12 @@
             <div id="emptypersontitle" class="persontitleform emptyform">
                 {% include "inline_wizard_form.html" with form=person_title_model_formset.empty_form del_icon_class="deltitle" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
             </div> <!-- div#emptypersontitle -->
-            <div>
-                <span id="newpersontitle" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another title' %}</span>
+            <div class="hidden manualdisplay manualdisplaylaw manualdisplaynotlaw">
+                <span id="newpersontitle" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another' %} <span class="tle">{% translate 'title' %}</span></span>
             </div>
         </div> <!-- div.collapsible for Titles -->
 
-        <button type="button" class="collapsible expanded">{% translate 'Payroll' %}</button>
+        <button type="button" class="collapsible expanded hidden manualdisplay manualdisplaylaw">{% translate 'Payroll' %}</button>
         <div class="collapsible">
             <div>
                 {{ person_payment_model_formset.management_form }}
@@ -183,12 +173,12 @@
                     </tr>
                 </table>
             </div> <!-- div#emptypersonpayment -->
-            <div>
+            <div class="hidden manualdisplay manualdisplaylaw">
                 <span id="newpersonpayment" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another payroll' %}</span>
             </div>
         </div> <!-- div.collapsible for Payroll -->
 
-        <button type="button" class="collapsible expanded">{% translate 'Aliases' %}</button>
+        <button type="button" class="collapsible expanded hidden manualdisplay manualdisplaylaw manualdisplaynotlaw">{% translate 'Aliases' %}</button>
         <div class="collapsible">
             <div>
                 {{ person_alias_model_formset.management_form }}
@@ -201,12 +191,12 @@
             <div id="emptypersonalias" class="personaliasform emptyform">
                 {% include "inline_wizard_form.html" with form=person_alias_model_formset.empty_form del_icon_class="delalias" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
             </div> <!-- div#emptypersonalias -->
-            <div>
+            <div class="hidden manualdisplay manualdisplaylaw manualdisplaynotlaw">
                 <span id="newpersonalias" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another alias' %}</span>
             </div>
         </div> <!-- div.collapsible for Aliases -->
 
-        <button type="button" class="collapsible expanded">{% translate 'Relationships' %}</button>
+        <button type="button" class="collapsible expanded hidden manualdisplay manualdisplaylaw manualdisplaynotlaw">{% translate 'Relationships' %}</button>
         <div class="collapsible">
             <div>
                 {{ person_relationship_model_formset.management_form }}
@@ -219,12 +209,12 @@
             <div id="emptypersonrelationship" class="personrelationshipform emptyform">
                 {% include "inline_wizard_form.html" with form=person_relationship_model_formset.empty_form del_icon_class="delrelationship" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
             </div> <!-- div#emptypersonrelationship -->
-            <div>
+            <div class="hidden manualdisplay manualdisplaylaw manualdisplaynotlaw">
                 <span id="newpersonrelationship" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another relationship' %}</span>
             </div>
         </div> <!-- div.collapsible for Relationships -->
 
-        <input type="submit" value="Save">
+        <input class="hidden manualdisplay manualdisplaylaw manualdisplaynotlaw" type="submit" value="Save">
 
         <div class="hidden">
             <select id="allcounties">
@@ -241,6 +231,14 @@
 {% block onready %}
     {{ block.super }}
     // localized alternative field labels
+    Fdp.ChangingPerson.Command = "{{ command }}";
+    Fdp.ChangingPerson.Commands = "{{ commands }}";
+    Fdp.ChangingPerson.Organization = "{{ organization }}";
+    Fdp.ChangingPerson.Organizations = "{{ organizations }}";
+    Fdp.ChangingPerson.Rank = "{{ rank }}";
+    Fdp.ChangingPerson.Ranks = "{{ ranks }}";
+    Fdp.ChangingPerson.Title = "{{ title_txt }}";
+    Fdp.ChangingPerson.Titles = "{{ titles }}";
     Fdp.Common.jsonSearchCriteria = "{{ json_search_criteria }}";
     // initialize interface elements
     Fdp.ChangingPerson.init(

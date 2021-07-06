@@ -1,0 +1,42 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n static compress %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vex-js/4.1.0/js/vex.combined.min.js"></script>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vex-js/4.1.0/css/vex-theme-default.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vex-js/4.1.0/css/vex.min.css">
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/fdp_ajax_base.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+
+{% block onready %}
+    {{ block.super }}
+    vex.defaultOptions.className = 'vex-theme-default';
+    Fdp.Common.locLoading = "{{ localized_loading }}";
+    Fdp.Common.locRawErrorTitle = "{{ localized_raw_err_tle }}";
+    Fdp.Common.locRawErrorMessage = "{{ localized_raw_err_msg }}";
+    Fdp.Common.locRawErrorDetails = "{{ localized_raw_err_dtl }}";
+    Fdp.Common.locSave = "{{ localized_save }}";
+    Fdp.Common.locCancel = "{{ localized_cancel }}";
+    Fdp.Common.locClickToEdit = "{{ localized_click_to_edit }}";
+    Fdp.Common.jsonIsError = "{{ json_is_error }}";
+    Fdp.Common.jsonIsEmpty = "{{ json_is_empty }}";
+    Fdp.Common.jsonIsData = "{{ json_is_data }}";
+    Fdp.Common.jsonIsHtml = "{{ json_is_html }}";
+    Fdp.Common.jsonError = "{{ json_error }}";
+    Fdp.Common.jsonData = "{{ json_data }}";
+    Fdp.Common.jsonHtml = "{{ json_html }}";
+    Fdp.Common.locError = "{{ localized_error }}";
+    Fdp.Common.locConfirmationTitle = "{{ localized_cnf_tle }}";
+    Fdp.Common.locErrorTitle = "{{ localized_err_tle }}";
+    Fdp.Common.locBrowserUnsupported = "{{ localized_browser_unsupported }}";
+    Fdp.Common.locPopupError = "{{ localized_popup_error }}";
+    Fdp.Common.initAjax(true);
+{% endblock %}

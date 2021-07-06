@@ -167,7 +167,17 @@ admin.site.unregister(CSPReport)
 class FdpCSPReportAdmin(HostOnlyBaseAdmin, FdpInheritableBaseAdmin, CSPReportAdmin):
     """ Include inheritable permissions for Django Content Security Policy Reports model handling policy violations.
 
+    Also, override representation of JSON to avoid error. See fdpuser.models.FdpCSPReport for more information.
+
     """
+    def json_as_html(self, instance):
+        """ Displays JSON content as HTML.
+
+        :param instance: Model instance.
+        :return: JSON that is formatted for display in the admin interface.
+        """
+        return instance.json_as_html_x()
+
     def has_add_permission(self, request):
         """ Disable ability to add CSP reports through the admin interface.
 
