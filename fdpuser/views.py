@@ -167,28 +167,59 @@ class FdpPasswordResetView(PasswordResetView):
         ]
     )
     def dispatch(self, *args, **kwargs):
-        """ Invalidate user's current password, log out user, record password reset and send
-        email.
+        """ Check whether password reset is supported with the particular settings configuration.
+
+        For example, configuring authentication through only Azure Active Directory will disable password resets.
 
         :param args:
         :param kwargs:
-        :return:
+        :return: Response redirecting to successful password reset regardless of whether a password was actually reset
+        or not.
         """
         if not AbstractConfiguration.can_do_password_reset():
             raise ImproperlyConfigured('Password reset is not supported with this configuration')
+        return super(FdpPasswordResetView, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        """ Invalidates a user's current password, logs the user out, records the password reset and sends
+        an email with a tokenized link to change the password.
+
+        Users who are authenticated externally such as through Azure Active Directory, will not have their passwords
+        reset, nor any emails sent. (They do not have "changeable" passwords according to FDP.)
+
+        Similarly, no password reset will be performed and no email sent for a user who does not exist.
+
+        Finally, users who are normally eligible for password resets, but have reached their password reset limits,
+        will also not have their passwords reset, nor any emails sent.
+
+        To minimize user-enumeration attacks, the view will redirect to a successful password reset view regardless of
+        whether the password was actually successfully reset and regardless of whether an email was sent.
+
+        Note from Django: "Be aware that sending an email costs extra time, hence you may be vulnerable to an email
+        address enumeration timing attack due to a difference between the duration of a reset request for an existing
+        email address and the duration of a reset request for a nonexistent email address. To reduce the overhead, you
+        can use a 3rd party package that allows to send emails asynchronously, e.g. django-mailer."
+
+        See: https://docs.djangoproject.com/en/3.2/topics/auth/default/#django.contrib.auth.views.PasswordResetView
+
+        :param form: Form submitted that contains email address of user whose password reset is requested.
+        :return: Response rendering successful password reset page, regardless of actual success.
+        """
         request = self.request
         if request.method == 'POST':
             ip_address = AbstractIpAddressValidator.get_ip_address(request=request)
             email = request.POST.get('email', None)
-            # limit hasn't been reached for email or IP address to reset password
+            # user exists, is internally authenticated and has not reached password reset limits for email or IP address
             if PasswordReset.can_reset_password(user=None, ip_address=ip_address, email=email):
                 user = FdpUser.objects.get(email=email)
                 # Invalidate current password
                 PasswordReset.invalidate_password_logout(user=user, request=request)
-            # limit has been reached for password resets
+            # user does not exist, is externally authenticated, or has reached password reset limits for email or IP
+            # address
             else:
-                raise Exception('Password reset rate limits have been reached')
-        return super(FdpPasswordResetView, self).dispatch(*args, **kwargs)
+                # replace specified email with an invalid email address that does not exist
+                form.cleaned_data['email'] = 'DOESNOTEXIST'
+        return super().form_valid(form=form)
 
 
 class ResetTwoFactorRedirectView(SecuredSyncRedirectView):
