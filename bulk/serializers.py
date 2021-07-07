@@ -186,9 +186,13 @@ class FdpModelSerializer(ModelSerializer):
         # TODO:     user = self.context['request'].user
         # TODO:     qs = qs.filter_for_confidential_by_user(user=user)
         # could not exactly match a single record
-        if qs.count() != 1:
+        if qs.count() < 1:
             raise ValidationError(
-                _('There is not exactly one {m} with the name {n}'.format(m=model.__name__, n=name_to_match))
+                _('No {m} found with the name {n}'.format(m=model.__name__, n=name_to_match))
+            )
+        elif qs.count() > 1:
+            raise ValidationError(
+                _('More than one {m} found with the name {n}'.format(m=model.__name__, n=name_to_match))
             )
         # matched exactly with a single record
         else:
@@ -224,15 +228,25 @@ class FdpModelSerializer(ModelSerializer):
         qs = BulkImport.objects.filter(pk_imported_from=external_id_to_match, table_imported_to=model.get_db_table())
         qs = qs.filter(pk_imported_to__in=model_qs)
         # could not exactly match a single record
-        if qs.count() != 1:
+        if qs.count() < 1:
             raise ValidationError(
                 _(
-                    'There is not exactly one {m} with the external ID {n}'.format(
+                    'No instances of {m} found with the external ID {n}'.format(
                         m=model.__name__,
                         n=external_id_to_match
                     )
                 )
             )
+        elif qs.count() > 1:
+            raise ValidationError(
+                _(
+                    'More than one {m} found with the external ID {n}'.format(
+                        m=model.__name__,
+                        n=external_id_to_match
+                    )
+                )
+            )
+
         # matched exactly with a single record
         else:
             # model instance matched by unique external ID
@@ -2244,8 +2258,10 @@ class AllegationAirTableSerializer(FdpModelSerializer):
             raise ValidationError(_('Content-person link could not be made for allegation'))
         else:
             content_person_qs = ContentPerson.objects.filter(content=content, person=person)
-            if not content_person_qs.count() == 1:
-                raise ValidationError(_('A single content-person link could not be found for allegation'))
+            if content_person_qs.count() > 1:
+                raise ValidationError(_('More than one content-person links found for allegation'))
+            if content_person_qs.count() < 1:
+                raise ValidationError(_('No content-person link found for allegation'))
             content_person = content_person_qs.get(content=content, person=person)
             self.custom_validated_data['content_person_id'] = content_person.pk
 
