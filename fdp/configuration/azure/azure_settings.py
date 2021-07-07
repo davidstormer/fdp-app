@@ -293,9 +293,12 @@ if EXT_AUTH == AAD_EXT_AUTH:
         SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
         # A list of domain names to be white-listed. Any user with an email address on any of the allowed domains will
         # login successfully, otherwise AuthForbidden is raised.
-        SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS = [
-            get_from_environment_var(environment_var='FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS', raise_exception=True)
-        ]
+        _whitelisted_domains_str = get_from_environment_var(
+            environment_var='FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS',
+            raise_exception=True
+        )
+        _whitelisted_domains_list = [] if not _whitelisted_domains_str else str(_whitelisted_domains_str).split(',')
+        SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS = [str(d).strip() for d in _whitelisted_domains_list]
         # When disconnecting an account, it is recommended to trigger a token revoke action in the authentication
         # provider,  that way we inform it that the token won’t be used anymore and can be disposed. By default the
         # action is not triggered because it’s not a common option on every provider, and tokens should be disposed
