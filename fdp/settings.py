@@ -61,3 +61,4 @@ LOGGING = FDP_ERR_LOGGING
 #: To allow files to be downloaded during a bulk import using the Django Data Wizard package, whitelist the
 # starting portion of each URL. For example, to download files from either Air Tables or Google Drive:
 # FDP_DJANGO_DATA_WIZARD_WHITELISTED_URLS = ['https://airtable.com/', 'https://drive.google.com/file/']
+
