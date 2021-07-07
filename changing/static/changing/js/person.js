@@ -363,6 +363,32 @@ var Fdp = (function (fdpDef, $, w, d) {
     };
 
     /**
+     * Called to initialize the person photo forms, including adding new and deleting existing forms.
+    */
+    function _initPersonPhotoForms() {
+        // icon to add new photo forms
+        var elem = $("#newpersonphoto");
+        elem.on("click", function () {
+            Fdp.Common.addInlineForm(
+                "photos", /* formPrefix */
+                "#emptypersonphoto", /* emptySelector */
+                _initPersonPhotoForm, /* onAddFunc */
+                "<div />" /* newContSelector */
+            );
+        });
+
+        // icons to remove existing person photo forms
+        $(".personphotoform").not(".emptyform").each(function (i, elem) {
+            var formContainer = $(elem);
+            _initPersonPhotoForm(
+                formContainer /* formContainer */
+            );
+
+            Fdp.Common.hideFormIfDeleted(formContainer /* containerToHide */);
+        });
+    };
+
+    /**
      * Marks an identifier form for deletion, and hides its corresponding HTML elements.
      * @param {number} id - Id of identifier form to delete.
     */
@@ -443,6 +469,18 @@ var Fdp = (function (fdpDef, $, w, d) {
             "contacts", /* formPrefix */
             id, /* id */
             ".personcontactform" /* parentSelector */
+        );
+    };
+
+    /**
+     * Marks a person photo form for deletion, and hides its corresponding HTML elements.
+     * @param {number} id - Id of person photo form to delete.
+    */
+    function _delPersonPhotoForm(id) {
+        Fdp.Common.delInlineForm(
+            "photos", /* formPrefix */
+            id, /* id */
+            ".personphotoform" /* parentSelector */
         );
     };
 
@@ -701,6 +739,20 @@ var Fdp = (function (fdpDef, $, w, d) {
     };
 
     /**
+     * Initializes a person photo form, including adding an event handler to the corresponding delete icon.
+     * @param {Object} formContainer - Element containing person photo form. Must be wrapped in JQuery object.
+    */
+    function _initPersonPhotoForm(formContainer) {
+        var delBtn = formContainer.find(".delphoto");
+        var id = delBtn.data("id");
+        delBtn.one("click", function () {
+            _delPersonPhotoForm(
+                id /* id */
+            );
+        });
+    };
+
+    /**
      * Function called when a date is selected through the JQuery UI Datepicker.
      * @param {string} selectedDate - Date was selected in the Datepicker plugin. Will be in the format of "mm/dd/yyyy".
      * @param {Object} datepickerInstance - Instance of Datepicker through which date was selected.
@@ -773,6 +825,9 @@ var Fdp = (function (fdpDef, $, w, d) {
 
         // initialize adding new and removing existing person contact
         _initPersonContactForms();
+
+        // initialize adding new and removing existing person photos
+        _initPersonPhotoForms();
 
         // initialize date pickers
         _initDatePickers(null /* containerSelector */);

@@ -30,7 +30,7 @@
 {% endblock %}
 {% endif %}
 {% block content %}
-    <form method="post">{% csrf_token %}
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}
         {% if form.non_field_errors %}
         <div>
             {{ form.non_field_errors }}
@@ -61,6 +61,24 @@
                 <span id="newidentifier" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another identifier' %}</span>
             </div>
         </div> <!-- div.collapsible for Identifiers -->
+
+        <button type="button" class="collapsible expanded">{% translate 'Photos' %}</button>
+        <div class="collapsible">
+            <div>
+                {{ person_photo_model_formset.management_form }}
+            </div>
+            {% for nested_form in person_photo_model_formset %}
+            <div class="personphotoform">
+                {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delphoto" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
+            </div> <!-- div.personphotoform -->
+            {% endfor %}
+            <div id="emptypersonphoto" class="personphotoform emptyform">
+                {% include "inline_wizard_form.html" with form=person_photo_model_formset.empty_form del_icon_class="delphoto" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
+            </div> <!-- div#emptypersonphoto -->
+            <div>
+                <span id="newpersonphoto" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another photo' %}</span>
+            </div>
+        </div> <!-- div.collapsible for Photos -->
 
         <button type="button" class="collapsible expanded">{% translate 'Contact' %}</button>
         <div class="collapsible">

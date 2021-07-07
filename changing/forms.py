@@ -11,7 +11,7 @@ from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPers
     ContentPersonAllegation, ContentPersonPenalty
 from core.models import Grouping, GroupingAlias, GroupingRelationship, Person, PersonAlias, PersonIdentifier, \
     PersonGrouping, PersonTitle, PersonRelationship, PersonContact, PersonPayment, Incident, PersonIncident, \
-    GroupingIncident
+    GroupingIncident, PersonPhoto
 from supporting.models import County, GroupingRelationshipType, PersonRelationshipType, Location
 
 
@@ -829,6 +829,33 @@ class PersonContactModelForm(AbstractWizardModelForm):
         fields_order = PersonContact.form_fields
 
 
+class PersonPhotoModelForm(AbstractWizardModelForm):
+    """ Form used to create new and edit existing instances of person photo model.
+
+    Fields:
+
+    """
+    #: Fields to show in the form
+    fields_to_show = PersonPhoto.form_fields
+
+    #: Prefix to use for form`
+    prefix = 'photos'
+
+    #: Extra parameter when creating a person photo formset
+    formset_extra = 0
+
+    #: Can delete (forms) parameter when creating a person photo formset
+    formset_can_delete = True
+
+    #: Can order (forms) parameter when creating a person photo formset
+    formset_can_order = False
+
+    class Meta:
+        model = PersonPhoto
+        fields = PersonPhoto.form_fields
+        fields_order = PersonPhoto.form_fields
+
+
 #: Known birth date are added to person
 person_form_fields = Person.form_fields.copy()
 person_form_fields.insert(4, 'known_birth_date')
@@ -985,6 +1012,18 @@ PersonContactModelFormSet = forms.inlineformset_factory(
     extra=PersonContactModelForm.formset_extra,
     can_delete=PersonContactModelForm.formset_can_delete,
     can_order=PersonContactModelForm.formset_can_order,
+)
+
+
+#: Form connecting the person photo to person
+PersonPhotoModelFormSet = forms.inlineformset_factory(
+    Person,
+    PersonPhoto,
+    form=PersonPhotoModelForm,
+    formset=AbstractWizardInlineFormSet,
+    extra=PersonPhotoModelForm.formset_extra,
+    can_delete=PersonPhotoModelForm.formset_can_delete,
+    can_order=PersonPhotoModelForm.formset_can_order,
 )
 
 
