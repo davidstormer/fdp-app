@@ -152,24 +152,34 @@ class FdpPasswordResetView(PasswordResetView):
     """ Overrides the PasswordResetView to ensure that rate limit is checked before a password reset, and that the
     password reset is logged.
 
+    Also, passes the nonce to the widget that is used to render the reCAPTCHA field, so that an inline JavaScript block
+    can be validated under the Content Security Policies (CSPs).
+
     """
     # Form extended so that password reset is logged and recaptcha is used
     form_class = FdpUserPasswordResetWithReCaptchaForm
 
+    def get_form_kwargs(self):
+        """ Adds the nonce that is used validate an inline JavaScript block under the Content Security Policies (CSPs).
+
+        :return: Dictionary of kwargs with which to instantiate form.
+        """
+        form_kwargs = super().get_form_kwargs()
+        # will eventually be passed to the get_context(...) method of the widget used to render the reCAPTCHA field
+        form_kwargs['csp_nonce'] = self.request.csp_nonce
+        return form_kwargs
+
     @method_decorator(csrf_protect)
-    @csp_update(FRAME_SRC='https://www.google.com/recaptcha/', DEFAULT_SRC="'unsafe-inline'")
-    @csp_replace(
-        SCRIPT_SRC=[
-            "'unsafe-inline'",
-            "'self'",
-            'https://www.google.com/recaptcha/',
-            'https://www.gstatic.com/recaptcha/'
-        ]
+    @csp_update(
+        FRAME_SRC='https://www.google.com/recaptcha/',
+        SCRIPT_SRC=['https://www.google.com/recaptcha/', 'https://www.gstatic.com/recaptcha/', "'unsafe-eval'"]
     )
     def dispatch(self, *args, **kwargs):
         """ Check whether password reset is supported with the particular settings configuration.
 
         For example, configuring authentication through only Azure Active Directory will disable password resets.
+
+        Changes the Content Security Policies (CSPs), to allow for access to external Google reCAPTCHA resources.
 
         :param args:
         :param kwargs:
