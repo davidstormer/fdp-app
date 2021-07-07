@@ -24,4 +24,6 @@ urlpatterns = [
          name='change_password'),
     path(AbstractUrlValidator.FDP_USER_RESET_2FA_URL, views.ResetTwoFactorRedirectView.as_view(),
          name='reset_2fa'),
+    path(AbstractUrlValidator.ASYNC_RENEW_SESSION_URL,
+         views.AsyncRenewSessionView.as_view(), name='async_renew_session'),
 ]

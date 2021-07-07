@@ -1364,6 +1364,9 @@ class AbstractUrlValidator(models.Model):
     # relative URL for a user to reset their own 2FA
     FDP_USER_RESET_2FA_URL = '{b}{s}2fa/reset/'.format(b=FDP_USER_BASE_URL, s=FDP_USER_SETTINGS_URL)
 
+    # relative URL for asynchronously renewing a user's session to avoid it expiring
+    ASYNC_RENEW_SESSION_URL = '{b}async/renew/session/'.format(b=FDP_USER_BASE_URL)
+
     # queryset GET parameter used to identify original search criteria entered by user
     GET_ORIGINAL_PARAM = 'orig'
 
