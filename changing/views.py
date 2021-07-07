@@ -1294,14 +1294,6 @@ class AbstractPersonView:
         :return: Nothing.
         """
         context.update({
-            'command': _('Command'),
-            'commands': _('Commands'),
-            'organization': _('Organization'),
-            'organizations': _('Organizations'),
-            'ranks': _('Ranks'),
-            'rank': _('Rank'),
-            'titles': _('Titles'),
-            'title_txt': _('Title'),
             'person': _('Person'),
             'json_search_criteria': AbstractUrlValidator.JSON_SRCH_CRT_PARAM,
             'counties': County.active_objects.all(),
