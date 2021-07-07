@@ -203,6 +203,9 @@ INSTALLED_APPS = [
     'cspreports',
     # Django reCAPTCHA: https://github.com/praekelt/django-recaptcha
     'captcha',
+    # Django Data Wizard: https://github.com/wq/django-data-wizard
+    'data_wizard',
+    'data_wizard.sources',
     # abstract base classes attributes and functionality reused throughout project
     'inheritable',
     # extends standard Django authentication and user roles to customize project
@@ -221,9 +224,6 @@ INSTALLED_APPS = [
     'profiles',
     # data model organizing user verification of data
     'verifying',
-    # Django Data Wizard: https://github.com/wq/django-data-wizard
-    'data_wizard',
-    'data_wizard.sources',
 ]
 
 

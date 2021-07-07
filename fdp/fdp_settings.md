@@ -92,6 +92,18 @@ To overwrite the *entire* list of supported file types for the `PersonPhoto` mod
         ... ('User-friendly description for file type', 'ext'), ...
     ]
 
+## Bulk import file download
+
+During a bulk import using the Django Data Wizard package, files such as for instances of the `PersonPhoto` and `Attachment` models can be automatically downloaded by specifying each file's publicly accessible URL. 
+
+These URLs cannot access files locally or through private IP addresses. Additionally, the starting portion of each URL must be whitelisted:  
+
+    FDP_DJANGO_DATA_WIZARD_WHITELISTED_URLS = [...]
+
+For instance, if during the bulk import there are person photos which are intended to be downloaded from either Air Tables or Google Drive, then the following URL portions could be whitelisted:
+
+    FDP_DJANGO_DATA_WIZARD_WHITELISTED_URLS = ['https://airtable.com/', 'https://drive.google.com/file/']
+
 ## FDP Settings for Azure
 
 For hosting in Microsoft Azure, it is recommended that the most sensitive settings are stored in Microsoft Azure Key Vault as Secrets. Less sensitive settings can be stored in the Azure App Service as Application Settings. The following is one possible configuration:
@@ -118,7 +130,7 @@ For hosting in Microsoft Azure, it is recommended that the most sensitive settin
 | | FDP-SOCIAL-AUTH-AZUREAD-TENANT-OAUTH2-KEY | | | Azure Active Directory client ID. Only checked if `'aad'` was specified for Azure Active Directory. |
 | | FDP-SOCIAL-AUTH-AZUREAD-TENANT-OAUTH2-TENANT-ID | | | Azure Active Directory tenant ID. Only checked if `'aad'` was specified for Azure Active Directory. |
 | | FDP-SOCIAL-AUTH-AZUREAD-TENANT-OAUTH2-SECRET | | | Azure Active Directory client secret. Only checked if `'aad'` was specified for Azure Active Directory. |
-| | | FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS | | Azure Active Directory domain. Only checked if `'aad'` was specified for Azure Active Directory. |
+| | | FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS | | Comma-separate list of Azure Active Directory domains. Only checked if `'aad'` was specified for Azure Active Directory. |
 | | | FDP_FROM_EMAIL | `'webmaster@localhost'` | `FROM` email address for system. |
 | | | FDP_EMAIL_HOST | `'localhost'` | Host used to send emails. |
 | | FDP-EMAIL-HOST-USER | | | User for login to send emails. |
