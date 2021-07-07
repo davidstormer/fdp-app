@@ -118,7 +118,7 @@ For hosting in Microsoft Azure, it is recommended that the most sensitive settin
 | | FDP-SOCIAL-AUTH-AZUREAD-TENANT-OAUTH2-KEY | | | Azure Active Directory client ID. Only checked if `'aad'` was specified for Azure Active Directory. |
 | | FDP-SOCIAL-AUTH-AZUREAD-TENANT-OAUTH2-TENANT-ID | | | Azure Active Directory tenant ID. Only checked if `'aad'` was specified for Azure Active Directory. |
 | | FDP-SOCIAL-AUTH-AZUREAD-TENANT-OAUTH2-SECRET | | | Azure Active Directory client secret. Only checked if `'aad'` was specified for Azure Active Directory. |
-| | | FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS | | Azure Active Directory domain. Only checked if `'aad'` was specified for Azure Active Directory. |
+| | | FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS | | Comma-separate list of Azure Active Directory domains. Only checked if `'aad'` was specified for Azure Active Directory. |
 | | | FDP_FROM_EMAIL | `'webmaster@localhost'` | `FROM` email address for system. |
 | | | FDP_EMAIL_HOST | `'localhost'` | Host used to send emails. |
 | | FDP-EMAIL-HOST-USER | | | User for login to send emails. |
