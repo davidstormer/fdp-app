@@ -22,12 +22,12 @@ CONST_AZURE_OTP_MIDDLEWARE = ['fdp.middleware.azure_middleware.AzureOTPMiddlewar
 
 
 #: Name of Django app to add into INSTALLED_APPS setting to support authentication through Azure Active Directory.
-#: Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+#: Django Social Auth: https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
 CONST_AZURE_AUTH_APP = 'social_django'
 
 
 #: Additional context processors to add into TEMPLATES setting to support authentication through Azure Active Directory.
-#: Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+#: Django Social Auth: https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
 CONST_AZURE_TEMPLATE_CONTEXT_PROCESSORS = [
     'social_django.context_processors.backends',
     'social_django.context_processors.login_redirect'

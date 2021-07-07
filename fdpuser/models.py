@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.sessions.models import Session
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.utils.crypto import get_random_string
@@ -83,14 +84,25 @@ class FdpUserManager(BaseUserManager):
     # serialize manager and make available in migrations
     use_in_migrations = True
 
+    def get_case_insensitive_username_filter_dict(self, username):
+        """ Retrieves a dictionary of keyword arguments that can be expanded to filter a queryset of users.
+
+        Return value from method can be expanded, for example, into a queryset's filter(...) or get(...) methods.
+
+        :param username: Username for which to filter the queryset.
+        :return: Dictionary of keyword arguments.
+        """
+        case_insensitive_username_field = '{u}__iexact'.format(u=self.model.USERNAME_FIELD)
+        return {case_insensitive_username_field: username}
+
     def get_by_natural_key(self, username):
         """ Retrieves case insensitive username (email).
 
         :param username: Username entered by user.
         :return: Case insensitive username.
         """
-        case_insensitive_username_field = '{u}__iexact'.format(u=self.model.USERNAME_FIELD)
-        return self.get(**{case_insensitive_username_field: username})
+        filter_dict = self.get_case_insensitive_username_filter_dict(username=username)
+        return self.get(**filter_dict)
 
     def __create_user(self, email, password, **kwargs):
         """ Creates a FDP user.
@@ -496,6 +508,9 @@ class FdpUser(AbstractUser):
     def is_user_azure_authenticated(cls, user):
         """ Checks if a user has been properly authenticated through the Azure Active Directory authentication backend.
 
+        The control statement logic should be similar to the control statement logic found in
+        the method do_missing_social_auth_check(...).
+
         :param user: User whose authentication status should be checked.
         :return: True if user has been properly authenticated through Azure Active Directory, false otherwise.
         """
@@ -516,6 +531,50 @@ class FdpUser(AbstractUser):
         # user is not externally authenticated
         else:
             return False
+
+    @classmethod
+    def do_missing_social_auth_check(cls, user):
+        """ Checks if a user is intended to be authenticated through the Azure Active Directory authentication backend,
+        but does not have a corresponding social auth record in the Django database.
+
+        In other words, the user has "only_external_auth" property set to True, but has no corresponding valid record in
+        the "social_auth_usersocialauth" database table.
+
+        In this case, remove the active session records from the database, to force the user to log in again.
+
+        The control statement logic should be similar to the control statement logic found in
+        the method is_user_azure_authenticated(...).
+
+        :param user: User whose social authentication association should be checked.
+        :return: Nothing.
+        """
+        # user is defined
+        # AND user is not anonymous
+        # AND user is authenticated
+        # AND user is not superuser
+        # and user is only externally authenticated
+        # and user has no social authentication through the Azure Active Directory
+        if user \
+                and (not user.is_anonymous) \
+                and user.is_authenticated \
+                and user.is_active \
+                and (not user.is_superuser) \
+                and user.only_external_auth \
+                and not user.social_auth.filter(
+                    provider=AbstractConfiguration.azure_active_directory_provider
+                ).exists():
+            # Only expected to be here if database is an unexpected state for a particular user. For example, the user's
+            # social auth association may have been manually deleted from the "social_auth_usersocialauth" database
+            # table. To resolve this unexpected state, cycle through all active sessions and remove those for this user.
+            # This is expected to force the user to login thereby fixing the unexpected state.
+            for session in Session.objects.filter(expire_date__gte=now()):
+                # decode each session and compare with the user's primary key
+                if str(user.pk) == str((session.get_decoded()).get('_auth_user_id')):
+                    # Once the session is removed, the next HTTPs request that the user submits, will be responded to
+                    # with a: Bad Request (400)
+                    # The corresponding error that is logged will be: The request's session was deleted before the
+                    # request completed. The user may have logged out in a concurrent request, for example.
+                    session.delete()
 
     class Meta:
         db_table = '{d}fdp_user'.format(d=settings.DB_PREFIX)

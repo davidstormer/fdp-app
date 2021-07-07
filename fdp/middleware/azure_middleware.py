@@ -55,4 +55,10 @@ class AzureOTPMiddleware(OTPMiddleware):
                 # defined in the Django Two-Factor Authentication package, and allow the user to skip the Django
                 # implemented 2FA verification step
                 user.is_verified = functools_partial(is_verified, user)
+            # user may still be intended to be authenticated through Azure Active Directory, but their social auth
+            # association could be missing
+            else:
+                # perform the check, and if an unexpected database state is encountered, then remove the user's active
+                # sessions
+                user_model.do_missing_social_auth_check(user=user)
         return user
