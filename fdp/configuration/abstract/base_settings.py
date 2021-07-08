@@ -461,6 +461,8 @@ AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
 # The names of request.META attributes as a tuple of strings to check to get the client IP address
 # See: https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
 AXES_META_PRECEDENCE_ORDER = [
+    # For Azure App Service, see: https://docs.microsoft.com/en-us/azure/application-gateway/how-application-gateway-works#modifications-to-the-request
+    'x-forwarded-for',
     # For Heroku, see: https://devcenter.heroku.com/articles/http-routing#heroku-headers
     'HTTP_X_FORWARDED_FOR',
     'REMOTE_ADDR',
