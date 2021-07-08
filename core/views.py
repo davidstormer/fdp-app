@@ -10,7 +10,7 @@ from pprint import pformat
 class DEBUGShowHeaders(SecuredSyncView):
 
     def get(self, request):
-        return HttpResponse(pformat(request))
+        return HttpResponse(f"<pre>{pformat(request.META)}</pre>")
 
 
 class DownloadPersonPhotoView(SecuredSyncView):
