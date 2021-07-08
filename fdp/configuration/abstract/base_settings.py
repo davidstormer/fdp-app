@@ -462,10 +462,9 @@ AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
 # See: https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
 AXES_META_PRECEDENCE_ORDER = [
     # For Azure App Service, see: https://docs.microsoft.com/en-us/azure/application-gateway/how-application-gateway-works#modifications-to-the-request
-    'x-forwarded-for',
+    'REMOTE_ADDR',
     # For Heroku, see: https://devcenter.heroku.com/articles/http-routing#heroku-headers
     'HTTP_X_FORWARDED_FOR',
-    'REMOTE_ADDR',
     # For Python Anywhere, see: http://help.pythonanywhere.com/pages/WebAppClientIPAddresses/
     'HTTP_X_REAL_IP'
 ]
