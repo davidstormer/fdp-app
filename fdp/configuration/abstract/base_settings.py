@@ -460,15 +460,17 @@ AXES_COOLOFF_TIME = 48
 AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
 # The names of request.META attributes as a tuple of strings to check to get the client IP address
 # See: https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
-AXES_META_PRECEDENCE_ORDER = [
-    # For Azure App Service, see: https://docs.microsoft.com/en-us/azure/application-gateway/how-application-gateway-works#modifications-to-the-request
-    'X_FORWARDED_FOR',
+AXES_META_PRECEDENCE_ORDER = (
+    'HTTP_X_FORWARDED_FOR', 'X_FORWARDED_FOR',  # <client>, <proxy1>, <proxy2>
+    'HTTP_CLIENT_IP',
+    'HTTP_X_REAL_IP',
+    'HTTP_X_FORWARDED',
+    'HTTP_X_CLUSTER_CLIENT_IP',
+    'HTTP_FORWARDED_FOR',
+    'HTTP_FORWARDED',
+    'HTTP_VIA',
     'REMOTE_ADDR',
-    # For Heroku, see: https://devcenter.heroku.com/articles/http-routing#heroku-headers
-    'HTTP_X_FORWARDED_FOR',
-    # For Python Anywhere, see: http://help.pythonanywhere.com/pages/WebAppClientIPAddresses/
-    'HTTP_X_REAL_IP'
-]
+)
 
 
 # Django-CSP: https://django-csp.readthedocs.io/en/latest/
