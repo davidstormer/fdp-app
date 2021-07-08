@@ -3,6 +3,14 @@ from django.conf import settings
 from .models import PersonPhoto
 from inheritable.models import AbstractUrlValidator, AbstractConfiguration
 from inheritable.views import SecuredSyncView
+from django.http import HttpResponse
+from pprint import pformat
+
+
+class DEBUGShowHeaders(SecuredSyncView):
+
+    def get(self, request):
+        return HttpResponse(pformat(request))
 
 
 class DownloadPersonPhotoView(SecuredSyncView):
