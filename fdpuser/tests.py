@@ -24,7 +24,7 @@ from fdp.configuration.abstract.constants import CONST_AZURE_AUTH_APP
 from fdp.urlconf.constants import CONST_TWO_FACTOR_PROFILE_URL_NAME, CONST_LOGIN_URL_NAME
 from unittest.mock import patch as mock_patch
 from os import environ
-from data_wizard.sources.models import FileSource, URLSource
+from data_wizard.sources.models import FileSource
 from axes.models import AccessLog, AccessAttempt
 from two_factor.models import PhoneDevice
 from two_factor.views import LoginView
@@ -984,7 +984,7 @@ class FdpUserTestCase(AbstractTestCase):
         for model_to_test in [
             PasswordReset, FdpOrganization, FdpCSPReport,
             BulkImport, FdpImportFile, FdpImportMapping, FdpImportRun,
-            FileSource, URLSource,
+            FileSource,
             AccessLog, AccessAttempt,
             PhoneDevice,
             CommandSearch, CommandView, OfficerSearch, OfficerView,
