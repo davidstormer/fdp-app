@@ -462,7 +462,7 @@ AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
 # See: https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
 
 AXES_META_PRECEDENCE_ORDER = (
-    'HTTP_CLIENT_IP',
+    'HTTP_X_CLIENT_IP',
 )
 
 
