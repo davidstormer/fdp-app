@@ -7,10 +7,11 @@ from django.http import HttpResponse
 from pprint import pformat
 from ipware import get_client_ip
 
+
 class DEBUGShowHeaders(SecuredSyncView):
 
     def get(self, request):
-        return HttpResponse(f"<pre>{pformat(get_client_ip(request))} {pformat(request.META)}</pre>")
+        return HttpResponse(f"<pre>{pformat(get_client_ip(request, request_header_order=['HTTP_X_FORWARDED_FOR',]))} {pformat(request.META)}</pre>")
 
 
 class DownloadPersonPhotoView(SecuredSyncView):
