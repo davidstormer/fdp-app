@@ -15,7 +15,7 @@ from sourcing.models import Content, ContentIdentifier, ContentCase, ContentPers
     ContentPersonPenalty, Attachment
 from supporting.models import County, GroupingRelationshipType, PersonIdentifierType, Trait, Title, IncidentTag, \
     Location, EncounterReason, State, ContentIdentifierType, ContentCaseOutcome, AllegationOutcome, Allegation, \
-    ContentType, PersonGroupingType, LeaveStatus, AttachmentType
+    ContentType, PersonGroupingType, LeaveStatus, AttachmentType, Court, SituationRole
 from rest_framework.serializers import ModelSerializer, CharField, EmailField
 from rest_framework.fields import empty
 from reversion.revisions import create_revision
@@ -186,9 +186,13 @@ class FdpModelSerializer(ModelSerializer):
         # TODO:     user = self.context['request'].user
         # TODO:     qs = qs.filter_for_confidential_by_user(user=user)
         # could not exactly match a single record
-        if qs.count() != 1:
+        if qs.count() < 1:
             raise ValidationError(
-                _('There is not exactly one {m} with the name {n}'.format(m=model.__name__, n=name_to_match))
+                _('No {m} found with the name {n}'.format(m=model.__name__, n=name_to_match))
+            )
+        elif qs.count() > 1:
+            raise ValidationError(
+                _('More than one {m} found with the name {n}'.format(m=model.__name__, n=name_to_match))
             )
         # matched exactly with a single record
         else:
@@ -224,15 +228,25 @@ class FdpModelSerializer(ModelSerializer):
         qs = BulkImport.objects.filter(pk_imported_from=external_id_to_match, table_imported_to=model.get_db_table())
         qs = qs.filter(pk_imported_to__in=model_qs)
         # could not exactly match a single record
-        if qs.count() != 1:
+        if qs.count() < 1:
             raise ValidationError(
                 _(
-                    'There is not exactly one {m} with the external ID {n}'.format(
+                    'No instances of {m} found with the external ID {n}'.format(
                         m=model.__name__,
                         n=external_id_to_match
                     )
                 )
             )
+        elif qs.count() > 1:
+            raise ValidationError(
+                _(
+                    'More than one {m} found with the external ID {n}'.format(
+                        m=model.__name__,
+                        n=external_id_to_match
+                    )
+                )
+            )
+
         # matched exactly with a single record
         else:
             # model instance matched by unique external ID
@@ -976,6 +990,42 @@ class AbstractAsOfDateBoundedModelSerializer(FdpModelSerializer):
         if is_valid:
             self.__validate_as_of_checkbox()
         return is_valid
+
+
+class AbstractSituationRoleLinkModelSerializer(FdpModelSerializer):
+    """ Abstract serializer from which all model serializers inherit for models that include a foreign key to the
+    situation role model.
+
+    Examples include the Person Incident Air Table serializer and the Content Person Air Table serializer.
+
+    Attributes:
+        :situation_role (str): Situation role, add if it does not exist.
+    """
+    situation_role = CharField(
+        required=False,
+        allow_null=True,
+        label=_('Situation role, add if it does not exist')
+    )
+
+    #: Fields that should be excluded from the list of mappable target serializer fields.
+    excluded_fields = FdpModelSerializer.excluded_fields
+
+    def is_valid(self, raise_exception=False):
+        """ Validates for optional custom attributes.
+
+        :param raise_exception: True if an exception should be raised during validation.
+        :return: True if record is valid, false if record is invalid.
+        """
+        # validate the given the situation role by its name, and add it as a model instance if it does not already
+        # exist, and then place the value into self.initial_data
+        self._validate_foreign_key_by_name(
+            foreign_key_field='situation_role',
+            foreign_key_model=SituationRole,
+            create_unknown=False,
+            raise_exception=False
+        )
+        # validate record
+        return super(AbstractSituationRoleLinkModelSerializer, self).is_valid(raise_exception=raise_exception)
 
 
 class AbstractPersonLinkModelSerializer(FdpModelSerializer):
@@ -1837,6 +1887,7 @@ class ContentAirTableSerializer(FdpModelSerializer):
     Attributes:
         :identifier_type (str): Type for content identifier, add if it does not exist.
         :identifier (str): Identifier for content identifier.
+        :case_court (str): Case court matched by unique name, added if it does not exist.
         :case_opened_date (str): Case opened date.
         :case_closed_date (str): Case closed date.
         :outcome_by_name (str): Case outcome matched by unique name, added if it does not exist.
@@ -1857,6 +1908,12 @@ class ContentAirTableSerializer(FdpModelSerializer):
         required=False,
         allow_null=True,
         label=_('Identifier for content identifier')
+    )
+
+    court_by_name = CharField(
+        required=False,
+        allow_null=True,
+        label=_('Case court - match by unique name, add if it does not exist')
     )
 
     case_opened_date = CharField(
@@ -1915,6 +1972,9 @@ class ContentAirTableSerializer(FdpModelSerializer):
 
     #: Key used to reference in the _validated_data dictionary, name of case outcome inst. to which content is linked.
     __outcome_key = 'outcome'
+
+    #: Key used to reference in the _validated_data dictionary, name of case court inst. to which content is linked.
+    __court_key = 'court'
 
     #: Key used to reference in the _validated_data dictionary, the list of incidents to add for a content.
     __split_incidents_key = 'split_incidents'
@@ -1985,6 +2045,19 @@ class ContentAirTableSerializer(FdpModelSerializer):
         outcome_by_name = self.validated_data.pop(outcome_by_name_key, None)
         if outcome_by_name:
             self._validated_data[self.__outcome_key] = outcome_by_name
+
+    def __validate_case_court(self):
+        """ Validates the case court field.
+
+        If validated, prepares them for the corresponding Content Case Court instance.
+
+        :return: Nothing.
+        """
+        # parse case court by unique name
+        court_by_name_key = 'court_by_name'
+        court_by_name = self.validated_data.pop(court_by_name_key, None)
+        if court_by_name:
+            self._validated_data[self.__court_key] = court_by_name
 
     def __validate_incidents(self):
         """ Validates the incidents field.
@@ -2080,6 +2153,7 @@ class ContentAirTableSerializer(FdpModelSerializer):
             self.__validate_case_opened_date()
             self.__validate_case_closed_date()
             self.__validate_case_outcome()
+            self.__validate_case_court()
             self.__validate_incidents()
             self.__validate_persons()
             self.__validate_attachment_files()
@@ -2099,6 +2173,7 @@ class ContentAirTableSerializer(FdpModelSerializer):
         identifier_type = validated_data.pop(self.__identifier_type_key, None)
         identifier = validated_data.pop(self.__identifier_key, '')
         outcome = validated_data.pop(self.__outcome_key, '')
+        court = validated_data.pop(self.__court_key, '')
         split_incident_ids = validated_data.pop(self.__split_incidents_key, [])
         split_person_ids = validated_data.pop(self.__split_persons_key, [])
         split_attachment_file_paths = validated_data.pop(self.__split_attachment_files_key, [])
@@ -2119,13 +2194,19 @@ class ContentAirTableSerializer(FdpModelSerializer):
             content_identifier.full_clean()
             content_identifier.save()
         # optionally create content case
-        if case_opened_date or case_closed_date or outcome:
+        if case_opened_date or case_closed_date or outcome or court:
             content_case = ContentCase(content=instance)
             if outcome:
                 content_case.outcome = self._add_if_does_not_exist(
                     model=ContentCaseOutcome,
                     filter_dict={'name__iexact': outcome},
                     add_dict={'name': outcome}
+                )
+            if court:
+                content_case.court = self._add_if_does_not_exist(
+                    model=Court,
+                    filter_dict={'name__iexact': court},
+                    add_dict={'name': court}
                 )
             if case_opened_date:
                 content_case.start_year = case_opened_date.year
@@ -2244,8 +2325,10 @@ class AllegationAirTableSerializer(FdpModelSerializer):
             raise ValidationError(_('Content-person link could not be made for allegation'))
         else:
             content_person_qs = ContentPerson.objects.filter(content=content, person=person)
-            if not content_person_qs.count() == 1:
-                raise ValidationError(_('A single content-person link could not be found for allegation'))
+            if content_person_qs.count() > 1:
+                raise ValidationError(_('More than one content-person links found for allegation'))
+            if content_person_qs.count() < 1:
+                raise ValidationError(_('No content-person link found for allegation'))
             content_person = content_person_qs.get(content=content, person=person)
             self.custom_validated_data['content_person_id'] = content_person.pk
 
@@ -2531,7 +2614,7 @@ class PersonPaymentAirTableSerializer(AbstractAsOfDateBoundedModelSerializer, Ab
                            []))
 
 
-class PersonIncidentAirTableSerializer(AbstractPersonLinkModelSerializer):
+class PersonIncidentAirTableSerializer(AbstractPersonLinkModelSerializer, AbstractSituationRoleLinkModelSerializer):
     """ Serializer for person-incidents that were defined through the Air Table templates.
 
     Attributes:
@@ -2584,10 +2667,13 @@ class PersonIncidentAirTableSerializer(AbstractPersonLinkModelSerializer):
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = list(set(AbstractPersonLinkModelSerializer.excluded_fields +
-                           ['situation_role', 'description', 'is_guess', 'known_info', 'tags']))
+                           AbstractSituationRoleLinkModelSerializer.excluded_fields +
+                           ['description', 'is_guess', 'known_info', 'tags']))
 
 
-class ContentPersonAirTableSerializer(AbstractPersonLinkModelSerializer, AbstractContentLinkModelSerializer):
+class ContentPersonAirTableSerializer(
+    AbstractPersonLinkModelSerializer, AbstractContentLinkModelSerializer, AbstractSituationRoleLinkModelSerializer
+):
     """ Serializer for content-persons that were defined through the Air Table templates.
 
     Attributes:
@@ -2627,7 +2713,8 @@ class ContentPersonAirTableSerializer(AbstractPersonLinkModelSerializer, Abstrac
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = list(set(AbstractPersonLinkModelSerializer.excluded_fields +
-                           ['situation_role', 'description', 'is_guess', 'known_info']))
+                           AbstractSituationRoleLinkModelSerializer.excluded_fields +
+                           ['description', 'is_guess', 'known_info']))
 
 
 class ContentIdentifierAirTableSerializer(AbstractContentLinkModelSerializer):
