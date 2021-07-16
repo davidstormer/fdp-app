@@ -286,8 +286,11 @@ class FdpUserTestCase(AbstractTestCase):
         """
         # officer (whose profile will be accessed below)
         officer = Person.objects.create(name='Name1', **self._is_law_dict, **self._not_confidential_dict)
-        # attachment (to be downloaded below)
-        with open('/media/sf_fdp/media/test.txt') as f:
+        # "dummy" file is used to test download functionality in officer profile
+        dummy_file = settings.MEDIA_ROOT / 'test.txt'
+        # create "dummy" file if it does not already exist
+        with open(dummy_file, 'a+') as f:
+            # attachment (to be downloaded below)
             attachment = Attachment.objects.create(name='dummy', file=File(f))
         # connection between attachment and officer
         content = Content.objects.create(name='Content1', **self._not_confidential_dict)
