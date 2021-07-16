@@ -542,3 +542,16 @@ secret_email_host_password = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FD
 # Azure Key Vault has priority, so overwrite any previous setting (e.g. from environment variable or configuration file)
 if secret_email_host_password:
     EMAIL_HOST_PASSWORD = secret_email_host_password
+
+
+# Axes login attempt throttling client IP detection settings
+# Note: HTTP_X_FORWARDED_FOR cannot be used because it contains not just the IP but also the port [1], which causes the
+# django-ipware module to reject it [2]. 'HTTP_X_CLIENT_IP' has been observed in Azure proxy requests to contain just
+# the IP address, and not the port [2].
+# [1] https://docs.microsoft.com/en-us/azure/application-gateway/how-application-gateway-works#modifications-to-the-request
+# [2] https://fdpapp.atlassian.net/browse/FDAB-166
+# The names of request.META attributes as a tuple of strings to check to get the client IP address
+# See: https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
+AXES_META_PRECEDENCE_ORDER = (
+    'HTTP_X_CLIENT_IP',
+)
