@@ -872,7 +872,7 @@ class AbstractDateValidator(models.Model):
         :param is_as_of: True if start date is as of, false if start date is exact.
         :return: A single fuzzy date in human-friendly display form.
         """
-        from_str = cls.AS_OF_DATE if is_as_of else cls.FROM_DATE        
+        from_str = cls.AS_OF_DATE if is_as_of else cls.FROM_DATE
         # parameters passed to strftime
         y = '%Y'
         m = '%m'
@@ -886,7 +886,7 @@ class AbstractDateValidator(models.Model):
                     year=start_year, month=start_month, day=start_day, prefix=cls.DURING_DATE
                 )
             # On 2018-03-23
-            else:            
+            else:
                 return cls.get_display_text_from_date(
                     year=start_year, month=start_month, day=start_day, prefix=cls.ON_DATE
                 )
