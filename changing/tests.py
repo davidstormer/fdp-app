@@ -6,6 +6,9 @@ from core.models import Person, PersonRelationship, Incident, PersonIncident
 from sourcing.models import Content, ContentPerson, Attachment, ContentIdentifier
 from supporting.models import PersonRelationshipType, ContentIdentifierType, Allegation
 from .forms import WizardSearchForm
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ChangingTestCase(AbstractTestCase):
@@ -1306,7 +1309,7 @@ class ChangingTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(
+        logger.debug(
             _('\nStarting test for synchronous Changing Search Results views, Changing Update views, and Link '
               'Allegations/Penalties view for all permutations of user roles, confidentiality levels and relevant '
               'models')
@@ -1317,7 +1320,7 @@ class ChangingTestCase(AbstractTestCase):
         self.__test_incident_changing_sync_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_changing_sync_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_link_allegations_penalties_changing_sync_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
-        print(_('\nSuccessfully finished test for synchronous Changing Search Results views, Changing Update views, '
+        logger.debug(_('\nSuccessfully finished test for synchronous Changing Search Results views, Changing Update views, '
                 'and Link Allegations/Penalties view for all permutations of user roles, confidentiality levels and '
                 'relevant models\n\n'))
 
@@ -1328,7 +1331,7 @@ class ChangingTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(
+        logger.debug(
             _('\nStarting test for asynchronous Changing views for all permutations of user roles, confidentiality '
               'levels and relevant models')
         )
@@ -1337,5 +1340,5 @@ class ChangingTestCase(AbstractTestCase):
         self.__test_person_changing_async_view(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_incident_changing_async_view(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_attachment_changing_async_view(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
-        print(_('\nSuccessfully finished test for asynchronous Changing views for all permutations of user roles, '
+        logger.debug(_('\nSuccessfully finished test for asynchronous Changing views for all permutations of user roles, '
                 'confidentiality levels and relevant models\n\n'))

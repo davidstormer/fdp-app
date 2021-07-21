@@ -29,6 +29,9 @@ from axes.models import AccessLog, AccessAttempt
 from two_factor.models import PhoneDevice
 from two_factor.views import LoginView
 from two_factor.admin import AdminSiteOTPRequired
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FdpUserTestCase(AbstractTestCase):
@@ -449,7 +452,7 @@ class FdpUserTestCase(AbstractTestCase):
 
         :return: Nothing.
         """
-        print(_('\nStarting test for access to views'))
+        logger.debug(_('\nStarting test for access to views'))
         self.__add_data_for_officer_profile()
         # number of users already in database
         num_of_users = FdpUser.objects.all().count() + 1
@@ -520,7 +523,7 @@ class FdpUserTestCase(AbstractTestCase):
                         reverse(settings.LOGIN_URL) if not str(view_to_test[self._url_key]).startswith('/admin')
                         else reverse('admin:login')
                 )
-                print(_('\nStarting sub-test for {v} for a {u} with expected status code {s}{r}'.format(
+                logger.debug(_('\nStarting sub-test for {v} for a {u} with expected status code {s}{r}'.format(
                     v=view_label,
                     u=user_role,
                     s=expected_status_code,
@@ -554,7 +557,7 @@ class FdpUserTestCase(AbstractTestCase):
                     client.logout()
                     fdp_user.delete()
         self.__delete_data_for_officer_profile()
-        print(_('\nSuccessfully finished test for access to views\n\n'))
+        logger.debug(_('\nSuccessfully finished test for access to views\n\n'))
 
     @local_test_settings_required
     def test_password_reset_throttling(self):
@@ -564,7 +567,7 @@ class FdpUserTestCase(AbstractTestCase):
 
         :return: Nothing.
         """
-        print(_('\nStarting test for password reset and password change throttling'))
+        logger.debug(_('\nStarting test for password reset and password change throttling'))
         max_password_resets = settings.MAX_PWD_RESET_PER_IP_ADDRESS_PER_DAY
         max_password_changes = settings.MAX_PWD_RESET_PER_USER_PER_DAY
         url = reverse('password_reset')
@@ -577,7 +580,7 @@ class FdpUserTestCase(AbstractTestCase):
             # skip "creating" the anonymous user
             if not user_role[self._is_anonymous_key]:
                 # test resetting any password
-                print(_('\nStarting sub-test to reset password '
+                logger.debug(_('\nStarting sub-test to reset password '
                         'for {u} by anonymous user'.format(u=user_role[self._label])))
                 data = {}
                 self.__delete_password_resets()
@@ -609,7 +612,7 @@ class FdpUserTestCase(AbstractTestCase):
                     client.logout()
                     self._do_get(c=client, url=url, expected_status_code=200, login_startswith=None)
                     self._do_post(c=client, url=url, data=data, expected_status_code=302, login_startswith=done_url)
-                    print(_('Password reset #{i} is successful'.format(i=i + 1)))
+                    logger.debug(_('Password reset #{i} is successful'.format(i=i + 1)))
                     self.assertEqual(PasswordReset.objects.all().count(), i + 1)
                     self.assertTrue(PasswordReset.objects.all().order_by('-pk')[0].ip_address)
                 # assert that we've reached the limit for password resets
@@ -619,12 +622,12 @@ class FdpUserTestCase(AbstractTestCase):
                 self._do_post(c=client, url=url, data=data, expected_status_code=302, login_startswith=done_url)
                 # assert that no more password resets were made
                 self.assertEqual(PasswordReset.objects.all().count(), max_password_resets)
-                print(_('Preceding password reset was successfully blocked'))
+                logger.debug(_('Preceding password reset was successfully blocked'))
                 PasswordReset.objects.all().delete()
                 self.assertEqual(PasswordReset.objects.all().count(), 0)
                 # test changing own password
                 # create the FDP user in the test database
-                print(_('\nStarting sub-test for {u} to change their own password'.format(u=user_role[self._label])))
+                logger.debug(_('\nStarting sub-test for {u} to change their own password'.format(u=user_role[self._label])))
                 fdp_user = self._create_fdp_user(
                     is_host=user_role[self._is_host_key],
                     is_administrator=user_role[self._is_administrator_key],
@@ -645,7 +648,7 @@ class FdpUserTestCase(AbstractTestCase):
                         will_login_succeed=True
                     )
                     self._do_get(c=client, url=chng_url, expected_status_code=302, login_startswith=url)
-                    print(_('Password change #{k} is successful'.format(k=k + 1)))
+                    logger.debug(_('Password change #{k} is successful'.format(k=k + 1)))
                     fdp_user.set_password(self._password)
                     fdp_user.save()
                 # this login should fail
@@ -665,11 +668,11 @@ class FdpUserTestCase(AbstractTestCase):
                 except Exception as err:
                     if not str(err) == 'Password reset rate limits have been reached':
                         raise Exception(_('Should not arrive here, but an unexpected problem occurred'))
-                print(_('Following password change was successfully blocked'))
+                logger.debug(_('Following password change was successfully blocked'))
         self.__delete_password_resets()
         FdpUser.objects.all().delete()
         self.assertEqual(FdpUser.objects.all().count(), 0)
-        print(_('\nSuccessfully finished test for password reset and password change throttling\n\n'))
+        logger.debug(_('\nSuccessfully finished test for password reset and password change throttling\n\n'))
 
     @local_test_settings_required
     def test_guest_admin_user_access(self):
@@ -678,7 +681,7 @@ class FdpUserTestCase(AbstractTestCase):
         :return: Nothing
         """
         admin_index = reverse('admin:index')
-        print(_('\nStarting test for guest administrators to access users for all permutations of user roles'))
+        logger.debug(_('\nStarting test for guest administrators to access users for all permutations of user roles'))
         fdp_org_1 = FdpOrganization.objects.create(name='FdpOrganization1FdpUser')
         fdp_org_2 = FdpOrganization.objects.create(name='FdpOrganization2FdpUser')
         guest_admin_without_org = self._create_fdp_user(email='donotreply001@google.com', **self._guest_admin_dict)
@@ -697,7 +700,7 @@ class FdpUserTestCase(AbstractTestCase):
             # email address will contain uniquely identifiable string
             email = (user_role[self._label]).replace(' ', '').lower()
             # for Guest Administrator without FDP organization
-            print(
+            logger.debug(
                 'Starting changelist view sub-test for {n} for guest administrator without a FDP organization'.format(
                     n=user_role[self._label]
                 )
@@ -711,7 +714,7 @@ class FdpUserTestCase(AbstractTestCase):
             else:
                 self.__check_emails_not_in_response(email=email, response_content=without_org_content)
             # for Guest Administrator with FDP organization
-            print(
+            logger.debug(
                 'Starting changelist view sub-test for {n} for guest administrator with a FDP organization'.format(
                     n=user_role[self._label]
                 )
@@ -722,7 +725,7 @@ class FdpUserTestCase(AbstractTestCase):
             else:
                 self.__check_emails_not_in_response(email=email, response_content=with_org_content)
             # for Guest Administrator without FDP organization
-            print(
+            logger.debug(
                 'Starting change instance view sub-test for {n} for '
                 'guest administrator without a FDP organization'.format(n=user_role[self._label])
             )
@@ -746,7 +749,7 @@ class FdpUserTestCase(AbstractTestCase):
                 login_startswith=admin_index, pk=wrong_org_ids[email]
             )
             # for Guest Administrator with FDP organization
-            print(
+            logger.debug(
                 'Starting change instance view sub-test for {n} for guest administrator with a FDP organization'.format(
                     n=user_role[self._label]
                 )
@@ -771,7 +774,7 @@ class FdpUserTestCase(AbstractTestCase):
                 login_startswith=admin_index, pk=wrong_org_ids[email]
             )
             # for Guest Administrator without FDP organization
-            print(
+            logger.debug(
                 'Starting history view sub-test for {n} for guest administrator without a FDP organization'.format(
                     n=user_role[self._label]
                 )
@@ -797,7 +800,7 @@ class FdpUserTestCase(AbstractTestCase):
                 login_startswith=admin_index, pk=wrong_org_ids[email]
             )
             # for Guest Administrator with FDP organization
-            print(
+            logger.debug(
                 'Starting history view sub-test for {n} for guest administrator with a FDP organization'.format(
                     n=user_role[self._label]
                 )
@@ -823,7 +826,7 @@ class FdpUserTestCase(AbstractTestCase):
                 login_startswith=admin_index, pk=wrong_org_ids[email]
             )
             # for Guest Administrator without FDP organization
-            print(
+            logger.debug(
                 'Starting delete instance view sub-test for {n} '
                 'for guest administrator without a FDP organization'.format(
                     n=user_role[self._label]
@@ -849,7 +852,7 @@ class FdpUserTestCase(AbstractTestCase):
                 login_startswith=admin_index, pk=wrong_org_ids[email]
             )
             # for Guest Administrator with FDP organization
-            print(
+            logger.debug(
                 'Starting delete instance view sub-test for {n} for guest administrator with a FDP organization'.format(
                     n=user_role[self._label]
                 )
@@ -873,7 +876,7 @@ class FdpUserTestCase(AbstractTestCase):
                 fdp_user=guest_admin_with_org, expected_status_code=302,
                 login_startswith=admin_index, pk=wrong_org_ids[email]
             )
-        print(_('\nSuccessfully finished test for guest administrators to '
+        logger.debug(_('\nSuccessfully finished test for guest administrators to '
                 'access users for all permutations of user roles\n\n'))
 
     @local_test_settings_required
@@ -884,7 +887,7 @@ class FdpUserTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(_('\nStarting test for guest administrators to create new users'))
+        logger.debug(_('\nStarting test for guest administrators to create new users'))
         fdp_org = FdpOrganization.objects.create(name='FdpOrganization3FdpUser')
         num_of_users = FdpUser.objects.all().count()
         guest_admin_without_org = self._create_fdp_user(email_counter=num_of_users + 1, **self._guest_admin_dict)
@@ -893,7 +896,7 @@ class FdpUserTestCase(AbstractTestCase):
         guest_admin_with_org.full_clean()
         guest_admin_with_org.save()
         # for Guest Administrator without FDP organization
-        print(_('Starting sub-test for guest admin without FDP organization to create new user '
+        logger.debug(_('Starting sub-test for guest admin without FDP organization to create new user '
                 '(check if new user\'s organization matches)'))
         email = 'donotreply0@google.com'
         without_org_create_form = FdpUserCreationForm(instance=FdpUser(email=email))
@@ -904,7 +907,7 @@ class FdpUserTestCase(AbstractTestCase):
         without_org_created_user = without_org_create_form.save(commit=True)
         self.assertEqual(without_org_created_user.fdp_organization, guest_admin_without_org.fdp_organization)
         # for Guest Administrator without FDP organization
-        print(_('Starting sub-test for guest admin with FDP organization to create new user '
+        logger.debug(_('Starting sub-test for guest admin with FDP organization to create new user '
                 '(check if new user\'s organization matches)'))
         email = 'donotreply00@google.com'
         with_org_create_form = FdpUserCreationForm(instance=FdpUser(email=email))
@@ -914,7 +917,7 @@ class FdpUserTestCase(AbstractTestCase):
         with_org_create_form.cleaned_data = {'email': email, 'password1': self._password}
         with_org_created_user = with_org_create_form.save(commit=True)
         self.assertEqual(with_org_created_user.fdp_organization, guest_admin_with_org.fdp_organization)
-        print(_('\nSuccessfully finished test for guest administrators to create new users\n\n'))
+        logger.debug(_('\nSuccessfully finished test for guest administrators to create new users\n\n'))
 
     @local_test_settings_required
     def test_admin_permission_escalation(self):
@@ -922,7 +925,7 @@ class FdpUserTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(_('\nStarting test for administrators to escalate permissions'))
+        logger.debug(_('\nStarting test for administrators to escalate permissions'))
         fdp_org = FdpOrganization.objects.create(name='FdpOrganization4FdpUser')
         other_fdp_org = FdpOrganization.objects.create(name='FdpOrganization5FdpUser')
         num_of_users = FdpUser.objects.all().count()
@@ -944,7 +947,7 @@ class FdpUserTestCase(AbstractTestCase):
         # create users who are host admins also that can be changed by the original host admins
         host_user = self._create_fdp_user(email_counter=num_of_users + 6, **self._host_admin_dict)
         # change guest admin user without organization using another guest admin user without organization
-        print(_('Starting sub-test for guest admin without FDP organization escalating another guest admin user\'s '
+        logger.debug(_('Starting sub-test for guest admin without FDP organization escalating another guest admin user\'s '
                 'permissions and assigning them FDP organization'))
         self.__check_perm_escalate(
             user_to_change=no_org_user,
@@ -952,7 +955,7 @@ class FdpUserTestCase(AbstractTestCase):
             perm_escalation_dict={**{'fdp_organization': fdp_org}, **base_perm_escalate_dict}
         )
         # change guest admin user with organization using another guest admin user with organization
-        print(_('Starting sub-test for guest admin with FDP organization escalating another guest admin user\'s '
+        logger.debug(_('Starting sub-test for guest admin with FDP organization escalating another guest admin user\'s '
                 'permissions and assigning them another FDP organization'))
         self.__check_perm_escalate(
             user_to_change=yes_org_user,
@@ -960,14 +963,14 @@ class FdpUserTestCase(AbstractTestCase):
             perm_escalation_dict={**{'fdp_organization': other_fdp_org}, **base_perm_escalate_dict}
         )
         # change host admin user without organization using another host admin user without organization
-        print(_('Starting sub-test for host admin without FDP organization escalating another host admin user\'s '
+        logger.debug(_('Starting sub-test for host admin without FDP organization escalating another host admin user\'s '
                 'permissions'))
         self.__check_perm_escalate(
             user_to_change=host_user,
             user_changing=host_admin,
             perm_escalation_dict={**{'fdp_organization': None}, **base_perm_escalate_dict}
         )
-        print(_('\nSuccessfully finished test for administrators to escalate permissions\n\n'))
+        logger.debug(_('\nSuccessfully finished test for administrators to escalate permissions\n\n'))
 
     @local_test_settings_required
     def test_guest_admin_host_only_access(self):
@@ -975,7 +978,7 @@ class FdpUserTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(_('\nStarting test for guest administrators to access host-only views'))
+        logger.debug(_('\nStarting test for guest administrators to access host-only views'))
         num_of_users = FdpUser.objects.all().count()
         fdp_org = FdpOrganization.objects.create(name='FdpOrganization6FdpUser')
         guest_admin = self._create_fdp_user(email_counter=num_of_users + 1, **self._guest_admin_dict)
@@ -1006,7 +1009,7 @@ class FdpUserTestCase(AbstractTestCase):
                     model_to_test=model_to_test._meta.model_name
                 )
             )
-            print(
+            logger.debug(
                 'Starting host-only view access sub-test for {n} for guest administrator'.format(
                     n=model_to_test._meta.model_name
                 )
@@ -1017,7 +1020,7 @@ class FdpUserTestCase(AbstractTestCase):
                 expected_status_code=403,
                 login_startswith=None
             )
-        print(_('\nSuccessfully finished test for guest administrators to access host-only views\n\n'))
+        logger.debug(_('\nSuccessfully finished test for guest administrators to access host-only views\n\n'))
 
     @local_test_settings_required
     def test_local_dev_configuration(self):
@@ -1026,12 +1029,12 @@ class FdpUserTestCase(AbstractTestCase):
 
         :return: Nothing.
         """
-        print(_('\nStarting test for login view, 2FA, URL patterns and '
+        logger.debug(_('\nStarting test for login view, 2FA, URL patterns and '
                 'file serving for local development configuration'))
         # test is only relevant for local development configuration
         self.assertTrue(AbstractConfiguration.is_using_local_configuration())
         self.assertFalse(AbstractConfiguration.is_using_azure_configuration())
-        print('Checking that view for login is from Django Two-Factor Authentication package')
+        logger.debug('Checking that view for login is from Django Two-Factor Authentication package')
         c = Client(**self._local_client_kwargs)
         # redirect to login expected
         response = self._do_get(
@@ -1044,14 +1047,14 @@ class FdpUserTestCase(AbstractTestCase):
         response = self._do_get(c=response.client, url=response.url, expected_status_code=200, login_startswith=None)
         # assert that the default 2FA Login view is used to receive username and password
         self._assert_class_based_view(response=response, expected_view=LoginView)
-        print('Checking that 2FA is encountered after Django authentication with username and password')
+        logger.debug('Checking that 2FA is encountered after Django authentication with username and password')
         host_admin = self._create_fdp_user(email_counter=FdpUser.objects.all().count() + 1, **self._host_admin_dict)
         user_kwargs = {'username': host_admin.email, 'password': self._password, 'login_status_code': 200}
         self._create_2fa_record(user=host_admin)
         response = self._do_django_username_password_authentication(c=response.client, **user_kwargs)
         # default 2FA Login view is expected for OTP step
         self._assert_2fa_step_in_login_view(response=response, expected_view=LoginView)
-        print('Checking that social-auth login is not defined')
+        logger.debug('Checking that social-auth login is not defined')
         self.assertRaises(
             NoReverseMatch,
             reverse,
@@ -1059,7 +1062,7 @@ class FdpUserTestCase(AbstractTestCase):
             kwargs={'args': [AbstractConfiguration.azure_active_directory_provider]}
         )
         for static_file_type in self.__get_static_file_types(callable_name='serve_static_file'):
-            print('Checking that {t} files are served '
+            logger.debug('Checking that {t} files are served '
                   'using serve_static_file(...) method'.format(t=static_file_type['type']))
             self.__check_callable_serving_static(
                 user=host_admin,
@@ -1068,15 +1071,15 @@ class FdpUserTestCase(AbstractTestCase):
                 expected_callable=static_file_type['expected_callable'],
                 view_class=static_file_type['view_class']
             )
-        print('Checking that users with only_external_auth=True cannot log in with username and password')
+        logger.debug('Checking that users with only_external_auth=True cannot log in with username and password')
         host_admin.only_external_auth = True
         host_admin.save()
         response = self._do_django_username_password_authentication(c=response.client, **user_kwargs)
         # default 2FA Login view is expected for username/password step
         self._assert_username_and_password_step_in_login_view(response=response, expected_view=LoginView)
-        print('Checking that 2FA is enforced for the Admin site')
+        logger.debug('Checking that 2FA is enforced for the Admin site')
         self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
-        print(_('\nSuccessfully finished test for '
+        logger.debug(_('\nSuccessfully finished test for '
                 'login view, 2FA, URL patterns and file serving for local development configuration\n\n'))
 
     @azure_test_settings_required
@@ -1090,14 +1093,14 @@ class FdpUserTestCase(AbstractTestCase):
 
         :return: Nothing.
         """
-        print(_('\nStarting test for login view, 2FA, URL patterns and '
+        logger.debug(_('\nStarting test for login view, 2FA, URL patterns and '
                 'file serving for Microsoft Azure configuration'))
         # test is only relevant for Microsoft Azure configuration
         self.assertFalse(AbstractConfiguration.is_using_local_configuration())
         self.assertTrue(AbstractConfiguration.is_using_azure_configuration())
         self.assertTrue(AbstractConfiguration.can_do_azure_active_directory())
         self.assertFalse(AbstractConfiguration.use_only_azure_active_directory())
-        print('Checking that view for login is from custom extension of Django Two-Factor Authentication package')
+        logger.debug('Checking that view for login is from custom extension of Django Two-Factor Authentication package')
         c = Client(**self._local_client_kwargs)
         # redirect to login expected
         response = self._do_get(
@@ -1110,7 +1113,7 @@ class FdpUserTestCase(AbstractTestCase):
         response = self._do_get(c=response.client, url=response.url, expected_status_code=200, login_startswith=None)
         # assert that the default 2FA Login view is used to receive username and password
         self._assert_class_based_view(response=response, expected_view=FdpLoginView)
-        print('Checking that 2FA is encountered after Django authentication with username and password')
+        logger.debug('Checking that 2FA is encountered after Django authentication with username and password')
         host_admin = self._create_fdp_user(email_counter=FdpUser.objects.all().count() + 1, **self._host_admin_dict)
         # user is authenticable by Django backend
         self.assertFalse(FdpUser.is_user_azure_authenticated(user=host_admin))
@@ -1120,10 +1123,10 @@ class FdpUserTestCase(AbstractTestCase):
         self.assertEqual(response.status_code, 200)
         # default 2FA Login view is expected for OTP step
         self._assert_2fa_step_in_login_view(response=response, expected_view=FdpLoginView)
-        print('Checking that social-auth login is defined')
+        logger.debug('Checking that social-auth login is defined')
         self.assertIsNotNone(reverse('social:begin', args=[AbstractConfiguration.azure_active_directory_provider]))
         for static_file_type in self.__get_static_file_types(callable_name='serve_azure_storage_static_file'):
-            print('Checking that {t} files are served '
+            logger.debug('Checking that {t} files are served '
                   'using serve_azure_storage_static_file(...) method'.format(t=static_file_type['type']))
             self.__check_callable_serving_static(
                 user=host_admin,
@@ -1132,17 +1135,17 @@ class FdpUserTestCase(AbstractTestCase):
                 expected_callable=static_file_type['expected_callable'],
                 view_class=static_file_type['view_class']
             )
-        print('Checking that users with only_external_auth=True cannot log in with username and password')
+        logger.debug('Checking that users with only_external_auth=True cannot log in with username and password')
         host_admin.only_external_auth = True
         host_admin.save()
         response = self._do_django_username_password_authentication(c=response.client, **user_kwargs)
         # default 2FA Login view is expected for username/password step
         self._assert_username_and_password_step_in_login_view(response=response, expected_view=FdpLoginView)
-        print('Checking that 2FA is enforced for the Admin site')
+        logger.debug('Checking that 2FA is enforced for the Admin site')
         self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
-        print('Checking that Azure users skip 2FA step')
+        logger.debug('Checking that Azure users skip 2FA step')
         self.__check_azure_user_skips_2fa(has_django_auth_backend=True)
-        print(_('\nSuccessfully finished test for '
+        logger.debug(_('\nSuccessfully finished test for '
                 'login view, 2FA, URL patterns and file serving for Microsoft Azure configuration\n\n'))
 
     @azure_only_test_settings_required
@@ -1156,14 +1159,14 @@ class FdpUserTestCase(AbstractTestCase):
 
         :return: Nothing.
         """
-        print(_('\nStarting test for login view, 2FA, URL patterns and '
+        logger.debug(_('\nStarting test for login view, 2FA, URL patterns and '
                 'file serving for "only" Microsoft Azure configuration'))
         # test is only relevant for "only" Microsoft Azure configuration
         self.assertFalse(AbstractConfiguration.is_using_local_configuration())
         self.assertTrue(AbstractConfiguration.is_using_azure_configuration())
         self.assertTrue(AbstractConfiguration.can_do_azure_active_directory())
         self.assertTrue(AbstractConfiguration.use_only_azure_active_directory())
-        print('Checking that view for login redirects to social auth with Azure Active Directory provider')
+        logger.debug('Checking that view for login redirects to social auth with Azure Active Directory provider')
         c = Client(**self._local_client_kwargs)
         # redirect to login expected, which is itself a redirect view
         response = self._do_get(
@@ -1180,15 +1183,15 @@ class FdpUserTestCase(AbstractTestCase):
             login_startswith=reverse('social:begin', args=[AbstractConfiguration.azure_active_directory_provider])
         )
         self._assert_class_based_view(response=response, expected_view=RedirectView)
-        print('Checking that non-Azure users cannot log in')
+        logger.debug('Checking that non-Azure users cannot log in')
         host_admin = self._create_fdp_user(email_counter=FdpUser.objects.all().count() + 1, **self._host_admin_dict)
         self.assertFalse(FdpUser.is_user_azure_authenticated(user=host_admin))
         self._create_2fa_record(user=host_admin)
         response = self.__verify_user_cannot_log_in(c=response.client, user=host_admin)
-        print('Checking that social-auth login is defined')
+        logger.debug('Checking that social-auth login is defined')
         self.assertIsNotNone(reverse('social:begin', args=[AbstractConfiguration.azure_active_directory_provider]))
         for static_file_type in self.__get_static_file_types(callable_name='serve_azure_storage_static_file'):
-            print('Checking that {t} files are served '
+            logger.debug('Checking that {t} files are served '
                   'using serve_azure_storage_static_file(...) method'.format(t=static_file_type['type']))
             self.__check_callable_serving_static(
                 user=host_admin,
@@ -1197,20 +1200,20 @@ class FdpUserTestCase(AbstractTestCase):
                 expected_callable=static_file_type['expected_callable'],
                 view_class=static_file_type['view_class']
             )
-        print('Checking that users with only_external_auth=True cannot log in with username and password')
+        logger.debug('Checking that users with only_external_auth=True cannot log in with username and password')
         host_admin.only_external_auth = True
         host_admin.save()
         response = self.__verify_user_cannot_log_in(c=response.client, user=host_admin)
-        print('Checking that Django Two-Factor Authentication profile is not defined')
+        logger.debug('Checking that Django Two-Factor Authentication profile is not defined')
         self._do_get(
             c=response.client,
             url=reverse('two_factor:{p}'.format(p=CONST_TWO_FACTOR_PROFILE_URL_NAME)),
             expected_status_code=404,
             login_startswith=None
         )
-        print('Checking that 2FA is enforced for the Admin site')
+        logger.debug('Checking that 2FA is enforced for the Admin site')
         self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
-        print('Checking that Azure users skip 2FA step')
+        logger.debug('Checking that Azure users skip 2FA step')
         self.__check_azure_user_skips_2fa(has_django_auth_backend=False)
-        print(_('\nSuccessfully finished test for '
+        logger.debug(_('\nSuccessfully finished test for '
                 'login view, 2FA, URL patterns and file serving for "only" Microsoft Azure configuration\n\n'))
