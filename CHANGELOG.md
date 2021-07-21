@@ -2,6 +2,14 @@
 
 All releases will be logged in this file.
 
+
+## [1.2.2] - 2021-07-21
+Bug fix release
+
+- Bulk importer: Add missing Case Court field to Content import serializer
+- Bulk importer: Add missing situational role to Content Person & Incident Person serializers
+- Bulk importer: Change Person serializer "exact_birth_date" to "birth_date_start_range" and "birth_date_end_range"
+
 ## [1.2.1] - 2021-07-06
 Bug fix release
 
