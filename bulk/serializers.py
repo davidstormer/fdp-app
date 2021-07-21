@@ -480,7 +480,7 @@ class FdpModelSerializer(ModelSerializer):
             instance = model.objects.get(**filter_dict)
         return instance
 
-    def _validate_date(self, custom_date_field, model_date_field_prefix, model_alt_date_field_prefix=None):
+    def _validate_date_components(self, custom_date_field, model_date_field_prefix, model_alt_date_field_prefix=None):
         """ Validates a date field that contains all three date components together, i.e. a complete date.
 
         If validated, splits field into its individual date components.
@@ -551,7 +551,24 @@ class FdpModelSerializer(ModelSerializer):
             # replace the individual date component
             self.initial_data[date_component_field] = int_date_component
 
-    def __handle_declared_field_conflict(self, foreign_key_field):
+    def _validate_full_date(self, date_field):
+        """ Validates the full date value intended for a date field.
+
+        Examples may be: "birth date start range", "birth date end range", etc.
+
+        If validated, overwrites value in initial data with typed date object.
+
+        :param date_field: Name of field containing date value to validate.
+        :return: Nothing.
+        """
+        full_date_str = self.initial_data.get(date_field, None)
+        if full_date_str:
+            full_date = self._convert_string_to_date(date_str_to_convert=str(full_date_str))
+            self.initial_data[date_field] = full_date.date()
+            # handle if a declared date field on the serializer overrides the model's date field
+            self.__handle_declared_field_conflict(field_name=date_field)
+
+    def __handle_declared_field_conflict(self, field_name):
         """ Handles the potential conflict that can occur when fields declared in the serializer class use the name of
         a field that is defined in the model class and so override it.
 
@@ -559,7 +576,7 @@ class FdpModelSerializer(ModelSerializer):
 
         To address this, declared fields that conflict with model fields are removed before validation.
 
-        :param foreign_key_field: Name of field defined in the model class.
+        :param field_name: Name of field defined in the model class.
         :return: Nothing.
         """
         # fields declared in the serializer class that override the fields declared in the model class
@@ -567,8 +584,8 @@ class FdpModelSerializer(ModelSerializer):
         # will create a conflict during validation
         # (i.e. validation from the declared field is used)
         # in that case, remove the declared field
-        if foreign_key_field in self._declared_fields:
-            self._declared_fields.pop(foreign_key_field)
+        if field_name in self._declared_fields:
+            self._declared_fields.pop(field_name)
 
     def _validate_foreign_key_by_external_id(self, foreign_key_field, foreign_key_model, raise_exception):
         """ Validates the value intended for a foreign key field, retrieved through its external ID.
@@ -590,7 +607,7 @@ class FdpModelSerializer(ModelSerializer):
         """
         # only validates for foreign key value if it is part of initial data
         if foreign_key_field in self.initial_data:
-            self.__handle_declared_field_conflict(foreign_key_field=foreign_key_field)
+            self.__handle_declared_field_conflict(field_name=foreign_key_field)
             # retrieve the external ID
             external_id = self.initial_data.pop(foreign_key_field)
             # standardize undefined value
@@ -639,7 +656,7 @@ class FdpModelSerializer(ModelSerializer):
         """
         # only validates for foreign key value if it is specified in the initial data
         if foreign_key_field in self.initial_data:
-            self.__handle_declared_field_conflict(foreign_key_field=foreign_key_field)
+            self.__handle_declared_field_conflict(field_name=foreign_key_field)
             # retrieve the by name
             by_name = self.initial_data.pop(foreign_key_field)
             # standardize undefined value
@@ -1220,7 +1237,8 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
     """ Serializer for persons that were defined through the Air Table templates.
 
     Attributes:
-        :exact_birth_date (str): Exact birth date.
+        :birth_date_range_start (str): Starting range for birth date.
+        :birth_date_range_end (str): Ending range for birth date.
         :law_enforcement_checkbox (str): Law enforcement checkbox.
         :phone_number (str): Phone number for person contact.
         :email_number (str): Email for person contact.
@@ -1232,10 +1250,16 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         :unsplit_person_photos (str): Person photo links separated by commas, from which to download without
         authentication.
     """
-    exact_birth_date = CharField(
+    birth_date_range_start = CharField(
         required=False,
         allow_null=True,
-        label=_('Exact birth date')
+        label=_('Starting range for birth date')
+    )
+
+    birth_date_range_end = CharField(
+        required=False,
+        allow_null=True,
+        label=_('Ending range for birth date')
     )
 
     law_enforcement_checkbox = CharField(
@@ -1315,20 +1339,6 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
 
     #: Key used to reference in the _validated_data dictionary, the list of person photos to add for a person.
     __split_person_photos_key = 'split_person_photos'
-
-    def __validate_exact_birth_date(self):
-        """ Validates the exact birth date field.
-
-        If validated, places it into the birth date range start and end fields.
-
-        :return: Nothing.
-        """
-        # exact birth date in dd-mmm-yy format
-        exact_birth_date_str = self.validated_data.pop('exact_birth_date', None)
-        if exact_birth_date_str:
-            exact_birth_date = self._convert_string_to_date(date_str_to_convert=exact_birth_date_str)
-            self._validated_data['birth_date_range_start'] = exact_birth_date
-            self._validated_data['birth_date_range_end'] = exact_birth_date
 
     def __validate_is_law_enforcement_checkbox(self):
         """ Validates the Is Law Enforcement checkbox field.
@@ -1474,11 +1484,12 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         name = self.initial_data.get('name', None)
         if not(name and str(name).strip()):
             self.initial_data['name'] = str(_('Unnamed'))
+        self._validate_full_date(date_field='birth_date_range_start')
+        self._validate_full_date(date_field='birth_date_range_end')
         # validate record
         is_valid = super(PersonAirTableSerializer, self).is_valid(raise_exception=raise_exception)
         # record is valid
         if is_valid:
-            self.__validate_exact_birth_date()
             self.__validate_is_law_enforcement_checkbox()
             self.__validate_phone_number()
             self.__validate_email()
@@ -1574,7 +1585,7 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = FdpModelSerializer.excluded_fields + FdpModelSerializer.confidentiable_excluded_fields + [
-            'birth_date_range_start', 'birth_date_range_end', 'description', 'is_law_enforcement', 'traits'
+            'description', 'is_law_enforcement', 'traits'
         ]
 
 
@@ -1635,7 +1646,7 @@ class IncidentAirTableSerializer(FdpModelSerializer):
 
         :return: Nothing.
         """
-        self._validate_date(
+        self._validate_date_components(
             custom_date_field='incident_date',
             model_date_field_prefix='start',
             model_alt_date_field_prefix='end'
