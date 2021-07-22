@@ -6,6 +6,7 @@ All releases will be logged in this file.
 ## [1.2.2] - 2021-07-21
 Bug fix release
 
+### Fixed
 - Bulk importer: Add missing Case Court field to Content import serializer
 - Bulk importer: Add missing situational role to Content Person & Incident Person serializers
 - Bulk importer: Change Person serializer "exact_birth_date" to "birth_date_start_range" and "birth_date_end_range"
@@ -14,7 +15,10 @@ Bug fix release
 Bug fix release
 
 ### Fixed
-- Address issues caused by Django username case sensitivity and Azure Active Directory case *in*sensitivity.
+- BREAKING CHANGE: Address issues caused by Django username case sensitivity and Azure Active Directory case *in*sensitivity.
+
+### Upgrading notes
+WARNING: After applying this update, if an instance contains duplicate usernames with case variations (e.g. 'User@example.com' and 'user@example.com') these users will not be able to log in. To remedy this, rename the disused duplicate to a unique name (e.g. rename 'User@example.com' to 'User-dupe@example.com') directly in the SQL database. Renaming is preferred over deleting the account. There could be valuable history associated with the account, which would be lost if it were deleted.
 
 ## [1.2.0] - 2021-06-22
 Bulk importer changes
