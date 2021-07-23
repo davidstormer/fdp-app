@@ -12,7 +12,7 @@ from fdp.configuration.abstract.constants import CONST_AZURE_AUTH_BACKEND, CONST
 
 #: Automated tests are only intended to be run in a local development environment.
 from fdp.configuration.local.local_settings import *
-
+from fdp.configuration.test.loggers import LOGGING
 
 USE_LOCAL_SETTINGS = False
 
