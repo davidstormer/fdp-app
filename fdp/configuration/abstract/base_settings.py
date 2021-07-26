@@ -466,7 +466,8 @@ AXES_META_PRECEDENCE_ORDER = [
     # For Python Anywhere, see: http://help.pythonanywhere.com/pages/WebAppClientIPAddresses/
     'HTTP_X_REAL_IP'
 ]
-
+# Redact contents of password parameter in login request
+AXES_PASSWORD_FORM_FIELD = 'auth-password'
 
 # Django-CSP: https://django-csp.readthedocs.io/en/latest/
 # Prevents fetching and executing plugin resources embedded using <object>, <embed> or <applet> tags.
