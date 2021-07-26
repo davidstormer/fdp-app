@@ -458,6 +458,8 @@ AXES_FAILURE_LIMIT = 3
 AXES_COOLOFF_TIME = 48
 # Prevents the login from IP under a particular user if the attempt limit has been exceeded
 AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
+# Redact contents of password parameter in login request
+AXES_PASSWORD_FORM_FIELD = 'auth-password'
 
 # Django-CSP: https://django-csp.readthedocs.io/en/latest/
 # Prevents fetching and executing plugin resources embedded using <object>, <embed> or <applet> tags.

@@ -29,6 +29,8 @@ from axes.models import AccessLog, AccessAttempt
 from two_factor.models import PhoneDevice
 from two_factor.views import LoginView
 from two_factor.admin import AdminSiteOTPRequired
+from axes.models import AccessAttempt
+import secrets
 import logging
 
 logger = logging.getLogger(__name__)
@@ -1217,3 +1219,44 @@ class FdpUserTestCase(AbstractTestCase):
         self.__check_azure_user_skips_2fa(has_django_auth_backend=False)
         logger.debug(_('\nSuccessfully finished test for '
                 'login view, 2FA, URL patterns and file serving for "only" Microsoft Azure configuration\n\n'))
+
+    @local_test_settings_required
+    def test_no_plaintext_passwords(self):
+        """Test to check that plain-text password attempts aren't stored by Axes in access attempts records.
+        """
+        def axes_record_contains(value: str, record: AccessAttempt) -> bool:
+            """Return True if given string found in an AxesAttempt record. Iterates through all attributes of a given
+            object.
+
+            :param value: String to search for
+            :type value: str
+            :param record: AxesAttempt record
+            :type record: object
+            :return: True if the string is found, False if not
+            :rtype: bool
+            """
+            for element in record.__dict__.keys():
+                try:
+                    if value in record.__dict__[element]:
+                        return True
+                except TypeError:
+                    pass
+            return False
+
+        username = secrets.token_urlsafe().replace('-', '').replace('_', '') + "@example.com"
+        password = secrets.token_urlsafe().replace('-', '').replace('_', '')
+        client = Client(**self._local_client_kwargs)
+        response = self._do_django_username_password_authentication(
+            c=client,
+            username=username,
+            password=password,
+            login_status_code=200
+        )
+
+        axes_attempt_record = AccessAttempt.objects.all()[0]
+
+        if not axes_record_contains(username, axes_attempt_record):
+            raise Exception("Username not found in Axes attempt record. Can't complete test.")
+
+        assert not axes_record_contains(password, axes_attempt_record), "Plain-text login attempt password found in " \
+                                                                        "Axes record."
