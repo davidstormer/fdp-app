@@ -62,8 +62,7 @@ LOGGING = {
         "azure": {
             "level": "DEBUG",
             "class": "opencensus.ext.azure.log_exporter.AzureLogHandler",
-            "instrumentation_key":
-                "InstrumentationKey=618ff4ad-f5b2-4e93-a0d3-ab41e502dfd7;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/",
+            "instrumentation_key": "618ff4ad-f5b2-4e93-a0d3-ab41e502dfd7",
          },
         "console": {
             "level": "DEBUG",
