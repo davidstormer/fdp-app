@@ -1221,9 +1221,11 @@ class FdpUserTestCase(AbstractTestCase):
                 'login view, 2FA, URL patterns and file serving for "only" Microsoft Azure configuration\n\n'))
 
     @local_test_settings_required
-    def test_no_plaintext_passwords(self):
+    def test_axes_redacts_attempted_passwords(self):
         """Test to check that plain-text password attempts aren't stored by Axes in access attempts records.
         """
+        logger.debug(_('\nStarting test for Axes redacts attempted passwords in logs'))
+
         def axes_record_contains(value: str, record: AccessAttempt) -> bool:
             """Return True if given string found in an AxesAttempt record. Iterates through all attributes of a given
             object.
@@ -1258,5 +1260,6 @@ class FdpUserTestCase(AbstractTestCase):
         if not axes_record_contains(username, axes_attempt_record):
             raise Exception("Username not found in Axes attempt record. Can't complete test.")
 
-        assert not axes_record_contains(password, axes_attempt_record), "Plain-text login attempt password found in " \
-                                                                        "Axes record."
+        self.assertTrue(not axes_record_contains(password, axes_attempt_record),
+                        "Plain-text login attempt password found in Axes record.")
+        logger.debug(_('\nSuccessfully finished test for Axes redacts attempted passwords in logs\n\n'))
