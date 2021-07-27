@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
+import sys
 
 
 #: To configure hosting in a local development environment, remove the comment from the below import statement.
@@ -52,11 +53,26 @@ FDP_CONTENT_GROUPING_SEARCH_FILE = 'def_grouping'
 # Name of class inheriting from AbstractChangingSearch that defines content changing searches.
 FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
 
-
-#: To enable logging, remove the comments from the below assignments.
-FDP_ERR_LOGGING['handlers']['file']['filename'] = '/home/perm_debug.log'
-LOGGING = FDP_ERR_LOGGING
-
+# Send log messages to Azure Monitor
+# Uncomment the below code and paste in
+LOGGING = {
+    "handlers": {
+        "azure": {
+            "level": "DEBUG",
+            "class": "opencensus.ext.azure.log_exporter.AzureLogHandler",
+            "instrumentation_key":
+                "InstrumentationKey=618ff4ad-f5b2-4e93-a0d3-ab41e502dfd7;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/",
+         },
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "stream": sys.stdout,
+         },
+      },
+    "loggers": {
+        "logger_name": {"handlers": ["azure", "console"]},
+    },
+}
 
 #: To allow files to be downloaded during a bulk import using the Django Data Wizard package, whitelist the
 # starting portion of each URL. For example, to download files from either Air Tables or Google Drive:
