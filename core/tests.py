@@ -5,6 +5,9 @@ from fdpuser.models import FdpOrganization, FdpUser
 from .models import Person, PersonContact, PersonAlias, PersonPhoto, PersonIdentifier, PersonTitle, \
     PersonRelationship, PersonPayment, PersonGrouping, PersonIncident, GroupingIncident, Grouping, Incident
 from supporting.models import PersonIdentifierType, Title, PersonRelationshipType
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CoreTestCase(AbstractTestCase):
@@ -490,7 +493,7 @@ class CoreTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(
+        logger.debug(
             _('\nStarting test for Core Data Admin changelist, create instance, change instance, delete instance and '
               'history views for all permutations of user roles, confidentiality levels and relevant models')
         )
@@ -498,7 +501,7 @@ class CoreTestCase(AbstractTestCase):
         other_fdp_org = FdpOrganization.objects.create(name='FdpOrganization2Core')
         self.__test_person_admin_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_incident_admin_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
-        print(_('\nSuccessfully finished test for Core Data Admin changelist, create instance, change instance, '
+        logger.debug(_('\nSuccessfully finished test for Core Data Admin changelist, create instance, change instance, '
                 'delete instance and history views for all permutations of user roles, confidentiality levels and '
                 'relevant models\n\n'))
 
@@ -508,10 +511,10 @@ class CoreTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(_('\nStarting test for Download Person Photo view for all permutations of user roles and'
+        logger.debug(_('\nStarting test for Download Person Photo view for all permutations of user roles and'
                 ' confidentiality levels'))
         fdp_org = FdpOrganization.objects.create(name='FdpOrganizationDlPerPh1')
         other_fdp_org = FdpOrganization.objects.create(name='FdpOrganizationDlPerPh2')
         self.__test_download_person_photo_view(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
-        print(_('\nSuccessfully finished test for Download Person Photo view for all permutations of user roles and '
+        logger.debug(_('\nSuccessfully finished test for Download Person Photo view for all permutations of user roles and '
                 'confidentiality levels\n\n'))
