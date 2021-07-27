@@ -56,6 +56,8 @@ FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
 # Send log messages to Azure Monitor
 # Uncomment the below code and paste in
 LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
     "handlers": {
         "azure": {
             "level": "DEBUG",
@@ -77,4 +79,3 @@ LOGGING = {
 #: To allow files to be downloaded during a bulk import using the Django Data Wizard package, whitelist the
 # starting portion of each URL. For example, to download files from either Air Tables or Google Drive:
 # FDP_DJANGO_DATA_WIZARD_WHITELISTED_URLS = ['https://airtable.com/', 'https://drive.google.com/file/']
-
