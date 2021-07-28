@@ -60,24 +60,24 @@ LOGGING = {
     'disable_existing_loggers': False,
     "handlers": {
         "azure": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "opencensus.ext.azure.log_exporter.AzureLogHandler",
             "instrumentation_key": "618ff4ad-f5b2-4e93-a0d3-ab41e502dfd7",
          },
         "console": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "logging.StreamHandler",
             "stream": sys.stdout,
          },
         'file': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/tmp/fdp-app.log',
         },
     },
     'root': {
         'handlers': ["azure", "console", "file"],
-        'level': 'DEBUG',
+        'level': 'INFO',
     },
 }
 
