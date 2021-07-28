@@ -75,8 +75,9 @@ LOGGING = {
             'filename': '/tmp/fdp-app.log',
         },
     },
-    "loggers": {
-        "logger_name": {"handlers": ["azure", "console", "file"]},
+    'root': {
+        'handlers': ["azure", "console", "file"],
+        'level': 'DEBUG',
     },
 }
 
