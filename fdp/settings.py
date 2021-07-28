@@ -70,7 +70,7 @@ LOGGING = {
             "stream": sys.stdout,
          },
         'file': {
-            'level': 'ERROR',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': '/tmp/fdp-app.log',
         },
