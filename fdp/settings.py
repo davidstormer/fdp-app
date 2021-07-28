@@ -69,9 +69,14 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "stream": sys.stdout,
          },
-      },
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': '/tmp/fdp-app.log',
+        },
+    },
     "loggers": {
-        "logger_name": {"handlers": ["azure", "console"]},
+        "logger_name": {"handlers": ["azure", "console", "file"]},
     },
 }
 
