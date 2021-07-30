@@ -872,7 +872,7 @@ class AbstractDateValidator(models.Model):
         :param is_as_of: True if start date is as of, false if start date is exact.
         :return: A single fuzzy date in human-friendly display form.
         """
-        from_str = cls.AS_OF_DATE if is_as_of else cls.FROM_DATE
+        from_str = cls.AS_OF_DATE if is_as_of else cls.FROM_DATE        
         # parameters passed to strftime
         y = '%Y'
         m = '%m'
@@ -886,7 +886,7 @@ class AbstractDateValidator(models.Model):
                     year=start_year, month=start_month, day=start_day, prefix=cls.DURING_DATE
                 )
             # On 2018-03-23
-            else:
+            else:            
                 return cls.get_display_text_from_date(
                     year=start_year, month=start_month, day=start_day, prefix=cls.ON_DATE
                 )
@@ -3047,16 +3047,6 @@ class AbstractConfiguration(models.Model):
         :return: List of tuples, each with two items.
         """
         return getattr(settings, 'FDP_SUPPORTED_PERSON_PHOTO_FILE_TYPES',  CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES)
-
-    @staticmethod
-    def whitelisted_django_data_wizard_urls():
-        """ Checks the necessary settings to retrieve the whitelisted URLs that will be used to vet publicly accessible
-        URLs from which to download files for person photos and attachments during a bulk import with the Django Data
-        Wizard package.
-
-        :return: List of whitelisted URLs.
-        """
-        return getattr(settings, 'FDP_DJANGO_DATA_WIZARD_WHITELISTED_URLS', [])
 
     class Meta:
         abstract = True
