@@ -1,7 +1,7 @@
 from django.test import Client, RequestFactory
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse, NoReverseMatch
-from django.core.files import File
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib import admin
 from django.conf import settings
 from django.apps import apps
@@ -291,14 +291,11 @@ class FdpUserTestCase(AbstractTestCase):
         """
         # officer (whose profile will be accessed below)
         officer = Person.objects.create(name='Name1', **self._is_law_dict, **self._not_confidential_dict)
-        # "dummy" file is used to test download functionality in officer profile
-        dummy_file = settings.MEDIA_ROOT / 'test.txt'
-        # create "dummy" file if it does not already exist
-        with open(dummy_file, 'a+') as f:
-            # attachment (to be downloaded below)
-            attachment = Attachment.objects.create(name='dummy', file=File(f))
         # connection between attachment and officer
         content = Content.objects.create(name='Content1', **self._not_confidential_dict)
+        # Use SimpleUploadedFile to populate dummy file for testing download functionality in officer profile
+        dummy_file = SimpleUploadedFile("dummy_file.txt", b"This is a test file")
+        attachment = Attachment.objects.create(name='dummy', file=dummy_file)
         content.attachments.add(attachment)
         ContentPerson.objects.create(person=officer, content=content)
         # This primary key will be used in tests when referencing self._views
