@@ -2,6 +2,11 @@
 
 All releases will be logged in this file.
 
+## [1.2.3] - 2021-07-26
+Security release
+
+### Fixed
+- Axes: Set AXES_PASSWORD_FORM_FIELD to 'auth-password'
 
 ## [1.2.2] - 2021-07-21
 Bug fix release
