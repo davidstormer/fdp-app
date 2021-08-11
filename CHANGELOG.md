@@ -2,6 +2,13 @@
 
 All releases will be logged in this file.
 
+## [1.2.4] - 2021-07-26
+Field validation changes
+
+### Changed
+- Phone number fields in Person Contact and Groups: remove validation
+- Bulk importer: Remove phone number field transformations (Person Contact and Groups)
+
 ## [1.2.3] - 2021-07-26
 Security release
 
