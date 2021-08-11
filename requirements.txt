@@ -62,3 +62,4 @@ xlrd==2.0.1
 
 # Testing logging in Azure
 opencensus
+opencensus-ext-azure==1.0.8
