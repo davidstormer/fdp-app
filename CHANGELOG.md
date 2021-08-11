@@ -9,6 +9,9 @@ Field validation changes
 - Phone number fields in Person Contact and Groups: remove validation
 - Bulk importer: Remove phone number field transformations (Person Contact and Groups)
 
+NOTE: this release makes a change to database constraints, allowing longer phone_number fields. Run
+`python manage.py migrate` to apply these changes.
+
 ## [1.2.3] - 2021-07-26
 Security release
 
