@@ -265,15 +265,6 @@ class FdpModelSerializer(ModelSerializer):
                     self._validated_data[validated_data_key] = matched_instance.pk
 
     @staticmethod
-    def _format_phone_number(unformatted_phone_number):
-        """ Formats a phone number so that it includes only digits.
-
-        :param unformatted_phone_number: Unformatted phone number that should be formatted.
-        :return: Formatted phone number.
-        """
-        return ''.join(filter(str.isdigit, str(unformatted_phone_number)))
-
-    @staticmethod
     def _get_links_from_string(str_with_links):
         """ Retrieves list of links from a string.
 
@@ -1075,20 +1066,6 @@ class GroupingAirTableSerializer(AbstractModelWithAliasesSerializer):
     #: Key used to reference in the _validated_data dictionary, the list of counties to add for a grouping.
     __split_counties_key = 'split_counties'
 
-    def __validate_phone_number(self):
-        """ Validates the phone number field.
-
-        If validated, places it back into the phone number field.
-
-        :return: Nothing.
-        """
-        # strip out all invalid characters from the phone number
-        phone_number_field = 'phone_number'
-        if phone_number_field in self.initial_data:
-            self.initial_data[phone_number_field] = self._format_phone_number(
-                unformatted_phone_number=self.initial_data[phone_number_field]
-            )
-
     def __validate_belongs_to_grouping(self):
         """ Validates the belongs to grouping field.
 
@@ -1163,7 +1140,6 @@ class GroupingAirTableSerializer(AbstractModelWithAliasesSerializer):
         :param raise_exception: True if an exception should be raised during validation.
         :return: True if record is valid, false if record is invalid.
         """
-        self.__validate_phone_number()
         # convert null address to blank
         self._convert_null_to_blank(field_name='address')
         # convert null email to blank
@@ -1316,9 +1292,6 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         label=_('Person photo links separated by commas, from which to download without authentication')
     )
 
-    #: Key used to reference in the _validated_data dictionary, the phone number for the person contact.
-    __phone_number_key = 'phone_number_formatted'
-
     #: Key used to reference in the _validated_data dictionary, the email for the person contact.
     __email_key = 'email_formatted'
 
@@ -1349,20 +1322,6 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
             unvalidated_checkbox_field='law_enforcement_checkbox',
             validated_checkbox_field='is_law_enforcement'
         )
-
-    def __validate_phone_number(self):
-        """ Validates the phone number field.
-
-        If validated, prepares it for the corresponding Person Contact instance.
-
-        :return: Nothing.
-        """
-        # phone number
-        unformatted_phone_number = self.validated_data.pop('phone_number', '')
-        if unformatted_phone_number:
-            self._validated_data[self.__phone_number_key] = self._format_phone_number(
-                unformatted_phone_number=unformatted_phone_number
-            )
 
     def __validate_email(self):
         """ Validates the email field.
@@ -1491,7 +1450,6 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         # record is valid
         if is_valid:
             self.__validate_is_law_enforcement_checkbox()
-            self.__validate_phone_number()
             self.__validate_email()
             self.__validate_identifier_and_identifier_type()
             self.__validate_title()
@@ -1510,7 +1468,7 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         self.original_validated_data = validated_data.copy()
         # pop custom fields from validated data
         split_aliases = validated_data.pop(self._split_aliases_key, [])
-        phone_number = validated_data.pop(self.__phone_number_key, '')
+        phone_number = validated_data.pop('phone_number', '') or ''
         email = validated_data.pop(self.__email_key, '')
         identifier_type = validated_data.pop(self.__identifier_type_key, '')
         identifier = validated_data.pop(self.__identifier_key, '')
