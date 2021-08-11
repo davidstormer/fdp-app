@@ -119,6 +119,7 @@
         {% block footer %}<div id="footer"></div>{% endblock %}
       </div>
     </div>
+    <div id="footer-global">{% if user.is_authenticated %}<span id="release-number">FDP App 2.0.0</span>{% endif %}</div>
 </div>
 <!-- END Container -->
 {% block endscript %}
