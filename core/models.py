@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db.models import Q, Prefetch, Exists
 from django.db.models.expressions import RawSQL, Subquery, OuterRef
 from django.apps import apps
-from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, AbstractPhoneValidator, \
+from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, \
     AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractAsOfDateBounded, Confidentiable, \
     AbstractFileValidator, AbstractUrlValidator, Linkable
 from supporting.models import State, Trait, PersonRelationshipType, Location, PersonIdentifierType, County, \
@@ -698,8 +698,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         help_text=_('Phone number for person'),
-        validators=[AbstractPhoneValidator.phone_validator],
-        max_length=AbstractPhoneValidator.max_length,
+        max_length=256,
         verbose_name=_('phone number')
     )
 
@@ -1411,8 +1410,7 @@ class Grouping(Archivable, Descriptable):
         blank=True,
         default='',
         help_text=_('Phone number for grouping'),
-        validators=[AbstractPhoneValidator.phone_validator],
-        max_length=AbstractPhoneValidator.max_length,
+        max_length=256,
         verbose_name=_('phone number')
     )
 
