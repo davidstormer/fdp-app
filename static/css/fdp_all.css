@@ -28,3 +28,9 @@ span#release-number {
   color: #aaa;
   font-weight: bold;
 }
+/* Move footer to bottom when on 2fa pages, where body div becomes tiny window */
+body.login div#footer-global {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+}
