@@ -284,17 +284,21 @@ class Person(Confidentiable, Descriptable):
         )
 
     @classmethod
-    def __get_content_query(cls, user, filter_by_dict, person_filter_dict):
+    def __get_content_query(cls, user, filter_by_dict, filter_by_exists, person_filter_dict):
         """ Retrieves a content queryset that is optionally filtered.
 
         :param user: User retrieving the queryset.
         :param filter_by_dict: Dictionary defining the filtering for the query set.
+        :param filter_by_exists: Instance of django.db.models.Exists(...) defining the filtering for the query set.
         :param person_filter_dict: Dictionary defining the keyword argument filtering for the person queryset in the
         prefetched ContentPerson queryset.
         :return: Content queryset.
         """
         m = apps.get_model('sourcing', 'Content')
         qs = m.active_objects.all() if not filter_by_dict else m.active_objects.filter(**filter_by_dict)
+        # filter queryset by an instance of Django's Exists() class
+        if filter_by_exists is not None:
+            qs = qs.filter(filter_by_exists)
         qs = qs.filter_for_confidential_by_user(user=user)
         return qs.filter(
             Q(Q(type__isnull=True) | Q(**m.get_active_filter(prefix='type')))
@@ -529,6 +533,14 @@ class Person(Confidentiable, Descriptable):
                         queryset=cls.__get_content_query(
                             user=user,
                             filter_by_dict={},
+                            filter_by_exists=Exists(
+                                # don't need to filter for confidentiality, since both content and person is filtered
+                                # in the outer queries
+                                (apps.get_model('sourcing', 'ContentPerson')).objects.filter(
+                                    person_id=pk,
+                                    content_id=OuterRef('pk')
+                                )
+                            ),
                             person_filter_dict={'pk': pk}
                         ),
                         to_attr='officer_contents'
@@ -567,6 +579,7 @@ class Person(Confidentiable, Descriptable):
                             cls.__get_content_query(
                                 user=user,
                                 filter_by_dict={'pk': OuterRef('content_id')},
+                                filter_by_exists=None,
                                 person_filter_dict=None
                             ).exclude(incidents__person_incident__person_id=pk).values('pk')
                         )
