@@ -394,7 +394,7 @@ class ContentIdentifier(Confidentiable, Descriptable):
         blank=False,
         help_text=_('Identifier number, such as the lawsuit number, IAB case number, or similar'),
         max_length=settings.MAX_NAME_LEN,
-        verbose_name=_('number')
+        verbose_name=_('identifier')
     )
 
     content_identifier_type = models.ForeignKey(
