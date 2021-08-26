@@ -4,6 +4,9 @@ from django.urls import reverse
 from bulk.models import BulkImport, FdpImportFile, FdpImportMapping, FdpImportRun
 from inheritable.tests import AbstractTestCase, local_test_settings_required
 from fdpuser.models import FdpUser, FdpOrganization
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BulkTestCase(AbstractTestCase):
@@ -53,10 +56,10 @@ class BulkTestCase(AbstractTestCase):
                 raise Exception(err)
         # host admin
         if fdp_user.is_host:
-            print(_('Fdp Import File download check is successful (file could be downloaded by host administrator)'))
+            logger.debug(_('Fdp Import File download check is successful (file could be downloaded by host administrator)'))
         # guest admin
         else:
-            print(_('Fdp Import File download check is successful (exception was raised for guest administrator)'))
+            logger.debug(_('Fdp Import File download check is successful (exception was raised for guest administrator)'))
 
     @local_test_settings_required
     def test_bulk_import_host_only_access(self):
@@ -64,7 +67,7 @@ class BulkTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(_('\nStarting test for bulk import access is host-only'))
+        logger.debug(_('\nStarting test for bulk import access is host-only'))
         num_of_users = FdpUser.objects.all().count()
         host_admin = self._create_fdp_user(email_counter=num_of_users + 1, **self._host_admin_dict)
         guest_admin = self._create_fdp_user(email_counter=num_of_users + 2, **self._guest_admin_dict)
@@ -78,13 +81,13 @@ class BulkTestCase(AbstractTestCase):
             url = reverse('admin:{app}_{model_to_test}_changelist'.format(app=meta.app_label, model_to_test=model_name))
             test_dict = {'url': url, 'login_startswith': None}
             # test for guest administrator
-            print('Starting host-only view access sub-test for {n} for guest administrator'.format(n=model_name))
+            logger.debug('Starting host-only view access sub-test for {n} for guest administrator'.format(n=model_name))
             self._get_response_from_get_request(fdp_user=guest_admin, expected_status_code=403, **test_dict)
             # test for host administrator
-            print('Starting host-only view access sub-test for {n} for host administrator'.format(n=model_name))
+            logger.debug('Starting host-only view access sub-test for {n} for host administrator'.format(n=model_name))
             self._get_response_from_get_request(fdp_user=host_admin, expected_status_code=200, **test_dict)
         # test downloading Fdp Import File for guest administrator
         self.__check_if_can_download_fdp_import_file(fdp_user=guest_admin)
         # test downloading Fdp Import File for host administrator
         self.__check_if_can_download_fdp_import_file(fdp_user=host_admin)
-        print(_('\nSuccessfully finished test for bulk import access is host-only\n\n'))
+        logger.debug(_('\nSuccessfully finished test for bulk import access is host-only\n\n'))

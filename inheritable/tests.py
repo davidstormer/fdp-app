@@ -9,6 +9,9 @@ from django.apps import apps
 from fdpuser.models import FdpUser
 from .models import AbstractUrlValidator, AbstractConfiguration
 from json import dumps
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def local_test_settings_required(func):
@@ -29,7 +32,7 @@ def local_test_settings_required(func):
         if AbstractConfiguration.is_using_local_configuration():
             func(*args, **kwargs)
         else:
-            print('\nSkipped {t}. It requires local test settings and can be run with the command: {c}'.format(
+            logger.warning('\nSkipped {t}. It requires local test settings and can be run with the command: {c}'.format(
                 t=func.__name__, c='python manage.py test --settings=fdp.configuration.test.test_local_settings'))
     return decorator
 
@@ -56,7 +59,7 @@ def azure_test_settings_required(func):
                 and not AbstractConfiguration.use_only_azure_active_directory():
             func(*args, **kwargs)
         else:
-            print('\nSkipped {t}. It requires Azure test settings and can be run with the command: {c}'.format(
+            logger.warning('\nSkipped {t}. It requires Azure test settings and can be run with the command: {c}'.format(
                 t=func.__name__, c='python manage.py test --settings=fdp.configuration.test.test_azure_settings'))
     return decorator
 
@@ -82,7 +85,7 @@ def azure_only_test_settings_required(func):
                 and AbstractConfiguration.use_only_azure_active_directory():
             func(*args, **kwargs)
         else:
-            print(
+            logger.warning(
                 '\nSkipped {t}. It requires Azure only test settings and can be run with the command: {c}'.format(
                     t=func.__name__,
                     c='python manage.py test --settings=fdp.configuration.test.test_azure_only_settings'
@@ -378,7 +381,7 @@ class AbstractTestCase(TestCase):
         """
         # automated tests will be skipped unless configuration is for local development or simulating a host environment
         if not (settings.USE_LOCAL_SETTINGS or getattr(settings, 'USE_TEST_AZURE_SETTINGS', False)):
-            print(_('\nSkipping tests in {t}'.format(t=self.__class__.__name__)))
+            logger.debug(_('\nSkipping tests in {t}'.format(t=self.__class__.__name__)))
             self.skipTest(reason=_('Automated tests will only run in a local development environment'))
         # configuration is for local development
         super().setUp()
@@ -771,7 +774,7 @@ class AbstractTestCase(TestCase):
                 self.assertIn(confidential[self._name_key], str_content)
             else:
                 self.assertNotIn(confidential[self._name_key], str_content)
-            print(
+            logger.debug(
                 _('{t} is successful ({d} {a})'.format(
                     t=confidential[self._label],
                     d=text_for_data,
@@ -793,7 +796,7 @@ class AbstractTestCase(TestCase):
         # cycle through all permutations of confidentiality for the row for data
         for confidential in self._confidentials:
             self.assertNotIn(confidential[self._name_key], str_content)
-            print(
+            logger.debug(
                 _(
                     '{t} is successful ({d} {a})'.format(
                         t=confidential[self._label],
@@ -882,7 +885,7 @@ class AbstractTestCase(TestCase):
                         text_for_data=text_for_data, content=content, fdp_org=fdp_org, fdp_user=fdp_user
                     )
             else:
-                print(
+                logger.debug(
                     _(
                         'Check for {m} is successful (user was redirected to login screen)'.format(
                             m=model_to_test._meta.model_name
@@ -947,7 +950,7 @@ class AbstractTestCase(TestCase):
                         text_for_data=text_for_data, content=content, fdp_org=fdp_org, fdp_user=fdp_user
                     )
             else:
-                print(
+                logger.debug(
                     _(
                         'Check for {m} is successful (user was redirected to login screen)'.format(
                             m=model_to_test._meta.model_name
@@ -1016,7 +1019,7 @@ class AbstractTestCase(TestCase):
                         text_for_data=text_for_data, content=content, fdp_org=fdp_org, fdp_user=fdp_user
                     )
             else:
-                print(
+                logger.debug(
                     _(
                         'Check for {m} is successful (user was redirected to login screen)'.format(
                             m=model_to_test._meta.model_name
@@ -1089,7 +1092,7 @@ class AbstractTestCase(TestCase):
                 # only if user can access the admin site
                 if can_user_access_admin:
                     text_for_data = _('{r} for {m}'.format(r=related_text, m=model_to_test._meta.model_name))
-                    print(
+                    logger.debug(
                         _('{t} is successful ({d} {a})'.format(
                             t=confidential[self._label],
                             d=text_for_data,
@@ -1097,7 +1100,7 @@ class AbstractTestCase(TestCase):
                         ))
                     )
                 else:
-                    print(
+                    logger.debug(
                         _(
                             'Check for {m} is successful (user was redirected to login screen)'.format(
                                 m=model_to_test._meta.model_name
@@ -1183,12 +1186,12 @@ class AbstractTestCase(TestCase):
                     text_for_data = _('{r} for {m}'.format(r=related_text, m=model_to_test._meta.model_name))
                     # user encountered 403 HTTP status code
                     if expected_status_code == 403:
-                        print(
+                        logger.debug(
                             _('{t} is successful ({r})'.format(t=confidential[self._label], r=_('403 status code')))
                         )
                     # user can access page
                     else:
-                        print(
+                        logger.debug(
                             _('{t} is successful ({d} {a})'.format(
                                 t=confidential[self._label],
                                 d=text_for_data,
@@ -1196,7 +1199,7 @@ class AbstractTestCase(TestCase):
                             ))
                         )
                 else:
-                    print(
+                    logger.debug(
                         _(
                             'Check for {m} is successful (user was redirected to login screen)'.format(
                                 m=model_to_test._meta.model_name
@@ -1269,7 +1272,7 @@ class AbstractTestCase(TestCase):
                 # only if user can access the admin site
                 if can_user_access_admin:
                     text_for_data = _('{r} for {m}'.format(r=related_text, m=model_to_test._meta.model_name))
-                    print(
+                    logger.debug(
                         _('{t} is successful ({d} {a})'.format(
                             t=confidential[self._label],
                             d=text_for_data,
@@ -1277,7 +1280,7 @@ class AbstractTestCase(TestCase):
                         ))
                     )
                 else:
-                    print(
+                    logger.debug(
                         _(
                             'Check for {m} is successful (user was redirected to login screen)'.format(
                                 m=model_to_test._meta.model_name
@@ -1292,7 +1295,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting admin changelist {m}-related sub-test for {u} without a FDP organization'.format(
                     m=model_txt,
@@ -1308,7 +1311,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting admin create instance {m}-related sub-test for {u} without a FDP organization'.format(
                     m=model_txt,
@@ -1324,7 +1327,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting admin change instance {m}-related sub-test for {u} without a FDP organization'.format(
                     m=model_txt,
@@ -1340,7 +1343,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting load admin change instance {m}-related sub-test for {u} without a FDP organization'.format(
                     m=model_txt,
@@ -1356,7 +1359,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting load admin history {m}-related sub-test for {u} without a FDP organization'.format(
                     m=model_txt,
@@ -1372,7 +1375,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting load admin delete {m}-related sub-test for {u} without a FDP organization'.format(
                     m=model_txt,
@@ -1388,7 +1391,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting admin changelist {m}-related sub-test for {u} with matching FDP organization'.format(
                     m=model_txt,
@@ -1404,7 +1407,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting admin create instance {m}-related sub-test for {u} with matching FDP organization'.format(
                     m=model_txt,
@@ -1420,7 +1423,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting admin change instance {m}-related sub-test for {u} with matching FDP organization'.format(
                     m=model_txt,
@@ -1436,7 +1439,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting load admin change instance {m}-related sub-test '
                 'for {u} with matching FDP organization'.format(
@@ -1453,7 +1456,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting load admin history {m}-related sub-test for {u} with matching FDP organization'.format(
                     m=model_txt,
@@ -1469,7 +1472,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting load admin delete {m}-related sub-test for {u} with matching FDP organization'.format(
                     m=model_txt,
@@ -1485,7 +1488,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting admin changelist {m}-related sub-test for {u} with different FDP organization'.format(
                     m=model_txt,
@@ -1501,7 +1504,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting admin create instance {m}-related sub-test for {u} with different FDP organization'.format(
                     m=model_txt,
@@ -1517,7 +1520,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting admin change instance {m}-related sub-test for {u} with different FDP organization'.format(
                     m=model_txt,
@@ -1533,7 +1536,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting load admin change instance {m}-related sub-test '
                 'for {u} with different FDP organization'.format(
@@ -1550,7 +1553,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting load admin history {m}-related sub-test for {u} with different FDP organization'.format(
                     m=model_txt,
@@ -1566,7 +1569,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _(
                 '\nStarting load admin delete {m}-related sub-test for {u} with different FDP organization'.format(
                     m=model_txt,
@@ -1583,7 +1586,7 @@ class AbstractTestCase(TestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(_('\nStarting {v} profile search results {m}-related sub-test for {u} without a '
+        logger.debug(_('\nStarting {v} profile search results {m}-related sub-test for {u} without a '
                 'FDP organization'.format(m=model_txt, u=user_role[self._label], v=view_txt)))
 
     def _print_profile_view_start_without_org(self, model_txt, user_role, view_txt):
@@ -1594,7 +1597,7 @@ class AbstractTestCase(TestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(_('\nStarting {v} profile view content check {m}-related sub-test for {u} without a '
+        logger.debug(_('\nStarting {v} profile view content check {m}-related sub-test for {u} without a '
                 'FDP organization'.format(m=model_txt, u=user_role[self._label], v=view_txt)))
 
     def _print_profile_load_start_without_org(self, model_txt, user_role, view_txt):
@@ -1605,7 +1608,7 @@ class AbstractTestCase(TestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(_('\nStarting {v} profile load {m}-related sub-test for {u} without a '
+        logger.debug(_('\nStarting {v} profile load {m}-related sub-test for {u} without a '
                 'FDP organization'.format(m=model_txt, u=user_role[self._label], v=view_txt)))
 
     def _print_profile_search_results_start_with_right_org(self, model_txt, user_role, view_txt):
@@ -1616,7 +1619,7 @@ class AbstractTestCase(TestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(_('\nStarting {v} profile search results {m}-related sub-test for {u} with matching '
+        logger.debug(_('\nStarting {v} profile search results {m}-related sub-test for {u} with matching '
                 'FDP organization'.format(m=model_txt, u=user_role[self._label], v=view_txt)))
 
     def _print_profile_view_start_with_right_org(self, model_txt, user_role, view_txt):
@@ -1627,7 +1630,7 @@ class AbstractTestCase(TestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(_('\nStarting {v} profile view content check {m}-related sub-test for {u} with matching '
+        logger.debug(_('\nStarting {v} profile view content check {m}-related sub-test for {u} with matching '
                 'FDP organization'.format(m=model_txt, u=user_role[self._label], v=view_txt)))
 
     def _print_profile_load_start_with_right_org(self, model_txt, user_role, view_txt):
@@ -1638,7 +1641,7 @@ class AbstractTestCase(TestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(_('\nStarting {v} profile load {m}-related sub-test for {u} with matching '
+        logger.debug(_('\nStarting {v} profile load {m}-related sub-test for {u} with matching '
                 'FDP organization'.format(m=model_txt, u=user_role[self._label], v=view_txt)))
 
     def _print_profile_search_results_start_with_wrong_org(self, model_txt, user_role, view_txt):
@@ -1649,7 +1652,7 @@ class AbstractTestCase(TestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(_('\nStarting {v} profile search results {m}-related sub-test for {u} with different '
+        logger.debug(_('\nStarting {v} profile search results {m}-related sub-test for {u} with different '
                 'FDP organization'.format(m=model_txt, u=user_role[self._label], v=view_txt)))
 
     def _print_profile_view_start_with_wrong_org(self, model_txt, user_role, view_txt):
@@ -1660,7 +1663,7 @@ class AbstractTestCase(TestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(_('\nStarting {v} profile view content check {m}-related sub-test for {u} with '
+        logger.debug(_('\nStarting {v} profile view content check {m}-related sub-test for {u} with '
                 'different FDP organization'.format(m=model_txt, u=user_role[self._label], v=view_txt)))
 
     def _print_profile_load_start_with_wrong_org(self, model_txt, user_role, view_txt):
@@ -1671,7 +1674,7 @@ class AbstractTestCase(TestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(_('\nStarting {v} profile load {m}-related sub-test for {u} with different '
+        logger.debug(_('\nStarting {v} profile load {m}-related sub-test for {u} with different '
                 'FDP organization'.format(m=model_txt, u=user_role[self._label], v=view_txt)))
 
     def _print_download_view_start_without_org(self, model_txt, user_role):
@@ -1681,7 +1684,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(_('\nStarting download view check {m}-related '
+        logger.debug(_('\nStarting download view check {m}-related '
                 'sub-test for {u} without a FDP organization'.format(m=model_txt, u=user_role[self._label])))
 
     def _print_download_view_start_with_right_org(self, model_txt, user_role):
@@ -1691,7 +1694,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(_('\nStarting download view check {m}-related '
+        logger.debug(_('\nStarting download view check {m}-related '
                 'sub-test for {u} with matching FDP organization'.format(m=model_txt, u=user_role[self._label])))
 
     def _print_download_view_start_with_wrong_org(self, model_txt, user_role):
@@ -1701,7 +1704,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(_('\nStarting download view check {m}-related '
+        logger.debug(_('\nStarting download view check {m}-related '
                 'sub-test for {u} with different FDP organization'.format(m=model_txt, u=user_role[self._label])))
 
     def _print_changing_search_results_start_without_org(self, view_txt, model_txt, user_role):
@@ -1712,7 +1715,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _('\nStarting {s} changing search results {m}-related sub-test for {u} without a FDP organization'.format(
                 s=view_txt, m=model_txt, u=user_role[self._label]
             ))
@@ -1726,7 +1729,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(_('\nStarting {s} changing search results {m}-related sub-test for {u} with matching '
+        logger.debug(_('\nStarting {s} changing search results {m}-related sub-test for {u} with matching '
                 'FDP organization'.format(s=view_txt, m=model_txt, u=user_role[self._label])))
 
     def _print_changing_search_results_start_with_wrong_org(self, view_txt, model_txt, user_role):
@@ -1737,7 +1740,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(_('\nStarting {s} changing search results {m}-related sub-test for {u} with different '
+        logger.debug(_('\nStarting {s} changing search results {m}-related sub-test for {u} with different '
                 'FDP organization'.format(s=view_txt, m=model_txt, u=user_role[self._label])))
 
     def _print_changing_update_start_without_org(self, view_txt, model_txt, user_role):
@@ -1748,7 +1751,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _('\nStarting {s} changing update view {m}-related sub-test for {u} without a FDP organization'.format(
                 s=view_txt, m=model_txt, u=user_role[self._label]
             ))
@@ -1762,7 +1765,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(_('\nStarting {s} changing update view {m}-related sub-test for {u} with matching '
+        logger.debug(_('\nStarting {s} changing update view {m}-related sub-test for {u} with matching '
                 'FDP organization'.format(s=view_txt, m=model_txt, u=user_role[self._label])))
 
     def _print_changing_update_start_with_wrong_org(self, view_txt, model_txt, user_role):
@@ -1773,7 +1776,7 @@ class AbstractTestCase(TestCase):
         :param user_role: Specific user role from self._user_roles for which test is performed.
         :return: Nothing.
         """
-        print(_('\nStarting {s} changing update view {m}-related sub-test for {u} with different '
+        logger.debug(_('\nStarting {s} changing update view {m}-related sub-test for {u} with different '
                 'FDP organization'.format(s=view_txt, m=model_txt, u=user_role[self._label])))
 
     def _check_if_in_view(self, url, fdp_user, fdp_org):
@@ -1812,7 +1815,7 @@ class AbstractTestCase(TestCase):
                 self.assertIn(confidential[self._name_key], str_content)
             else:
                 self.assertNotIn(confidential[self._name_key], str_content)
-            print(
+            logger.debug(
                 _('{t} is successful ({d} {a})'.format(
                     t=confidential[self._label],
                     d=confidential[self._name_key],
@@ -1865,7 +1868,7 @@ class AbstractTestCase(TestCase):
             if admin_only and not (fdp_user.is_administrator or fdp_user.is_superuser):
                 role_text = fdp_user.role_txt
                 response = self._do_get(c=response.client, url=url, expected_status_code=403, login_startswith=None)
-                print(_('View for {u} is successful (displays 403 HTTP status code)'.format(u=role_text)))
+                logger.debug(_('View for {u} is successful (displays 403 HTTP status code)'.format(u=role_text)))
             # this view is not restricted to administrators only, or user is an administrator
             else:
                 # exception is expected
@@ -1878,7 +1881,7 @@ class AbstractTestCase(TestCase):
                         self.assertEqual(str(err), exception_msg)
                     # view is expected to load
                     if should_view_load:
-                        print(
+                        logger.debug(
                             _('{t} is successful ({d} {a})'.format(
                                 t=confidential[self._label],
                                 d=confidential[self._name_key],
@@ -1887,7 +1890,7 @@ class AbstractTestCase(TestCase):
                         )
                     # view is not expected to load
                     else:
-                        print(
+                        logger.debug(
                             _('{t} is successful ({d} {a})'.format(
                                 t=confidential[self._label],
                                 d=confidential[self._name_key],
@@ -1902,7 +1905,7 @@ class AbstractTestCase(TestCase):
                     )
                     # view is expected to load
                     if should_view_load:
-                        print(
+                        logger.debug(
                             _('{t} is successful ({d} {a})'.format(
                                 t=confidential[self._label],
                                 d=confidential[self._name_key],
@@ -1911,7 +1914,7 @@ class AbstractTestCase(TestCase):
                         )
                     # view is not expected to load
                     else:
-                        print(
+                        logger.debug(
                             _('{t} is successful ({d} {a})'.format(
                                 t=confidential[self._label],
                                 d=confidential[self._name_key],
@@ -1950,7 +1953,7 @@ class AbstractTestCase(TestCase):
             role_text = fdp_user.role_txt
             # attempt to navigate to search
             response = self._do_get(c=response.client, url=search_url, expected_status_code=403, login_startswith=None)
-            print(_('Search with {u} is successful (displays 403 HTTP status code)'.format(u=role_text)))
+            logger.debug(_('Search with {u} is successful (displays 403 HTTP status code)'.format(u=role_text)))
             # attempt to submit search results
             self._do_post(
                 c=response.client,
@@ -1959,7 +1962,7 @@ class AbstractTestCase(TestCase):
                 expected_status_code=403,
                 login_startswith=None
             )
-            print(_('Search results with {u} is successful (displays 403 HTTP status code)'.format(u=role_text)))
+            logger.debug(_('Search results with {u} is successful (displays 403 HTTP status code)'.format(u=role_text)))
         # this search is not restricted to administrators only, or user is an administrator
         else:
             # navigate to search
@@ -1995,7 +1998,7 @@ class AbstractTestCase(TestCase):
                     self.assertIn(confidential[self._name_key], str_content)
                 else:
                     self.assertNotIn(confidential[self._name_key], str_content)
-                print(
+                logger.debug(
                     _('{t} is successful ({d} {a})'.format(
                         t=confidential[self._label],
                         d=confidential[self._name_key],
@@ -2068,7 +2071,7 @@ class AbstractTestCase(TestCase):
                     raise Exception(err)
             # file is expected to download
             if should_file_download:
-                print(
+                logger.debug(
                     _('{t} is successful ({d} {a})'.format(
                         t=confidential[self._label],
                         d=confidential[self._name_key],
@@ -2077,7 +2080,7 @@ class AbstractTestCase(TestCase):
                 )
             # file is not expected to download
             else:
-                print(
+                logger.debug(
                     _('{t} is successful ({d} {a})'.format(
                         t=confidential[self._label],
                         d=confidential[self._name_key],
@@ -2118,7 +2121,7 @@ class AbstractTestCase(TestCase):
                 login_startswith=None,
                 data={AbstractUrlValidator.JSON_SRCH_CRT_PARAM: 'a'}
             )
-            print(_('Async view for {u} is successful (displays 403 HTTP status code)'.format(u=role_text)))
+            logger.debug(_('Async view for {u} is successful (displays 403 HTTP status code)'.format(u=role_text)))
         # this asynchronous view is not restricted to administrators only, or user is an administrator
         else:
             # cycle through all permutations of confidentiality for the row for data
@@ -2142,7 +2145,7 @@ class AbstractTestCase(TestCase):
                     self.assertIn(confidential[self._name_key], str_content)
                 else:
                     self.assertNotIn(confidential[self._name_key], str_content)
-                print(
+                logger.debug(
                     _('{t} is successful ({d} {a})'.format(
                         t=confidential[self._label],
                         d=confidential[self._name_key],

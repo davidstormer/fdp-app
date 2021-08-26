@@ -5,7 +5,8 @@ from django.db.models import Q, Prefetch
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, AbstractKnownInfo, \
-    AbstractFileValidator, Confidentiable, AbstractUrlValidator, AbstractExactDateBounded, Linkable
+    AbstractFileValidator, Confidentiable, AbstractUrlValidator, AbstractExactDateBounded, Linkable, \
+    AbstractConfiguration
 from supporting.models import ContentType, Court, ContentIdentifierType, ContentCaseOutcome, \
     AttachmentType, SituationRole, Allegation, AllegationOutcome
 from fdpuser.models import FdpOrganization
@@ -42,8 +43,14 @@ class Attachment(Confidentiable, Descriptable):
         upload_to='{b}%Y/%m/%d/%H/%M/%S/'.format(b=AbstractUrlValidator.ATTACHMENT_BASE_URL),
         blank=True,
         null=False,
-        help_text=_('Uploaded file as the attachment. Should be less than {s}MB. Ignore if linking an attachment '
-                    'via the web.'.format(s=AbstractFileValidator.MAX_ATTACHMENT_MB_SIZE)),
+        help_text=_(
+            'Uploaded file as the attachment. Should be less than {s}MB. '
+            'Ignore if linking an attachment via the web.'.format(
+                s=AbstractFileValidator.get_megabytes_from_bytes(
+                    num_of_bytes=AbstractConfiguration.max_attachment_file_bytes()
+                )
+            )
+        ),
         validators=[
             AbstractFileValidator.validate_attachment_file_size,
             AbstractFileValidator.validate_attachment_file_extension
@@ -141,7 +148,7 @@ class Attachment(Confidentiable, Descriptable):
             # record already exists, i.e. has primary key in database
             pk = getattr(self, 'pk', None)
             if pk:
-                attachments_qs.exclude(pk=pk)
+                attachments_qs = attachments_qs.exclude(pk=pk)
             # check that no attachments with this file field exist
             if attachments_qs.exists():
                 raise ValidationError(_('The path for this file is already taken'))
@@ -227,7 +234,8 @@ class Content(Confidentiable, Descriptable):
 
     name = models.CharField(
         null=False,
-        blank=False,
+        blank=True,
+        default='',
         max_length=settings.MAX_NAME_LEN,
         help_text=_(
             'Name of content. Use this for the article headline, report title or other user-friendly name.'
@@ -309,11 +317,29 @@ class Content(Confidentiable, Descriptable):
 
         :return: String representation of a content.
         """
-        return '{t} {o} {p}'.format(
+        return '{t} - {p}'.format(
             t=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='type'),
-            o=_('on'),
-            p=self.name
+            p=self.name if self.name else getattr(self, 'pk', 'unnamed')
         )
+
+    def clean(self):
+        """ Ensure that if link is defined, it is unique.
+
+        :return: Nothing
+        """
+        super(Content, self).clean()
+        # link is defined
+        if self.link:
+            # content with this link
+            content_qs = self.__class__.objects.filter(link=self.link)
+            # record already exists, i.e. has primary key in database
+            pk = getattr(self, 'pk', None)
+            if pk:
+                # exclude itself
+                content_qs = content_qs.exclude(pk=pk)
+            # check that no content with this link field value exist
+            if content_qs.exists():
+                raise ValidationError(_('Content with this link already exists'))
 
     @classmethod
     def filter_for_admin(cls, queryset, user):
@@ -347,6 +373,10 @@ class Content(Confidentiable, Descriptable):
         db_table = '{d}content'.format(d=settings.DB_PREFIX)
         verbose_name = _('content')
         ordering = ['type', 'publication_date', 'name']
+        constraints = [
+            # unique content link if field is not blank
+            models.UniqueConstraint(fields=['link'], name='uq_content_link', condition=Q(~Q(link__iexact='')))
+        ]
 
 
 class ContentIdentifier(Confidentiable, Descriptable):

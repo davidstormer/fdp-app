@@ -6,6 +6,9 @@ from core.models import Person, PersonIncident, Incident, PersonRelationship, Gr
 from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase
 from supporting.models import PersonRelationshipType, ContentIdentifierType
 from os.path import splitext
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ProfileTestCase(AbstractTestCase):
@@ -54,7 +57,7 @@ class ProfileTestCase(AbstractTestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _('\nStarting {v} profile download attachments sub-test for {u} with matching FDP organization'.format(
                 u=user_role[self._label],
                 v=view_txt
@@ -69,7 +72,7 @@ class ProfileTestCase(AbstractTestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _('\nStarting {v} profile download attachments sub-test for {u} with different FDP organization'.format(
                 u=user_role[self._label],
                 v=view_txt
@@ -83,7 +86,7 @@ class ProfileTestCase(AbstractTestCase):
         :param view_txt: Text defining the specific profile, e.g. officer or command.
         :return: Nothing.
         """
-        print(
+        logger.debug(
             _('\nStarting {v} profile download attachments sub-test for {u} without FDP organization'.format(
                 u=user_role[self._label],
                 v=view_txt
@@ -114,7 +117,7 @@ class ProfileTestCase(AbstractTestCase):
                 self.assertIn(confidential[self._name_key], attachment_names_list)
             else:
                 self.assertNotIn(confidential[self._name_key], attachment_names_list)
-            print(
+            logger.debug(
                 _('{t} is successful ({d} {a})'.format(
                     t=confidential[self._label],
                     d=confidential[self._name_key],
@@ -146,7 +149,7 @@ class ProfileTestCase(AbstractTestCase):
                 self.assertIn(confidential[self._name_key], attachment_names_list)
             else:
                 self.assertNotIn(confidential[self._name_key], attachment_names_list)
-            print(
+            logger.debug(
                 _('{t} is successful ({d} {a})'.format(
                     t=confidential[self._label],
                     d=confidential[self._name_key],
@@ -1279,7 +1282,7 @@ class ProfileTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(
+        logger.debug(
             _('\nStarting test for Officer Profile Search Results view and Officer Profile view for all permutations '
               'of user roles, confidentiality levels and relevant models')
         )
@@ -1290,7 +1293,7 @@ class ProfileTestCase(AbstractTestCase):
         self.__test_attachment_for_officer_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_for_officer_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_identifier_for_officer_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
-        print(_('\nSuccessfully finished test for for Officer Profile Search Results view and Officer Profile view for '
+        logger.debug(_('\nSuccessfully finished test for for Officer Profile Search Results view and Officer Profile view for '
                 'all permutations of user roles, confidentiality levels and relevant models\n\n'))
 
     @local_test_settings_required
@@ -1300,7 +1303,7 @@ class ProfileTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(
+        logger.debug(
             _('\nStarting test for Command Profile view for all permutations '
               'of user roles, confidentiality levels and relevant models')
         )
@@ -1311,5 +1314,5 @@ class ProfileTestCase(AbstractTestCase):
         self.__test_attachment_for_command_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_for_command_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_identifier_for_command_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
-        print(_('\nSuccessfully finished test for for Command Profile view for '
+        logger.debug(_('\nSuccessfully finished test for for Command Profile view for '
                 'all permutations of user roles, confidentiality levels and relevant models\n\n'))

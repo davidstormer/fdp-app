@@ -1,0 +1,36 @@
+/* *** GENERAL LAYOUT STYLES *** */
+/* social authentication disconnect and user logout */
+form.logout { float: right; }
+button.logout {
+    text-transform: uppercase;
+    padding: 0;
+    padding-bottom: 2px;
+    background: transparent;
+    font: inherit;
+    color: #FFF;
+    cursor: pointer;
+    border: 0 none;
+    border-bottom: 1px solid rgba(255,255,255,0.25);
+    line-height: 1em;
+}
+button.logout:focus, button.logout:hover {
+    border-bottom-color: #79aec8;
+    color: #79aec8;
+}
+/* element appearing on the modal dialogue that contains the exact time remaining until a user's session will expire */
+#sessiontoexpirytime { font-weight:bold; }
+
+/* Footer & Release number styling */
+div#footer-global {
+  text-align: right;
+}
+span#release-number {
+  color: #aaa;
+  font-weight: bold;
+}
+/* Move footer to bottom when on 2fa pages, where body div becomes tiny window */
+body.login div#footer-global {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+}

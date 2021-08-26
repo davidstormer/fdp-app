@@ -6,7 +6,8 @@ This file is imported and provides definitions for all settings files.
 
 """
 
-from .constants import CONST_AXES_AUTH_BACKEND, CONST_DJANGO_AUTH_BACKEND
+from .constants import CONST_AXES_AUTH_BACKEND, CONST_DJANGO_AUTH_BACKEND, CONST_MAX_ATTACHMENT_FILE_BYTES, \
+    CONST_SUPPORTED_ATTACHMENT_FILE_TYPES, CONST_MAX_PERSON_PHOTO_FILE_BYTES, CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES
 from django.urls import reverse_lazy
 from django.core.exceptions import ImproperlyConfigured
 from pathlib import Path
@@ -202,6 +203,9 @@ INSTALLED_APPS = [
     'cspreports',
     # Django reCAPTCHA: https://github.com/praekelt/django-recaptcha
     'captcha',
+    # Django Data Wizard: https://github.com/wq/django-data-wizard
+    'data_wizard',
+    'data_wizard.sources',
     # abstract base classes attributes and functionality reused throughout project
     'inheritable',
     # extends standard Django authentication and user roles to customize project
@@ -220,9 +224,6 @@ INSTALLED_APPS = [
     'profiles',
     # data model organizing user verification of data
     'verifying',
-    # Django Data Wizard: https://github.com/wq/django-data-wizard
-    'data_wizard',
-    'data_wizard.sources',
 ]
 
 
@@ -457,15 +458,6 @@ AXES_FAILURE_LIMIT = 3
 AXES_COOLOFF_TIME = 48
 # Prevents the login from IP under a particular user if the attempt limit has been exceeded
 AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
-# The names of request.META attributes as a tuple of strings to check to get the client IP address
-# See: https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
-AXES_META_PRECEDENCE_ORDER = [
-    # For Heroku, see: https://devcenter.heroku.com/articles/http-routing#heroku-headers
-    'HTTP_X_FORWARDED_FOR',
-    'REMOTE_ADDR',
-    # For Python Anywhere, see: http://help.pythonanywhere.com/pages/WebAppClientIPAddresses/
-    'HTTP_X_REAL_IP'
-]
 # Redact contents of password parameter in login request
 AXES_PASSWORD_FORM_FIELD = 'auth-password'
 
@@ -481,7 +473,6 @@ CSP_OBJECT_SRC = ("'none'",)
 # the https: and http: whitelist entries will be ignored by modern browsers. Older browsers will allow the loading of
 # scripts from any URL.
 CSP_SCRIPT_SRC = (
-    "'unsafe-inline'",
     "'self'",
     'https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/',
     'https://ajax.googleapis.com/ajax/libs/jquery/',
@@ -498,7 +489,6 @@ CSP_FRAME_ANCESTORS = ("'none'",)
 # The default-src is the default policy for loading content such as JavaScript, Images, CSS, Fonts, AJAX requests,
 # Frames, HTML5 Media.
 CSP_DEFAULT_SRC = (
-    "'unsafe-inline'",
     "'self'",
     'https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/',
     'https://ajax.googleapis.com/ajax/libs/jqueryui/',
@@ -507,6 +497,8 @@ CSP_DEFAULT_SRC = (
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/',
     "'self' data:",
 )
+# Defines valid sources for stylesheets.
+CSP_STYLE_SRC = CSP_DEFAULT_SRC
 # Defines valid sources that can be used as a HTML <form> action.
 CSP_FORM_ACTION = ("'self'",)
 # The font-src directive restricts the URLs from which font resources may be loaded.
@@ -518,6 +510,9 @@ CSP_FONT_SRC = (
 # Causes all violations to the policy to be reported to the supplied URL
 # so you can debug them.
 CSP_REPORT_URI = reverse_lazy('report_csp')
+# A tuple or list. Default is None. Include dynamically generated nonce in all listed directives,
+# e.g. CSP_INCLUDE_NONCE_IN=['script-src'] will add 'nonce-<b64-value>' to the script-src directive.
+CSP_INCLUDE_NONCE_IN = ['script-src', 'default-src', 'style-src']
 
 
 # Django Content Security Policy Reports: https://github.com/adamalton/django-csp-reports
@@ -682,3 +677,23 @@ FDP_ERR_LOGGING = {
 # It must end in a slash if set to a non-empty value.
 # See the Django setting MEDIA_URL for similarities.
 FDP_MEDIA_URL = '/perm/media/'
+
+
+# The maximum number of bytes that a user-uploaded file can have for an instance of the Attachment model.
+FDP_MAX_ATTACHMENT_FILE_BYTES = CONST_MAX_ATTACHMENT_FILE_BYTES
+
+
+# A list of tuples that define the types of user-uploaded files that are supported for an instance of the Attachment
+# model. Each tuple has two items: the first is a user-friendly short description of the supported file type; the second
+# is the expected extension of the supported file type.
+FDP_SUPPORTED_ATTACHMENT_FILE_TYPES = CONST_SUPPORTED_ATTACHMENT_FILE_TYPES
+
+
+# The maximum number of bytes that a user-uploaded file can have for an instance of the Person Photo model.
+FDP_MAX_PERSON_PHOTO_FILE_BYTES = CONST_MAX_PERSON_PHOTO_FILE_BYTES
+
+
+# A list of tuples that define the types of user-uploaded files that are supported for an instance of the Person Photo
+# model. Each tuple has two items: the first is a user-friendly short description of the supported file type; the second
+# is the expected extension of the supported file type.
+FDP_SUPPORTED_PERSON_PHOTO_FILE_TYPES = CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES

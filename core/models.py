@@ -5,9 +5,9 @@ from django.conf import settings
 from django.db.models import Q, Prefetch, Exists
 from django.db.models.expressions import RawSQL, Subquery, OuterRef
 from django.apps import apps
-from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, AbstractPhoneValidator, \
+from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, \
     AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractAsOfDateBounded, Confidentiable, \
-    AbstractFileValidator, AbstractUrlValidator, Linkable
+    AbstractFileValidator, AbstractUrlValidator, Linkable, AbstractConfiguration
 from supporting.models import State, Trait, PersonRelationshipType, Location, PersonIdentifierType, County, \
     Title, GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
     PersonIncidentTag, LeaveStatus, SituationRole, TraitType
@@ -698,8 +698,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         help_text=_('Phone number for person'),
-        validators=[AbstractPhoneValidator.phone_validator],
-        max_length=AbstractPhoneValidator.max_length,
+        max_length=256,
         verbose_name=_('phone number')
     )
 
@@ -901,7 +900,9 @@ class PersonPhoto(Archivable, Descriptable):
         null=False,
         help_text=_(
             'Photo representing person. Should be less than {s}MB.'.format(
-                s=AbstractFileValidator.MAX_PHOTO_MB_SIZE
+                s=AbstractFileValidator.get_megabytes_from_bytes(
+                    num_of_bytes=AbstractConfiguration.max_person_photo_file_bytes()
+                )
             )
         ),
         validators=[
@@ -1379,7 +1380,6 @@ class Grouping(Archivable, Descriptable):
 
     Attributes:
         :name (str): Name of grouping.
-        :code (str): Code for grouping.
         :phone_number (str): Phone number for grouping.
         :email (str): Email address for grouping.
         :address (str): Full address for grouping.
@@ -1397,22 +1397,12 @@ class Grouping(Archivable, Descriptable):
         verbose_name=_('name')
     )
 
-    code = models.CharField(
-        null=False,
-        blank=True,
-        default='',
-        help_text=_('Code for grouping'),
-        max_length=50,
-        verbose_name=_('code')
-    )
-
     phone_number = models.CharField(
         null=False,
         blank=True,
         default='',
         help_text=_('Phone number for grouping'),
-        validators=[AbstractPhoneValidator.phone_validator],
-        max_length=AbstractPhoneValidator.max_length,
+        max_length=256,
         verbose_name=_('phone number')
     )
 
@@ -1479,7 +1469,7 @@ class Grouping(Archivable, Descriptable):
 
     #: Fields to display in the model form.
     form_fields = [
-        'name', 'code', 'phone_number', 'email', 'address', 'is_inactive', 'inception_date', 'cease_date', 'counties',
+        'name', 'phone_number', 'email', 'address', 'is_inactive', 'inception_date', 'cease_date', 'counties',
         'description', 'belongs_to_grouping', 'belongs_to_grouping_name'
     ]
 
@@ -1755,7 +1745,7 @@ class Grouping(Archivable, Descriptable):
     class Meta:
         db_table = '{d}grouping'.format(d=settings.DB_PREFIX)
         verbose_name = _('grouping')
-        unique_together = ('name', 'code', 'address')
+        unique_together = ('name', 'address')
         ordering = ['name']
 
 

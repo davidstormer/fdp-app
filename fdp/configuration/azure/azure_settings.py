@@ -185,7 +185,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # external authentication such as through Azure Active Directory is supported
 if EXT_AUTH == AAD_EXT_AUTH:
-    # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+    # Django Social Auth: https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
     # Azure Client ID
     SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY = get_from_azure_key_vault(
         secret_name=ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY
@@ -233,7 +233,7 @@ if EXT_AUTH == AAD_EXT_AUTH:
         # See: https://python-social-auth.readthedocs.io/en/latest/backends/azuread.html
         # Ensure that the Django default authentication backend 'django.contrib.auth.backends.ModelBackend' is before
         AUTHENTICATION_BACKENDS.append(CONST_AZURE_AUTH_BACKEND)
-        # Django Social Auth: https://python-social-auth-docs.readthedocs.io/en/latest/configuration/django.html
+        # Django Social Auth: https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
         # Enable JSONB field to store extracted extra data in PostgreSQL
         SOCIAL_AUTH_POSTGRES_JSONFIELD = True
         # Custom namespace for URL entries
@@ -293,9 +293,12 @@ if EXT_AUTH == AAD_EXT_AUTH:
         SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
         # A list of domain names to be white-listed. Any user with an email address on any of the allowed domains will
         # login successfully, otherwise AuthForbidden is raised.
-        SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS = [
-            get_from_environment_var(environment_var='FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS', raise_exception=True)
-        ]
+        _whitelisted_domains_str = get_from_environment_var(
+            environment_var='FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_WHITELISTED_DOMAINS',
+            raise_exception=True
+        )
+        _whitelisted_domains_list = [] if not _whitelisted_domains_str else str(_whitelisted_domains_str).split(',')
+        SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_WHITELISTED_DOMAINS = [str(d).strip() for d in _whitelisted_domains_list]
         # When disconnecting an account, it is recommended to trigger a token revoke action in the authentication
         # provider,  that way we inform it that the token won’t be used anymore and can be disposed. By default the
         # action is not triggered because it’s not a common option on every provider, and tokens should be disposed
@@ -493,6 +496,7 @@ AZURE_MEDIA_URL_EXPIRATION_SECS = get_from_environment_var(
 # Ensure that URLs for Azure Storage static files container are included in the Content Security Policy (CSP)
 CSP_SCRIPT_SRC = CSP_SCRIPT_SRC + (STATIC_URL,)
 CSP_DEFAULT_SRC = CSP_DEFAULT_SRC + (STATIC_URL,)
+CSP_STYLE_SRC = CSP_STYLE_SRC + (STATIC_URL,)
 CSP_FONT_SRC = CSP_FONT_SRC + (STATIC_URL,)
 
 
@@ -538,3 +542,16 @@ secret_email_host_password = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FD
 # Azure Key Vault has priority, so overwrite any previous setting (e.g. from environment variable or configuration file)
 if secret_email_host_password:
     EMAIL_HOST_PASSWORD = secret_email_host_password
+
+
+# Axes login attempt throttling client IP detection settings
+# Note: HTTP_X_FORWARDED_FOR cannot be used because it contains not just the IP but also the port [1], which causes the
+# django-ipware module to reject it [2]. 'HTTP_X_CLIENT_IP' has been observed in Azure proxy requests to contain just
+# the IP address, and not the port [2].
+# [1] https://docs.microsoft.com/en-us/azure/application-gateway/how-application-gateway-works#modifications-to-the-request
+# [2] https://fdpapp.atlassian.net/browse/FDAB-166
+# The names of request.META attributes as a tuple of strings to check to get the client IP address
+# See: https://django-axes.readthedocs.io/en/latest/4_configuration.html#configuring-reverse-proxies
+AXES_META_PRECEDENCE_ORDER = (
+    'HTTP_X_CLIENT_IP',
+)

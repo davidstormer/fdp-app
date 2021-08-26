@@ -34,4 +34,29 @@ Tests intended for the Microsoft Azure configuration with both Azure Active Dire
 
 Finally, tests intended for the Microsoft Azure configuration with only the Azure Active Directory authentication backend supported, can be run with: `python manage.py test --settings=fdp.configuration.test.test_azure_only_settings`
 
+## Logging levels
+By default, informational messages are logged to the DEBUG log level but are not printed to the console. To direct 
+them to the console use the `FDP_TESTS_LOGGING_VERBOSITY` environment variable.
+
+``` bash
+export FDP_TESTS_LOGGING_VERBOSITY=0
+export FDP_TESTS_LOGGING_VERBOSITY=1
+export FDP_TESTS_LOGGING_VERBOSITY=2
+```
+
+### Level '0' (or unset)
+Do nothing, use the existing logger configurations.
+
+### Level '1'
+Show additional context debug messages from tests.py files while running tests. E.g. "Starting
+person changing ..." This logger sets the level to DEBUG and filters messages to only show log messages coming 
+from tests.py file (i.e. tests modules). Note that non-tests messages of level WARNING and above will still be 
+printed to the console, per the default behavior of Python loggers with no explicit destination [1].
+
+- [1] https://docs.python.org/3/howto/logging.html#advanced-logging-tutorial
+
+### Level '2'
+Show all messages of level DEBUG and up coming from any module whatever. I.e. firehose mode.
+
+## Further reading
 For more information on writing and running tests in Django, see: [https://docs.djangoproject.com/en/3.2/topics/testing/overview/](https://docs.djangoproject.com/en/3.2/topics/testing/overview/)

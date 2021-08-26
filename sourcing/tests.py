@@ -6,6 +6,9 @@ from core.models import Person
 from supporting.models import ContentIdentifierType, Allegation
 from .models import Attachment, Content, ContentCase, ContentPerson, ContentIdentifier, ContentPersonAllegation, \
     ContentPersonPenalty
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SourcingTestCase(AbstractTestCase):
@@ -57,7 +60,7 @@ class SourcingTestCase(AbstractTestCase):
                 name=name,
                 for_admin_only=confidential[self._for_admin_only_key],
                 for_host_only=confidential[self._for_host_only_key],
-                file='{b}{f}'.format(b=AbstractUrlValidator.ATTACHMENT_BASE_URL, f='dummy{i}.txt'.format(i=i))
+                file='{b}{f}'.format(b=AbstractUrlValidator.ATTACHMENT_BASE_URL, f='dummy{i}.pdf'.format(i=i))
             )
             self._confidentials[i][self._pk_key] = attachment.pk
             if confidential[self._has_fdp_org_key]:
@@ -763,7 +766,7 @@ class SourcingTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(
+        logger.debug(
             _('\nStarting test for Sourcing Data Admin changelist, create instance, change instance, delete instance '
               'and history views for all permutations of user roles, confidentiality levels and relevant models')
         )
@@ -773,7 +776,7 @@ class SourcingTestCase(AbstractTestCase):
         self.__test_attachment_admin_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_admin_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_identifier_admin_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
-        print(_('\nSuccessfully finished test for Sourcing Data Admin changelist, create instance, change instance, '
+        logger.debug(_('\nSuccessfully finished test for Sourcing Data Admin changelist, create instance, change instance, '
                 'delete instance and history views for all permutations of user roles, confidentiality levels and '
                 'relevant models\n\n'))
 
@@ -783,10 +786,10 @@ class SourcingTestCase(AbstractTestCase):
 
         :return: Nothing
         """
-        print(_('\nStarting test for Download Attachment view for all permutations of user roles and'
+        logger.debug(_('\nStarting test for Download Attachment view for all permutations of user roles and'
                 ' confidentiality levels'))
         fdp_org = FdpOrganization.objects.create(name='FdpOrganizationDlAtt1')
         other_fdp_org = FdpOrganization.objects.create(name='FdpOrganizationDlAtt2')
         self.__test_download_attachment_view(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
-        print(_('\nSuccessfully finished test for Download Attachment view for all permutations of user roles and '
+        logger.debug(_('\nSuccessfully finished test for Download Attachment view for all permutations of user roles and '
                 'confidentiality levels\n\n'))

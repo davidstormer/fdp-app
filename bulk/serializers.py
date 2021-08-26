@@ -1,16 +1,12 @@
 from django.utils.translation import ugettext_lazy as _
-from django.utils.text import slugify
-from django.utils.html import urlize
-from django.utils.timezone import now
 from django.db.models import ForeignKey, OneToOneField, ManyToManyField, IntegerField, DecimalField
 from django.core.exceptions import ValidationError
-from django.conf import settings
 #: TODO: Confidentliaty filtering
 #: TODO from inheritable.models import Confidentiable
 from .models import BulkImport
-from inheritable.models import AbstractFileValidator, AbstractUrlValidator, AbstractConfiguration, AbstractDateValidator
+from inheritable.models import AbstractConfiguration, AbstractDateValidator
 from core.models import Grouping, GroupingAlias, GroupingRelationship, Person, PersonAlias, PersonContact, \
-    PersonIdentifier, PersonTitle, PersonGrouping, Incident, PersonIncident, PersonPhoto, PersonPayment
+    PersonIdentifier, PersonTitle, PersonGrouping, Incident, PersonIncident, PersonPayment
 from sourcing.models import Content, ContentIdentifier, ContentCase, ContentPerson, ContentPersonAllegation, \
     ContentPersonPenalty, Attachment
 from supporting.models import County, GroupingRelationshipType, PersonIdentifierType, Trait, Title, IncidentTag, \
@@ -21,12 +17,6 @@ from rest_framework.fields import empty
 from reversion.revisions import create_revision
 from datetime import datetime
 from json import dumps as json_dumps
-from re import compile as re_compile
-from urllib.request import urlretrieve
-from urllib.parse import urlparse
-from os.path import exists as path_exists, basename as path_basename, dirname as path_dirname
-from os import makedirs as os_makedirs
-from errno import EEXIST
 from decimal import Decimal, InvalidOperation
 
 
@@ -263,170 +253,6 @@ class FdpModelSerializer(ModelSerializer):
                 # only one model instance will be stored
                 else:
                     self._validated_data[validated_data_key] = matched_instance.pk
-
-    @staticmethod
-    def _format_phone_number(unformatted_phone_number):
-        """ Formats a phone number so that it includes only digits.
-
-        :param unformatted_phone_number: Unformatted phone number that should be formatted.
-        :return: Formatted phone number.
-        """
-        return ''.join(filter(str.isdigit, str(unformatted_phone_number)))
-
-    @staticmethod
-    def _get_links_from_string(str_with_links):
-        """ Retrieves list of links from a string.
-
-        :param str_with_links: String from which to retrieve links.
-        :return: List of links that were found in string.
-        """
-        # list of links retrieved from the string
-        list_of_links = []
-        # first split the string by commas
-        split_by_commas = str_with_links.split(',')
-        # next remove out round parentheses
-        for split_by_comma in split_by_commas:
-            mapping_table = str.maketrans(dict.fromkeys('()'))
-            parentheses_removed_str = split_by_comma.translate(mapping_table)
-            # use Django's urlize method to wrap links in <a href="...">
-            # see: https://docs.djangoproject.com/en/3.1/ref/templates/builtins/#urlize
-            links_wrapped_in_a_href = urlize(text=parentheses_removed_str)
-            # use regular expressions to identify <a href="..." wrappers
-            regex_links = re_compile(r'<a\shref=(["\'])(.*?)\1')
-            # matches will be in form of: [(", link1,), (", link2,), ...]
-            list_of_matches = regex_links.findall(links_wrapped_in_a_href)
-            # at least some matches were found
-            if list_of_matches:
-                # for each tuple in the list of matches
-                for match_tuple in list_of_matches:
-                    # for each tuple element in a tuple match
-                    # tuple elements will include single or double quotes, and the value of the HREF attribute
-                    list_of_links.extend(
-                        [tuple_element for tuple_element in match_tuple if tuple_element not in ['\'', '"']]
-                    )
-        return list_of_links
-
-    @staticmethod
-    def __create_directories_for_path(full_path):
-        """ Create all directories defined in a full path, if they do not yet exist.
-
-        Full path will include the file name.
-
-        :param full_path: Full path including the file name for which to create directories.
-        :return: Nothing.
-        """
-        # the directories for the full path may not exist
-        if not path_exists(path_dirname(full_path)):
-            # try and create all directories required for the full path
-            try:
-                os_makedirs(path_dirname(full_path))
-            # Check for race condition
-            except OSError as exc:
-                if exc.errno != EEXIST:
-                    raise
-
-    @classmethod
-    def __download_files_from_links_without_auth(
-            cls, links, external_id, root_path, base_path, extension_validator
-    ):
-        """ Downloads files from a list of links without requiring any authentication.
-
-        :param links: List of links, each containing a file to download.
-        :param external_id: ID of containing record for files outside of the Fdp database.
-        :param root_path: Root path on server into which files should be downloaded, such as the media root.
-        :param base_path: Base path on server that will be appended to root path into which files should be downloaded,
-        such as the person photos base path, or the attachments base path.
-        :param extension_validator: Method that takes a single value parameter to validate the file type that is
-        downloaded.
-        :return: List of relative paths on the server for the files that were downloaded.
-        """
-        timestamp = now()
-        # convert external ID to slug, since it will be a folder name
-        external_id = slugify(external_id)
-        unique_padding = 0
-        relative_paths = []
-        for i, download_link in enumerate(links, start=0):
-            # parse the download link
-            parsed_url = urlparse(download_link)
-            # name of file in download link
-            filename = path_basename(parsed_url.path)
-            # create an instance of a dummy file, so that the default validator can be used (e.g. to validate its file
-            # extension)
-            file_to_validate = cls.FileToValidate()
-            file_to_validate.name = filename
-            # validate file type
-            extension_validator(value=file_to_validate)
-            # find a unique folder path that does not yet exist
-            full_path = None
-            relative_path = None
-            while full_path is None or path_exists(full_path):
-                unique_padding += 1
-                # relative path
-                relative_path = '{base_path}{id}/{counter}/{yr}/{mon}/{day}/{hr}/{min}/{sec}/{filename}'.format(
-                    base_path=base_path,
-                    id=external_id,
-                    counter=i + unique_padding,
-                    yr=timestamp.year,
-                    mon=timestamp.month,
-                    day=timestamp.day,
-                    hr=timestamp.hour,
-                    min=timestamp.minute,
-                    sec=timestamp.second,
-                    filename=filename
-                )
-                # full path when relative and root paths are joined
-                full_path = AbstractFileValidator.join_relative_and_root_paths(
-                    relative_path=relative_path,
-                    root_path=root_path
-                )
-            # verify that path is a real path (i.e. no directory traversal takes place)
-            # will raise exception if path is not a real path
-            AbstractFileValidator.check_path_is_expected(
-                relative_path=relative_path,
-                root_path=root_path,
-                expected_path_prefix=full_path,
-                err_msg=_('File path may contain directory traversal'),
-                err_cls=ValidationError
-            )
-            # create any missing directories in the full path
-            cls.__create_directories_for_path(full_path=full_path)
-            # full path now exists, so download the file
-            urlretrieve(url=download_link, filename=full_path)
-            # append relative path for file
-            relative_paths.append(relative_path)
-        return relative_paths
-
-    @classmethod
-    def _download_person_photos_from_links_without_auth(cls, links, external_person_id):
-        """ Downloads person photos for a person from a list of links without requiring any authentication.
-
-        :param links: List of links, each containing a photo to download.
-        :param external_person_id: ID of person record outside of the Fdp database.
-        :return: List of relative paths on the server for the person photos that were downloaded.
-        """
-        return cls.__download_files_from_links_without_auth(
-            links=links,
-            external_id=external_person_id,
-            root_path=settings.MEDIA_ROOT,
-            base_path=AbstractUrlValidator.PERSON_PHOTO_BASE_URL,
-            extension_validator=AbstractFileValidator.validate_photo_file_extension
-        )
-
-    @classmethod
-    def _download_attachment_files_from_links_without_auth(cls, links, external_content_id):
-        """ Downloads attachment files for a content from a list of links without requiring any authentication.
-
-        :param links: List of links, each containing an attachment file to download.
-        :param external_content_id: ID of content record outside of the Fdp database.
-        :return: List of relative paths on the server for the attachment files that were downloaded.
-        """
-        return cls.__download_files_from_links_without_auth(
-            links=links,
-            external_id=external_content_id,
-            root_path=settings.MEDIA_ROOT,
-            base_path=AbstractUrlValidator.ATTACHMENT_BASE_URL,
-            extension_validator=AbstractFileValidator.validate_attachment_file_extension
-        )
 
     @staticmethod
     def _convert_string_to_date(date_str_to_convert):
@@ -758,16 +584,6 @@ class FdpModelSerializer(ModelSerializer):
             # replace the decimal value
             self.initial_data[decimal_field] = decimal_value
 
-    class FileToValidate:
-        """ Dummy class used to simulate a FieldFile object so that validation can be performed on key parts of it
-        during import.
-
-        An example is to include the filename as an attribute of an instance of this class, so that the default
-        validator methods can be used for person photos and attachments.
-
-        """
-        pass
-
 
 class AbstractModelWithAliasesSerializer(FdpModelSerializer):
     """ Abstract serializer from which all model serializers inherit that also include aliases in the import.
@@ -1075,20 +891,6 @@ class GroupingAirTableSerializer(AbstractModelWithAliasesSerializer):
     #: Key used to reference in the _validated_data dictionary, the list of counties to add for a grouping.
     __split_counties_key = 'split_counties'
 
-    def __validate_phone_number(self):
-        """ Validates the phone number field.
-
-        If validated, places it back into the phone number field.
-
-        :return: Nothing.
-        """
-        # strip out all invalid characters from the phone number
-        phone_number_field = 'phone_number'
-        if phone_number_field in self.initial_data:
-            self.initial_data[phone_number_field] = self._format_phone_number(
-                unformatted_phone_number=self.initial_data[phone_number_field]
-            )
-
     def __validate_belongs_to_grouping(self):
         """ Validates the belongs to grouping field.
 
@@ -1163,7 +965,6 @@ class GroupingAirTableSerializer(AbstractModelWithAliasesSerializer):
         :param raise_exception: True if an exception should be raised during validation.
         :return: True if record is valid, false if record is invalid.
         """
-        self.__validate_phone_number()
         # convert null address to blank
         self._convert_null_to_blank(field_name='address')
         # convert null email to blank
@@ -1229,7 +1030,7 @@ class GroupingAirTableSerializer(AbstractModelWithAliasesSerializer):
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = FdpModelSerializer.excluded_fields + [
-            'belongs_to_grouping', 'cease_date', 'code', 'counties', 'description', 'inception_date', 'is_inactive'
+            'belongs_to_grouping', 'cease_date', 'counties', 'description', 'inception_date', 'is_inactive'
         ]
 
 
@@ -1247,8 +1048,6 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         :person_title (str): Title which person holds, matched by unique title name or added if it does not exist.
         :unsplit_traits (str): Trait names separated by commas.
         :unsplit_groupings (str): External grouping IDs separated by commas.
-        :unsplit_person_photos (str): Person photo links separated by commas, from which to download without
-        authentication.
     """
     birth_date_range_start = CharField(
         required=False,
@@ -1310,15 +1109,6 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         label=_('External grouping IDs separated by commas')
     )
 
-    unsplit_person_photos = CharField(
-        required=False,
-        allow_null=True,
-        label=_('Person photo links separated by commas, from which to download without authentication')
-    )
-
-    #: Key used to reference in the _validated_data dictionary, the phone number for the person contact.
-    __phone_number_key = 'phone_number_formatted'
-
     #: Key used to reference in the _validated_data dictionary, the email for the person contact.
     __email_key = 'email_formatted'
 
@@ -1337,9 +1127,6 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
     #: Key used to reference in the _validated_data dictionary, the list of groupings to add for a person.
     __split_groupings_key = 'split_groupings'
 
-    #: Key used to reference in the _validated_data dictionary, the list of person photos to add for a person.
-    __split_person_photos_key = 'split_person_photos'
-
     def __validate_is_law_enforcement_checkbox(self):
         """ Validates the Is Law Enforcement checkbox field.
 
@@ -1349,20 +1136,6 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
             unvalidated_checkbox_field='law_enforcement_checkbox',
             validated_checkbox_field='is_law_enforcement'
         )
-
-    def __validate_phone_number(self):
-        """ Validates the phone number field.
-
-        If validated, prepares it for the corresponding Person Contact instance.
-
-        :return: Nothing.
-        """
-        # phone number
-        unformatted_phone_number = self.validated_data.pop('phone_number', '')
-        if unformatted_phone_number:
-            self._validated_data[self.__phone_number_key] = self._format_phone_number(
-                unformatted_phone_number=unformatted_phone_number
-            )
 
     def __validate_email(self):
         """ Validates the email field.
@@ -1449,32 +1222,6 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
                         validated_data_key=self.__split_groupings_key
                     )
 
-    def __validate_person_photos(self):
-        """ Validates the person photos field.
-
-        If validated, prepares them for the corresponding Person Photo instances.
-
-        :return: Nothing.
-        """
-        # split person photos
-        unsplit_person_photos_key = 'unsplit_person_photos'
-        unsplit_person_photos = self.validated_data.pop(unsplit_person_photos_key, '')
-        if unsplit_person_photos:
-            # retrieve list of links from a string
-            person_photo_links = self._get_links_from_string(str_with_links=unsplit_person_photos)
-            # some person photo links exist for this record
-            if person_photo_links:
-                undefined = 'undefined'
-                # external id
-                external_person_id = self.validated_data.get('external_id', undefined)
-                # download the photos from links without authentication
-                person_photo_paths = self._download_person_photos_from_links_without_auth(
-                    links=person_photo_links,
-                    external_person_id=undefined if not external_person_id else external_person_id
-                )
-                if person_photo_paths:
-                    self._validated_data[self.__split_person_photos_key] = person_photo_paths
-
     def is_valid(self, raise_exception=False):
         """ Validates for optional custom attributes.
 
@@ -1491,13 +1238,11 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         # record is valid
         if is_valid:
             self.__validate_is_law_enforcement_checkbox()
-            self.__validate_phone_number()
             self.__validate_email()
             self.__validate_identifier_and_identifier_type()
             self.__validate_title()
             self.__validate_traits()
             self.__validate_groupings()
-            self.__validate_person_photos()
         return is_valid
 
     def create(self, validated_data):
@@ -1510,14 +1255,13 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         self.original_validated_data = validated_data.copy()
         # pop custom fields from validated data
         split_aliases = validated_data.pop(self._split_aliases_key, [])
-        phone_number = validated_data.pop(self.__phone_number_key, '')
+        phone_number = validated_data.pop('phone_number', '') or ''
         email = validated_data.pop(self.__email_key, '')
         identifier_type = validated_data.pop(self.__identifier_type_key, '')
         identifier = validated_data.pop(self.__identifier_key, '')
         title_name = validated_data.pop(self.__title_instance_name_key, '')
         split_traits = validated_data.pop(self.__split_traits_key, [])
         split_grouping_ids = validated_data.pop(self.__split_groupings_key, [])
-        split_person_photo_paths = validated_data.pop(self.__split_person_photos_key, [])
         # instance has been added into bulk import table
         instance = super(PersonAirTableSerializer, self).create(validated_data=validated_data)
         # optionally create person aliases
@@ -1573,11 +1317,6 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
             person_grouping = PersonGrouping(person=instance, grouping=grouping, is_inactive=False)
             person_grouping.full_clean()
             person_grouping.save()
-        # optionally create person photos
-        for person_photo_path in split_person_photo_paths:
-            person_photo = PersonPhoto(person=instance, photo=person_photo_path)
-            person_photo.full_clean()
-            person_photo.save()
         return instance
 
     class Meta:
@@ -1806,8 +1545,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
         :type (str): Content type matched by unique name, added if it does not exist.
         :unsplit_incidents (str): External incident IDs separated by commas.
         :unsplit_persons (str): External person IDs separated by commas.
-        :unsplit_attachment_files (str): Attachment file links separated by commas, from which to download without
-        authentication.
 
     """
     identifier_type = CharField(
@@ -1864,12 +1601,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
         label=_('External person IDs separated by commas')
     )
 
-    unsplit_attachment_files = CharField(
-        required=False,
-        allow_null=True,
-        label=_('Attachment file links separated by commas, from which to download without authentication')
-    )
-
     #: Key used to reference in the _validated_data dictionary, case opened date for content.
     __case_opened_date_key = 'case_opened'
 
@@ -1893,9 +1624,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
 
     #: Key used to reference in the _validated_data dictionary, the list of persons to link to a content.
     __split_persons_key = 'split_persons'
-
-    #: Key used to reference in the _validated_data dictionary, the list of attachment files to add for a content.
-    __split_attachment_files_key = 'split_attachment_files'
 
     def __validate_identifier_and_identifier_type(self):
         """ Validates the identifier and identifier type fields.
@@ -2015,32 +1743,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
                         validated_data_key=self.__split_persons_key
                     )
 
-    def __validate_attachment_files(self):
-        """ Validates the attachment files field.
-
-        If validated, prepares them for the corresponding Attachment instances.
-
-        :return: Nothing.
-        """
-        # split attachment files
-        unsplit_attachment_files_key = 'unsplit_attachment_files'
-        unsplit_attachment_files = self.validated_data.pop(unsplit_attachment_files_key, '')
-        if unsplit_attachment_files:
-            # retrieve list of links from a string
-            attachment_file_links = self._get_links_from_string(str_with_links=unsplit_attachment_files)
-            # some attachment file links exist for this record
-            if attachment_file_links:
-                undefined = 'undefined'
-                # external id
-                external_content_id = self.validated_data.get('external_id', undefined)
-                # download the files from links without authentication
-                attachment_file_paths = self._download_attachment_files_from_links_without_auth(
-                    links=attachment_file_links,
-                    external_content_id=undefined if not external_content_id else external_content_id
-                )
-                if attachment_file_paths:
-                    self._validated_data[self.__split_attachment_files_key] = attachment_file_paths
-
     def is_valid(self, raise_exception=False):
         """ Validates for optional custom attributes.
 
@@ -2048,6 +1750,7 @@ class ContentAirTableSerializer(FdpModelSerializer):
         :return: True if record is valid, false if record is invalid.
         """
         self._convert_null_to_blank(field_name='description')
+        self._convert_null_to_blank(field_name='name')
         # validate the given the content type by its name, and add it as a model instance if it does not already
         # exist, and then place the value into self.initial_data
         self._validate_foreign_key_by_name(
@@ -2056,11 +1759,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
             create_unknown=False,
             raise_exception=False
         )
-        # content must have a name
-        content_name_field = 'name'
-        content_name = self.initial_data.get(content_name_field, '')
-        if not content_name:
-            self.initial_data[content_name_field] = str(_('Unnamed'))
         # validate record
         is_valid = super(ContentAirTableSerializer, self).is_valid(raise_exception=raise_exception)
         # record is valid
@@ -2072,7 +1770,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
             self.__validate_case_court()
             self.__validate_incidents()
             self.__validate_persons()
-            self.__validate_attachment_files()
         return is_valid
 
     def create(self, validated_data):
@@ -2092,7 +1789,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
         court = validated_data.pop(self.__court_key, '')
         split_incident_ids = validated_data.pop(self.__split_incidents_key, [])
         split_person_ids = validated_data.pop(self.__split_persons_key, [])
-        split_attachment_file_paths = validated_data.pop(self.__split_attachment_files_key, [])
         # instance has been added into bulk import table
         instance = super(ContentAirTableSerializer, self).create(validated_data=validated_data)
         # optionally create content identifier
@@ -2151,12 +1847,6 @@ class ContentAirTableSerializer(FdpModelSerializer):
                 content_person = ContentPerson(content=instance, person=accessible_persons.get(pk=person_id))
                 content_person.full_clean()
                 content_person.save()
-        # optionally create attachments
-        for attachment_file_path in split_attachment_file_paths:
-            attachment = Attachment(file=attachment_file_path, name=path_basename(attachment_file_path))
-            attachment.full_clean()
-            attachment.save()
-            instance.attachments.add(attachment)
         return instance
 
     class Meta:

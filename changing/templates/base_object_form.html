@@ -1,5 +1,5 @@
 {% extends "common/fdp_base_site.html" %}
-{% load static %}
+{% load static compress %}
 
 {% block extrahead %}
     {{ block.super }}
@@ -13,4 +13,7 @@
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" />
     <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'changing/css/autocomplete.css' %}">
+    {% endcompress %}
 {% endblock %}
