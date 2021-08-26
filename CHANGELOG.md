@@ -2,6 +2,9 @@
 
 All releases will be logged in this file.
 
+## [2.0.0] - 2021-08-XX
+Major release
+
 ## [1.2.4] - 2021-07-26
 Field validation changes
 
