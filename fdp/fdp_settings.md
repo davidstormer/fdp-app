@@ -117,6 +117,16 @@ If no options are listed, the federated login page will be skipped, and the user
 
 To enable the requirement that each user agree to an end-user license agreement (EULA) before they can access any secured views, set `FDP_EULA_SPLASH_ENABLE=True`. By default, this feature is disabled.
 
+## Wholesale import tool
+
+The default list of models that are whitelisted for use through the wholesale import tool can be modified by specifying a new list of model names: 
+
+    FDP_WHOLESALE_WHITELISTED_MODELS = ['Attachment', 'Content', 'ContentIdentifier', ...]
+
+The default list of fields that are blacklisted from use through the wholesale import tool can be modified by specifying a new list of field names: 
+
+    FDP_WHOLESALE_BLACKLISTED_FIELDS = ['is_archived', ...]
+
 ## FDP Settings for Azure
 
 For hosting in Microsoft Azure, it is recommended that the most sensitive settings are stored in Microsoft Azure Key Vault as Secrets. Less sensitive settings can be stored in the Azure App Service as Application Settings. The following is one possible configuration:
