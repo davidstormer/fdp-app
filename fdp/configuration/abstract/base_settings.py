@@ -224,6 +224,8 @@ INSTALLED_APPS = [
     'profiles',
     # data model organizing user verification of data
     'verifying',
+    # allows users to add and update large volumes of data through a simplified and automated process
+    'wholesale',
 ]
 
 
