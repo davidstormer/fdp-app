@@ -1,0 +1,27 @@
+/* help text below the field, matching Django 3.2 styling */
+span.helptext {
+    display: block;
+    font-size: 11px;
+    color: #999;
+    margin-top: 1em;
+}
+
+label {
+    /* all labels are styled as "required", matching Django 3.2 styling */
+    font-weight: bold;
+    color: #333;
+    /* label pushed corresponding field over to the right */
+    margin-right: 1em;
+}
+/* generate button */
+input[type="submit"] {
+    margin-top: 1em;
+}
+
+/* notes portion */
+.notes h3 { margin-top: 2em; margin-bottom: 1em; }
+.notes p span { line-height: 200%; vertical-align: top; }
+.do { color: #45A26D; }
+.dont { color: #ba2121; }
+i.do, i.dont { font-weight: bold; font-size: 200%; margin-right: 0.5em; }
+.notes p span em { font-family: Courier New; font-style: normal; font-weight: bold; }

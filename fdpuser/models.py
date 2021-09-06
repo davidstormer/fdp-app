@@ -421,6 +421,16 @@ class FdpUser(AbstractUser):
         """
         return user.is_active and (user.is_administrator or user.is_superuser)
 
+    @staticmethod
+    def can_view_host_admin(user):
+        """ Checks whether a user can view host and admin only data and access corresponding functionality.
+
+        :param user: User to check.
+        :return: True if user can view host and admin only data, and access corresponding functionality,
+        false otherwise.
+        """
+        return user.is_active and ((user.is_administrator and user.is_host) or user.is_superuser)
+
     def get_accessible_users(self):
         """ Retrieves a filtered queryset of users that the user can access.
 
