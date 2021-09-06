@@ -1,0 +1,59 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress %}
+
+{% block extrahead %}
+    {{ block.super }}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'wholesale/css/wholesale_import_logs.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a>
+    &rsaquo;
+    <a href="{% url 'wholesale:index' %}">{% translate 'Wholesale' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+{% block content %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>{% translate 'Link' %}</th>
+                <th>{% translate 'Started' %}</th>
+                <th>{% translate 'By' %}</th>
+                <th>{% translate 'Type' %}</th>
+                <th>{% translate 'Models' %}</th>
+                <th>{% translate 'Errors' %}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for wholesale_import in object_list %}
+            <tr>
+                <td><a href="{% url 'wholesale:log' wholesale_import.pk %}">#{{ wholesale_import.pk }}</a></td>
+                <td>{{ wholesale_import.started_timestamp|date }}</td>
+                <td>{{ wholesale_import.user }}</td>
+                <td>{{ wholesale_import.get_action_display }}</td>
+                <td>{{ wholesale_import.import_models_as_str }}</td>
+                <td>{% if wholesale_import.has_errors %}<i class="err fas fa-exclamation-circle"></i>{% endif %}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="6">{% translate 'There are no imports.' %}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

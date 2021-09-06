@@ -8,7 +8,9 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
 from django.utils._os import safe_join
 from fdp.configuration.abstract.constants import CONST_AZURE_AD_PROVIDER, CONST_MAX_ATTACHMENT_FILE_BYTES, \
-    CONST_MAX_PERSON_PHOTO_FILE_BYTES, CONST_SUPPORTED_ATTACHMENT_FILE_TYPES, CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES
+    CONST_MAX_PERSON_PHOTO_FILE_BYTES, CONST_SUPPORTED_ATTACHMENT_FILE_TYPES, CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES, \
+    CONST_WHOLESALE_WHITELISTED_MODELS, CONST_WHOLESALE_BLACKLISTED_FIELDS, CONST_MAX_WHOLESALE_FILE_BYTES, \
+    CONST_SUPPORTED_WHOLESALE_FILE_TYPES
 from datetime import date
 from os import path
 from cryptography.fernet import Fernet
@@ -62,6 +64,15 @@ class Metable(models.Model):
         :return: Model for foreign key or one-to-one.
         """
         return foreign_key.remote_field.model
+
+    @classmethod
+    def get_verbose_name(cls):
+        """ Retrieves the localized name that represents a single instance of the model.
+
+        :return: String representing a single instance of the model.
+        """
+        meta = getattr(cls, '_meta')
+        return meta.verbose_name
 
     @classmethod
     def get_verbose_name_plural(cls):
@@ -1050,6 +1061,9 @@ class AbstractFileValidator(models.Model):
     # Maximum length for the VARCHAR(...) file field storing the attachment path and filename
     MAX_ATTACHMENT_FILE_LEN = settings.MAX_NAME_LEN
 
+    # Maximum length for the VARCHAR(...) file field storing the wholesale import path and filename
+    MAX_WHOLESALE_FILE_LEN = settings.MAX_NAME_LEN
+
     @staticmethod
     def get_megabytes_from_bytes(num_of_bytes):
         """ Converts bytes into megabytes.
@@ -1077,11 +1091,37 @@ class AbstractFileValidator(models.Model):
     def get_file_name(file_path):
         """ Retrieves the file name, without the base url, for a file path.
 
-        :param file_path: File path for which to retireve file name.
+        :param file_path: File path for which to retrieve file name.
         :return: File name, or blank if not relevant
         """
         file_name = path.basename(file_path) if file_path else ''
         return file_name
+
+    @staticmethod
+    def validate_wholesale_file_extension(value):
+        """ Checks that a user uploaded wholesale import file extension is one that is supported by the system.
+
+        :param value: User uploaded wholesale import file whose extension should be checked.
+        :return: Nothing.
+        """
+        file_name, extension = path.splitext(value.name)
+        extension = extension.lower()
+        if extension not in ['.{x}'.format(x=x[1]) for x in AbstractConfiguration.supported_wholesale_file_types()]:
+            raise ValidationError(_('%(file)s is not a supported file type'), params={'file': value.name})
+
+    @staticmethod
+    def validate_wholesale_file_size(value):
+        """ Checks that a user uploaded wholesale import file size does not exceed allowable maximum.
+
+        :param value: User uploaded wholesale import file whose size should be checked.
+        :return: Nothing.
+        """
+        max_size = AbstractConfiguration.max_wholesale_file_bytes()
+        if value.size > max_size:
+            raise ValidationError(
+                _('%(file)s is %(size)s bytes exceeding the maximum allowable size of %(max)s bytes'),
+                params={'file': value.name, 'size': value.size, 'max': max_size}
+            )
 
     @staticmethod
     def validate_attachment_file_extension(value):
@@ -1203,6 +1243,27 @@ class AbstractUrlValidator(models.Model):
         There are no attributes.
 
     """
+    # leftmost section of URLs used in the context of wholesale import tool
+    WHOLESALE_BASE_URL = 'wholesale/'
+
+    # relative URL for the wholesale import tool home page from which user selects their usage of the tool
+    WHOLESALE_HOME_URL = '{b}home/'.format(b=WHOLESALE_BASE_URL)
+
+    # relative URL for the wholesale import tool page from which to generate templates
+    WHOLESALE_TEMPLATE_URL = '{b}template/'.format(b=WHOLESALE_BASE_URL)
+
+    # leftmost section of URLs used in the context of importing data through the wholesale import tool
+    WHOLESALE_IMPORT_BASE_URL = '{b}import/'.format(b=WHOLESALE_BASE_URL)
+
+    # relative URL for the wholesale import tool page from which to import data
+    WHOLESALE_START_IMPORT_URL = '{b}start/'.format(b=WHOLESALE_IMPORT_BASE_URL)
+
+    # relative URL for the wholesale import tool page from which to review records for a specific import
+    WHOLESALE_LOG_URL = '{b}log/'.format(b=WHOLESALE_BASE_URL)
+
+    # relative URL for the wholesale import tool page from which to review previous imports
+    WHOLESALE_LOGS_URL = '{b}logs/'.format(b=WHOLESALE_BASE_URL)
+
     # leftmost section of URLs used in the context of data management wizard
     CHANGING_BASE_URL = 'changing/'
 
@@ -3011,6 +3072,26 @@ class AbstractConfiguration(models.Model):
         return getattr(settings, 'DATA_WIZARD_STATUS_CHECK_SECONDS', 1)
 
     @staticmethod
+    def max_wholesale_file_bytes():
+        """ Checks the necessary setting to retrieve the maximum number of bytes that a user-uploaded file can have
+        for an instance of the WholesaleImport model.
+
+        :return: Number of bytes.
+        """
+        return getattr(settings, 'FDP_MAX_WHOLESALE_FILE_BYTES',  CONST_MAX_WHOLESALE_FILE_BYTES)
+
+    @staticmethod
+    def supported_wholesale_file_types():
+        """ Checks the necessary setting to retrieve a list of tuples that define the types of user-uploaded files that
+        are supported for an instance of the WholesaleImport model. Each tuple has two items: the first is a
+        user-friendly short description of the supported file type; the second is the expected extension of the
+        supported file type.
+
+        :return: List of tuples, each with two items.
+        """
+        return getattr(settings, 'FDP_SUPPORTED_WHOLESALE_FILE_TYPES',  CONST_SUPPORTED_WHOLESALE_FILE_TYPES)
+
+    @staticmethod
     def max_attachment_file_bytes():
         """ Checks the necessary setting to retrieve the maximum number of bytes that a user-uploaded file can have
         for an instance of the Attachment model.
@@ -3047,6 +3128,24 @@ class AbstractConfiguration(models.Model):
         :return: List of tuples, each with two items.
         """
         return getattr(settings, 'FDP_SUPPORTED_PERSON_PHOTO_FILE_TYPES',  CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES)
+
+    @staticmethod
+    def whitelisted_wholesale_models():
+        """ Checks the necessary setting to retrieve a list of names of models that are whitelisted for use through
+        the wholesale import tool.
+
+        :return: List of model names.
+        """
+        return getattr(settings, 'FDP_WHOLESALE_WHITELISTED_MODELS', CONST_WHOLESALE_WHITELISTED_MODELS)
+
+    @staticmethod
+    def blacklisted_wholesale_fields():
+        """ Checks the necessary setting to retrieve a list of names of fields that are blacklisted from use through
+        the wholesale import tool.
+
+        :return: List of field names.
+        """
+        return getattr(settings, 'FDP_WHOLESALE_BLACKLISTED_FIELDS', CONST_WHOLESALE_BLACKLISTED_FIELDS)
 
     class Meta:
         abstract = True

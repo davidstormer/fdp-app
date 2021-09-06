@@ -43,6 +43,7 @@ rest_urlpatterns = [
     path('', include('profiles.urls', namespace='profiles')),
     path('', include('core.urls', namespace='core')),
     path('', include('sourcing.urls', namespace='sourcing')),
+    path('', include('wholesale.urls', namespace='wholesale')),
     # Django Data Wizard: https://github.com/wq/django-data-wizard
     path('datawizard/', include('data_wizard.urls')),
 ]

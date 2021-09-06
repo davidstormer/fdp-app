@@ -24,13 +24,9 @@
     margin-right: 0.25em;
 }
 
-.column.content i { color: #45A26D; }
-.column.incidents i { color: #ba2121; }
-.column.persons i { color: #666; }
-.column.groupings i { color: #E4BF60; }
-.column.wholesale i { color: #C4547F; }
-.column.advanced i { color: #4E579D; }
-.column.profiles i { color: #9F621C; }
+.column.template i { color: #45A26D; }
+.column.import i { color: #C4547F; }
+.column.log i { color: #ADBD39; }
 
 /* For mobile users (width <= 480px), apply full width */
 @media only screen and (max-width: 640px) {
