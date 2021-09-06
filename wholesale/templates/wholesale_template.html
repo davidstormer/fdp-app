@@ -1,0 +1,64 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    {% compress js %}
+    <script src="{% static 'wholesale/js/wholesale_template.js' %}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" />
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'wholesale/css/wholesale_template.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a>
+    &rsaquo;
+    <a href="{% url 'wholesale:index' %}">{% translate 'Wholesale' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+{% block content %}
+
+<form action="{% url 'wholesale:template' %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="{% translate 'Generate' %}" />
+</form>
+
+<div class="notes">
+    <h3>{% translate 'Notes' %}</h3>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Feel free to <strong class="do">remove columns</strong>{% endblocktranslate %}</span></p>
+    <p><i class="dont fas fa-window-close"></i><span>{% blocktranslate %}Please <strong class="dont">don't reorder columns</strong>{% endblocktranslate %}</span></p>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Use <em>{{ delimiter }}</em> as the delimiter character and <em>{{ quotechar }}</em> as the quotechar character in <strong class="do">CSV templates</strong>{% endblocktranslate %}</span></p>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Use fields marked with <em>{{ external_id_suffix }}</em> to reference <strong class="do">external IDs</strong>{% endblocktranslate %}</span></p>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}References <strong class="do">by name</strong> for FKs, O2Os and M2Ms will be <strong class="do">automatically added</strong> if they do not exist{% endblocktranslate %}</span></p>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}FKs, O2Os and M2Ms can also be referenced by <strong class="do">their PK reference</strong>{% endblocktranslate %}</span></p>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Multiple M2Ms can placed into the <strong class="do">same column separated by commas</strong>{% endblocktranslate %}</span></p>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Include <strong class="do">internal or external PK columns during updates</strong> for every model{% endblocktranslate %}</span></p>
+    <p><i class="dont fas fa-window-close"></i><span>{% blocktranslate %}Please <strong class="dont">don't include internal PK columns during adds</strong> for any model{% endblocktranslate %}</span></p>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Use <em>{{ true_bools }}</em> for <strong class="do">true boolean</strong> values and <em>{{ false_bools }}</em> for <strong class="do">false boolean</strong> values{% endblocktranslate %}</span></p>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Use <em>{{ date_format }}</em> for <strong class="do">date</strong> values and <em>{{ datetime_format }}</em> for <strong class="do">datetime</strong> values, as defined in <a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">Python's documentation</a>{% endblocktranslate %}</span></p>
+</div>
+
+{% endblock %}
+
+{% block onready %}
+    {{ block.super }}
+    // initialize interface elements
+    Fdp.WholesaleTemplate.init();
+{% endblock %}
