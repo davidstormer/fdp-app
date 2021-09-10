@@ -1,0 +1,7727 @@
+[
+{
+    "model": "core.person",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Arthur Addams",
+        "birth_date_range_start": "1970-01-05",
+        "birth_date_range_end": "1970-01-05",
+        "is_law_enforcement": true,
+        "traits": [
+            4,
+            2,
+            13
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.person",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Edna Eddison",
+        "birth_date_range_start": null,
+        "birth_date_range_end": null,
+        "is_law_enforcement": true,
+        "traits": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.person",
+    "pk": 6774,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Benjamin Bradly",
+        "birth_date_range_start": "1989-04-17",
+        "birth_date_range_end": "1989-04-17",
+        "is_law_enforcement": true,
+        "traits": [
+            4,
+            2,
+            10
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.person",
+    "pk": 6775,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Christopher Carson",
+        "birth_date_range_start": "1953-09-22",
+        "birth_date_range_end": "1953-09-22",
+        "is_law_enforcement": true,
+        "traits": [
+            4,
+            2,
+            13
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.person",
+    "pk": 6895,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Deborah Darth",
+        "birth_date_range_start": null,
+        "birth_date_range_end": null,
+        "is_law_enforcement": true,
+        "traits": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Arthur Adams",
+        "person": 3
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Arty Adams",
+        "person": 3
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Arthur Adam",
+        "person": 3
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 92,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Ben Bradley",
+        "person": 6774
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 93,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Benny Bradley",
+        "person": 6774
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 94,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Benjamin Bradly",
+        "person": 6774
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 95,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Chris Carson",
+        "person": 6775
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 96,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Chris Carsen",
+        "person": 6775
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 97,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Christopher Carson",
+        "person": 6775
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 98,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Christofer Carson",
+        "person": 6775
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 99,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Cristofer Carson",
+        "person": 6775
+    }
+},
+{
+    "model": "core.personalias",
+    "pk": 100,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "The Big C",
+        "person": 6775
+    }
+},
+{
+    "model": "core.personphoto",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "person": 3,
+        "photo": "person/photo/2021/03/16/19/14/05/Middle_age_chief.png"
+    }
+},
+{
+    "model": "core.personphoto",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "person": 6774,
+        "photo": "person/photo/2021/03/24/18/18/52/White_Man_middle_age.png"
+    }
+},
+{
+    "model": "core.personphoto",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "person": 6775,
+        "photo": "person/photo/2021/03/24/18/19/43/Old_Chief.png"
+    }
+},
+{
+    "model": "core.personidentifier",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 1990,
+        "start_month": 2,
+        "start_day": 20,
+        "end_year": 2010,
+        "end_month": 3,
+        "end_day": 10,
+        "as_of": false,
+        "identifier": "763098",
+        "person_identifier_type": 4,
+        "person": 3
+    }
+},
+{
+    "model": "core.personidentifier",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2010,
+        "start_month": 3,
+        "start_day": 11,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "identifier": "2038691",
+        "person_identifier_type": 3,
+        "person": 3
+    }
+},
+{
+    "model": "core.personidentifier",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2018,
+        "start_month": 8,
+        "start_day": 19,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "identifier": "7620961",
+        "person_identifier_type": 3,
+        "person": 6774
+    }
+},
+{
+    "model": "core.personidentifier",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2010,
+        "start_month": 3,
+        "start_day": 11,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "identifier": "9820735",
+        "person_identifier_type": 3,
+        "person": 6775
+    }
+},
+{
+    "model": "core.persontitle",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 1995,
+        "start_month": 2,
+        "start_day": 1,
+        "end_year": 2001,
+        "end_month": 5,
+        "end_day": 15,
+        "as_of": true,
+        "title": 8,
+        "person": 3
+    }
+},
+{
+    "model": "core.persontitle",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2001,
+        "start_month": 5,
+        "start_day": 16,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "title": 4,
+        "person": 3
+    }
+},
+{
+    "model": "core.persontitle",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2019,
+        "start_month": 1,
+        "start_day": 20,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": true,
+        "title": 4,
+        "person": 6774
+    }
+},
+{
+    "model": "core.persontitle",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2009,
+        "start_month": 10,
+        "start_day": 31,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "title": 1,
+        "person": 6775
+    }
+},
+{
+    "model": "core.persontitle",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 1999,
+        "start_month": 4,
+        "start_day": 19,
+        "end_year": 2009,
+        "end_month": 10,
+        "end_day": 30,
+        "as_of": false,
+        "title": 4,
+        "person": 6775
+    }
+},
+{
+    "model": "core.persontitle",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2014,
+        "start_month": 0,
+        "start_day": 0,
+        "end_year": 2019,
+        "end_month": 7,
+        "end_day": 0,
+        "as_of": true,
+        "title": 8,
+        "person": 5
+    }
+},
+{
+    "model": "core.persontitle",
+    "pk": 7892,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2020,
+        "start_month": 10,
+        "start_day": 0,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": true,
+        "title": 4,
+        "person": 5
+    }
+},
+{
+    "model": "core.personrelationship",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2019,
+        "start_month": 1,
+        "start_day": 20,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "subject_person": 6774,
+        "type": 2,
+        "object_person": 3
+    }
+},
+{
+    "model": "core.personrelationship",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 0,
+        "start_month": 0,
+        "start_day": 0,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "subject_person": 6775,
+        "type": 6,
+        "object_person": 6774
+    }
+},
+{
+    "model": "core.personrelationship",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 0,
+        "start_month": 0,
+        "start_day": 0,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "subject_person": 6775,
+        "type": 3,
+        "object_person": 3
+    }
+},
+{
+    "model": "core.personrelationship",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2011,
+        "start_month": 2,
+        "start_day": 5,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "subject_person": 5,
+        "type": 6,
+        "object_person": 3
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 11001,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2014,
+        "start_month": 4,
+        "start_day": 1,
+        "end_year": 2014,
+        "end_month": 6,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "61698.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 15285,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2014,
+        "start_month": 7,
+        "start_day": 1,
+        "end_year": 2014,
+        "end_month": 9,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "64167.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 19559,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2014,
+        "start_month": 10,
+        "start_day": 1,
+        "end_year": 2014,
+        "end_month": 12,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "64167.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 23841,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2015,
+        "start_month": 1,
+        "start_day": 1,
+        "end_year": 2015,
+        "end_month": 3,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "66092.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 28107,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2015,
+        "start_month": 4,
+        "start_day": 1,
+        "end_year": 2015,
+        "end_month": 6,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "66092.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 32338,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2015,
+        "start_month": 7,
+        "start_day": 1,
+        "end_year": 2015,
+        "end_month": 9,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "69384.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 36549,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2015,
+        "start_month": 10,
+        "start_day": 1,
+        "end_year": 2015,
+        "end_month": 12,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "69384.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 40690,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2016,
+        "start_month": 1,
+        "start_day": 1,
+        "end_year": 2016,
+        "end_month": 3,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "71465.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 44805,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2016,
+        "start_month": 10,
+        "start_day": 1,
+        "end_year": 2016,
+        "end_month": 12,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "71465.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 48917,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2017,
+        "start_month": 1,
+        "start_day": 1,
+        "end_year": 2017,
+        "end_month": 3,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "73609.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 53048,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2017,
+        "start_month": 4,
+        "start_day": 1,
+        "end_year": 2017,
+        "end_month": 6,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "73608.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 57252,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2017,
+        "start_month": 7,
+        "start_day": 1,
+        "end_year": 2017,
+        "end_month": 9,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "73609.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 61481,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2017,
+        "start_month": 10,
+        "start_day": 1,
+        "end_year": 2017,
+        "end_month": 12,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "73609.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 65616,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2018,
+        "start_month": 1,
+        "start_day": 1,
+        "end_year": 2018,
+        "end_month": 3,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "73609.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 69714,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2018,
+        "start_month": 4,
+        "start_day": 1,
+        "end_year": 2018,
+        "end_month": 6,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "73609.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 73882,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2018,
+        "start_month": 7,
+        "start_day": 1,
+        "end_year": 2018,
+        "end_month": 9,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "77304.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 78003,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2018,
+        "start_month": 10,
+        "start_day": 1,
+        "end_year": 2018,
+        "end_month": 12,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "77304.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 82166,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2019,
+        "start_month": 1,
+        "start_day": 1,
+        "end_year": 2019,
+        "end_month": 3,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "77304.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 86296,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2019,
+        "start_month": 4,
+        "start_day": 1,
+        "end_year": 2019,
+        "end_month": 6,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "81216.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 90326,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2019,
+        "start_month": 7,
+        "start_day": 1,
+        "end_year": 2019,
+        "end_month": 9,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "81216.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 94428,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2019,
+        "start_month": 10,
+        "start_day": 1,
+        "end_year": 2019,
+        "end_month": 12,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "82716.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 98504,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2020,
+        "start_month": 1,
+        "start_day": 1,
+        "end_year": 2020,
+        "end_month": 3,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "85558.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 102561,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2020,
+        "start_month": 7,
+        "start_day": 1,
+        "end_year": 2020,
+        "end_month": 9,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "85558.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 106623,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2020,
+        "start_month": 10,
+        "start_day": 1,
+        "end_year": 2020,
+        "end_month": 12,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "85558.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 110686,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2021,
+        "start_month": 4,
+        "start_day": 1,
+        "end_year": 2021,
+        "end_month": 6,
+        "end_day": 30,
+        "as_of": false,
+        "base_salary": "61698.00",
+        "regular_hours": null,
+        "regular_gross_pay": null,
+        "overtime_hours": null,
+        "overtime_pay": null,
+        "total_other_pay": null,
+        "county": null,
+        "person": 5,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 111685,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2020,
+        "start_month": 1,
+        "start_day": 1,
+        "end_year": 2020,
+        "end_month": 12,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "83467.00",
+        "regular_hours": "570.00",
+        "regular_gross_pay": "84012.00",
+        "overtime_hours": "204.00",
+        "overtime_pay": "32058.00",
+        "total_other_pay": "3015.00",
+        "county": 12,
+        "person": 3,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 111686,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2019,
+        "start_month": 1,
+        "start_day": 1,
+        "end_year": 2019,
+        "end_month": 12,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "82568.00",
+        "regular_hours": "570.00",
+        "regular_gross_pay": "83056.00",
+        "overtime_hours": "178.00",
+        "overtime_pay": "28504.00",
+        "total_other_pay": "2137.00",
+        "county": 12,
+        "person": 3,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.personpayment",
+    "pk": 111687,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2018,
+        "start_month": 1,
+        "start_day": 1,
+        "end_year": 2018,
+        "end_month": 12,
+        "end_day": 31,
+        "as_of": false,
+        "base_salary": "81039.00",
+        "regular_hours": "570.00",
+        "regular_gross_pay": "82465.00",
+        "overtime_hours": "182.00",
+        "overtime_pay": "29674.00",
+        "total_other_pay": "1204.00",
+        "county": 12,
+        "person": 3,
+        "leave_status": null
+    }
+},
+{
+    "model": "core.grouping",
+    "pk": 101,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Cadet Department 4D",
+        "phone_number": "",
+        "email": "",
+        "address": "",
+        "is_inactive": false,
+        "inception_date": null,
+        "cease_date": null,
+        "belongs_to_grouping": 315,
+        "counties": []
+    }
+},
+{
+    "model": "core.grouping",
+    "pk": 109,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Investigations Branch",
+        "phone_number": "",
+        "email": "",
+        "address": "",
+        "is_inactive": false,
+        "inception_date": null,
+        "cease_date": null,
+        "belongs_to_grouping": 315,
+        "counties": []
+    }
+},
+{
+    "model": "core.grouping",
+    "pk": 129,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "3D Substation",
+        "phone_number": "",
+        "email": "",
+        "address": "",
+        "is_inactive": false,
+        "inception_date": null,
+        "cease_date": null,
+        "belongs_to_grouping": 315,
+        "counties": []
+    }
+},
+{
+    "model": "core.grouping",
+    "pk": 260,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Bronx Division",
+        "phone_number": "",
+        "email": "",
+        "address": "",
+        "is_inactive": false,
+        "inception_date": null,
+        "cease_date": null,
+        "belongs_to_grouping": 315,
+        "counties": []
+    }
+},
+{
+    "model": "core.grouping",
+    "pk": 264,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "4th District NYPD (4D)",
+        "phone_number": "2029566725",
+        "email": "4d@nypd.dc.gov",
+        "address": "1893 Georgia Ave NW, New York City 10024",
+        "is_inactive": false,
+        "inception_date": null,
+        "cease_date": null,
+        "belongs_to_grouping": 315,
+        "counties": [
+            57,
+            58
+        ]
+    }
+},
+{
+    "model": "core.grouping",
+    "pk": 271,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Gun Recovery Branch",
+        "phone_number": "",
+        "email": "",
+        "address": "",
+        "is_inactive": false,
+        "inception_date": null,
+        "cease_date": null,
+        "belongs_to_grouping": 315,
+        "counties": []
+    }
+},
+{
+    "model": "core.grouping",
+    "pk": 294,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "Office of the Attorney General",
+        "phone_number": "",
+        "email": "",
+        "address": "",
+        "is_inactive": false,
+        "inception_date": null,
+        "cease_date": null,
+        "belongs_to_grouping": null,
+        "counties": [
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18
+        ]
+    }
+},
+{
+    "model": "core.grouping",
+    "pk": 315,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "name": "New York Police Department",
+        "phone_number": "",
+        "email": "",
+        "address": "",
+        "is_inactive": false,
+        "inception_date": null,
+        "cease_date": null,
+        "belongs_to_grouping": null,
+        "counties": []
+    }
+},
+{
+    "model": "core.groupingrelationship",
+    "pk": 99,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 0,
+        "start_month": 0,
+        "start_day": 0,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "subject_grouping": 101,
+        "type": 3,
+        "object_grouping": 260
+    }
+},
+{
+    "model": "core.groupingrelationship",
+    "pk": 262,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 0,
+        "start_month": 0,
+        "start_day": 0,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "subject_grouping": 264,
+        "type": 1,
+        "object_grouping": 260
+    }
+},
+{
+    "model": "core.groupingrelationship",
+    "pk": 287,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 0,
+        "start_month": 0,
+        "start_day": 0,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "subject_grouping": 264,
+        "type": 3,
+        "object_grouping": 109
+    }
+},
+{
+    "model": "core.groupingrelationship",
+    "pk": 288,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 0,
+        "start_month": 0,
+        "start_day": 0,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "subject_grouping": 264,
+        "type": 2,
+        "object_grouping": 101
+    }
+},
+{
+    "model": "core.persongrouping",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2010,
+        "start_month": 4,
+        "start_day": 28,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "person": 3,
+        "grouping": 264,
+        "type": null,
+        "is_inactive": false
+    }
+},
+{
+    "model": "core.persongrouping",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2008,
+        "start_month": 6,
+        "start_day": 9,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "person": 5,
+        "grouping": 315,
+        "type": 1,
+        "is_inactive": false
+    }
+},
+{
+    "model": "core.persongrouping",
+    "pk": 20306,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 0,
+        "start_month": 0,
+        "start_day": 0,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "person": 6774,
+        "grouping": 264,
+        "type": 1,
+        "is_inactive": false
+    }
+},
+{
+    "model": "core.persongrouping",
+    "pk": 20307,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 0,
+        "start_month": 0,
+        "start_day": 0,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "as_of": false,
+        "person": 6775,
+        "grouping": 264,
+        "type": 3,
+        "is_inactive": false
+    }
+},
+{
+    "model": "core.persongrouping",
+    "pk": 20308,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 1987,
+        "start_month": 7,
+        "start_day": 18,
+        "end_year": 2001,
+        "end_month": 4,
+        "end_day": 9,
+        "as_of": false,
+        "person": 6775,
+        "grouping": 129,
+        "type": 1,
+        "is_inactive": true
+    }
+},
+{
+    "model": "core.persongrouping",
+    "pk": 20309,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2001,
+        "start_month": 9,
+        "start_day": 12,
+        "end_year": 2010,
+        "end_month": 4,
+        "end_day": 27,
+        "as_of": false,
+        "person": 3,
+        "grouping": 129,
+        "type": 1,
+        "is_inactive": true
+    }
+},
+{
+    "model": "core.persongrouping",
+    "pk": 20310,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 1993,
+        "start_month": 3,
+        "start_day": 23,
+        "end_year": 2001,
+        "end_month": 9,
+        "end_day": 11,
+        "as_of": true,
+        "person": 3,
+        "grouping": 271,
+        "type": 3,
+        "is_inactive": true
+    }
+},
+{
+    "model": "core.persongrouping",
+    "pk": 20430,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2011,
+        "start_month": 5,
+        "start_day": 16,
+        "end_year": 2019,
+        "end_month": 2,
+        "end_day": 22,
+        "as_of": false,
+        "person": 6895,
+        "grouping": 264,
+        "type": null,
+        "is_inactive": true
+    }
+},
+{
+    "model": "core.incident",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "On February 14, 2016 the officers made a traffic stop searched the car driver and passenger. Officer Addams put one passenger into a chokehold. All of the officers refused to give their badge numbers. The officers did not arrest either person and left the scene.",
+        "start_year": 2016,
+        "start_month": 2,
+        "start_day": 14,
+        "end_year": 2016,
+        "end_month": 2,
+        "end_day": 14,
+        "location": 1,
+        "location_type": 6,
+        "encounter_reason": 8,
+        "tags": [
+            1,
+            3
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.incident",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "On 12/29/2011, near exit 36 on Highway 375, Officer Arthur Addams made a vehicle stop alleging the driver was his using cellphone while driving, Addams pulled the driver and three passengers out of the car, handcuffed them all, and searched the car without the driver consent.  According to a civil lawsuit filed by the occupants of the car, the driver notified Adams he had poor circulation but Addams refused to loosen handcuffs and used derogatory slurs. Addams also searched the driver without cause. The lawsuit settled for $10,000.  The driver also made a civilian complaint and the Civilian Complaint Board substantiated allegations that the officer unlawfully stopped the vehicle and searched the vehicle.   Addams received instruction as a consequence.",
+        "start_year": 2011,
+        "start_month": 12,
+        "start_day": 29,
+        "end_year": 2011,
+        "end_month": 12,
+        "end_day": 29,
+        "location": null,
+        "location_type": 6,
+        "encounter_reason": 5,
+        "tags": [
+            9,
+            12,
+            19
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.incident",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "On 6/27/2012, plainclothes officers Arthur Addams, Christopher Chris, and Matilda Milton knocked on the door of Julia Star's home and when she refused entry, they pushed past her and entered the home with guns drawn and searched it without a warrant. \r\n\r\nStar filed a civilian complaint with the Civilian Complaint Board alleging the officers unlawfully searched the home. The outcome of the investigation is unknown.",
+        "start_year": 2012,
+        "start_month": 6,
+        "start_day": 27,
+        "end_year": 2012,
+        "end_month": 6,
+        "end_day": 27,
+        "location": null,
+        "location_type": 10,
+        "encounter_reason": 5,
+        "tags": [
+            18
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.incident",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "According to a civil lawsuit, on January 18th, 2008, Officer Benjamin Bradly and Officer Carson approached a civilian playing with his children in a park.  Officer Bradly used excessive force to handcuff him and he was brought to the 4D precinct where he was charged with unspecified drug charges. Charges were dismissed two months later. The lawsuit settled for $35,000.",
+        "start_year": 2008,
+        "start_month": 1,
+        "start_day": 18,
+        "end_year": 2008,
+        "end_month": 1,
+        "end_day": 18,
+        "location": 2,
+        "location_type": 7,
+        "encounter_reason": 7,
+        "tags": [
+            11
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.incident",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "According to a summary of Officer Addam's internal affairs history, he was investigated for an incident in 2018.  Internal affairs substantiated a complaint that property was damaged and dismissed allegations for discourtesy and and offensive language based on race. We do not know more about the incident.",
+        "start_year": 2018,
+        "start_month": 0,
+        "start_day": 0,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "location": null,
+        "location_type": null,
+        "encounter_reason": null,
+        "tags": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.incident",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "On 03/06/2016, Officer Arthur Addams and Benjamin Bradly arrested Legal Aid's client for possession of a weapon.  During a suppression hearing, Judge Hanlon found that there was no way officers could've seen the bulge of the weapon underneath client's jacket, as the officers claimed. Judge Hanlon therefore found officers had no probable cause to stop client and suppressed the weapon. Client's case was dismissed.",
+        "start_year": 2016,
+        "start_month": 3,
+        "start_day": 6,
+        "end_year": 2016,
+        "end_month": 3,
+        "end_day": 6,
+        "location": 3,
+        "location_type": 10,
+        "encounter_reason": 8,
+        "tags": [
+            17
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "core.personincident",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "incident": 5,
+        "situation_role": 4,
+        "tags": []
+    }
+},
+{
+    "model": "core.personincident",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 5,
+        "incident": 5,
+        "situation_role": 4,
+        "tags": []
+    }
+},
+{
+    "model": "core.personincident",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 6774,
+        "incident": 5,
+        "situation_role": 4,
+        "tags": []
+    }
+},
+{
+    "model": "core.personincident",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "incident": 6,
+        "situation_role": 4,
+        "tags": []
+    }
+},
+{
+    "model": "core.personincident",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "incident": 7,
+        "situation_role": 4,
+        "tags": []
+    }
+},
+{
+    "model": "core.personincident",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 6774,
+        "incident": 8,
+        "situation_role": 4,
+        "tags": []
+    }
+},
+{
+    "model": "core.personincident",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 6775,
+        "incident": 8,
+        "situation_role": 4,
+        "tags": []
+    }
+},
+{
+    "model": "core.personincident",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "incident": 9,
+        "situation_role": 4,
+        "tags": []
+    }
+},
+{
+    "model": "core.personincident",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "incident": 10,
+        "situation_role": 4,
+        "tags": []
+    }
+},
+{
+    "model": "core.personincident",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 6774,
+        "incident": 10,
+        "situation_role": 4,
+        "tags": []
+    }
+},
+{
+    "model": "core.groupingincident",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "grouping": 264,
+        "incident": 5
+    }
+},
+{
+    "model": "core.groupingincident",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "grouping": 264,
+        "incident": 8
+    }
+},
+{
+    "model": "core.groupingincident",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "grouping": 264,
+        "incident": 6
+    }
+},
+{
+    "model": "core.groupingincident",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "grouping": 264,
+        "incident": 7
+    }
+},
+{
+    "model": "core.groupingincident",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "grouping": 264,
+        "incident": 10
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Pantaleo Officer CCRB History",
+        "file": "attm/2021/03/22/13/48/24/200906868.pdf",
+        "extension": "",
+        "link": "",
+        "type": 3,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Christian Gonzalez 14cv705",
+        "file": "attm/2021/03/22/13/57/38/US_v_Gonzalez.pdf",
+        "extension": "",
+        "link": "",
+        "type": 11,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Arthur Addams, Internal Affairs, 1256228",
+        "file": "attm/2021/03/22/14/18/01/2011-34344_-_Intenal_Affairs_Investigation_-_David_Grieco_-_Allegations_No_Penalties.pdf",
+        "extension": "",
+        "link": "",
+        "type": 6,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "CCRB Investigation History Addams Arthur",
+        "file": "attm/2021/03/24/14/27/07/200906868_-_Civilian_Complaint_Review_Board_Investigation_-_David_Pantelo_3.22.12_1.pdf",
+        "extension": "",
+        "link": "",
+        "type": 3,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "CCRB Investigative Recommendation Arthur Addams 201601216",
+        "file": "attm/2021/03/24/14/32/50/201601216_-_CCRB_Investigative_Recomendation.pdf",
+        "extension": "",
+        "link": "",
+        "type": null,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Complaint Boyd v Metropolitan Police Department 118cv04678",
+        "file": "attm/2021/03/24/15/03/02/Grieco_Lawsuit2018.pdf",
+        "extension": "",
+        "link": "",
+        "type": 7,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Civilian Video of search Arthur Addams 12/29/2011",
+        "file": "attm/2021/03/24/15/35/58/Racoon_Hello_Video.mp4",
+        "extension": "",
+        "link": "",
+        "type": 91,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Civilian Video of search Arthur Addams 12/29/2011",
+        "file": "attm/2021/03/24/15/36/01/Racoon_Hello_Video.mp4",
+        "extension": "",
+        "link": "",
+        "type": 91,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Facebook Post 12.30.2015 Arthur Addams",
+        "file": "attm/2021/03/24/15/46/19/Facebook_Post_12.30.2015_Arthur_Addams_.png",
+        "extension": "",
+        "link": "",
+        "type": 18,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Facebook Post 12.30.2015 Arthur Addams",
+        "file": "attm/2021/03/24/15/47/00/Facebook_Post_12.30.2015_Arthur_Addams_.png",
+        "extension": "",
+        "link": "",
+        "type": 14,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Facebook Post 7.6.2018 Arthur Addams",
+        "file": "attm/2021/03/24/15/47/30/Facebook_Post_7.6.2018_Arthur_Addams_.png",
+        "extension": "",
+        "link": "",
+        "type": 14,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Complaint - Marty v Bradly",
+        "file": "attm/2021/04/02/19/15/25/Grieco_Lawsuit2018.pdf",
+        "extension": "",
+        "link": "",
+        "type": 7,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Brady letter regarding Arthur Addams",
+        "file": "attm/2021/04/09/16/49/41/Court_Disclosure_Brady_letter_listing_multiple_items_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": 2,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "People v Addams Criminal Case Published Suppression",
+        "file": "attm/2021/04/09/16/55/02/Criminal_Case_Finding_Published_appellate_suppression_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": 5,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Arthur Addams, Internal Affairs Investigation Summary",
+        "file": "attm/2021/04/09/16/55/14/Internal_Affairs_Investigation_Log_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": null,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "People vs Smith",
+        "file": "attm/2021/04/09/17/15/00/Criminal_Case_Finding_Published_appellate_suppression_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": 11,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Complaint 1:06-cv-14216-MGC",
+        "file": "attm/2021/07/28/19/10/34/Civil_Rights_Lawsuit_1983_claims_complaint_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": 7,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Complaint 1:06-cv-14216-MGC",
+        "file": "attm/2021/07/28/19/10/36/Civil_Rights_Lawsuit_1983_claims_complaint_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": 7,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Stipulation 1:06-cv-14216-MGC",
+        "file": "attm/2021/07/28/19/13/58/Civil_Rights_Lawsuit_1983_claims_stipulation_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": 10,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Rose v. Romero",
+        "file": "attm/2021/07/28/19/23/47/Civil_Rights_Lawsuit_state_court_complaint_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": 17,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 21,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Complaint 26115/2015E",
+        "file": "attm/2021/07/28/19/23/49/Civil_Rights_Lawsuit_state_court_complaint_NY_1.pdf",
+        "extension": "",
+        "link": "",
+        "type": 7,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Ann Marie Rose vs City of New York et al",
+        "file": "attm/2021/07/28/19/26/23/Civil_Rights_Lawsuit_state_court_complaint_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": 7,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 23,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "CCRB 201601216",
+        "file": "attm/2021/07/28/19/59/25/Civilian_Complaint_Investigation_Full_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": 3,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.attachment",
+    "pk": 24,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "CCRB 201601216",
+        "file": "attm/2021/07/28/19/59/27/Civilian_Complaint_Investigation_Full_NY.pdf",
+        "extension": "",
+        "link": "",
+        "type": 3,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Officer David Grieco and Peter Cybulski were sued for section 1983 claims on August 8, 2018.",
+        "name": "Hines et al v. City of New York et al",
+        "type": 1,
+        "link": "",
+        "publication_date": null,
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": true,
+        "description": "Officers Heilig, Signorile, and Romanello were investigated by the CCRB on 02/15/2016. Kevin Kirby at 519 West street made the complaint",
+        "name": "CCRB Kevin Kirby",
+        "type": 3,
+        "link": "",
+        "publication_date": null,
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "The city pulled the trigger on yet another lawsuit settlement involving Sgt. David “Bullethead” Grieco.\r\n\r\nThe $75,500 payout, linked to an Aug. 19, 2015, gun arrest in Brownsville, means the city has now shelled out nearly $600,000 to settle more than a dozen lawsuits with Grieco as the defendant, the Daily News has learned. At least nine other suits are still pending against the hard-charging Brooklyn cop.\r\n\r\nMost of the 31 lawsuits brought against Grieco involve allegations that he made bad arrests or searched homes without warrants.\r\n\r\nThe NYPD stood by Grieco in this case, noting that he and his partner, Officer Peter Cybulski had a warrant and “there was no evidence of misconduct by any of the officers involved,” said Sgt. Jessica McRorie, a NYPD spokeswoman.\r\n\r\n“Sergeant David Grieco,” McRorie added, “has made and supervised hundreds of arrests that did not lead to any civil litigation, but in fact helped keep people in New York City safe from drugs and violence.\" But Joshua Moskovitz, the lawyer for the family that sued, called Grieco a “bad apple” and dismissed the claim that a proactive cop in a neighborhood where guns are a problem is more likely to land as a defendant that the average officer.\r\n\r\n“It might explain one or two lawsuits,” he said. “But what about 31? Not every anti-crime cop has 31 suits.”\r\n\r\nOn the morning of the incident, the officers appeared at the Linden Boulevard two-family home where Carl Waites, 26, and Sherry Hines, 25, were asleep with their 6-year-old twins in the family’s first-floor apartment. Hines’ sister Monique, 26, was there spending the night, as was the sister’s 14-year-old niece and a family friend. Police said they had a warrant for the home based on information that Waites had a gun. The cops tore the apartment apart, according to the lawsuit, after handcuffing the adults and the niece. The twins woke up during the raid and were crying hysterically, Moskovitz said.\r\n\r\nA law enforcement source said marijuana was found in the friend’s handbag, but no gun was found in the apartment.\r\n\r\nMoskovitz said police then went to the upstairs apartment, where someone else lives, and found a loaded gun and ammunition outside that apartment’s door.Accounts differ greatly from there on.\r\n\r\nMoskovitz claims Grieco instructed Waites to say the gun was his or police would call the Administration for Children’s Services to take away his kids. Waites went along with the story, but he did so before he was read his rights. After he, Sherry and Monique were arrested, the District Attorney’s office declined to prosecute the case.\r\n\r\n“There was no doubt the gun would be suppressed,” said Moskovitz. “They would have no case.\"\r\n\r\nA law enforcement source said that after the cops found the .40-caliber handgun, the officers told Waites they had “found an item.” According to the source, Waites’ reaction indicated he knew what they meant, but the cops nonetheless told him to describe the item. He told cops it was a gun used for protection, the source said, and kept it in the hallway so his kids couldn’t get their hands on the weapon.Grieco was promoted to sergeant in 2017 and is now a field intelligence officer in East Flatbush. Cybulski was awarded a Medal of Valor earlier this month for his role in a 2016 Times Square incident where he and another sergeant sped out of Times Square after a device was tossed into their police van.\r\n\r\nThe device turned out to be inert but the suspect was arrested.",
+        "name": "Settlement in suit involving NYPD cop known as ‘Bullethead’ after DA declined to prosecute",
+        "type": 8,
+        "link": "https://www.nydailynews.com/new-york/nyc-crime/ny-david-grieco-lawsuit-settlement-20190627-5kcmjq5zgbc23nxot7jzkt56nu-story.html",
+        "publication_date": null,
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "CCRB 201213522",
+        "type": 3,
+        "link": "",
+        "publication_date": null,
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "200906868",
+        "type": 3,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            1
+        ],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "201108018",
+        "type": 3,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            1
+        ],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "UNited States v. Redacted Case",
+        "type": 5,
+        "link": "",
+        "publication_date": "2015-05-22",
+        "attachments": [
+            2
+        ],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Officer Addams was investigated by IAB for damaging property, a discourteous gesture, and failure to remain at a scene.",
+        "name": "Arthur Addams - Internal Investigation - C12-0761",
+        "type": 6,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            15
+        ],
+        "incidents": [
+            9
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "History of Civilian Complaint investigation and history involving Addams traffic stop with officers Abbey and Moore on Feb 14, 2016",
+        "name": "CCRB Investigation History Addams",
+        "type": 3,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            4,
+            5
+        ],
+        "incidents": [
+            5
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "CCRB 201116562",
+        "type": 3,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            4
+        ],
+        "incidents": [
+            6
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "The driver of the vehicle sued officer Addams, Moore, and Abby for the stop and search and won $10,000 in damages",
+        "name": "Boyds v Metropolitan Police Department",
+        "type": 1,
+        "link": "",
+        "publication_date": "2013-11-04",
+        "attachments": [
+            6
+        ],
+        "incidents": [
+            6
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "On June 27, 2012 Civilian Complaint of Abuse Frisk(Substantiated)   and Abuse Search of person (Unsubstantiated)",
+        "name": "CCRB 201208174",
+        "type": 3,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            4
+        ],
+        "incidents": [
+            7
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Arthur Addams\r\nTwo years ago, Cedric Harper and his friends stopped at a convenience store in southeast Washington, D.C., after their high school homecoming to buy candy and Gatorade. As they left the store, Harper says, an unmarked truck sped over to them and four police officers in bulletproof vests jumped out, guns drawn.\r\n\r\nThese weren't ordinary police handguns, he recalls, but big, tactical weapons. Harper, now 18, says the police threw him against a brick wall and searched him. The officers gave no reason for the stop, and after they found nothing suspicious, they let the kids go. The police offered no apology and appeared to make no record of the encounter, he says.\r\n\r\nIt was one of at least 10 so-called \"jump-outs\" Harper has endured; they are now such everyday occurrences that he doesn't think to report them or even tell his parents. \"It's kind of a regular thing,\" he says. \"What's the point of telling anyone?\"\r\nPresident Barack Obama's Task Force on 21st-Century Policing held its first \"listening session\" in D.C. this week, while heated debate is going on within the district over the controversial police tactic that activists say is traumatizing black communities. Locals say anyone is a target, especially young black men, while the Metropolitan Police Department (MPD) says it hasn't used this policing tactic for at least 15 years, and even then, it was employed only for high-risk arrests.\r\n\"Jump-outs\" became notorious during MPD drug stings in the 1980s, when open-air drug markets plagued D.C. and, according to The Washington Post, kids in schoolyards would imitate drug busts, role-playing jump-out squads and hustlers, using crushed chalk in sandwich bags as the \"drugs.\" \"Nobody wants to be the jump-outs,\" a 9-year-old told the Post, adding, \"The hustlers get to keep all the money.\"\r\n\r\nThough police have eradicated those drug markets, residents still yell \"jump-out\" when undercover officers on lookout are spotted in a neighborhood. \"It's almost like a scene from The Wire,\" says criminal defense lawyer Patrice A. Sulton.\r\nAs the national conversation about racial bias in policing and the militarization of police departments intensifies, community activists in D.C. say they've had enough of the jump-outs and have enlisted the American Civil Liberties Union (ACLU) and others to tell police leadership that this must stop. But that's difficult to do when MPD officials deny that it has jump-out squads. MPD Chief Cathy Lanier recently referred to such squads as a \"fantasy.\"\r\n\r\nThe tactic sounds like a souped-up version of the New York City Police Department's much-maligned \"stop-and-frisk\" policy, which the police commissioner promised to reform last year. But while the MPD's regulations do permit stop-and-frisks, jump-outs would violate those rules, based on descriptions from victims and activists. For example, a stop for reasonable suspicion is not supposed to exceed 10 minutes, an officer must be clear about the reason for the stop, and the officer must file paperwork afterward. Civil rights lawyers say that in many cases of jump-outs, none of that is happening.\r\nArmed with arrest records and \"hundreds of anecdotal stories,\" ACLU lawyers have testified in court and before the D.C. City Council that jump-outs are illegal and target people of color. \"Jump-outs are one of the strategies and tactics that make up this entire matrix of policies and practices that police use in black communities to aggressively pursue low-level offenses,\" says Seema Sadanandan, policy and advocacy director in D.C. for the ACLU. Sadanandan, who regularly trains students in how to interact with the police, says she's heard jump-out stories from children as young as 11.\r\n\r\nIn 2013, Sadanandan penned an opinion piece in the Post about jump-outs. A year later, after the deaths of Michael Brown and Eric Garner, several D.C. communities mobilized to tackle the issue. Last October, a City Council committee held hearings to discuss what residents called racially biased policing, including the use of jump-outs, and in December a Change.org petition against the tactic had 2,000 signatures.\r\n\r\n\"We don't use controversial tactics,\" Chief Lanier said in a statement during one of those City Council hearings. \"There are no jump-out units in MPD,\" she added, explaining that activists were likely referring to vice units, responsible for covert drug busts. During such operations, she said, four to six undercover officers wearing police vests \"pull into the block, jump out of the car and arrest those observed in the drug transaction.... That tactic is not used nearly as often as it was in the late '90s and early 2000s.\"\r\n\r\nLanier tells Newsweek that the MPD has discredited many of the alleged jump-outs and that accusers were often unable to provide basic details, or that the incidents involved other law enforcement agencies, or happened outside of the district. \"An 11-year-old telling a story, and then the ACLU retelling that story, is not a fact,\" she says.\r\n\r\nRepresentatives from the U.S. Capitol Police, U.S. Park Police and Metro Transit Police Department, all agencies that make arrests in the district, say they do not conduct jump-outs.",
+        "name": "'Jump-Outs': D.C.'s Scarier Version of 'Stop-and-Frisk'",
+        "type": 8,
+        "link": "https://www.newsweek.com/jump-outs-dcs-scarier-version-stop-and-frisk-300151",
+        "publication_date": "2015-01-16",
+        "attachments": [],
+        "incidents": [
+            6
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "WASHINGTON - The American Civil Liberties Union is suing Metropolitan Police for failure to release stop and frisk data. The ACLU says it’s been nearly a year since MPD released new information regarding traffic stops.\r\nThe ACLU filed the lawsuit last Tuesday. The ACLU says MPD missed the deadline to respond to a FOIA request asking for the stop and frisk data and the organization \r\nwants a judge to order it to be released.\r\nnder the Neighborhood Engagement Achieves Results Act or the NEAR Act, passed by the Council of the District in 2016, MPD must record all traffic stop data, including age, race and reason for the stop.\r\n\r\nA separate lawsuit filed by the ACLU and Black Lives Matter in 2019 alleged the department failed to collect any of that information. The suit was dropped after MPD promised to not only record the data but release it twice a year.\r\n\r\nIn the current lawsuit the ACLU writes, \"Near act data is vital to the ongoing debate about policing in the district. Mass protests against police brutality swept the district in 2020 after police killings of George Floyd and",
+        "name": "ACLU files lawsuit against DC Police Department for failure to release stop and frisk data",
+        "type": 8,
+        "link": "https://www.fox5dc.com/news/aclu-files-lawsuit-against-dc-police-department-for-failure-to-release-stop-and-frisk-data",
+        "publication_date": "2014-02-22",
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "A civilian took this video of the car search",
+        "name": "Civilian Video of Vehicle Search Arthur Addams 12/29/2011",
+        "type": null,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            8
+        ],
+        "incidents": [
+            6
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Linked In Profile of Arthur Addams",
+        "name": "Linked In Profile Arthur Addams",
+        "type": 14,
+        "link": "https://www.linkedin.com/company/metropolitan-police-department-of-the-district-of-columbia/",
+        "publication_date": null,
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Arthur Addams Facebook Account active since June 2007",
+        "name": "Facebook Account Arthur Adams",
+        "type": 15,
+        "link": "https://en-gb.facebook.com/people/Rocky-Racoon/100008795412156",
+        "publication_date": null,
+        "attachments": [
+            10,
+            11
+        ],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Legal Aid Attorney Jessica Lassen had a client arrested on a felony gun charge on 03/14/2016.  After Lassen made a brady demand, the ADA Jen Halloway dismissed the case in the interest of justice.",
+        "name": "Jessica Lassen Note - 03.14.16",
+        "type": 10,
+        "link": "",
+        "publication_date": "2016-03-14",
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "The mother of one of Jessica Lassen's Clients reports that officer Arthur Addams is well known on the 1400 block of G street and that there is a pattern of community harassments, searches, and arrests 2016 to present.",
+        "name": "Civilian Note G. Smith",
+        "type": 9,
+        "link": "",
+        "publication_date": null,
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Legal Aid's community justice unit has heard from many community members that Officer Arthur Addams is well known on the 1400 block of G st NW. Officer Addams patrols frequently and has a pattern of stopping and frisking black teens on the block",
+        "name": "CJU Note -10.12.2018",
+        "type": 9,
+        "link": "",
+        "publication_date": "2018-10-12",
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 21,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Civil Lawsuit against officer Benjamin Bradly for illegitimate arrest",
+        "name": "Marty Martin v Benjamin Boyd Metropolitan Police Department",
+        "type": 1,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            12
+        ],
+        "incidents": [
+            8
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Criminal Case Finding in People vs Smith about officer Arthur Addams and Benjamin Bradly search of a car after a traffic violation. The Supreme Court of  Washington DC, Second Judicial Department 3-1 found Addams lacked the founded suspicion of criminality and thus lacked the authority to ask whether there was anything illegal inside the vehicle.  Subsequent consent was unlawful. All fruits physical evidence suppressed",
+        "name": "People vs Smith",
+        "type": 5,
+        "link": "",
+        "publication_date": "2017-11-08",
+        "attachments": [
+            16
+        ],
+        "incidents": [
+            10
+        ],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 24,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Tristan's Content",
+        "type": 1,
+        "link": "",
+        "publication_date": null,
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 25,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Tristan's Content",
+        "type": null,
+        "link": "",
+        "publication_date": null,
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 26,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "Tristan Chambers's Content",
+        "type": null,
+        "link": "",
+        "publication_date": null,
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 27,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Plaintiff Willy Askew sued officers Edwin Ortiz, and Damien Majersky.",
+        "name": "Askew v. City of New York et al.",
+        "type": 1,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            18,
+            19
+        ],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 28,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "NY State civil rights lawsuit",
+        "name": "ZT",
+        "type": 1,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            20
+        ],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 29,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "A civil rights lawsuit filed against Eduardo Perez Romero, Adam Cruz, Darell Denison, Woll, and three unnamed officers",
+        "name": "PMR Ann Marie Rose vs The City of New York et al",
+        "type": 1,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            22
+        ],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 30,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "A civil rights lawsuit filed against Eduardo Perez Romero, Adam Cruz, Darell Denison, Woll, and three unnamed officers",
+        "name": "PMR Ann Marie Rose vs The City of New York et al",
+        "type": 1,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            22
+        ],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 31,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "Anna Marie Rose against The City of New York (P.O Eduardo Perez Romero, P.O Adam Cruz, P.O Darell Dennison, P.O Woll, and P.Os John Does (1-3).",
+        "name": "AI_Rose_v_City_of_NY",
+        "type": 1,
+        "link": "",
+        "publication_date": "2015-11-05",
+        "attachments": [
+            21
+        ],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 32,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "In a sharply-worded decision, a Brooklyn federal judge has suppressed the loaded semiautomatic handgun seized from a suspect by plainclothes anti-crime cops whose credibility has been previously questioned by two other judges, the Daily News has learned.\r\n\r\nJudge Roslynn Mauskopf, a former Manhattan prosecutor who later served as the U.S. Attorney for the Eastern District of New York, didn't pull any punches about what she thought of the testimony by Police Officers Konrad Zakiewicz and Javier Velez.\r\n\r\n\"The Court finds the officers' observations, particularly those of Officer Zakiewicz, inherently and transparently false,\" Mauskopf wrote in a 24-page decision issued Wednesday.\r\n\r\nMauskopf stated that she reviewed the findings of Federal Judges John Gleeson and Raymond Dearie who found the cops' testimony implausible in separate cases involving gun seizures.\r\n\r\n\"The Court need not even resort to the officers' seriously damaged credibility to find their testimony here lacks honesty,\" Mauskopf wrote.\r\n\r\nThe cops seized a loaded .380 semiautomatic handgun from Martese Price last February in Brownsville.\r\n\r\nDefense lawyer Kannan Sundaram argued that the officers fabricated the circumstances leading them to stop and frisk Price. The cops claimed they suspected Price was packing a weapon because he appeared nervous and they spotted a heavy object in his pants pocket.\r\n\r\nMauskopf reviewed a post-arrest photo of Price and found that his pants pocket was obscured by the oversized sweatshirt he was wearing and there is nothing unusual about carrying an object that makes a pocket sag.\r\n\r\nShe also found it unbelievable that neither Zakiewicz nor Velez mentioned their suspicion that Price was armed to each other or their supervisor in the unmarked car.\r\n\r\nPatrolmen's Benevolent Association President Patrick Lynch fired back at the judges' judgment: \"What gets lost many times in the quiet of a court room is that New York City police officers are trained observers who are skilled in spotting illegal weapons. Another gun is off the street because of the professional work of trained police officers, but the offender may still walk away scot free and that is unconscionable.\"",
+        "name": "Brooklyn judge slams cops' testimony in gun seizure case as 'inherently and transparently false'",
+        "type": 8,
+        "link": "https://www.nydailynews.com/news/crime/brooklyn-judge-slams-cops-testimony-gun-seizure-case-article-1.1612659",
+        "publication_date": "2014-02-13",
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 33,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "The family of a Brooklyn man who died from surgery complications after a 2014 shootout with cops claims in a new $10 million lawsuit that NYPD officers purposefully interfered with his recovery.\r\n\r\nThe mother of Na’im Owens says in Brooklyn federal court papers that her son was continually harassed by cops after the controversial NYPD-shooting death of his mentally ill brother, Khiel Coppin, in 2007, setting up an explosive situation that led to Na’im’s death.\r\n\r\nCoppin was killed after he emerged from his Bed-Stuy home screaming threats and taunts and claiming to have a firearm that he refused to drop, the NYPD said at the time.\r\n\r\nCops shot the 18-year-old man 10 times and later discovered that he had been holding a black hairbrush.\r\n\r\nAn NYPD investigation found that the officers were justified in using lethal force because they felt that they were under imminent threat from a firearm.\r\n\r\nDenise Elliott-Owens, the mom of both men, claims in her new suit that officers targeted Owens after Coppin’s shooting came under criticism and that police harassed him between 2007 and 2014 “as retaliation for the public outcry over his brother’s death.”\r\n\r\nIn August 2014, Owens fled from police near his home on Gates Avenue and fired several shots at pursuing cops, grazing officer John Hirschberger in the thigh, the NYPD said.\r\n\r\nBut his mother’s suit disputes that account and argues that the officer was struck by friendly fire and that Owens never fired a weapon.\r\n\r\nThe suit even names the shot cop as a defendant in the case.\r\n\r\nCops fired at Owens, and he was struck once in the torso. He was taken to Kings County Hospital, where doctors initially said he was likely to make a full recovery.\r\n\r\nOn parole for larceny and criminal possession of a weapon at the time, Owens was charged with a slew of felonies including attempted murder.\r\n\r\nHe died five days after the shooting from surgery complications.\r\n\r\nThe family’s lawyer, Andrew Classe, told The Post on Monday that before Owens died, he related to his father that officers were interfering with his treatment. The lawyer wouldn’t explain exactly how but said those details would emerge as the case moves forward.\r\n\r\n“Members of the Plaintiff’s decedent’s family were present when Police Officers intentionally interfered with his physical recovery from his wounds for several reasons, including retaliation for media attention concerning the murder of his brother, Khiel Coppin, and to cover up the use of force that occurred on August 31, 2015,” the suit says.\r\n\r\nClasse added, “Na’im Owens survived after he was shot for several days in Kings County Hospital. During that time, he stated that he never was in possession of a weapon and certainly never shot at anybody”\r\n\r\nThe city Law Department did not immediately comment on the suit.",
+        "name": "ZT Mom links NYPD shooting deaths of her two sons in lawsuit",
+        "type": 8,
+        "link": "https://nypost.com/2015/08/17/mom-links-nypd-shooting-deaths-of-her-two-sons-in-lawsuit/",
+        "publication_date": "2015-08-17",
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 34,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": true,
+        "description": "The CCRB investigated helig, signorile, romanello",
+        "name": "dummy data",
+        "type": 3,
+        "link": "",
+        "publication_date": null,
+        "attachments": [
+            24
+        ],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 35,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "DA Andrew told Legal Aid Attorney Julie Ciccolino on 04/01/2021 that Officer Signorile is on administrative leave while he's investigated for his involvement in a buy and bust. Call Julie if you want more info",
+        "name": "fdbfgdhb",
+        "type": 10,
+        "link": "",
+        "publication_date": "2021-07-19",
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.content",
+    "pk": 36,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "name": "hydroplanula",
+        "type": null,
+        "link": "",
+        "publication_date": null,
+        "attachments": [],
+        "incidents": [],
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "18cv04678",
+        "content_identifier_type": 4,
+        "content": 1,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "201601216",
+        "content_identifier_type": 2,
+        "content": 2,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "Settlement in suit involving NYPD cop known as ‘Bullethead’ after DA declined to prosecute",
+        "content_identifier_type": 12,
+        "content": 3,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "201213522",
+        "content_identifier_type": 2,
+        "content": 4,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "200906868",
+        "content_identifier_type": 2,
+        "content": 5,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "201108018",
+        "content_identifier_type": 2,
+        "content": 6,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": true,
+        "for_host_only": true,
+        "description": "",
+        "identifier": "14cr705",
+        "content_identifier_type": 5,
+        "content": 7,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": true,
+        "for_host_only": true,
+        "description": "",
+        "identifier": "2015WL2452405",
+        "content_identifier_type": 11,
+        "content": 7,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "C120761",
+        "content_identifier_type": 7,
+        "content": 8,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "200906868",
+        "content_identifier_type": 2,
+        "content": 9,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "201116562",
+        "content_identifier_type": 2,
+        "content": 10,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "118cv04678",
+        "content_identifier_type": 3,
+        "content": 11,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "201208174",
+        "content_identifier_type": 2,
+        "content": 12,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "'Jump-Outs': D.C.'s Scarier Version of 'Stop-and-Frisk'",
+        "content_identifier_type": 12,
+        "content": 13,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "ACLU files lawsuit against DC Police Department for failure to release stop and frisk data",
+        "content_identifier_type": 12,
+        "content": 14,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "Civilian Video Arthur Addams 12/29/2011",
+        "content_identifier_type": 12,
+        "content": 15,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "Linked In Profile Arthur Addams",
+        "content_identifier_type": 12,
+        "content": 16,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "Arthur Addams FB Account",
+        "content_identifier_type": 12,
+        "content": 17,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 21,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "4218cv08194",
+        "content_identifier_type": 4,
+        "content": 21,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "2013-09493",
+        "content_identifier_type": 3,
+        "content": 22,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 24,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "1:06-cv-14216-MGC",
+        "content_identifier_type": 4,
+        "content": 27,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 25,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "26115/2015E",
+        "content_identifier_type": 8,
+        "content": 28,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 26,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "26115/2015E",
+        "content_identifier_type": 8,
+        "content": 29,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 27,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "26115/2015E",
+        "content_identifier_type": 8,
+        "content": 30,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 28,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "26115/2015E",
+        "content_identifier_type": 8,
+        "content": 31,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 29,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "Brooklyn judge slams...",
+        "content_identifier_type": 12,
+        "content": 32,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 30,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "Mom links NYPD shooting deaths of her two sons in lawsuit",
+        "content_identifier_type": 12,
+        "content": 33,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 31,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": false,
+        "for_host_only": false,
+        "description": "",
+        "identifier": "201601216",
+        "content_identifier_type": 2,
+        "content": 34,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentidentifier",
+    "pk": 32,
+    "fields": {
+        "is_archived": false,
+        "for_admin_only": true,
+        "for_host_only": true,
+        "description": "",
+        "identifier": "2015grdfgs",
+        "content_identifier_type": 3,
+        "content": 35,
+        "fdp_organizations": []
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2018,
+        "start_month": 8,
+        "start_day": 18,
+        "end_year": 2021,
+        "end_month": 3,
+        "end_day": 15,
+        "outcome": 6,
+        "court": 24,
+        "settlement_amount": "75000.00",
+        "content": 1
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2016,
+        "start_month": 2,
+        "start_day": 15,
+        "end_year": 2017,
+        "end_month": 8,
+        "end_day": 14,
+        "outcome": 8,
+        "court": null,
+        "settlement_amount": null,
+        "content": 2
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2011,
+        "start_month": 6,
+        "start_day": 11,
+        "end_year": 2011,
+        "end_month": 6,
+        "end_day": 21,
+        "outcome": null,
+        "court": null,
+        "settlement_amount": null,
+        "content": 6
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2014,
+        "start_month": 7,
+        "start_day": 2,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "outcome": null,
+        "court": null,
+        "settlement_amount": null,
+        "content": 7
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2012,
+        "start_month": 10,
+        "start_day": 10,
+        "end_year": 2012,
+        "end_month": 10,
+        "end_day": 23,
+        "outcome": 1,
+        "court": null,
+        "settlement_amount": null,
+        "content": 8
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2016,
+        "start_month": 2,
+        "start_day": 15,
+        "end_year": 2016,
+        "end_month": 4,
+        "end_day": 27,
+        "outcome": 8,
+        "court": null,
+        "settlement_amount": null,
+        "content": 9
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2011,
+        "start_month": 12,
+        "start_day": 29,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "outcome": 8,
+        "court": null,
+        "settlement_amount": null,
+        "content": 10
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2012,
+        "start_month": 1,
+        "start_day": 3,
+        "end_year": 2013,
+        "end_month": 11,
+        "end_day": 4,
+        "outcome": 5,
+        "court": 1,
+        "settlement_amount": "10000.00",
+        "content": 11
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2012,
+        "start_month": 6,
+        "start_day": 27,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "outcome": 8,
+        "court": null,
+        "settlement_amount": null,
+        "content": 12
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2008,
+        "start_month": 6,
+        "start_day": 3,
+        "end_year": 2009,
+        "end_month": 12,
+        "end_day": 1,
+        "outcome": 9,
+        "court": 17,
+        "settlement_amount": null,
+        "content": 21
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2006,
+        "start_month": 12,
+        "start_day": 7,
+        "end_year": 2007,
+        "end_month": 9,
+        "end_day": 18,
+        "outcome": 7,
+        "court": 25,
+        "settlement_amount": "25000.00",
+        "content": 27
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2015,
+        "start_month": 11,
+        "start_day": 5,
+        "end_year": 0,
+        "end_month": 0,
+        "end_day": 0,
+        "outcome": 6,
+        "court": 1,
+        "settlement_amount": null,
+        "content": 28
+    }
+},
+{
+    "model": "sourcing.contentcase",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "start_year": 2016,
+        "start_month": 2,
+        "start_day": 15,
+        "end_year": 2016,
+        "end_month": 4,
+        "end_day": 27,
+        "outcome": null,
+        "court": null,
+        "settlement_amount": null,
+        "content": 34
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 9
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 5,
+        "situation_role": 4,
+        "content": 9
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 6774,
+        "situation_role": 4,
+        "content": 9
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 10
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 11
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 12
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 13
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": null,
+        "content": 15
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 23,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 16
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 24,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 17
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 25,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 18
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 26,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 20
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 27,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 6774,
+        "situation_role": 4,
+        "content": 21
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 28,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 6775,
+        "situation_role": null,
+        "content": 21
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 29,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 8
+    }
+},
+{
+    "model": "sourcing.contentperson",
+    "pk": 30,
+    "fields": {
+        "is_archived": false,
+        "is_guess": false,
+        "description": "",
+        "known_info": null,
+        "person": 3,
+        "situation_role": 4,
+        "content": 22
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 14,
+        "allegation": 2,
+        "allegation_outcome": 15,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 14,
+        "allegation": 5,
+        "allegation_outcome": 6,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 15,
+        "allegation": 8,
+        "allegation_outcome": 6,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 15,
+        "allegation": 2,
+        "allegation_outcome": 15,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 16,
+        "allegation": 2,
+        "allegation_outcome": 15,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 16,
+        "allegation": 15,
+        "allegation_outcome": 15,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 17,
+        "allegation": 32,
+        "allegation_outcome": 15,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 17,
+        "allegation": 31,
+        "allegation_outcome": 15,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 19,
+        "allegation": 33,
+        "allegation_outcome": 17,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 26,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 29,
+        "allegation": 10,
+        "allegation_outcome": 5,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 27,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 29,
+        "allegation": 5,
+        "allegation_outcome": 15,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonallegation",
+    "pk": 28,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 29,
+        "allegation": 23,
+        "allegation_outcome": 5,
+        "allegation_count": 1
+    }
+},
+{
+    "model": "sourcing.contentpersonpenalty",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 14,
+        "penalty_requested": "Suspension 30 Days",
+        "penalty_received": "Formal Training",
+        "discipline_date": "2016-12-12"
+    }
+},
+{
+    "model": "sourcing.contentpersonpenalty",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 14,
+        "penalty_requested": "Written Reprimand",
+        "penalty_received": "Written Reprimand",
+        "discipline_date": "2016-04-20"
+    }
+},
+{
+    "model": "sourcing.contentpersonpenalty",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "description": "",
+        "content_person": 17,
+        "penalty_requested": "",
+        "penalty_received": "Instruction",
+        "discipline_date": "2012-11-18"
+    }
+},
+{
+    "model": "supporting.state",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "New York"
+    }
+},
+{
+    "model": "supporting.state",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "California"
+    }
+},
+{
+    "model": "supporting.state",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "New Jersey"
+    }
+},
+{
+    "model": "supporting.state",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "District of Columbia"
+    }
+},
+{
+    "model": "supporting.state",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Massachusetts"
+    }
+},
+{
+    "model": "supporting.state",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Arizona"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Disability Status"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Gender"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Immigration Status"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Languages other than English"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Race"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Sexual Orientation"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Other"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Employment Status"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Criminal Justice Status"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Housing Status"
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Female",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Male",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Nonbinary",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Cisgender",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Transgender",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Self-identified / Other",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "American Indian or Alaska Native",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Arabic",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Black or African American",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Hispanic or Latino",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Native Hawaiian or Other Pacific Islander",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Self-identified / Other",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "White/Caucasian",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Gay",
+        "type": 6
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Straight",
+        "type": 6
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "Bisexual",
+        "type": 6
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "Asexual",
+        "type": 6
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "name": "Formerly Incarcerated",
+        "type": 9
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "name": "Is/was on Parole",
+        "type": 9
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "name": "Is/was on Probation",
+        "type": 9
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 21,
+    "fields": {
+        "is_archived": false,
+        "name": "Blind or vision impaired",
+        "type": 1
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "name": "Deaf or hard of hearing",
+        "type": 1
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 23,
+    "fields": {
+        "is_archived": false,
+        "name": "Developmental Disability",
+        "type": 1
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 24,
+    "fields": {
+        "is_archived": false,
+        "name": "Disability Unspecified",
+        "type": 1
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 25,
+    "fields": {
+        "is_archived": false,
+        "name": "Learning Disability",
+        "type": 1
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 26,
+    "fields": {
+        "is_archived": false,
+        "name": "Physical Disability",
+        "type": 1
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 27,
+    "fields": {
+        "is_archived": false,
+        "name": "Significant Psychiatric Disorder",
+        "type": 1
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 28,
+    "fields": {
+        "is_archived": false,
+        "name": "Employed full-time",
+        "type": 8
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 29,
+    "fields": {
+        "is_archived": false,
+        "name": "Employed part-time",
+        "type": 8
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 30,
+    "fields": {
+        "is_archived": false,
+        "name": "Student full-time",
+        "type": 8
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 31,
+    "fields": {
+        "is_archived": false,
+        "name": "Student part-time",
+        "type": 8
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 32,
+    "fields": {
+        "is_archived": false,
+        "name": "Unemployed",
+        "type": 8
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 33,
+    "fields": {
+        "is_archived": false,
+        "name": "Gender Non-conforming",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 34,
+    "fields": {
+        "is_archived": false,
+        "name": "Unhoused / no shelter",
+        "type": 10
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 35,
+    "fields": {
+        "is_archived": false,
+        "name": "Permanent Housing",
+        "type": 10
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 36,
+    "fields": {
+        "is_archived": false,
+        "name": "Shelter",
+        "type": 10
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 37,
+    "fields": {
+        "is_archived": false,
+        "name": "Citizen",
+        "type": 3
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 38,
+    "fields": {
+        "is_archived": false,
+        "name": "Conditional Permanent Resident",
+        "type": 3
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 39,
+    "fields": {
+        "is_archived": false,
+        "name": "Legal Permanent Resident (Green Card Holder)",
+        "type": 3
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 40,
+    "fields": {
+        "is_archived": false,
+        "name": "Non-immigrant Temporary Visa",
+        "type": 3
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 41,
+    "fields": {
+        "is_archived": false,
+        "name": "Refugee/Asylee",
+        "type": 3
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 42,
+    "fields": {
+        "is_archived": false,
+        "name": "Special Immigrant Juvenile Status",
+        "type": 3
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 43,
+    "fields": {
+        "is_archived": false,
+        "name": "Undocumented",
+        "type": 3
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 44,
+    "fields": {
+        "is_archived": false,
+        "name": "Victim of Trafficking",
+        "type": 3
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 45,
+    "fields": {
+        "is_archived": false,
+        "name": "Asian",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 46,
+    "fields": {
+        "is_archived": false,
+        "name": "Self-identified/Other",
+        "type": 6
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "\\",
+        "name": "Parent"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Patrol Partner"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Relative"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Sibling"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Spouse"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "\\",
+        "name": "Supervisor"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Significant Other"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "state": 2,
+        "name": "San Mateo"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "state": 3,
+        "name": "Curry"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "state": 3,
+        "name": "Lea"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "state": 3,
+        "name": "Union"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "District 1"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "District 2"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "District 3"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "District 4"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "District 5"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "District 6"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "District 7"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20016"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20015"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 21,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20012"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20007"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 23,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20008"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 24,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20011"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 25,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20010"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 26,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20009"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 27,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20057"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 28,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20037"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 29,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20036"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 30,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20005"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 31,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20004"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 32,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20024"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 33,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20001"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 34,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20017"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 35,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20064"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 36,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20018"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 37,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20002"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 38,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20003"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 39,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20019"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 40,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20020"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 41,
+    "fields": {
+        "is_archived": false,
+        "state": 4,
+        "name": "20032"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 42,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Apache"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 43,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Cochise"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 44,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Coconino"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 45,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Gila"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 46,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Graham"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 47,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "La Paz"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 48,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Maricopa"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 49,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Mohave"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 50,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Navajo"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 51,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Pima"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 52,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Pinal"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 53,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Santa Cruz"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 54,
+    "fields": {
+        "is_archived": false,
+        "state": 6,
+        "name": "Yavapai"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 55,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Albany"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 56,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Allegany"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 57,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Bronx"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 58,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Broome"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 59,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Cattaraugus"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 60,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Cayuga"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 61,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Chautauqua"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 62,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Chemung"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 63,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Chenango"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 64,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Clinton"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 65,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Columbia"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 66,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Cortland"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 67,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Delaware"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 68,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Dutchess"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 69,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Erie"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 70,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Essex"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 71,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Franklin"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 72,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Fulton"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 73,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Genesee"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 74,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Greene"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 75,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Hamilton"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 76,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Herkimer"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 77,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Jefferson"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 78,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Kings"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 79,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Lewis"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 80,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Livingston"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 81,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Madison"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 82,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Monroe"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 83,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Montgomery"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 84,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Nassau"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 85,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "New York City"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 86,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Niagara"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 87,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Oneida"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 88,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Onondaga"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 89,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Ontario"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 90,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Orange"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 91,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Orleans"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 92,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Oswego"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 93,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Otsego"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 94,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Putnam"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 95,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Queens"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 96,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Rensselaer"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 97,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Richmond"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 98,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Rockland"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 99,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "St. Lawrence"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 100,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Saratoga"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 101,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Schenectady"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 102,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Schoharie"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 103,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Schuyler"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 104,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Seneca"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 105,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Steuben"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 106,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Suffolk"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 107,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Sullivan"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 108,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Tioga"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 109,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Tompkins"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 110,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Ulster"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 111,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Warren"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 112,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Washington"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 113,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Wayne"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 114,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Westchester"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 115,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Wyoming"
+    }
+},
+{
+    "model": "supporting.county",
+    "pk": 116,
+    "fields": {
+        "is_archived": false,
+        "state": 1,
+        "name": "Yates"
+    }
+},
+{
+    "model": "supporting.location",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "county": 26,
+        "address": "1476 G St NW"
+    }
+},
+{
+    "model": "supporting.location",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "county": 26,
+        "address": "879 Quabec Street NW, Washington DC"
+    }
+},
+{
+    "model": "supporting.location",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "county": 23,
+        "address": "1533 M St NW"
+    }
+},
+{
+    "model": "supporting.personidentifiertype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Prison Detention Number"
+    }
+},
+{
+    "model": "supporting.personidentifiertype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Drivers License Number"
+    }
+},
+{
+    "model": "supporting.personidentifiertype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Shield/Badge Number"
+    }
+},
+{
+    "model": "supporting.personidentifiertype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Police ID Number"
+    }
+},
+{
+    "model": "supporting.personidentifiertype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Bar Registration  Number"
+    }
+},
+{
+    "model": "supporting.personidentifiertype",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Book and Case Number"
+    }
+},
+{
+    "model": "supporting.personidentifiertype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "NYSID (New York State ID)"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Captain"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Chief"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Attorney"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Detective"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "District Attorney"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Investigator"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Lieutenant"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Police Officer"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Police Cadet"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Sergeant"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Police Communications Technician"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "name": "Fingerprint Technician"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 25,
+    "fields": {
+        "is_archived": false,
+        "name": "Administrative/Other Staff"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 30,
+    "fields": {
+        "is_archived": false,
+        "name": "Detective Third Grade"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 38,
+    "fields": {
+        "is_archived": false,
+        "name": "Crime Analyst"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 52,
+    "fields": {
+        "is_archived": false,
+        "name": "Police Administrative Aide"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 53,
+    "fields": {
+        "is_archived": false,
+        "name": "Director"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 56,
+    "fields": {
+        "is_archived": false,
+        "name": "Inspector"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 78,
+    "fields": {
+        "is_archived": false,
+        "name": "Detective Second Grade"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 91,
+    "fields": {
+        "is_archived": false,
+        "name": "Detective Specialist"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 94,
+    "fields": {
+        "is_archived": false,
+        "name": "First Deputy Commissioner"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 95,
+    "fields": {
+        "is_archived": false,
+        "name": "Evidence And Property Control Specialist"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 100,
+    "fields": {
+        "is_archived": false,
+        "name": "Social Worker"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 101,
+    "fields": {
+        "is_archived": false,
+        "name": "Criminalist"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 102,
+    "fields": {
+        "is_archived": false,
+        "name": "Correction Officer"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 105,
+    "fields": {
+        "is_archived": false,
+        "name": "Deputy Commissioner"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 109,
+    "fields": {
+        "is_archived": false,
+        "name": "Special Officer"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 111,
+    "fields": {
+        "is_archived": false,
+        "name": "Traffic Enforcement Agent"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 125,
+    "fields": {
+        "is_archived": false,
+        "name": "Detective First Grade"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 127,
+    "fields": {
+        "is_archived": false,
+        "name": "Warden"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 154,
+    "fields": {
+        "is_archived": false,
+        "name": "Assistant Commissioner"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 156,
+    "fields": {
+        "is_archived": false,
+        "name": "Deputy Warden"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 158,
+    "fields": {
+        "is_archived": false,
+        "name": "Deputy Inspector"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 164,
+    "fields": {
+        "is_archived": false,
+        "name": "Paralegal"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 168,
+    "fields": {
+        "is_archived": false,
+        "name": "Assistant Chief Inspector"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 169,
+    "fields": {
+        "is_archived": false,
+        "name": "Deputy Chief Inspector"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 170,
+    "fields": {
+        "is_archived": false,
+        "name": "Principal Administrative Associate"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 174,
+    "fields": {
+        "is_archived": false,
+        "name": "Department Secretary"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 176,
+    "fields": {
+        "is_archived": false,
+        "name": "School Safety Agent"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 180,
+    "fields": {
+        "is_archived": false,
+        "name": "Assistant Deputy Commissioner"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 181,
+    "fields": {
+        "is_archived": false,
+        "name": "Assistant Deputy Warden"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 182,
+    "fields": {
+        "is_archived": false,
+        "name": "Assistant District Attorney"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 183,
+    "fields": {
+        "is_archived": false,
+        "name": "Chemist"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 184,
+    "fields": {
+        "is_archived": false,
+        "name": "Commissioner"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 185,
+    "fields": {
+        "is_archived": false,
+        "name": "Police Attendant"
+    }
+},
+{
+    "model": "supporting.groupingrelationshiptype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "/",
+        "name": "Reports to"
+    }
+},
+{
+    "model": "supporting.groupingrelationshiptype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "\\",
+        "name": "Trains"
+    }
+},
+{
+    "model": "supporting.groupingrelationshiptype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Operates In"
+    }
+},
+{
+    "model": "supporting.persongroupingtype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Member"
+    }
+},
+{
+    "model": "supporting.persongroupingtype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Supervisor"
+    }
+},
+{
+    "model": "supporting.persongroupingtype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Commanding Officer"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "At Residence but not inside (Lobby, Stairwell, Yard, etc.)"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Bike"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Bus Stop/Subway Station"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Commercial Location"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Inside Residence"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Motor Vehicle"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Park"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Precinct"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Prison/Jail"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Street"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Demonstration/protest/parade/special event"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Execution of arrest/bench warrant"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Affordable Housing patrols"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "PD auto/transit checkpoint"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "PD initiates stop/question/frisk"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "PD off-duty encounter with subject"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "PD responds to report of crime/call for service"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "PD suspected subject of violation/crime"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject already in custody"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject at precinct (not in custody)"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject intervened on behalf of/observed encounter with third party"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject requested info from officer"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject was victim of crime"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Execution of search warrant"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Biased-Based Profiling Alleged"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Baton/Asp/Object as Weapon"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Chokehold"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Mase/Chemical Spray/Pepper Spray"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Officer Discharged Firearm"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Physical"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Rough Ride"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Taser"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Tight Handcuffs"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Unspecified"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "False Arrest"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Inappropriate, Biased, or Offensive Language"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Incredibility/False Testimony"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Ongoing Harassment"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Sexual Misconduct"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "Stolen Property"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "Suppression"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "name": "Unlawful Entry"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "name": "Unlawful Search"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "name": "Unlawful Stop"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 21,
+    "fields": {
+        "is_archived": false,
+        "name": "Facial Insufficiency"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "name": "Injuries Resulting In Hospitalization"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 23,
+    "fields": {
+        "is_archived": false,
+        "name": "No Controlled Substance/Kalin"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 24,
+    "fields": {
+        "is_archived": false,
+        "name": "Patrol Guide/Procedural Violation"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 25,
+    "fields": {
+        "is_archived": false,
+        "name": "Retaliation for Exercise of Rights to Free Speech/Recording"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 26,
+    "fields": {
+        "is_archived": false,
+        "name": "Unlawful/Suggestive Line-up"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 27,
+    "fields": {
+        "is_archived": false,
+        "name": "Wrongful Death"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Abuse of Authority: Electronic Device Information Deletion"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Abuse of Authority: Frisk"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Abuse of Authority: Gun Drawn"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Abuse of Authority: Other"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Abuse of Authority: Property Damaged"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Conduct: Accepted Bribes For Services In Conjunction With Official Position"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Conduct: Leveraged Official Position Unlawfully"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Criminal Behavior: Assault"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Criminal Behavior: Fraud"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Discourtesy: Gesture"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Evidence Discrepancy: Lab Narcotics"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Evidence Discrepancy: Other"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Evidence Handling: Concealed/Tampered with Evidence"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Evidence Handling: Failed To Properly Voucher Evidence"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Failure to Remain at Scene"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "Failure to Supervise: Other"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "Failure to Take Police Action: Other"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "name": "False Oral Statement/Testimony: Gave Misinformation To Public"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "name": "Misuse/Unauthorized Use of Department Property: Computer"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "name": "Offensive Language: Gender"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 21,
+    "fields": {
+        "is_archived": false,
+        "name": "Offensive Language: Other"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "name": "Offensive Language: Physical Disability"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 23,
+    "fields": {
+        "is_archived": false,
+        "name": "Offensive Language: Race"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 24,
+    "fields": {
+        "is_archived": false,
+        "name": "Offensive Language: Religion"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 25,
+    "fields": {
+        "is_archived": false,
+        "name": "Paid Time/Leave: Absent Without Leave"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 26,
+    "fields": {
+        "is_archived": false,
+        "name": "Sexual Misconduct: Touched A Civilian In An Inappropriate Manner"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 27,
+    "fields": {
+        "is_archived": false,
+        "name": "Sexual Misconduct: Touched A Member Of Service In An Inappropriate Manner"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 28,
+    "fields": {
+        "is_archived": false,
+        "name": "Undisclosed CCRB Allegation"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 29,
+    "fields": {
+        "is_archived": false,
+        "name": "Undisclosed IAB Allegation"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 30,
+    "fields": {
+        "is_archived": false,
+        "name": "Use of Force/Threats: Used Deadly Force/Force Resulting in Death"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 31,
+    "fields": {
+        "is_archived": false,
+        "name": "Abuse of Authority: Unlawful Search of Person"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 32,
+    "fields": {
+        "is_archived": false,
+        "name": "Abuse of Authority: Unlawful Search of Vehicle"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 33,
+    "fields": {
+        "is_archived": false,
+        "name": "Abuse of Authority: Unlawful Search of Residence"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Administratively Closed"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Allegation Removed"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Complainant or Victim Unavailable/Uncooperative/Unidentified"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Complaint Withdrawn"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Dismissed"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Exonerated"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Guilty In Part"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Guilty/Pled Guilty"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Info and Intelligence"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Instructed"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Mediation"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Nolo Contendre"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Open/Pending"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Partially Substantiated"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Substantiated"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "Unfounded"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "Unknown"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "name": "Unsubstantiated"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "name": "Other Misconduct"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Civil Rights Lawsuit"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Civilian Complaint - Other"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Civilian Complaint Board Investigation"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Court Disclosure"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Criminal Case Finding"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Internal Investigation"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Lawsuit- Other"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Media Article"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Note from community member"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Note from FDP user"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Officer's Criminal Case"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Public Social Media/Blog Post"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Relevant Cross-Examination/Testimony"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject's Social Media Account"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject's Social Media Post"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "Other"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "Press Release"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Bronx County Civil Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Bronx County Criminal Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Bronx County Family Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Bronx County Housing Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Bronx County Small Claims Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Bronx County Supreme Court, Civil Term"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Bronx County Supreme Court, Criminal Term"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Bronx County Surrogate Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Harlem Community Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "New York County Civil Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "New York County Criminal Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "New York County Family Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "New York County Small Claims Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "New York County Supreme Court, Civil Term"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "New York County Supreme Court, Criminal Term"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "New York County Surrogate Court"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "New York Court of Appeals"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "name": "New York State Court of Claims"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "name": "New York Supreme Court Appellate Division First Department"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "name": "New York Supreme Court Appellate Division Fourth Department"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 21,
+    "fields": {
+        "is_archived": false,
+        "name": "New York Supreme Court Appellate Division Second Department"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "name": "New York Supreme Court Appellate Division Third Department"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 23,
+    "fields": {
+        "is_archived": false,
+        "name": "United States Court of Appeals for the Second Circuit"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 24,
+    "fields": {
+        "is_archived": false,
+        "name": "United States District Court for the Eastern District of New York"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 25,
+    "fields": {
+        "is_archived": false,
+        "name": "United States District Court for the Southern District of New York"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 26,
+    "fields": {
+        "is_archived": false,
+        "name": "United States District Court for the Western District of New York"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 29,
+    "fields": {
+        "is_archived": false,
+        "name": "United States District Court for the Northern District of New York"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Appellate Division Reports (A.D./A.D.2d)"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "CCRB Case Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Docket Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Federal Civil Case Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Federal Criminal Case Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Indictment Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Internal Affairs Bureau Log Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "New York State Civil Case Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Supreme Court Reporter (S. Ct.)"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "United States Reports (U.S.)"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Westlaw"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Headline"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Federal Reporter (F./F.2d/F.3d)"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Federal Supplement (F. Supp./F. Supp.2d/F. Supp.3d)"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Case Management System Key"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "New York Law Journal"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "New York Miscellaneous Reports (Misc./Misc.2d/Misc.3d)"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "name": "New York Reports (N.Y./N.Y.2d/N.Y.3d)"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "name": "New York Slip Opinion"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "name": "Office of Administrative Trials and Hearings Case Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 21,
+    "fields": {
+        "is_archived": false,
+        "name": "West New York Supplement (N.Y.S./N.Y.S.2d/N.Y.S.3d)"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Administrative Closing"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Dismissed without Prejudice"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Dismissed with Prejudice"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Judgment for Defendant"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Judgment for Plaintiff"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Pending"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Settled"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Closed"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Verdict for Defendant"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Verdict for Plaintiff"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Guilty"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Not Guilty"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Plea-Other"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "No Prosecution / Dropped Charges"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Mistrial"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Affidavit"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Brady/Garret/Rosario Letter"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "CCRB Investigation"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Client Waiver"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Criminal Complaint"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "IAB Investigation"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Lawsuit Complaint"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Lawsuit Docket Report"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Lawsuit Miscellaneous Documents"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Lawsuit Stipulation/Order"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Miscellaneous Criminal Court Documents"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Personnel Order"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Related Photos/Videos/Audio"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Social Media/Online Screenshots"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Stipulation of Settlement"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "Body Cam Footage"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "Complaint"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "name": "Other"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 91,
+    "fields": {
+        "is_archived": false,
+        "name": "Video"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Defendant Attorney"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "District Attorney / Assistant District Attorney"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Judge"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Perpetrator of Misconduct"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Plaintiff Attorney"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Source"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Victim / Subject of Misconduct"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Witness"
+    }
+},
+{
+    "model": "supporting.leavestatus",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Military Leave"
+    }
+},
+{
+    "model": "supporting.leavestatus",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Suspended"
+    }
+},
+{
+    "model": "supporting.leavestatus",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Separation Leave"
+    }
+}
+]
