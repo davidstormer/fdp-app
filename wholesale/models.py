@@ -821,7 +821,20 @@ class WholesaleImport(Metable):
 
         :return: String representing content in file.
         """
+        # ensure that file handle offset is always at the beginning before reading
+        self.__rewind_io(io_to_rewind=self.file)
         return self.file.read().decode(self.csv_encoding)
+
+    @staticmethod
+    def __rewind_io(io_to_rewind):
+        """ Places current offset for the file handle or stream position back to the beginning.
+
+         Can be used with a memory stream such as io.StringIO, with Django's FieldFile proxy, or similar.
+
+        :param io_to_rewind: Instance to rewind.
+        :return: Nothing.
+        """
+        io_to_rewind.seek(0)
 
     def __get_csv_reader(self, string_io):
         """ Retrieves the reader object used to read the CSV template.
@@ -1276,7 +1289,10 @@ class WholesaleImport(Metable):
         # not yet a date
         else:
             try:
-                typed_val = datetime.strptime(str(cell).strip(), self.date_format)
+                # Passing a datetime to a date field will successfully create a version through the django-reversion
+                # package, but this version cannot then be loaded through the History view in the Admin.
+                # The resulting error message will be: "Could not load YYY version - incompatible version data."
+                typed_val = datetime.strptime(str(cell).strip(), self.date_format).date()
             except ValueError:
                 self.__skip_record_due_to_value(field_val=cell, expected_type='date', **skip_rec_dict)
         return typed_val
@@ -2795,13 +2811,13 @@ class WholesaleImport(Metable):
             cached_fields_to_add_by_model = self.__get_fields_to_convert_implicit_references()
             # if there are some fields to add
             if cached_fields_to_add_by_model:
+                # rewind the memory stream position, to read the heading row again
+                self.__rewind_io(io_to_rewind=read_string_io)
                 # list of CSV slice object instances that can be used to define a new CSV row
                 fields_to_add = self.get_fields_to_add(cached_fields_to_add_by_model=cached_fields_to_add_by_model)
                 # rebuild CSV using CSV slices
                 with StringIO() as write_string_io:
                     writer = self.__get_csv_writer(string_io=write_string_io)
-                    # start reading CSV template again
-                    read_string_io.seek(0)
                     self.__write_new_headings_row(reader=reader, writer=writer, fields_to_add=fields_to_add)
                     self.__write_new_data_rows(reader=reader, writer=writer, fields_to_add=fields_to_add)
                     # wrap the file
