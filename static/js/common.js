@@ -1396,6 +1396,17 @@ var Fdp = (function (fdpDef, $, w, d) {
     };
 
 	/**
+	* Initializes an element with the Select2 package.
+	* @param {string} select2Selector - JQuery selector for the element that should be initialized with the Select2 package.
+	* @param {Object} select2Options - Object representing the options with which to initialize the Select2 package.
+	* @see {@link https://select2.org/}
+	* @see {@link https://github.com/select2/select2}
+	*/
+	commonDef.initSelect2Elem = function (select2Selector, select2Options) {
+        $(select2Selector).select2(select2Options);
+    };
+
+	/**
 	* Initializes elements with the Select2 package for client-side only (i.e. no requests sent to server) that in a containing element.
 	* @param {string} selector - JQuery selector for the elements that should be initialized with the Select2 package.
 	* @param {Object} container - Container for Select2 elements to initialize. If defined, must be wrapped in JQuery object. May be undefined.

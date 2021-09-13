@@ -18,6 +18,11 @@ input[type="submit"] {
     margin-top: 1em;
 }
 
+/* icon representing related models in the select2 drop-down list */
+i.r { margin-left: 4px; }
+/* icon representing related models in help text */
+i.h { margin-right: 4px; }
+
 /* notes portion */
 .notes h3 { margin-top: 2em; margin-bottom: 1em; }
 .notes p span { line-height: 200%; vertical-align: top; }
