@@ -37,20 +37,28 @@
 <form action="{% url 'wholesale:template' %}" method="post">
     {% csrf_token %}
     {{ form.as_p }}
+    <p><span class="helptext">{% blocktranslate %}<i class="h fas fa-bezier-curve"></i> shows related models{% endblocktranslate %}</span></p>
     <input type="submit" value="{% translate 'Generate' %}" />
 </form>
 
 <div class="notes">
-    <h3>{% translate 'Notes' %}</h3>
+    <h3>{% translate 'Columns' %}</h3>
     <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Feel free to <strong class="do">remove columns</strong>{% endblocktranslate %}</span></p>
     <p><i class="dont fas fa-window-close"></i><span>{% blocktranslate %}Please <strong class="dont">don't reorder columns</strong>{% endblocktranslate %}</span></p>
     <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Use <em>{{ delimiter }}</em> as the delimiter character and <em>{{ quotechar }}</em> as the quotechar character in <strong class="do">CSV templates</strong>{% endblocktranslate %}</span></p>
-    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Use fields marked with <em>{{ external_id_suffix }}</em> to reference <strong class="do">external IDs</strong>{% endblocktranslate %}</span></p>
+    <h3>{% translate 'PKs' %}</h3>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Include <strong class="do">internal or external PK columns during updates</strong> for every model{% endblocktranslate %}</span></p>
+    <p><i class="dont fas fa-window-close"></i><span>{% blocktranslate %}Any <strong class="dont">internal or external PK column</strong> cannot have any <strong class="dont">blank values</strong>{% endblocktranslate %}</span></p>
+    <p><i class="dont fas fa-window-close"></i><span>{% blocktranslate %}Please <strong class="dont">don't include internal PK columns during adds</strong> for any model{% endblocktranslate %}</span></p>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Internal PK columns such as <em>id</em> are omitted during template generation but can be <strong class="do">manually included</strong> during updates{% endblocktranslate %}</span></p>
+    <h3>{% translate 'External PKs' %}</h3>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Use fields marked with <em>{{ external_id_suffix }}</em> to reference <strong class="do">external PKs</strong>{% endblocktranslate %}</span></p>
+    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}External PKs may be <strong class="do">automatically generated</strong> when converting implicit model references to explicit, and will in the format of <em>{{ auto_external_id }}</em>{% endblocktranslate %}</span></p>
+    <h3>{% translate 'References' %}</h3>
     <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}References <strong class="do">by name</strong> for FKs, O2Os and M2Ms will be <strong class="do">automatically added</strong> if they do not exist{% endblocktranslate %}</span></p>
     <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}FKs, O2Os and M2Ms can also be referenced by <strong class="do">their PK reference</strong>{% endblocktranslate %}</span></p>
     <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Multiple M2Ms can placed into the <strong class="do">same column separated by commas</strong>{% endblocktranslate %}</span></p>
-    <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Include <strong class="do">internal or external PK columns during updates</strong> for every model{% endblocktranslate %}</span></p>
-    <p><i class="dont fas fa-window-close"></i><span>{% blocktranslate %}Please <strong class="dont">don't include internal PK columns during adds</strong> for any model{% endblocktranslate %}</span></p>
+    <h3>{% translate 'Data types' %}</h3>
     <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Use <em>{{ true_bools }}</em> for <strong class="do">true boolean</strong> values and <em>{{ false_bools }}</em> for <strong class="do">false boolean</strong> values{% endblocktranslate %}</span></p>
     <p><i class="do fas fa-check-square"></i><span>{% blocktranslate %}Use <em>{{ date_format }}</em> for <strong class="do">date</strong> values and <em>{{ datetime_format }}</em> for <strong class="do">datetime</strong> values, as defined in <a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes">Python's documentation</a>{% endblocktranslate %}</span></p>
 </div>
@@ -60,5 +68,5 @@
 {% block onready %}
     {{ block.super }}
     // initialize interface elements
-    Fdp.WholesaleTemplate.init();
+    Fdp.WholesaleTemplate.init({{ model_relations }} /* modelRelations */);
 {% endblock %}

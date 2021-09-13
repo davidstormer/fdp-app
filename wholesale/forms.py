@@ -1,7 +1,6 @@
 from django import forms
 from django.utils.translation import gettext as _
 from django.core.exceptions import ValidationError
-from django.db.models import ManyToManyField, ForeignKey, OneToOneField, ManyToManyRel, ManyToOneRel, OneToOneRel
 from inheritable.models import AbstractConfiguration
 from .models import WholesaleImport, ModelHelper
 from graphlib.graphlib import TopologicalSorter
@@ -25,13 +24,12 @@ class WholesaleTemplateForm(forms.Form):
     # package.
     models.widget.attrs.update({'class': 'multiselect'})
 
-    def __init__(self, *args, **kwargs):
-        """ Defines the list of all possible models for which templates can be generated.
+    @staticmethod
+    def __get_relevant_whitelisted_models():
+        """ Retrieves a list of relevant whitelisted models.
 
-        :param args:
-        :param kwargs:
+        :return: List strings representing model names.
         """
-        super().__init__(*args, **kwargs)
         relevant_models = ModelHelper.get_relevant_models()
         whitelisted_models = sorted(
             [
@@ -39,7 +37,17 @@ class WholesaleTemplateForm(forms.Form):
                 if ModelHelper.get_str_for_cls(model_class=m) in AbstractConfiguration.whitelisted_wholesale_models()
             ]
         )
-        self.fields['models'].choices = [(m, m) for m in whitelisted_models]
+        return whitelisted_models
+
+    def __init__(self, *args, **kwargs):
+        """ Defines the list of all possible models for which templates can be generated.
+
+        :param args:
+        :param kwargs:
+        """
+        super().__init__(*args, **kwargs)
+        relevant_whitelisted_models = self.__get_relevant_whitelisted_models()
+        self.fields['models'].choices = [(m, m) for m in relevant_whitelisted_models]
 
     def clean_models(self):
         """ Ensures that the submitted list of models for which to generate a template adheres to the whitelist.
@@ -60,20 +68,13 @@ class WholesaleTemplateForm(forms.Form):
         :return: List of model classes upon which specified model class depends.
         """
         return [
-            f.remote_field.model
-            for f in ModelHelper.get_fields(model=model_class)
-            if (
-                # field for relation must be defined on the model itself
-                (f.many_to_many and isinstance(f, ManyToManyField))
-                or (f.many_to_one and isinstance(f, ForeignKey))
-                or (f.one_to_one and isinstance(f, OneToOneField))
-            ) and (
-                # field cannot reference model it is defined on
-                model_class != f.remote_field.model
-            )
+            field.remote_field.model
+            for field in ModelHelper.get_fields(model=model_class)
+            if ModelHelper.is_field_linked_to_another_model(model=model_class, field=field)
         ]
 
-    def __load_model_classes(self, models):
+    @classmethod
+    def __load_model_classes(cls, models):
         """ Loads the model classes, and in the process, determines the apps to which each model belongs.
 
         :param models: List of strings that defines the models for which to load model classes.
@@ -98,7 +99,7 @@ class WholesaleTemplateForm(forms.Form):
                     app_name,
                     model,
                     model_class,
-                    self.__get_dependent_model_classes(model_class=model_class)
+                    cls.__get_dependent_model_classes(model_class=model_class)
                 )
             )
         return models_with_apps_and_classes
@@ -118,7 +119,8 @@ class WholesaleTemplateForm(forms.Form):
             dict_of_list_indices[index] = set()
             cache_for_indices[model_class_name] = index
 
-    def __get_model_dependencies(self, models_with_apps_and_classes):
+    @classmethod
+    def __get_model_dependencies(cls, models_with_apps_and_classes):
         """ Retrieves a dictionary that maps the dependencies between the different model classes.
 
         :param models_with_apps_and_classes: List of tuples where:
@@ -135,7 +137,7 @@ class WholesaleTemplateForm(forms.Form):
         dict_of_list_indices = {}
         for i, model_tuple in enumerate(models_with_apps_and_classes):
             str_i = str(i)
-            self.__record_model_index(
+            cls.__record_model_index(
                 index=str_i,
                 model_class_name=ModelHelper.get_str_for_cls(model_class=model_tuple[2]),
                 dict_of_list_indices=dict_of_list_indices,
@@ -156,7 +158,7 @@ class WholesaleTemplateForm(forms.Form):
                                 model_class=dependent_model_tuple[2]
                         ) == dependent_model_class_name:
                             str_j = str(j)
-                            self.__record_model_index(
+                            cls.__record_model_index(
                                 index=str_j,
                                 model_class_name=dependent_model_class_name,
                                 dict_of_list_indices=dict_of_list_indices,
@@ -170,7 +172,8 @@ class WholesaleTemplateForm(forms.Form):
                     (dict_of_list_indices[str_i]).add(dependent_str_i)
         return dict_of_list_indices
 
-    def __order_model_classes(self, models_with_apps_and_classes):
+    @classmethod
+    def __order_model_classes(cls, models_with_apps_and_classes):
         """ Attempts to order the list of models so that their dependencies such as foreign keys are respected during
         the order of import.
 
@@ -188,7 +191,7 @@ class WholesaleTemplateForm(forms.Form):
         #: TODO: Also, the graphlib backport can be removed.
         #: TODO: See: https://pypi.org/project/graphlib-backport/
         # dictionary will be in the form of: {'3': {'2', '7'}, '1': {}, '2': {'7'}, ....}
-        dict_of_list_indices = self.__get_model_dependencies(models_with_apps_and_classes=models_with_apps_and_classes)
+        dict_of_list_indices = cls.__get_model_dependencies(models_with_apps_and_classes=models_with_apps_and_classes)
         # perform topological sorting
         topological_sorter = TopologicalSorter(graph=dict_of_list_indices)
         # retrieve the order list
@@ -196,17 +199,8 @@ class WholesaleTemplateForm(forms.Form):
         # ordered list of model classes
         return [models_with_apps_and_classes[int(index)][2] for index in sorted_indices_list]
 
-    @staticmethod
-    def __get_col_heading_name(model, field):
-        """ Retrieves the name of a column heading for the wholesale import tool template.
-
-        :param model: Model for which to retrieve heading.
-        :param field: Field in model for which to retrieve heading.
-        :return: String representing column heading.
-        """
-        return f'{model}.{field}'
-
-    def __get_column_headings(self, ordered_model_classes):
+    @classmethod
+    def __get_column_headings(cls, ordered_model_classes):
         """ Retrieves the column headings for the wholesale import tool template for a particular combination of the
         data model.
 
@@ -221,25 +215,21 @@ class WholesaleTemplateForm(forms.Form):
             for f in ModelHelper.get_fields(model=model_class):
                 if not (
                     # exclude relations that are not defined on the model
-                    (
-                        f.is_relation and (
-                            isinstance(f, OneToOneRel) or isinstance(f, ManyToOneRel) or isinstance(f, ManyToManyRel)
-                        )
-                    )
+                    ModelHelper.is_field_a_relation(field=f)
                     or
                     # exclude blacklisted fields
-                    (
-                        f.name in AbstractConfiguration.blacklisted_wholesale_fields()
-                    )
+                    f.name in AbstractConfiguration.blacklisted_wholesale_fields()
                 ):
                     model = ModelHelper.get_str_for_cls(model_class=model_class)
-                    field = f.name
-                    col_headings.append(self.__get_col_heading_name(model=model, field=field))
+                    # primary key fields are automatically converted to external ID fields, and are therefore excluded
+                    # from the generated templates; they are still allowed to be imported
+                    field = f.name if f.name != 'id' else f'{f.name}{WholesaleImport.external_id_suffix}'
+                    col_headings.append(WholesaleImport.get_col_heading_name(model=model, field=field))
                     # if this is the primary key, or a many-to-many field, or a foreign key, or a one-to-one field
                     # add possibility to specify external id
                     if field == 'id' or f.many_to_many or f.many_to_one or f.one_to_one:
                         col_headings.append(
-                            self.__get_col_heading_name(
+                            WholesaleImport.get_col_heading_name(
                                 model=model,
                                 field=f'{field}{WholesaleImport.external_id_suffix}'
                             )
@@ -262,6 +252,47 @@ class WholesaleTemplateForm(forms.Form):
         col_headings = self.__get_column_headings(ordered_model_classes=ordered_model_classes)
         return col_headings
 
+    @classmethod
+    def __get_related_models_for_model(cls, model_name, relevant_whitelisted_models):
+        """ Retrieves list of models related to a particular model.
+
+        A related model is a model that links to the model in question such as through a foreign key, one-to-one field
+        or many-to-many field.
+
+        Each related model must also be a member of the relevant whitelisted models.
+
+        :param model_name: Name of model for which to retrieve related models.
+        :param relevant_whitelisted_models: List of all relevant and whitelisted model names.
+        :return: List of related models.
+        """
+        app_name = ModelHelper.get_app_name(model=model_name)
+        model_class = ModelHelper.get_model_class(app_name=app_name, model_name=model_name)
+        fields = ModelHelper.get_fields(model=model_class)
+        related_model_names = []
+        for field in fields:
+            # field is a relation
+            if ModelHelper.is_field_a_relation(field=field):
+                related_model_class = field.related_model
+                related_model_name = ModelHelper.get_str_for_cls(model_class=related_model_class)
+                # related model is in relevant whitelisted models
+                if related_model_name in relevant_whitelisted_models:
+                    related_model_names.append(related_model_name)
+        return related_model_names
+
+    @classmethod
+    def get_model_relations(cls):
+        """ Retrieves a dictionary mapping models to their model relations.
+
+        :return: Dictionary with keys as model names, and values as lists of related models.
+        """
+        relevant_whitelisted_models = cls.__get_relevant_whitelisted_models()
+        return {
+            model_name: cls.__get_related_models_for_model(
+                model_name=model_name,
+                relevant_whitelisted_models=relevant_whitelisted_models
+            ) for model_name in relevant_whitelisted_models
+        }
+
 
 class WholesaleStartImportForm(forms.ModelForm):
     """ Synchronous form for the wholesale import tool that is submitted to start an import process.
@@ -269,4 +300,4 @@ class WholesaleStartImportForm(forms.ModelForm):
     """
     class Meta:
         model = WholesaleImport
-        fields = ['file', 'action', 'before_import', 'on_error']
+        fields = ['file', 'action']
