@@ -998,6 +998,15 @@ class AbstractStringValidator(models.Model):
     # Length of truncated description, excluding characters placed at the end as a suffix
     __truncated_length = MAX_TRUNCATED_LENGTH - __suffix_length
 
+    #: Default maximum length for a joined list of string.
+    __max_joined_strings_length = 100
+
+    #: Default string used to join together a list of string.
+    __join_strings_with = ', '
+
+    #: Default suffix that is appended if a joined list of strings exceeds the maximum length allowed.
+    __long_joined_strings_suffix = _(', ... and more')
+
     @classmethod
     def truncate_description(cls, description):
         """ Truncate a verbose description.
@@ -1009,6 +1018,25 @@ class AbstractStringValidator(models.Model):
             '{a}{b}'.format(a=description[:cls.__truncated_length], b=cls.SUFFIX)
             if len(str(description)) > cls.MAX_TRUNCATED_LENGTH else description
         )
+
+    @classmethod
+    def join_list_of_strings(cls, list_of_strings, join_with=None, max_len=None):
+        """ Joins a list of strings into a single string.
+
+        :param list_of_strings: List of string to join together.
+        :param join_with: A string that is used to join the list of strings together. Default is __join_strings_with.
+        :param max_len: Maximum length ofr a joined list of strings. Default is __max_joined_strings_length.
+        :return: A single string representing the joined list of strings.
+        """
+        if join_with is None:
+            join_with = cls.__join_strings_with
+        if max_len is None:
+            max_len = cls.__max_joined_strings_length
+        joined_strings = join_with.join(list_of_strings)
+        if len(joined_strings) > max_len:
+            and_more = cls.__long_joined_strings_suffix
+            joined_strings = f'{joined_strings[:max_len - len(and_more)]}{and_more}'
+        return joined_strings
 
     class Meta:
         abstract = True

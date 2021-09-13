@@ -1,4 +1,5 @@
 from django.utils.translation import gettext as _
+from django.utils.html import mark_safe
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
@@ -8,6 +9,7 @@ from inheritable.views import HostAdminSyncTemplateView, HostAdminSyncFormView, 
 from .forms import WholesaleTemplateForm, WholesaleStartImportForm
 from .models import WholesaleImport, WholesaleImportRecord, ModelHelper
 from csv import writer as csv_writer
+from json import dumps as json_dumps
 
 
 class IndexTemplateView(HostAdminSyncTemplateView):
@@ -58,6 +60,12 @@ class TemplateFormView(HostAdminSyncFormView):
             'datetime_format': WholesaleImport.datetime_format,
             'delimiter': WholesaleImport.csv_delimiter,
             'quotechar': WholesaleImport.csv_quotechar,
+            'model_relations': mark_safe(json_dumps(WholesaleTemplateForm.get_model_relations())),
+            'auto_external_id': WholesaleImport.get_auto_external_id(
+                uuid='<UUID>',
+                group='<GROUP>',
+                row_num='<ROW_NUM>'
+            )
         })
         return context
 
@@ -96,30 +104,16 @@ class StartImportCreateView(HostAdminSyncCreateView):
         self.wholesale_import_pk = None
 
     def get_success_url(self):
-        """ Retrieves the URL to which the user should be redirected after the import or a desired step before it, is
-        performed.
+        """ Retrieves the URL to which the user should be redirected after the import.
 
         :return: URL to which user should be redirected.
         """
         # wholesale import is recorded in the database, but may or may not be done
         if self.wholesale_import_pk:
-            #: TODO: If user selects basic validation before importing data.
-            #: TODO: if self.object.before_import == WholesaleImport.validate_value:
-            #: TODO:     reverse('wholesale:confirm_import', kwargs={'pk'
             return reverse('wholesale:log', kwargs={'pk': self.wholesale_import_pk})
         # wholesale import was not recorded in the database
         else:
             return reverse('wholesale:logs')
-
-    def get_initial(self):
-        """ Sets defaults for the form representing the wholesale import to start.
-
-        :return: Dictionary containing initial data for form.
-        """
-        initial = super().get_initial()
-        initial['before_import'] = WholesaleImport.nothing_value
-        initial['on_error'] = WholesaleImport.stop_value
-        return initial
 
     def get_context_data(self, **kwargs):
         """ Adds the title, description and user details to the view context.
@@ -142,9 +136,12 @@ class StartImportCreateView(HostAdminSyncCreateView):
         """
         self.object = form.save(commit=False)
         self.object.user = self.request.user.email
+        self.object.uuid = WholesaleImport.get_uuid()
         self.object.full_clean()
         self.object.save()
-        # import the data
+        # converts any implicit references between related models to be explicit
+        self.object.convert_implicit_references()
+        # imports the data
         wholesale_import = self.object.do_import()
         self.wholesale_import_pk = wholesale_import.pk
         return HttpResponseRedirect(self.get_success_url())

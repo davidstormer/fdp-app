@@ -1,19 +1,30 @@
-from django.db import models
-from django.db.utils import IntegrityError
+from django.db import models, router
+from django.db.models import Q, ManyToManyField, ForeignKey, OneToOneField, ManyToManyRel, ManyToOneRel, OneToOneRel
+from django.core.validators import MinLengthValidator
 from django.core.exceptions import ValidationError, FieldDoesNotExist
+from django.core.files.base import ContentFile
+from django.core import serializers
 from django.apps import apps
 from django.utils.translation import ugettext_lazy as _
+from django.utils.timezone import now
 from django.conf import settings
-from inheritable.models import Metable, AbstractUrlValidator, AbstractFileValidator, AbstractConfiguration
+from inheritable.models import Metable, AbstractUrlValidator, AbstractFileValidator, AbstractConfiguration, \
+    AbstractStringValidator
+from fdpuser.models import FdpUser
 from bulk.models import BulkImport
-from reversion.revisions import create_revision
-from csv import reader as csv_reader
+from reversion.revisions import create_revision, force_str, _get_options, _get_content_type
+from reversion.models import Revision, Version
+from csv import reader as csv_reader, writer as csv_writer
 from operator import attrgetter
 from decimal import Decimal
 from datetime import date, datetime
 from json import loads as json_loads, dumps as json_dumps
 from json.decoder import JSONDecodeError
 from io import StringIO
+from uuid import uuid4
+from functools import reduce
+from sys import exc_info
+from os.path import basename, dirname
 
 
 class ModelHelper(models.Model):
@@ -142,6 +153,40 @@ class ModelHelper(models.Model):
         """
         return apps.get_model(app_label=app_name, model_name=model_name)
 
+    @staticmethod
+    def is_field_linked_to_another_model(model, field):
+        """ Checks whether a field that is declared on a model links to any other model.
+
+        Many-to-many fields, foreign keys and one-to-one fields will be considered as long as they link to a model
+        other than the one on which they are declared.
+
+        :param model: Model on which field is declared.
+        :param field: Field to check.
+        :return: True if field links to a model that is different than the on on which it is declared, false otherwise.
+        """
+        return (
+                # field for relation must be defined on the model itself
+                (field.many_to_many and isinstance(field, ManyToManyField))
+                or (field.many_to_one and isinstance(field, ForeignKey))
+                or (field.one_to_one and isinstance(field, OneToOneField))
+        ) and (
+                # field cannot reference model it is defined on
+                model != field.remote_field.model
+        )
+
+    @staticmethod
+    def is_field_a_relation(field):
+        """ Checks whether field is actually a relation, and so not a declared field.
+
+        E.g., if Model A has a FK to Model B, then Model A has a FK field, and Model B has a many-to-one relation.
+
+        :param field: Field for which to check.
+        :return: True if field is actually a relation and not a declared field.
+        """
+        return field.is_relation and (
+                isinstance(field, OneToOneRel) or isinstance(field, ManyToOneRel) or isinstance(field, ManyToManyRel)
+        )
+
     class Meta:
         abstract = True
 
@@ -159,6 +204,53 @@ class SkipWholesaleImportRecord(Exception):
     """
 
 
+def handle_import_errors(func):
+    """ Retrieves a decorator method that allows for the wrapping of an instance method in a try... except... block that
+    handles import errors.
+
+    :param func: Instance method that should be wrapped in try... except... block.
+    :return: Decorator.
+    """
+    def decorator(*args, **kwargs):
+        """ Decorator that wraps an instance method in a try... except... block that handles import errors.
+
+        :param args: Positional arguments for decorated instance method, starting with a reference to the
+        instance itself, i.e. "self".
+        :param kwargs: Keyword arguments for decorated instance method.
+        :return: Instance for which instance method was called.
+        """
+        self = args[0]
+        try:
+            return func(*args, **kwargs)
+        except StopWholesaleImportException as err:
+            # exception was raised that was already handled to some degree
+            self.finish_import_without_raising_exception(err=err)
+            self.full_clean()
+            self.save()
+        except:
+            # unhandled exception
+            exc_type, exc_value, exc_traceback = exc_info()
+            # cycle to the most specific call
+            while exc_traceback.tb_next is not None:
+                exc_traceback = exc_traceback.tb_next
+            # line number of offending code
+            line_number = exc_traceback.tb_lineno
+            # file name in which offending code resides
+            full_path = exc_traceback.tb_frame.f_code.co_filename
+            filename = basename(full_path)
+            app_name = basename(dirname(full_path))
+            # class for exception
+            exc_type_name = ModelHelper.get_str_for_cls(model_class=exc_type)
+            self.finish_import_without_raising_exception(
+                err=f'Unhandled exception of type: {exc_type_name}; with message: {exc_value}; '
+                    f'on line number: {line_number}; in file: {filename}; and in app: {app_name}.'
+            )
+            self.full_clean()
+            self.save()
+        return self
+    return decorator
+
+
 class WholesaleImportManager(models.Manager):
     """ Manager for imports performed through the wholesale import tool.
 
@@ -172,15 +264,14 @@ class WholesaleImport(Metable):
     Attributes:
         :started_timestamp (datetime): Automatically added timestamp recording when wholesale import was started.
         :action (str): The nature of the database change that is intended with the import such as add or update.
-        :before_import (str): Optional step before importing data such as basic validation.
-        :on_error (str): What to do if the import encounters an error such as to stop or keep going.
         :file (file): Template file containing data for wholesale import.
-        :is_done (bool): True if the import of data has been done, regardless of errors or success; false otherwise.
         :user (str): User starting import.
         :import_models (json): JSON formatted list of model names that were imported through the wholesale import.
         :import_errors (str): Errors, if any, that were encountered during the import.
         :import_rows (int): Number of rows that were imported.
         :error_rows (int): Number of rows where errors were encountered.
+        :uuid (str): Random combination of characters that form a unique identifier for the import. Used to identify
+        corresponding reversion records.
 
     Properties:
         :has_errors (bool): True if wholesale import encountered errors, false otherwise.
@@ -193,6 +284,9 @@ class WholesaleImport(Metable):
     #: A one-character string used to quote fields containing special characters, such as the delimiter or quotechar,
     # or which contain new-line characters. It defaults to '"'.
     csv_quotechar = '"'
+
+    #: The encoding use for the CSV templates.
+    csv_encoding = 'UTF-8'
 
     #: Tuple of values that represent True if the field is a boolean.
     true_booleans = ('true', 'yes', 'checked', 't', 'y')
@@ -238,38 +332,16 @@ class WholesaleImport(Metable):
     #: Choices for action intended during import such as add or update of data.
     action_choices = ((add_value, add_label,), (update_value, update_label,))
 
-    #: Value for validate data before attempting to import option.
-    validate_value = 'V'
-
-    #: Label for validate data before attempting to import option.
-    validate_label = _('Validate')
-
-    #: Value for nothing before attempting to import option.
-    nothing_value = 'N'
-
-    #: Label for nothing before attempting to import option.
-    nothing_label = _('Nothing')
-
-    #: Choices for preprocessing of data before import such as basic validation or nothing.
-    before_import_choices = ((nothing_value, nothing_label,), (validate_value, validate_label,))
-
-    #: Value for keep going option during errors in import.
-    keep_going_value = 'K'
-
-    #: Label for keep going option during errors in import.
-    keep_going_label = _('Try to keep going')
-
-    #: Value for stop option during errors in import.
-    stop_value = 'S'
-
-    #: Label for stop option during errors in import.
-    stop_label = _('Stop')
-
-    #: Choices for what to do during errors in import such as keep going or stop.
-    on_error_choices = ((keep_going_value, keep_going_label,), (stop_value, stop_label,))
-
     #: Suffix added to database primary key field name to reference a record's external primary key.
     external_id_suffix = '__external'
+
+    #: Length of UUID for wholesale imports.
+    _uuid_len = 36
+
+    #: Name of database primary key columns.
+    _id_col = 'id'
+    #: Name of external unique identifier columns.
+    _id_external_col = f'{_id_col}{external_id_suffix}'
 
     started_timestamp = models.DateTimeField(
         null=False,
@@ -287,24 +359,6 @@ class WholesaleImport(Metable):
         max_length=1,
         verbose_name=_('Action'),
         help_text=_('The nature of the database change that is intended with the import such as add or update.'),
-    )
-
-    before_import = models.CharField(
-        null=False,
-        blank=False,
-        choices=before_import_choices,
-        max_length=1,
-        verbose_name=_('Before import'),
-        help_text=_('Optional step before importing data such as basic validation.'),
-    )
-
-    on_error = models.CharField(
-        null=False,
-        blank=False,
-        choices=on_error_choices,
-        max_length=1,
-        verbose_name=_('On error'),
-        help_text=_('What to do if the import encounters an error such as to stop or keep going.'),
     )
 
     file = models.FileField(
@@ -325,15 +379,6 @@ class WholesaleImport(Metable):
             )
         ),
         unique=True,
-    )
-
-    is_done = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name=_('done'),
-        help_text=_('True if import is considered done, regardless of '
-                    'any errors encountered or whether the result was successful')
     )
 
     user = models.CharField(
@@ -372,6 +417,17 @@ class WholesaleImport(Metable):
         default=0,
         verbose_name=_('Rows with errors'),
         help_text=_('Number of rows where errors were encountered.')
+    )
+
+    uuid = models.CharField(
+        null=False,
+        blank=False,
+        max_length=_uuid_len,
+        validators=[MinLengthValidator(_uuid_len)],
+        verbose_name=_('UUID'),
+        help_text=_('Random combination of characters that form a unique identifier for the import. '
+                    'Used to identify corresponding reversion records.'),
+        unique=True
     )
 
     @property
@@ -595,12 +651,14 @@ class WholesaleImport(Metable):
         # referenced by name values are evaluated and/or imported
         data_struct[rel_model_name][named_instance][model_name].append((row_num, actual_field_name))
 
-    def __init__(self, *args, **kwargs):
+    def __init_data_structures(self):
         """ Initializes data structures for metadata about the import such as the models to be imported, their fields,
         and those fields' types.
 
+        Also initializes revision record placeholder for import.
+
+        :return: Nothing.
         """
-        super().__init__(*args, **kwargs)
         # Stores metadata for the import in list format where the index of each list item corresponds to the index of
         # each column.
         # Use __model_name_index, __field_name_index, __field_type_index and __rel_model_name_index to access tuple
@@ -717,6 +775,18 @@ class WholesaleImport(Metable):
         # }
         self._by_external_id_non_m2m_rel_data_by_model_name = {}
         self._by_external_id_m2m_rel_data_by_model_name = {}
+        # Groups revision records for import for the django-reversion package. Set in __add_revision_to_database(...).
+        self._revision = None
+
+    def __init__(self, *args, **kwargs):
+        """ Initializes data structures for metadata about the import such as the models to be imported, their fields,
+        and those fields' types.
+
+        Also initializes revision record placeholder for import.
+
+        """
+        super().__init__(*args, **kwargs)
+        self.__init_data_structures()
 
     def __str__(self):
         """ Defines string representation for an import performed through the wholesale import tool.
@@ -746,6 +816,49 @@ class WholesaleImport(Metable):
             err_cls=ValidationError
         )
 
+    def __get_decoded_string_content(self):
+        """ Retrieves the decoded string content of the CSV template.
+
+        :return: String representing content in file.
+        """
+        return self.file.read().decode(self.csv_encoding)
+
+    def __get_csv_reader(self, string_io):
+        """ Retrieves the reader object used to read the CSV template.
+
+        :param string_io: Instantiated StringIO instance that wraps the decoded string content of the CSV template.
+        :return: Instantiated CSV reader object.
+        """
+        return csv_reader(string_io, delimiter=self.csv_delimiter, quotechar=self.csv_quotechar)
+
+    def __get_csv_writer(self, string_io):
+        """ Retrieves the writer object used to write the CSV template.
+
+        :param string_io: Instantiated StringIO instance that is used as a buffer holding the content to write.
+        :return: Instantiated CSV writer object.
+        """
+        return csv_writer(string_io, delimiter=self.csv_delimiter, quotechar=self.csv_quotechar)
+
+    @classmethod
+    def get_uuid(cls):
+        """ Retrieves a UUID, a randomly generated unique identifier, to be used by a wholesale import model instance.
+
+        :return: Nothing.
+        """
+        # maximum number of tries to generate unique identifier
+        max_tries = 10
+        # random UUID, see: https://docs.python.org/3/library/uuid.html#uuid.uuid4
+        uuid = uuid4()
+        tries = 1
+        # keep trying to generate unique identifier until successful or max tries are exceeded
+        while tries <= max_tries and cls.objects.filter(uuid=uuid).exists():
+            uuid = uuid4()
+            tries += 1
+        # max tries were exceeded, so was not successful in generating unique identifier
+        if tries > max_tries:
+            raise Exception(f'UUID could not be generated for wholesale import')
+        return uuid
+
     def __add_to_import_errors(self, err):
         """ Adds to the model instance's import errors field.
 
@@ -772,22 +885,22 @@ class WholesaleImport(Metable):
                 # append error
                 self.import_errors = f'{import_errors} {str_err}'
 
-    def __finish_import_without_exception(self, err):
-        """ Marks an import as done.
+    def finish_import_without_raising_exception(self, err):
+        """ Finishes the import by recording its errors, if any, and then DOES NOT raise an exception.
 
         :param err: Optional exception that may have been encountered.
         :return: Nothing.
         """
         self.__add_to_import_errors(err=err)
-        self.is_done = True
 
-    def __finish_import_with_exception(self, err):
-        """ Marks an import as done due to an exception that was encountered, and raises a StopWholesaleImportException.
+    def __finish_import_and_raise_exception(self, err):
+        """ Finishes the import by recording its errors, if any, and then DOES raise
+        a StopWholesaleImportException exception.
 
         :param err: Exception that was encountered.
         :return: Nothing.
         """
-        self.__finish_import_without_exception(err=err)
+        self.finish_import_without_raising_exception(err=err)
         raise StopWholesaleImportException()
 
     def __get_field_metadata(self, field_name, model_name, model_class, model_fields):
@@ -848,7 +961,7 @@ class WholesaleImport(Metable):
                 rel_model_class = field.remote_field.model
             # field is unrecognized, e.g. DurationField, FloatField, AutoField
             else:
-                self.__finish_import_with_exception(
+                self.__finish_import_and_raise_exception(
                     err=f'Field {field_name} on model {model_name} is a type of field '
                         f'that is not yet supported through wholesale import.'
                 )
@@ -865,7 +978,9 @@ class WholesaleImport(Metable):
         # heading will be in the form of Model.field such as Person.is_archived
         split_heading = heading.split('.')
         if len(split_heading) != 2:
-            self.__finish_import_with_exception(err=f'Column {heading} is not in the expected format of <Model.field>.')
+            self.__finish_import_and_raise_exception(
+                err=f'Column {heading} is not in the expected format of <Model.field>.'
+            )
         model_name = split_heading[0]
         field_name = split_heading[1]
         return model_name, field_name
@@ -879,7 +994,7 @@ class WholesaleImport(Metable):
         """
         headings_row = next(reader, None)
         if headings_row is None:
-            self.__finish_import_with_exception(err='No rows were found in CSV file.')
+            self.__finish_import_and_raise_exception(err='No rows were found in CSV file.')
         # cache used only in this method to map model names to their respective model classes
         cached_model_classes = {}
         # list of fields for each model
@@ -888,19 +1003,31 @@ class WholesaleImport(Metable):
         import_models = []
         # total number of columns in CSV
         num_of_cols = len(headings_row)
+        # list of already parsed headings that is used to identify duplicate headings, in the format of:
+        # ['model1__field1', 'model1__field2', ... 'model2__field1', 'model2_field2', ...]
+        duplicate_headings_check = []
         # cycle through all heading columns
         for i, heading in enumerate(headings_row):
             model_name, field_name = self.__parse_template_heading(heading=heading)
+            heading_for_duplicate_check = f'{model_name}__{field_name}'
+            # heading has already been parsed, and so it a duplicate
+            if heading_for_duplicate_check in duplicate_headings_check:
+                self.__finish_import_and_raise_exception(
+                    err=f'Field {field_name} appears more than once for model {model_name}'
+                )
+            # heading has not yet been parsed
+            else:
+                duplicate_headings_check.append(heading_for_duplicate_check)
             # check cache, if this model has already been processed
             if model_name not in cached_model_classes:
                 # ensure model can be imported
                 if model_name not in AbstractConfiguration.whitelisted_wholesale_models():
-                    self.__finish_import_with_exception(
+                    self.__finish_import_and_raise_exception(
                         err=f'Model {model_name} is not whitelisted for wholesale import'
                     )
                 # check if this model has somehow already been added to the import list
                 elif model_name in import_models:
-                    self.__finish_import_with_exception(
+                    self.__finish_import_and_raise_exception(
                         err=f'Model {model_name} appears twice for wholesale import, perhaps due to column ordering'
                     )
                 app_name = ModelHelper.get_app_name(model=model_name)
@@ -909,7 +1036,7 @@ class WholesaleImport(Metable):
                 model_class = cached_model_classes[model_name]
             # check if field can be imported
             if field_name in AbstractConfiguration.blacklisted_wholesale_fields():
-                self.__finish_import_with_exception(err=f'Field {field_name} is blacklisted for wholesale import')
+                self.__finish_import_and_raise_exception(err=f'Field {field_name} is blacklisted for wholesale import')
             # metadata for particular field
             field_type, rel_model_class = self.__get_field_metadata(
                 field_name=field_name,
@@ -968,10 +1095,6 @@ class WholesaleImport(Metable):
 
         :return: Nothing.
         """
-        # name of database primary key columns
-        id_col = 'id'
-        # name of external unique identifier columns
-        id_external_col = f'{id_col}{self.external_id_suffix}'
         # all models must have "id" or "id__external" if import action is update
         # all models must not have "id" or "id__external" if import action is add
         # true if import action is add, false if import action is update
@@ -981,7 +1104,7 @@ class WholesaleImport(Metable):
         num_of_cols = len(self._metadata_by_col_index)
         # no columns were found
         if num_of_cols == 0:
-            self.__finish_import_with_exception(err='No columns were found in the import template.')
+            self.__finish_import_and_raise_exception(err='No columns were found in the import template.')
         model_name = self._metadata_by_col_index[0][self.__model_name_index]
         # true when "id" column is found, i.e. direct PK
         found_id_col = False
@@ -993,20 +1116,20 @@ class WholesaleImport(Metable):
             if not (found_id_col and found_external_id_col):
                 field_name = self._metadata_by_col_index[i][self.__field_name_index]
                 # check if field is the direct PK identifier column
-                if field_name == id_col:
+                if field_name == self._id_col:
                     found_id_col = True
                 # check if field is the indirect PK identifier column, i.e. through external ID
-                elif field_name == id_external_col:
+                elif field_name == self._id_external_col:
                     found_external_id_col = True
             # check if this is the last column, or if the next column is a new model
             if i+1 >= num_of_cols or self._metadata_by_col_index[i+1][self.__model_name_index] != model_name:
                 # direct or indirect PK column was not found and the import is an update action
                 if is_update and not (found_id_col or found_external_id_col):
-                    pk_err += f' Model {model_name} does not have an "{id_col}" or "{id_external_col}" ' \
+                    pk_err += f' Model {model_name} does not have an "{self._id_col}" or "{self._id_external_col}" ' \
                               f'column that is required to update.'
                 # direct PK column was found and the import is an add action
                 elif found_id_col and is_add:
-                    pk_err += f' Model {model_name} has an "{id_col}" column that is not allowed during adds.'
+                    pk_err += f' Model {model_name} has an "{self._id_col}" column that is not allowed during adds.'
                 # get next model, if it exists
                 model_name = '' if i+1 >= num_of_cols else self._metadata_by_col_index[i+1][self.__model_name_index]
                 # reset found id columns
@@ -1015,7 +1138,7 @@ class WholesaleImport(Metable):
         # some models were missing identifier columns and the action was an update, OR
         # some models had identifier columns and the action was an add
         if pk_err:
-            self.__finish_import_with_exception(err=pk_err)
+            self.__finish_import_and_raise_exception(err=pk_err)
 
     def __check_import_metadata(self):
         """ Checks the contents of the data structures storing metadata about the import to ensure that they are valid.
@@ -1394,9 +1517,6 @@ class WholesaleImport(Metable):
                     if i + 1 >= num_of_cols or self._metadata_by_col_index[i+1][self.__model_name_index] != model_name:
                         # skipping this record because of an error
                         if skip_record:
-                            # stop on error
-                            if self.on_error == self.stop_value:
-                                raise StopWholesaleImportException(' '.join(err_msgs))
                             # add list of error messages in the spot where the model instance would be
                             self.__add_to_data_by_model_name(
                                 model_name=model_name,
@@ -1434,9 +1554,9 @@ class WholesaleImport(Metable):
 
         :return: Nothing.
         """
-        decoded_string_content = self.file.read().decode('UTF-8')
+        decoded_string_content = self.__get_decoded_string_content()
         with StringIO(decoded_string_content) as string_io:
-            reader = csv_reader(string_io, delimiter=self.csv_delimiter, quotechar=self.csv_quotechar)
+            reader = self.__get_csv_reader(string_io=string_io)
             # creates and populates data structures to store metadata used during the import such as models involved,
             # their fields, and those fields' types
             self.__make_import_metadata(reader=reader)
@@ -1491,7 +1611,7 @@ class WholesaleImport(Metable):
         fk = f'{field_name}_id'
         self._data_by_model_name[model_name][row_num][self.__instance_attr_dict_index][fk] = instance_pk
 
-    def __add_rel_val_to_data_by_model_name(self, dict_by_model_name, err_msg, is_m2m, instance, instance_pk):
+    def __add_rel_val_to_data_by_model_name(self, dict_by_model_name, err_msg, is_m2m, instance_pk):
         """ Adds a relation value intended for a one-to-one field, foreign key or many-to-many field to
         the _data_by_model_name_ data structure.
 
@@ -1499,9 +1619,6 @@ class WholesaleImport(Metable):
         :param err_msg: Error message if an error was encountered while evaluating/importing relation. Will be None if
         no error was encountered.
         :param is_m2m: True if relation is for a many-to-many field, false otherwise.
-        :param instance: Instance referenced by relation, if reference was using a "by name" or "by PK" approach.
-        Primary key for instance referenced by relation, if reference was using a "by external ID" approach.
-        Will be None if an error was encountered.
         :param instance_pk: Primary key for instance referenced by relation.
         :return: Nothing.
         """
@@ -1513,7 +1630,7 @@ class WholesaleImport(Metable):
             for instance_tuple in model_list:
                 row_num = instance_tuple[self.__data_row_index]
                 field_name = instance_tuple[self.__actual_field_name_index]
-                error_encountered = instance is None and err_msg is not None
+                error_encountered = err_msg is not None
                 # a placeholder list of error messages was found for this referencing model instance
                 if isinstance(self._data_by_model_name[model_name][row_num], list):
                     # an error was encountered attempting to create instance with the desired name OR to retrieve
@@ -1566,6 +1683,7 @@ class WholesaleImport(Metable):
         CSV template file or not.
         :return: Nothing.
         """
+        fields = ['pk', 'name']
         data_struct_tuples = [
             (
                 '_by_name_non_m2m_rel_data_by_model_name',  # name of property storing data structure
@@ -1589,32 +1707,70 @@ class WholesaleImport(Metable):
                     imported_rel_model_names.append(rel_model_name)
                     rel_model_dict = data_struct[rel_model_name]
                     rel_model_class = self._metadata_by_rel_model_name[rel_model_name]
+                    # all values referenced "by name"
+                    rel_names = rel_model_dict.keys()
+                    #: TODO: Multiple references below to "name" field. Not all relation models may have this field.
+                    # in the format of: [Q(...), Q(...), ...]
+                    list_of_q = map(lambda name_val: Q(name__iexact=name_val), rel_names)
+                    # in the format of: Q(...) | Q(...) | ...
+                    by_names_filter = reduce(lambda q1, q2: q1 | q2, list_of_q)
+                    by_name_instances = [
+                        # tuple is in the format of:
+                        #     [0] lower_case_name (i.e. case-insensitive for comparison)
+                        #     [1] PK
+                        #     [2] name (i.e. original case-sensitivity preserved)
+                        (str(r[1]).lower(), r[0], r[1])
+                        for r in rel_model_class.objects.only(*fields).filter(by_names_filter).values_list(*fields)
+                    ]
+                    # List of tuples, in the format of: [(instance_1, rel_name_1), (instance_2, rel_name_2), ....]
+                    instance_tuples_to_add = []
                     # cycle through name values that represent instances in this relation model
                     for rel_name in rel_model_dict.keys():
-                        err_msg = None
+                        rel_name_lower = rel_name.lower()
                         rel_name_dict = rel_model_dict[rel_name]
-                        # retrieve an existing instance of relation model referenced by name
-                        try:
-                            instance = rel_model_class.objects.only('pk').get(name__iexact=rel_name)
-                        # instance with that name does not exist, so create it
-                        except rel_model_class.DoesNotExist:
-                            #: TODO: Not all relation model classes may have a 'name' field.
-                            instance = rel_model_class(name=rel_name)
-                            # create instance with that name
-                            try:
-                                instance.full_clean()
-                                instance.save()
-                            # could not create instance with that name
-                            except (ValidationError, IntegrityError) as err:
-                                instance = None
-                                err_msg = str(err)
-                        # add/link relation that was referenced in data to be imported
+                        instance_index = None
+                        # try and find existing instance by name
+                        for i, by_name_instance in enumerate(by_name_instances):
+                            # case-insensitive match
+                            if rel_name_lower == by_name_instance[0]:
+                                instance_index = i
+                                break
+                        # no instance of relation model matched the name referenced
+                        if instance_index is None:
+                            # plan to add instance to database later, with bulk_create(...)
+                            instance_tuples_to_add.append((rel_model_class(name=rel_name), rel_name))
+                        # first instance that matched name with case-insensitive comparison
+                        else:
+                            instance_pk = by_name_instances[instance_index][1]
+                            # add/link relation that was referenced in data to be imported
+                            self.__add_rel_val_to_data_by_model_name(
+                                dict_by_model_name=rel_name_dict,
+                                err_msg=None,
+                                is_m2m=is_m2m,
+                                instance_pk=instance_pk
+                            )
+                    # add the "name" references that did not already exist in the database
+                    added_instances = rel_model_class.objects.bulk_create([i[0] for i in instance_tuples_to_add])
+                    a = len(instance_tuples_to_add)
+                    b = len(added_instances)
+                    # some "name" references could not be added
+                    if a != b:
+                        names_to_add = [i[0].name for i in instance_tuples_to_add]
+                        added_names = [i.name for i in added_instances]
+                        missing_names = [name for name in names_to_add if name not in added_names]
+                        missing_names_str = AbstractStringValidator.join_list_of_strings(list_of_strings=missing_names)
+                        raise StopWholesaleImportException(f'Could not import the following {rel_model_name} '
+                                                           f'relations referenced by name: {missing_names_str}')
+                    # create reversion history
+                    self.__add_versions_to_database(model_class=rel_model_class, model_instances=added_instances)
+                    # add/link relations that were referenced in data to be imported
+                    for instance_tuple_to_add, added_instance in zip(instance_tuples_to_add, added_instances):
+                        rel_name = instance_tuple_to_add[1]
                         self.__add_rel_val_to_data_by_model_name(
-                            dict_by_model_name=rel_name_dict,
-                            err_msg=err_msg,
+                            dict_by_model_name=rel_model_dict[rel_name],
+                            err_msg=None,
                             is_m2m=is_m2m,
-                            instance=instance,
-                            instance_pk=instance.pk
+                            instance_pk=added_instance.pk
                         )
             # remove the imported relation model from the data structure
             for imported_rel_model_name in imported_rel_model_names:
@@ -1685,7 +1841,6 @@ class WholesaleImport(Metable):
                             dict_by_model_name=external_id_dict,
                             err_msg=err_msg,
                             is_m2m=is_m2m,
-                            instance=instance_pk,
                             instance_pk=instance_pk
                         )
             # remove the imported relation model from the data structure
@@ -1755,6 +1910,97 @@ class WholesaleImport(Metable):
                     through_model_class.objects.filter(**{f'{through_pk_field}__in': clear_for_pks}).delete()
                 through_model_class.objects.bulk_create(through_model_instances)
 
+    @staticmethod
+    def __get_existing_external_ids(model_name, external_ids_to_add):
+        """ Retrieves the relevant external IDs that are already recorded for this model in the bulk import table.
+
+        :param model_name: String representation of model name.
+        :param external_ids_to_add: List of tuples representing the external IDs that are intended to be added to the
+        database. Use the first tuple item for the external ID value, i.e. external_id_tuple[0].
+        :return: A tuple:
+                    [0] A dictionary mapping existing external IDs to internal database primary keys; and
+                    [1] A list of existing external ID values.
+        """
+        # all of the external IDs to add
+        all_external_ids = [
+            external_id_tuple[0] for external_id_tuple in external_ids_to_add if external_id_tuple[0] is not None
+        ]
+        # map between external IDs and internal database primary keys
+        fields = ['pk_imported_from', 'pk_imported_to']
+        external_to_internal_map = {
+            str(tuple_value[0]): int(tuple_value[1]) for tuple_value in BulkImport.objects.filter(
+                table_imported_to=model_name,
+                pk_imported_from__in=all_external_ids
+            ).only(*fields).values_list(*fields)
+        }
+        # external IDs that already exist
+        existing_external_ids = [e for e in external_to_internal_map.keys()]
+        return external_to_internal_map, existing_external_ids
+
+    def __add_revision_to_database(self):
+        """ Adds a revision record to the database that is used to group records for the django-reversion package.
+
+        Sets the self._revision property to the revision record that was added to the database.
+
+        :return: Nothing.
+        """
+        action_txt = self.get_action_display()
+        comment = f'Changed through an "{action_txt}" wholesale import with UUID: {self.uuid}'
+        # Contains metadata about a revision, and groups together all reversion.models.Version instances created in
+        # that revision. See: https://django-reversion.readthedocs.io/en/stable/api.html#reversion-models-revision
+        revision = Revision.objects.create(
+            date_created=now(),
+            user=FdpUser.objects.get(email=self.user),
+            comment=comment
+        )
+        self._revision = revision
+
+    def __add_versions_to_database(self, model_class, model_instances):
+        """ Adds version records to the database for model instances that have already been saved in the database.
+
+        Based on _add_to_revision(...) in reversion.revisions.py for the django-reversion package.
+
+        Ensure that __add_revision_to_database(...) is called first, as it groups the version records.
+
+        :param model_class: Class for instances for which to add version records.
+        :param model_instances: List of model instances for which to add version records. Must be for a single model.
+        :return: Nothing.
+        """
+        model_name = ModelHelper.get_str_for_cls(model_class=model_class)
+        a = len(model_instances)
+        model_db = router.db_for_write(model_class)
+        using = 'default'
+        version_options = _get_options(model_class)
+        content_type = _get_content_type(model_class, using)
+        versions_to_add = [
+            # Represents a single model instance serialized in a revision.
+            # See: https://django-reversion.readthedocs.io/en/stable/api.html#reversion-models-version
+            Version(
+                revision=self._revision,
+                content_type=content_type,
+                object_id=force_str(obj.pk),
+                db=model_db,
+                format=version_options.format,
+                serialized_data=serializers.serialize(
+                    version_options.format,
+                    (obj,),
+                    fields=version_options.fields,
+                    use_natural_foreign_keys=version_options.use_natural_foreign_keys,
+                ),
+                object_repr=force_str(obj),
+            ) for obj in model_instances
+        ]
+        b = len(versions_to_add)
+        if a != b:
+            raise StopWholesaleImportException(f'Could not add versions to the database for {model_name}. '
+                                               f'Length of versions ({b}) must be equal to the length of model '
+                                               f'instances ({a}) upon which they are based.')
+        added_versions = Version.objects.bulk_create(versions_to_add)
+        c = len(added_versions)
+        if a != c:
+            raise StopWholesaleImportException(f'Could not add versions to the database for all {a} model instances '
+                                               f'for {model_name}. Only {c} versions were added.')
+
     def __add_models_to_database(
             self, model_name, m2ms_to_add, external_ids_to_add, attr_dicts, wholesale_import_records
     ):
@@ -1784,6 +2030,16 @@ class WholesaleImport(Metable):
                 f'Cannot add models in database. Length of attribute dictionaries ({c}) must be equal to length of '
                 f'corresponding many-to-many fields tuples ({d}).'
             )
+        # external IDs already recorded in database
+        external_to_internal_map, existing_external_ids = self.__get_existing_external_ids(
+            model_name=model_name,
+            external_ids_to_add=external_ids_to_add
+        )
+        # some external IDs already exist
+        if existing_external_ids:
+            ext_ids_str = AbstractStringValidator.join_list_of_strings(list_of_strings=existing_external_ids)
+            raise StopWholesaleImportException(f'Cannot add models in database. The following external '
+                                               f'IDs already exist: {ext_ids_str}.')
         model_class = self._metadata_by_model_name[model_name][self.__model_class_index]
         # create model instances in database
         instances_to_add = [model_class(**attr_dict) for attr_dict in attr_dicts]
@@ -1795,6 +2051,8 @@ class WholesaleImport(Metable):
                 f'corresponding external ID tuples ({b}). This may be caused because some instances could not be '
                 f'created.'
             )
+        # create reversion history
+        self.__add_versions_to_database(model_class=model_class, model_instances=created_instances)
         # create the corresponding bulk import records in the database
         bulk_instances = [
             BulkImport(
@@ -1862,20 +2120,11 @@ class WholesaleImport(Metable):
             )
         # list of fields that reflect the changes
         fields_to_update = self._metadata_by_model_name[model_name][self.__model_fields_index]
-        # all of the external IDs to add
-        all_external_ids = [
-            external_id_tuple[0] for external_id_tuple in external_ids_to_add if external_id_tuple[0] is not None
-        ]
-        # map between external IDs and internal database primary keys
-        fields = ['pk_imported_from', 'pk_imported_to']
-        external_to_internal_map = {
-            str(tuple_value[0]): int(tuple_value[1]) for tuple_value in BulkImport.objects.filter(
-                table_imported_to=model_name,
-                pk_imported_from__in=all_external_ids
-            ).only(*fields).values_list(*fields)
-        }
-        # external IDs that already exist
-        existing_external_ids = [e for e in external_to_internal_map.keys()]
+        # external IDs already recorded in database
+        external_to_internal_map, existing_external_ids = self.__get_existing_external_ids(
+            model_name=model_name,
+            external_ids_to_add=external_ids_to_add
+        )
         # no primary key in fields to update, depend on external ID
         if 'id' not in fields_to_update:
             e = len(existing_external_ids)
@@ -1952,6 +2201,8 @@ class WholesaleImport(Metable):
             # cannot do bulk_update on external fields or many-to-many fields
             [f for f in fields_to_update if f not in m2m_fields and not f.endswith(self.external_id_suffix)]
         )
+        # create reversion history
+        self.__add_versions_to_database(model_class=model_class, model_instances=instances_to_update)
         # create the corresponding bulk import records in the database
         bulk_instances = [
             BulkImport(
@@ -2054,23 +2305,20 @@ class WholesaleImport(Metable):
             # update any model instances that may reference the just imported instances by external ID
             self.__import_relation_models_by_external_id(import_these_models=(model_name,))
         # save in the database the model instance that represents the entire import
-        self.__finish_import_without_exception(err=None)
+        self.finish_import_without_raising_exception(err=None)
         self.full_clean()
         self.save()
         # save in the database the model instances that represent each record imported
         WholesaleImportRecord.objects.bulk_create(wholesale_import_records)
 
+    @handle_import_errors
     def do_import(self):
         """ Perform wholesale import.
 
         :return: Wholesale import model instance that represents this import, i.e. "self".
         """
-        # cannot import if it was already done
-        if self.is_done:
-            raise StopWholesaleImportException('Wholesale import that is marked as done cannot be imported')
-        # true when wholesale import record has been saved
-        is_saved = False
-        try:
+        # only import, if there were no errors found while converting implicit references to explicit
+        if not self.has_errors:
             # creates and populates metadata for import, perform validation checks and prepares data for import
             self.__before_import()
             try:
@@ -2080,6 +2328,8 @@ class WholesaleImport(Metable):
                 # If atomic=True, the revision block will be wrapped in a transaction.atomic().
                 # see: https://django-reversion.readthedocs.io/en/stable/views.html#decorators
                 with create_revision(manage_manually=True, atomic=True):
+                    # create a revision that will group reversion records for the django-reversion package
+                    self.__add_revision_to_database()
                     # create or retrieve model instances that are referenced by name, then update relation fields on
                     # referencing model instances
                     self.__import_relation_models_by_name(import_these_models=())
@@ -2092,19 +2342,487 @@ class WholesaleImport(Metable):
                 # exception was raised during actual import, i.e. adding/updating records in the database
                 self.imported_rows = 0
                 self.error_rows = 0
-                self.__finish_import_without_exception(err=err)
+                self.finish_import_without_raising_exception(err=err)
                 self.full_clean()
                 self.save()
-                is_saved = True
-        except StopWholesaleImportException as err:
-            # exception was raised before actual import, i.e. adding/updating records in the database, such as during
-            # preparation, so wholesale import record is not yet saved
-            if not is_saved:
-                self.__finish_import_without_exception(err=err)
-                self.full_clean()
-                self.save()
-        # retrieve wholesale import model instance
+            # retrieve wholesale import model instance
         return self
+
+    @staticmethod
+    def __add_to_cached_fields_to_add_by_model(
+            model_name, field_name, has_pk_vals, rel_model_name, cached_fields_to_add_by_model
+    ):
+        """ Records a field that should be added for a particular model, and whether it contains primary key values.
+
+        Used during the conversion of implicit references.
+
+        :param model_name: Name of model for which to add field.
+        :param field_name: Name of field to add.
+        :param has_pk_vals: True if field to add will contain primary key values, false if it will contain external ID
+        values.
+        :param rel_model_name: Name of model to which field links, if field is a linking field such as a foreign key,
+        one-to-one field or many-to-many field; will be None otherwise.
+        :param cached_fields_to_add_by_model: Data structure that stores the fields to add in the format of a
+        dictionary whose keys are the model names.
+        :return: Nothing.
+        """
+        # no fields have yet needed to be added for this particular model
+        if model_name not in cached_fields_to_add_by_model:
+            cached_fields_to_add_by_model[model_name] = []
+        (cached_fields_to_add_by_model[model_name]).append((field_name, has_pk_vals, rel_model_name))
+
+    def __get_fields_to_convert_implicit_references(self):
+        """ Retrieves a data structure that stores the fields to add in the format of a dictionary whose keys are the
+        model names.
+
+        Used during the conversion of implicit references.
+
+        Fields may be added that make explicit a link from one model to another model. External ID fields may also be
+        added to provide a target (i.e. endpoint) for linking fields.
+
+        :return: Data structure the stores the fields to add.
+        """
+        # fields to add, in the format of: {
+        # 'model_1': [(field_1, is_pk_1, rel_model_1), (field_2, is_pk_2, rel_model_2), ...],
+        # 'model_2': [...],
+        # ...
+        # }
+        cached_fields_to_add_by_model = {}
+        # models that have already been checked, in the format of: {'model_1': (has_id_1, has_external_id_1), ...}
+        cached_models_to_the_left = {}
+        # cycle through each model
+        for import_model in self.import_models:
+            model_name_dict = self._metadata_by_model_name[import_model]
+            model_name = import_model
+            model_class = model_name_dict[self.__model_class_index]
+            csv_model_fields = model_name_dict[self.__model_fields_index]
+            has_id = self._id_col in csv_model_fields
+            has_external_id = self._id_external_col in csv_model_fields
+            is_first_model = not cached_models_to_the_left
+            cached_models_to_the_left[model_name] = (has_id, has_external_id)
+            # only cycle through fields, if this is not the first model
+            if not is_first_model:
+                db_model_fields = ModelHelper.get_fields(model=model_class)
+                # cycle through fields that are noted for model in database
+                for field in db_model_fields:
+                    field_name = field.name
+                    # field is not explicitly defined in csv AND field is a linking field AND
+                    if field_name not in csv_model_fields \
+                            and ModelHelper.is_field_linked_to_another_model(model=model_class, field=field):
+                        # fields links to this model
+                        linked_model_name = ModelHelper.get_str_for_cls(model_class=field.remote_field.model)
+                        # model that field links to is included in the CSV template
+                        if linked_model_name in cached_models_to_the_left:
+                            cached_model_tuple = cached_models_to_the_left[linked_model_name]
+                            has_pk = cached_model_tuple[0]
+                            has_external_id = cached_model_tuple[1]
+                            # model to left has a primary key field, so link to this primary key field
+                            if has_pk:
+                                self.__add_to_cached_fields_to_add_by_model(
+                                    model_name=model_name,
+                                    field_name=field_name,
+                                    has_pk_vals=True,
+                                    rel_model_name=linked_model_name,
+                                    cached_fields_to_add_by_model=cached_fields_to_add_by_model
+                                )
+                            # model to left does not have a primary key field
+                            else:
+                                # link will be established by external ID
+                                self.__add_to_cached_fields_to_add_by_model(
+                                    model_name=model_name,
+                                    field_name=field_name,
+                                    has_pk_vals=False,
+                                    rel_model_name=linked_model_name,
+                                    cached_fields_to_add_by_model=cached_fields_to_add_by_model
+                                )
+                                # model to left doesn't have an external ID field, so it too will be added
+                                if not has_external_id:
+                                    # link will be established by external ID
+                                    self.__add_to_cached_fields_to_add_by_model(
+                                        model_name=linked_model_name,
+                                        field_name=self._id_external_col,
+                                        has_pk_vals=False,
+                                        rel_model_name=None,
+                                        cached_fields_to_add_by_model=cached_fields_to_add_by_model
+                                    )
+                                    # update cache for models to the left, with the newly added external ID column
+                                    cached_models_to_the_left[linked_model_name] = (has_pk, True)
+        return cached_fields_to_add_by_model
+
+    @staticmethod
+    def get_auto_external_id(uuid, group, row_num):
+        """ Retrieves an external ID that has been automatically generated, such as for the conversion of implicit
+        model references to explicit model references.
+
+        :param uuid: UUID for wholesale import.
+        :param group: Collection of characters that represents a group of records, such as for a particular table.
+        :param row_num: Sequential numbering for external ID.
+        :return: External ID that has been automatically generated.
+        """
+        return f'__AUTO_{uuid}_{group}_{row_num}'
+
+    class FieldToAdd(object):
+        """ Each instance of this object stores information about a field that will be added so that implicit references
+        between models are converted to explicit references.
+
+        During this conversion process, the CSV template will be regenerated using slices from the original template
+        rows.
+
+        """
+        def __init__(
+                self, start, end, is_field_a_reference, orig_col_index, group, reference_group, model_name, field_name
+        ):
+            """ Creates an instance defining a field that will be added to the CSV template to facilitate making
+            an implicit reference between models into an explicit reference.
+
+            :param start: Starting index for slice from original CSV template. Can be used with a CSV row that is a
+            list, i.e. [start:...]. Will be None if there is no relevant slice.
+            :param end: Ending index for slice from original CSV template. Can be used with a CSV row that is a
+            list, i.e. [...:end]. Will be None if there is no relevant slice.
+            :param is_field_a_reference: True if the field to add is a reference to another model field, such as when
+            adding a foreign key, one-to-one field or many-to-many field. False if the field to add is a primary
+            key or external ID.
+            :param orig_col_index: Column index in the original CSV template if the field to add is referencing a field
+            that existed in the original template. Will be None if the field is referencing a field that was added, or
+            if the field is not a reference, i.e. if is_field_a_reference is False.
+            :param group: Collection of characters that represents a group of records, such as for a particular table
+            on which the field is declared.
+            :param reference_group: Collection of characters that represents another group of records, such as for a
+            particular table that is referenced by the field. Will be None if is_field_a_reference=False.
+            :param model_name: Name of model for which to add field.
+            :param field_name: Name of field to add.
+            """
+            super().__init__()
+            self.start = start if end is not None else None
+            self.end = end if start is not None else None
+            self.is_field_a_reference = is_field_a_reference
+            self.orig_col_index = orig_col_index if is_field_a_reference else None
+            self.group = group
+            self.reference_group = reference_group if is_field_a_reference else None
+            self.model_name = model_name
+            self.field_name = field_name
+
+        @property
+        def has_original_slice(self):
+            """ Checks whether any relevant slice of the original CSV template can be taken when adding this field.
+
+            :return: True if a relevant slice of the original CSV template row can be taken, false otherwise.
+            """
+            return self.start is not None and self.end is not None
+
+        def get_new_heading_slice(self, original_csv_row, field_heading):
+            """ Retrieves the slice of a headings row to build a new CSV template, which includes the field, and in some
+            cases a slice of a headings row from the original CSV template.
+
+            :param original_csv_row: Original CSV template headings row.
+            :param field_heading: Column heading intended for the field to add.
+            :return: List of cells that represents a new CSV template headings row.
+            """
+            new_cell = [field_heading]
+            # a slice from the original CSV template should be appended to the field
+            if self.has_original_slice:
+                return new_cell + original_csv_row[self.start: self.end]
+            # no slice from the original CSV template is relevant for this field
+            else:
+                return new_cell
+
+        def get_new_data_slice(self, original_csv_row, auto_external_id, reference_auto_external_id):
+            """ Retrieves the slice of a data row to build a new CSV template, which includes the field, and in some
+            cases a slice of a data row from the original CSV template.
+
+            :param original_csv_row: Original CSV template data row.
+            :param auto_external_id: Automatically generated external ID that is only used if field to add is an
+            external ID, i.e. if self.is_field_a_reference is False.
+            :param reference_auto_external_id: Automatically generated referenced external ID that is only used if field
+            to add references a field that did not exist in the original CSV template, i.e. self.is_field_a_reference
+            is True and self.orig_col_index is None and self.reference_group is not None.
+            :return: List of cells that represents a new CSV template data row.
+            """
+            # field references another field
+            if self.is_field_a_reference:
+                # field references a field that existed in the original CSV template
+                if self.orig_col_index is not None and self.reference_group is None:
+                    new_cell = [original_csv_row[self.orig_col_index]]
+                # field references an external ID field that will be added to the new CSV template
+                elif self.orig_col_index is None and self.reference_group is not None:
+                    new_cell = [reference_auto_external_id]
+                # something went wrong
+                else:
+                    raise StopWholesaleImportException(
+                        f'Could not retrieve a new slice while building a new CSV template. Either orig_col_index '
+                        f'({self.orig_col_index}) must be None/not None or reference_group ({self.reference_group}) '
+                        f'must be None/not None.')
+            # field is an external ID
+            else:
+                new_cell = [auto_external_id]
+            # a slice from the original CSV template should be appended to the field
+            if self.has_original_slice:
+                return new_cell + original_csv_row[self.start: self.end]
+            # no slice from the original CSV template is relevant for this field
+            else:
+                return new_cell
+
+    def __get_end_col_index_for_model(self, start, model_name):
+        """ Retrieves the column index for the original CSV template, for which the fields for the current model end,
+        and EITHER fields for a new model begin, OR it is the end of the CSV template columns.
+
+        The column index is based on the original column index before any CSV slices, or any fields that are added.
+
+        See the _metadata_by_col_index data structure.
+
+        :param start: Starting column index for current model.
+        :param model_name: Name of current model.
+        :return: Column index for where next model begins or the CSV template ends.
+        """
+        num_of_cols = len(self._metadata_by_col_index)
+        # cycle through the columns, starting at the current column
+        for i in range(start + 1, num_of_cols):
+            referenced_model_name = self._metadata_by_col_index[i][self.__model_name_index]
+            # this is a new model
+            if model_name != referenced_model_name:
+                return i
+        # this is the end of the row
+        return num_of_cols
+
+    def __get_reference_for_field_to_add(self, is_pk, model_name, fields_to_add):
+        """ Retrieves the reference for a field that is to be added when generating a new CSV template from the
+        original CSV template to convert implicit model references into explicit references.
+
+        Should only be called if the field to add is a reference field, i.e. if is_field_a_reference is True.
+
+        The field to add may reference a field that existed in the original CSV template such as an external ID or a
+        primary key.
+
+        The field to add may also reference another field to be added, which will always be an external ID.
+
+        For parsing the original CSV template, see the _metadata_by_col_index data structure.
+
+        :param is_pk: True if the field to add references the primary key on another model, false if it references the
+        external ID.
+        :param model_name: Name of model whose primary key or external ID is referenced by field to add.
+        :param fields_to_add: List of other fields to add, which may be referenced by this field to add.
+        :return: A tuple:
+                    [0] Column index in the original CSV template that is referenced by this field, will be None if
+                        field references a field that is not yet added; and
+                    [1] The group that defines the collection of records referenced by the field, will be None if field
+                        referenced a field that existed in the original CSV template.
+        """
+        # will note the column index where fields start for the model we are looking for
+        model_start_index = None
+        # name of field being referenced
+        field_to_find = self._id_col if is_pk else self._id_external_col
+        # cycle through columns in original CSV template, in case field referenced already existed
+        for col_index, by_col_tuple in enumerate(self._metadata_by_col_index):
+            cur_model_name = by_col_tuple[self.__model_name_index]
+            cur_field_name = by_col_tuple[self.__field_name_index]
+            # note column index where fields for desired model start
+            if model_start_index is None and model_name == cur_model_name:
+                model_start_index = col_index
+            # found the field for that model
+            if model_name == cur_model_name and field_to_find == cur_field_name:
+                return col_index, None
+        # did not find field for that model in original fields, so check fields to add
+        if model_start_index is not None and fields_to_add:
+            # cycle through fields to add when building new CSV template
+            for i, field_to_add in enumerate(fields_to_add):
+                # first field to add for every model will contain the relevant slice from the original CSV template, so
+                # compare model indices
+                if field_to_add.has_original_slice and field_to_add.start == model_start_index:
+                    num_of_fields_to_add = len(fields_to_add)
+                    # cycle through fields to add until we've reached a new model
+                    for j in range(i, num_of_fields_to_add):
+                        cur_field_to_add = fields_to_add[j]
+                        # this is a new model, since there is a new relevant slice from the original CSV template
+                        if cur_field_to_add.has_original_slice and j > i:
+                            break
+                        # this is the same model
+                        else:
+                            # this is an external ID
+                            if not cur_field_to_add.is_field_a_reference:
+                                return None, cur_field_to_add.group
+                    # this is a new model, since there is a new relevant slice from the original CSV template, OR we've
+                    # reached the end of the CSV row
+                    break
+        # did not find field in neither the _metadata_by_col_index data structure nor the fields to add
+        raise StopWholesaleImportException(f'Could not find field {field_to_find} for model {model_name} in '
+                                           f'the _metadata_by_col_index data structure or in the fields to add.')
+
+    def get_fields_to_add(self, cached_fields_to_add_by_model):
+        """ Retrieves a list of fields to add and corresponding slices from the original CSV template, that can be used
+        to convert the original CSV template with implicit references into a new CSV template with explicit references.
+
+        :param cached_fields_to_add_by_model: Data structure that stores the fields to add in the format of a
+        dictionary whose keys are the model names.
+        :return: List of fields to add.
+        """
+        # list of fields to add and corresponding slices from the original CSV template
+        fields_to_add = []
+        # models for which the fields to add have already been noted
+        done_models = []
+        # cycle through fields recorded in metadata, and create fields to add that will be used to rebuild the CSV
+        for col_num, by_col_tuple in enumerate(self._metadata_by_col_index):
+            # name of model for CSV column
+            model_name = by_col_tuple[self.__model_name_index]
+            # some fields will be added for this model, and they have not yet been noted
+            if model_name in cached_fields_to_add_by_model and model_name not in done_models:
+                done_models.append(model_name)
+                group = str(len(done_models))
+                fields_to_add_tuples = cached_fields_to_add_by_model[model_name]
+                #: TODO: Create cache mapping (model, field) -> column_index.
+                #: TODO: Create cache of end indexes for each model.
+                # cycle through fields to add tuples
+                for i, field_to_add_tuple in enumerate(fields_to_add_tuples):
+                    field_name = field_to_add_tuple[0]
+                    is_pk = field_to_add_tuple[1]
+                    rel_model_name = field_to_add_tuple[2]
+                    # only include slice from original CSV row once, and so on the first field tuple is enough
+                    if i == 0:
+                        # starting column for CSV row
+                        start = col_num
+                        # find where next model starts or CSV row ends
+                        end = self.__get_end_col_index_for_model(start=col_num, model_name=model_name)
+                    else:
+                        start = None
+                        end = None
+                    # only external ID columns may be added, never internal PK columns
+                    is_field_a_reference = field_name != self._id_external_col
+                    # if field is a reference to another field, then find the relevant external ID or primary key
+                    if is_field_a_reference:
+                        orig_col_index, reference_group = self.__get_reference_for_field_to_add(
+                            is_pk=is_pk,
+                            model_name=rel_model_name,
+                            fields_to_add=fields_to_add
+                        )
+                    else:
+                        orig_col_index, reference_group = None, None
+                    # don't change the field name if it references a primary key or if it is not a reference at all,
+                    # and therefore is an external ID field (and so already have external ID suffix)
+                    dont_change_field = is_pk or not is_field_a_reference
+                    fields_to_add.append(
+                        self.FieldToAdd(
+                            start=start,
+                            end=end,
+                            is_field_a_reference=is_field_a_reference,
+                            orig_col_index=orig_col_index,
+                            group=group,
+                            reference_group=reference_group,
+                            model_name=model_name,
+                            field_name=field_name if dont_change_field else f'{field_name}{self.external_id_suffix}'
+                        )
+                    )
+        return fields_to_add
+
+    def __write_new_headings_row(self, reader, writer, fields_to_add):
+        """ Writes a headings row into the new CSV template based on the fields to add, as well as corresponding slices
+        from the original CSV template.
+
+        :param reader: Instantiated reader object from the csv module that allows for iterating over the original CSV
+        file.
+        :param writer: Instantiated writer object from the csv module that allows writing to the new CSV file.
+        :param fields_to_add: List of fields to add and optionally corresponding slices from the original CSV template.
+        :return: Nothing.
+        """
+        headings_row = next(reader, None)
+        new_csv_row = []
+        for field_to_add in fields_to_add:
+            new_csv_row += field_to_add.get_new_heading_slice(
+                original_csv_row=headings_row,
+                field_heading=self.get_col_heading_name(
+                    model=field_to_add.model_name,
+                    field=field_to_add.field_name
+                )
+            )
+        # write row to the new CSV template
+        writer.writerow(new_csv_row)
+
+    def __write_new_data_rows(self, reader, writer, fields_to_add):
+        """ Writes a headings row into the new CSV template based on the fields to add, as well as corresponding slices
+        from the original CSV template.
+
+        :param reader: Instantiated reader object from the csv module that allows for iterating over the original CSV
+        file.
+        :param writer: Instantiated writer object from the csv module that allows writing to the new CSV file.
+        :param fields_to_add: List of fields to add and optionally corresponding slices from the original CSV template.
+        :return: Nothing.
+        """
+        # cycle through original CSV template data rows and modify using fields to add and corresponding slices
+        for row_num, original_csv_row in enumerate(reader):
+            new_csv_row = []
+            # cycle through the fields to add and corresponding slices from the original CSV template that
+            # can be used to create a new CSV row
+            for field_to_add in fields_to_add:
+                new_csv_row += field_to_add.get_new_data_slice(
+                    original_csv_row=original_csv_row,
+                    auto_external_id=self.get_auto_external_id(
+                        uuid=self.uuid,
+                        group=field_to_add.group,
+                        row_num=row_num + 1
+                    ),
+                    reference_auto_external_id=self.get_auto_external_id(
+                        uuid=self.uuid,
+                        group=field_to_add.reference_group,
+                        row_num=row_num + 1
+                    )
+                )
+            # write row to the new CSV template
+            writer.writerow(new_csv_row)
+
+    @handle_import_errors
+    def convert_implicit_references(self):
+        """ Converts implicit references between related models to be explicit using external IDs.
+
+        Related models are any that are linked by foreign keys, one-to-one fields and many-to-many fields, even if those
+        are not required, i.e. they are nullable.
+
+        If implicit references are found in the CSV template, then it will be updated and the original overwritten.
+
+        :return: Wholesale import model instance that represents this import, i.e. "self".
+        """
+        new_csv_file = None
+        file_changed = False
+        filename = self.file.name
+        decoded_string_content = self.__get_decoded_string_content()
+        with StringIO(decoded_string_content) as read_string_io:
+            reader = self.__get_csv_reader(string_io=read_string_io)
+            # creates and populates data structures to store metadata used during the import such as models involved,
+            # their fields, and those fields' types
+            self.__make_import_metadata(reader=reader)
+            # fields to add, in the format of: {
+            # 'model_1': [(field_1, is_pk_1, rel_model_1), (field_2, is_pk_2, rel_model_2), ...],
+            # 'model_2': [...],
+            # ...
+            # }
+            cached_fields_to_add_by_model = self.__get_fields_to_convert_implicit_references()
+            # if there are some fields to add
+            if cached_fields_to_add_by_model:
+                # list of CSV slice object instances that can be used to define a new CSV row
+                fields_to_add = self.get_fields_to_add(cached_fields_to_add_by_model=cached_fields_to_add_by_model)
+                # rebuild CSV using CSV slices
+                with StringIO() as write_string_io:
+                    writer = self.__get_csv_writer(string_io=write_string_io)
+                    # start reading CSV template again
+                    read_string_io.seek(0)
+                    self.__write_new_headings_row(reader=reader, writer=writer, fields_to_add=fields_to_add)
+                    self.__write_new_data_rows(reader=reader, writer=writer, fields_to_add=fields_to_add)
+                    # wrap the file
+                    new_csv_file = ContentFile(write_string_io.getvalue().encode(self.csv_encoding))
+                    file_changed = True
+        # re-initialize data structures
+        self.__init_data_structures()
+        # only re-save object if CSV template file has been changed to make explicit the implicit references
+        if file_changed:
+            self.file.save(f'mod_{filename}', new_csv_file)
+        return self
+
+    @staticmethod
+    def get_col_heading_name(model, field):
+        """ Retrieves the name of a column heading for the wholesale import tool template.
+
+        :param model: Model for which to retrieve heading.
+        :param field: Field in model for which to retrieve heading.
+        :return: String representing column heading.
+        """
+        return f'{model}.{field}'
 
     class Meta:
         db_table = '{d}wholesale_import'.format(d=settings.DB_PREFIX)
