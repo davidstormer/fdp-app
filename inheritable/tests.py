@@ -758,7 +758,9 @@ class AbstractTestCase(TestCase):
         )
         return str(response.content)
 
-    def _get_response_from_post_request(self, fdp_user, url, expected_status_code, login_startswith, post_data):
+    def _get_response_from_post_request(
+            self, fdp_user, url, expected_status_code, login_startswith, post_data, cast_response_as_string=True
+    ):
         """ Retrieves an HTTP response after sending an HTTP request through a POST method to a particular view for
         an FDP user.
 
@@ -766,7 +768,10 @@ class AbstractTestCase(TestCase):
         :param url: Url to which to send HTTP request through a POST method.
         :param expected_status_code: Expected HTTP status code that is returned in the response.
         :param login_startswith: Url to which response may be redirected. Only used when HTTP status code is 302.
-        :return: String representation of the HTTP response.
+        :param cast_response_as_string: True to cast the HTTP response content as a string when returning it, false to
+        return the raw HTTP response content. True by default.
+        :return: String representation of the HTTP response if cast_response_as_string is True, the raw HTTP response
+        otherwise.
         """
         client = Client(**self._local_client_kwargs)
         client.logout()
@@ -787,7 +792,7 @@ class AbstractTestCase(TestCase):
             expected_status_code=expected_status_code,
             login_startswith=login_startswith
         )
-        return str(response.content)
+        return str(response.content) if cast_response_as_string else response.content
 
     @staticmethod
     def _can_user_access_data(for_admin_only, for_host_only, has_fdp_org, fdp_user, fdp_org):

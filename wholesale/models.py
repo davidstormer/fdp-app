@@ -881,22 +881,24 @@ class WholesaleImport(Metable):
         # only if exception is defined
         if err:
             str_err = err.strip() if isinstance(err, str) else str(err).strip()
-            # add ending period
-            if str_err and not str_err.endswith('.'):
-                str_err = f'{str_err}.'
-            # no errors previously defined
-            if not self.import_errors:
-                self.import_errors = str_err
-            # append error to other existing errors
-            else:
-                # strip all superfluous whitespace
-                import_errors = self.import_errors.strip() if isinstance(self.import_errors, str) \
-                    else str(self.import_errors).strip()
+            # exception is still defined after stripping superfluous whitespace
+            if str_err:
                 # add ending period
-                if import_errors and not import_errors.endswith('.'):
-                    import_errors = f'{import_errors}.'
-                # append error
-                self.import_errors = f'{import_errors} {str_err}'
+                if not str_err.endswith('.'):
+                    str_err = f'{str_err}.'
+                # no errors previously defined
+                if not self.import_errors:
+                    self.import_errors = str_err
+                # append error to other existing errors
+                else:
+                    # strip all superfluous whitespace
+                    import_errors = self.import_errors.strip() if isinstance(self.import_errors, str) \
+                        else str(self.import_errors).strip()
+                    # add ending period
+                    if import_errors and not import_errors.endswith('.'):
+                        import_errors = f'{import_errors}.'
+                    # append error
+                    self.import_errors = f'{import_errors} {str_err}'
 
     def finish_import_without_raising_exception(self, err):
         """ Finishes the import by recording its errors, if any, and then DOES NOT raise an exception.
