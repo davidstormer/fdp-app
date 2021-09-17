@@ -92,6 +92,10 @@ To overwrite the *entire* list of supported file types for the `PersonPhoto` mod
         ... ('User-friendly description for file type', 'ext'), ...
     ]
 
+## EULA
+
+To disable the requirement that each user agree to an end-user license agreement (EULA) before they can access any secured views, set `FDP_EULA_SPLASH_ENABLED=False`.
+
 ## Wholesale import tool
 
 The default list of models that are whitelisted for use through the wholesale import tool can be modified by specifying a new list of model names: 

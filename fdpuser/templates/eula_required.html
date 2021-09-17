@@ -1,0 +1,58 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress fdp_extras %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {% compress js %}
+    <script src="{% static 'fdpuser/js/eula_required.js' %}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'fdpuser/css/eula_required.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">{{ title }}</div>
+{% endblock %}
+{% endif %}
+
+{% block content %}
+     <p class="line">
+         {% if not eula %}
+          {% translate 'No end user license agreement has yet been added.' %}
+         {% else %}
+            {% translate 'Please review and accept the' %}
+            <a class="eula" href="{{ eula.file.url }}" rel="noopener noreferrer" target="_blank" download>
+            {% translate 'end user license agreement' %}</a>.
+            <a class="eula" href="{{ eula.file.url }}" rel="noopener noreferrer" target="_blank" download><i class="fas fa-file-download"></i></a>
+         {% endif %}
+     </p>
+    <div>
+        <form id="agreetoeula" action="{% url 'fdpuser:agree_to_eula' %}" method="post">
+            {% csrf_token %}
+
+            <p class="line">
+                <input id="agreed" type="checkbox" name="agreed" />
+                {% translate 'I' %}
+                <strong>{% translate 'understand and agree' %}</strong>
+                {% translate 'to the end user license agreement.' %}
+            </p>
+            <input id="id_next_url" name="next_url" type="hidden" value="{{ next_url }}" />
+            <input type="submit" value="{% translate 'I understand and agree' %}" />
+        </form>
+    </div>
+
+{% endblock %}
+
+
+{% block onready %}
+    {{ block.super }}
+    // initialize interface elements
+    Fdp.EulaRequired.init();
+{% endblock %}
