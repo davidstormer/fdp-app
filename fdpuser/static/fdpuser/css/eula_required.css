@@ -1,0 +1,4 @@
+input[type=submit] { display: none; }
+#agreed { margin-top: -1px; }
+p.line { margin-top: 2em; }
+.eula i { }

@@ -92,6 +92,10 @@ To overwrite the *entire* list of supported file types for the `PersonPhoto` mod
         ... ('User-friendly description for file type', 'ext'), ...
     ]
 
+## EULA
+
+To disable the requirement that each user agree to an end-user license agreement (EULA) before they can access any secured views, set `FDP_EULA_SPLASH_ENABLED=False`.
+
 ## FDP Settings for Azure
 
 For hosting in Microsoft Azure, it is recommended that the most sensitive settings are stored in Microsoft Azure Key Vault as Secrets. Less sensitive settings can be stored in the Azure App Service as Application Settings. The following is one possible configuration:

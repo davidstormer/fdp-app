@@ -7,15 +7,16 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from django.utils.decorators import method_decorator
 from django.conf import settings
-from inheritable.models import AbstractIpAddressValidator, AbstractConfiguration, JsonData
-from inheritable.views import SecuredSyncTemplateView, SecuredSyncRedirectView, SecuredAsyncJsonView
-from .models import PasswordReset, FdpUser
-from .forms import FdpUserPasswordResetForm, FdpUserPasswordResetWithReCaptchaForm
+from inheritable.models import AbstractIpAddressValidator, AbstractConfiguration, JsonData, AbstractUrlValidator
+from inheritable.views import SecuredSyncTemplateView, SecuredSyncRedirectView, SecuredAsyncJsonView, \
+    SecuredSyncNoEulaFormView, SecuredSyncButNoEulaView
+from .models import PasswordReset, FdpUser, Eula
+from .forms import FdpUserPasswordResetForm, FdpUserPasswordResetWithReCaptchaForm, AgreeToEulaForm
 from two_factor.views import LoginView
 from two_factor.views.utils import class_view_decorator
 from django_otp import devices_for_user
 from formtools.wizard.views import normalize_name
-from csp.decorators import csp_update, csp_replace
+from csp.decorators import csp_update
 from time import time
 
 
@@ -39,7 +40,9 @@ class SettingsTemplateView(SecuredSyncTemplateView):
             'email': u.email,
             'name': u.get_full_name(),
             'role': u.role_txt,
-            'fdp_organization': u.organization_txt
+            'fdp_organization': u.organization_txt,
+            'eula_agreement': u.agreed_to_eula,
+            'current_eula': Eula.objects.get_current_eula()
         })
         return context
 
@@ -419,3 +422,112 @@ class AsyncRenewSessionView(SecuredAsyncJsonView):
         except Exception as err:
             json = self.jsonify_error(err=err, b=_('Could not renew session. Please reload the page.'))
         return self.render_to_response(json=json)
+
+
+class AgreeToEulaFormView(SecuredSyncNoEulaFormView):
+    """ View that processes the submission of a form representing the submitting user's agreement to a EULA.
+
+    Only POST request methods are allowed.
+
+    """
+    form_class = AgreeToEulaForm
+
+    def __init__(self, *args, **kwargs):
+        """ Initializes the property to store the URL to which the user should be redirected. Will be set
+        in form_valid(...).
+
+        :param args:
+        :param kwargs:
+        """
+        super().__init__(*args, **kwargs)
+        self.next_url = None
+
+    def get_success_url(self):
+        """ Retrieves the URL to which the user should be redirected once they have agreed to the end-user license
+        agreement (EULA).
+
+        :return: URL to which to redirect.
+        """
+        if not self.next_url:
+            return '/' if not hasattr(settings, 'LOGIN_REDIRECT_URL') else settings.LOGIN_REDIRECT_URL
+        else:
+            return self.next_url
+
+    def dispatch(self, request, *args, **kwargs):
+        """ Checks whether the request method is POST, the user is defined and has not yet agreed to the EULA.
+
+        :param request: Http request object.
+        :param args:
+        :param kwargs:
+        :return: Http response
+        """
+        # only via the POST method, user must be defined, and user has not yet agreed to the EULA
+        if request.method == 'POST' and request.user and request.user.agreed_to_eula is None:
+            return super().dispatch(request, *args, **kwargs)
+        # something went wrong
+        return self.handle_no_permission()
+
+    def form_invalid(self, form):
+        """ Raises an exception when the form representing the user's agreement to EULA is submitted.
+
+        This form is never expected to be invalid.
+
+        :param form: Submitted form representing user's agreement to EULA.
+        :return: Nothing. Always raises an exception.
+        """
+        form_errors = ''
+        for field in form.errors:
+            form_errors += f"{field}: {','.join(form.errors[field])} "
+        form_errors = form_errors.strip()
+        raise ImproperlyConfigured(
+            f'The form representing the user\'s agreement to the EULA was submitted '
+            f'but was considered invalid. {form_errors}'
+        )
+
+    def form_valid(self, form):
+        """ Stores the URL to which the user should be redirected.
+
+        :param form: Submitted form representing user's agreement to EULA, that also stores the URL to which the user
+        should be redirected.
+        :return: Http response.
+        """
+        # record timestamp for when user agreed to EULA
+        self.request.user.agrees_to_eula()
+        # URL to which to redirect
+        self.next_url = form.cleaned_data['next_url']
+        return super().form_valid(form=form)
+
+
+class DownloadEulaFileView(SecuredSyncButNoEulaView):
+    """ View that allows users to download an end-user license agreement (EULA) file.
+
+    """
+    def get(self, request, path):
+        """ Retrieve the requested end-user license agreement (EULA) file.
+
+        :param request: Http request object.
+        :param path: Full path for the end-user license agreement (EULA) file.
+        :return: End-user license agreement (EULA) file to download or link to download file.
+        """
+        if not path:
+            raise Exception(_('No EULA file path was specified'))
+        else:
+            # value that will be in end-user license agreement file field
+            file_field_value = '{b}{p}'.format(b=AbstractUrlValidator.EULA_BASE_URL, p=path)
+            # end-user license agreement file filtered for whether it exists
+            unfiltered_queryset = Eula.objects.all()
+            # end-user license agreement file does not exist
+            if file_field_value and not unfiltered_queryset.filter(file=file_field_value).exists():
+                raise Exception(_('User does not have access to EULA file'))
+            # if hosted in Microsoft Azure, storing EULA files in an Azure Storage account is required
+            if AbstractConfiguration.is_using_azure_configuration():
+                return self.serve_azure_storage_static_file(name=file_field_value)
+            # otherwise use default mechanism to serve files
+            else:
+                return self.serve_static_file(
+                    request=request,
+                    path=path,
+                    absolute_base_url=settings.MEDIA_URL,
+                    relative_base_url=AbstractUrlValidator.EULA_BASE_URL,
+                    document_root=settings.MEDIA_ROOT
+                )

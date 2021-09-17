@@ -1,5 +1,4 @@
 from two_factor.urls import urlpatterns as two_factor__urls
-from inheritable.models import AbstractConfiguration
 from .constants import CONST_TWO_FACTOR_BASE_ROUTE
 
 

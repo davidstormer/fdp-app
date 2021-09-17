@@ -68,3 +68,12 @@ def get_abstract_url_validator_attr(attr_to_get):
     :return: Value of attribute.
     """
     return getattr(AbstractUrlValidator, attr_to_get)
+
+
+@register.simple_tag
+def is_eula_splash_enabled():
+    """ Checks whether the system requires a user to agree to a EULA before accessing its views.
+
+    :return: True if the system requires a user to agree to a EULA before accessing its views, false otherwise.
+    """
+    return AbstractConfiguration.eula_splash_enabled()

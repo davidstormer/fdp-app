@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import path, include
+from django.urls import path, re_path, include
+from django.conf import settings
 from django.views.defaults import page_not_found
 from two_factor.admin import AdminSiteOTPRequired
-from fdpuser.views import FdpPasswordResetView
+from fdpuser.views import FdpPasswordResetView, DownloadEulaFileView
+from inheritable.models import AbstractUrlValidator, AbstractConfiguration
 
 
 # Django Two-Factor Authentication
@@ -46,6 +48,19 @@ rest_urlpatterns = [
     # Django Data Wizard: https://github.com/wq/django-data-wizard
     path('datawizard/', include('data_wizard.urls')),
 ]
+#: Only include the EULA download link if the configuration supports it.
+if AbstractConfiguration.eula_splash_enabled():
+    # EULA download URL pattern included here instead of through fdp.urls so that it is outside of base path for app.
+    rest_urlpatterns += [
+        re_path(
+            r'{b}{s}(?P<path>.*)'.format(
+                b=settings.FDP_MEDIA_URL[1:] if settings.FDP_MEDIA_URL.startswith('/') else settings.FDP_MEDIA_URL,
+                s=AbstractUrlValidator.EULA_BASE_URL
+            ),
+            view=DownloadEulaFileView.as_view(),
+            name='download_eula_file'
+        ),
+    ]
 
 
 #: URL patterns for when password resets are not supported.
