@@ -14,11 +14,15 @@ var Fdp = (function (fdpDef, $, w, d) {
      */
 	eulaRequiredDef.init = function () {
 
-        let agreedSelector = "#agreed";
+        let checkboxSelector = "#agreed";
 
-        $(agreedSelector).one("click", function () {
-            $(agreedSelector).remove();
-            $("#agreetoeula").trigger("submit");
+        let formSelector = "#agreetoeula";
+
+        $(formSelector).on("submit", function (event) {
+            // user has not yet agreed to EULA
+            if ($(checkboxSelector).is(":checked") !== true) {
+                event.preventDefault();
+            }
         });
 
 	};
