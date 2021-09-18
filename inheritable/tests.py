@@ -3,6 +3,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.util import random_hex
 from django_otp.oath import totp
 from django.utils.translation import ugettext_lazy as _
+from django.utils.timezone import now
 from django.urls import reverse, reverse_lazy
 from django.conf import settings
 from django.apps import apps
@@ -560,6 +561,8 @@ class AbstractTestCase(TestCase):
             is_administrator=is_administrator,
             is_superuser=is_superuser
         )
+        # add agreement to EULA, so splash page does not interrupt view tests
+        fdp_user.agreed_to_eula = now()
         fdp_user.full_clean()
         fdp_user.save()
         return fdp_user
