@@ -5,6 +5,36 @@ All releases will be logged in this file.
 ## [2.0.0] - 2021-08-XX
 Major release
 
+### Added
+- Add session timeout reminder popup
+- Add photo upload to Add Person form
+- Add app version to user interface
+- Add indication when fields are required
+- Make attachment validation settings configurable on a per-instance basis (via settings.py)
+
+### Changed
+- Merge Add Person forms (is law enf and not is law enf)
+- Accept .webm format for source attachments
+- Make name field on content not required
+- Make link field on content unique
+
+### Removed
+- Remove code field from Grouping
+
+### Fixed
+- Fix typo of 'Reasons' field in encounters
+
+### Security
+- FDP-2021-006: Bulk importer: Remove file download capability from file serializers
+- FDP-2021-003: Email enumeration via password reset
+- FDP-2021-001: CSP largely ineffective against injection attacks
+- FDP-2021-006: Admin SSRF signifies access to internal network
+- FDP-2021-005: Pre-auth stored XSS in CSP logs in admin panel
+- FDP-2021-004 & FDP-2021-002: Account lockout on failed login attempts
+- Upgrade Django to 3.1.12 (security release) and cryptography to 3.3.2 (security release)
+- Freeze all package dependencies in requirements.txt
+- FDP-2021-007: Fix FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS setting has no effect
+
 ## [1.2.4] - 2021-07-26
 Field validation changes
 
@@ -18,8 +48,8 @@ NOTE: this release makes a change to database constraints, allowing longer phone
 ## [1.2.3] - 2021-07-26
 Security release
 
-### Fixed
-- Axes: Set AXES_PASSWORD_FORM_FIELD to 'auth-password'
+### Security
+- FDP-2021-008: Set AXES_PASSWORD_FORM_FIELD to 'auth-password'
 
 ## [1.2.2] - 2021-07-21
 Bug fix release
