@@ -470,7 +470,7 @@ class FdpUserTestCase(AbstractTestCase):
         fdp_user.agreed_to_eula = None
         fdp_user.full_clean()
         fdp_user.save()
-        with self.settings(FDP_EULA_SPLASH_ENABLED=False):
+        with self.settings(FDP_EULA_SPLASH_ENABLE=False):
             response = self._do_get(c=response.client, **success_kwargs)
             self.assertNotIn(eula_txt, str(response.content))
             self._assert_class_based_view(response=response, expected_view=expected_view)
