@@ -29,17 +29,14 @@
              {% else %}
                 {% translate 'Please review and accept the' %}
                 <a class="eula" href="{{ eula.file.url }}" rel="noopener noreferrer" target="_blank" download>
-                {% translate 'end user license agreement' %}</a>.
-                <a class="eula" href="{{ eula.file.url }}" rel="noopener noreferrer" target="_blank" download><i class="fas fa-file-download"></i></a>
+                {% translate 'end user license agreement' %}<i class="fas fa-file-download"></i></a>.
              {% endif %}
          </p>
         <div>
                 <p class="line">
                     <form>
                         <input id="agreed" type="checkbox" name="agreed" />
-                        {% translate 'I' %}
-                        <strong>{% translate 'understand and agree' %}</strong>
-                        {% translate 'to the end user license agreement.' %}
+                        <strong>{% translate 'I understand and agree to the end user license agreement.' %}</strong>
                     </form>
                 </p>
             <form id="agreetoeula" action="{% url 'fdpuser:agree_to_eula' %}" method="post">
