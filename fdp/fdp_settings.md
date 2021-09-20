@@ -94,7 +94,8 @@ To overwrite the *entire* list of supported file types for the `PersonPhoto` mod
 
 ## EULA
 
-To disable the requirement that each user agree to an end-user license agreement (EULA) before they can access any secured views, set `FDP_EULA_SPLASH_ENABLED=False`.
+To enable the requirement that each user agree to an end-user license agreement (EULA) before they can access any 
+secured views, set `FDP_EULA_SPLASH_ENABLE=True`. By default, this feature is disabled.
 
 ## Wholesale import tool
 
