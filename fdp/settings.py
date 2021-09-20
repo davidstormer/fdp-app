@@ -20,6 +20,7 @@ import sys
 #: To configure hosting in a Microsoft Azure environment, remove the comment from the below import statement.
 from .configuration.azure.azure_settings import *
 
+FDP_EULA_SPLASH_ENABLED = True
 
 DATA_WIZARD_STATUS_CHECK_SECONDS = 3
 
