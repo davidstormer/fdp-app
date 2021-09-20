@@ -3120,7 +3120,7 @@ class AbstractConfiguration(models.Model):
 
         :return: True if EULA splash page is enabled, false otherwise.
         """
-        return getattr(settings, 'FDP_EULA_SPLASH_ENABLED', True)
+        return getattr(settings, 'FDP_EULA_SPLASH_ENABLED', False)
 
     class Meta:
         abstract = True
