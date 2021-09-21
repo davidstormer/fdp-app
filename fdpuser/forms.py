@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm, ReadOnlyPasswordHashField, PasswordResetForm
 from django.contrib.auth.tokens import default_token_generator
 from .models import FdpUser, PasswordReset
@@ -178,3 +179,16 @@ class FdpUserPasswordResetWithReCaptchaForm(FdpUserPasswordResetForm):
         super().__init__(*args, **kwargs)
         # will be used by the get_context(...) method of the widget
         self.fields['captcha'].widget.csp_nonce = csp_nonce
+
+
+class AgreeToEulaForm(forms.Form):
+    """ Synchronous form submitted when a user agrees to the EULA.
+
+    Fields:
+        next_url (str): URL to which user should be redirected after agreement.
+
+    """
+    next_url = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput
+    )

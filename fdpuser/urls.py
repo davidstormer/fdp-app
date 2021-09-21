@@ -17,6 +17,16 @@ urlpatterns = [
             name='confirm_password_change'
         ),
     ]
+) + (
+    # only include EULA agreement page if the configuration supports it
+    [] if not AbstractConfiguration.eula_splash_enabled() else [
+        path(
+            AbstractUrlValidator.FDP_USER_EULA_AGREEMENT_URL,
+            views.AgreeToEulaFormView.as_view(),
+            name='agree_to_eula'
+        )
+    ]
+    # EULA download URL pattern is included through the fdp.urlconf.base_urls module
 ) + [
     path(AbstractUrlValidator.FDP_USER_CONF_2FA_RESET_URL, views.ConfirmTwoFactorResetTemplateView.as_view(),
          name='confirm_2fa_reset'),

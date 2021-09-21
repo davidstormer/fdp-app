@@ -3,7 +3,6 @@ from django.views.generic.base import RedirectView
 from two_factor.views import BackupTokensView, ProfileView, QRGeneratorView, SetupCompleteView, SetupView
 from fdpuser.views import FdpLoginView
 from fdp.configuration.abstract.constants import CONST_AZURE_AD_PROVIDER
-from inheritable.models import AbstractConfiguration
 from .constants import CONST_TWO_FACTOR_BASE_ROUTE, CONST_LOGIN_URL_PATH, CONST_LOGIN_URL_NAME, \
     CONST_TWO_FACTOR_PROFILE_URL_NAME, CONST_TWO_FACTOR_PROFILE_URL_PATH
 

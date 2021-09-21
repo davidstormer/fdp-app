@@ -1,5 +1,6 @@
 from django.test import Client, RequestFactory
 from django.utils.translation import ugettext_lazy as _
+from django.utils.timezone import now
 from django.urls import reverse, NoReverseMatch
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib import admin
@@ -16,9 +17,11 @@ from inheritable.tests import AbstractTestCase, local_test_settings_required, az
     azure_only_test_settings_required
 from sourcing.models import Attachment, Content, ContentPerson
 from sourcing.views import DownloadAttachmentView
+from changing.views import IndexTemplateView as changing_index_view
 from core.models import Person
 from core.views import DownloadPersonPhotoView
 from profiles.models import CommandSearch, CommandView, OfficerSearch, OfficerView
+from profiles.views import IndexTemplateView as profiles_index_view
 from verifying.models import VerifyContentCase, VerifyPerson, VerifyType
 from fdp.configuration.abstract.constants import CONST_AZURE_AUTH_APP
 from fdp.urlconf.constants import CONST_TWO_FACTOR_PROFILE_URL_NAME, CONST_LOGIN_URL_NAME
@@ -59,6 +62,11 @@ class FdpUserTestCase(AbstractTestCase):
 
     (9) Test login view, 2FA, URL patterns and file serving for Microsoft Azure configuration with only AAD
     authentication
+
+    (10) Test enforcement of EULA requirement, including:
+            (a) EULA is not required when EULAs are disabled;
+            (b) EULA agreement is first required before accessing profiles and changing index pages; and
+            (c) EULA agreement is only required once when accessing profiles and changing index pages.
 
     """
     def setUp(self):
@@ -443,6 +451,41 @@ class FdpUserTestCase(AbstractTestCase):
             download_view(request, **path_kwargs)
             # assert that expected method was called during handling of GET request
             mocked_callable.assert_called_once()
+
+    def __check_for_eula(self, fdp_user, response, url, expected_view):
+        """ Checks that a user is first required to agree to a EULA before access a URL that requires it.
+
+        :param fdp_user: User attempting to access URL.
+        :param response: Http response object once user has been logged in. Contains "client" attribute for further
+        tests.
+        :param url: Url that user is attempting to access.
+        :param expected_view: View that is expected to render the page that the user is accessing through the URL.
+        :return: Nothing.
+        """
+        eula_txt = 'end user license agreement'
+        all_kwargs = {'url': url, 'login_startswith': None}
+        success_kwargs = {'expected_status_code': 200, **all_kwargs}
+        forbidden_kwargs = {'expected_status_code': 403, **all_kwargs}
+        # ensure that at start of check, user does not have any EULA agreement
+        fdp_user.agreed_to_eula = None
+        fdp_user.full_clean()
+        fdp_user.save()
+        with self.settings(FDP_EULA_SPLASH_ENABLE=False):
+            response = self._do_get(c=response.client, **success_kwargs)
+            self.assertNotIn(eula_txt, str(response.content))
+            self._assert_class_based_view(response=response, expected_view=expected_view)
+            logger.debug(f'With EULA disabled, and without agreeing to EULA, user can access: {url}')
+        response = self._do_get(c=response.client, **forbidden_kwargs)
+        self.assertIn(eula_txt, str(response.content))
+        self.assertEqual(response.template_name, 'fdpuser/templates/eula_required.html')
+        logger.debug(f'With EULA enabled, user must first agree to EULA before accessing: {url}')
+        fdp_user.agreed_to_eula = now()
+        fdp_user.full_clean()
+        fdp_user.save()
+        response = self._do_get(c=response.client, **success_kwargs)
+        self.assertNotIn(eula_txt, str(response.content))
+        self._assert_class_based_view(response=response, expected_view=expected_view)
+        logger.debug(f'With EULA enabled, once agreeing to EULA, user can access: {url}')
 
     @local_test_settings_required
     def test_access_to_views(self):
@@ -1260,3 +1303,58 @@ class FdpUserTestCase(AbstractTestCase):
         self.assertTrue(not axes_record_contains(password, axes_attempt_record),
                         "Plain-text login attempt password found in Axes record.")
         logger.debug(_('\nSuccessfully finished test for Axes redacts attempted passwords in logs\n\n'))
+
+    @local_test_settings_required
+    def test_eula_requirement(self):
+        """ Test enforcement of EULA requirement, including:
+                (a) EULA is not required when EULAs are disabled;
+                (b) EULA agreement is first required before accessing profiles and changing index pages; and
+                (c) EULA agreement is only required once when accessing profiles and changing index pages.
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for enforcement of EULA requirements'))
+        num_of_users = FdpUser.objects.all().count()
+        fdp_organization = FdpOrganization.objects.create(name='FdpOrganization7FdpUser')
+        # test for all user types
+        for i, user_role in enumerate(self._user_roles):
+            # skip for anonymous user
+            if user_role[self._is_anonymous_key]:
+                continue
+            # user without organization
+            fdp_user = self._create_fdp_user(
+                is_host=user_role[self._is_host_key],
+                is_administrator=user_role[self._is_administrator_key],
+                is_superuser=user_role[self._is_superuser_key],
+                email_counter=i + num_of_users
+            )
+            # log user in
+            client = Client(**self._local_client_kwargs)
+            client.logout()
+            two_factor = self._create_2fa_record(user=fdp_user)
+            response = self._do_login(
+                c=client,
+                username=fdp_user.email,
+                password=self._password,
+                two_factor=two_factor,
+                login_status_code=200,
+                two_factor_status_code=200,
+                will_login_succeed=True
+            )
+            all_kwargs = {'fdp_user': fdp_user, 'response': response}
+            staff_kwargs = {'url': reverse('profiles:index'), 'expected_view': profiles_index_view, **all_kwargs}
+            admin_kwargs = {'url': reverse('changing:index'), 'expected_view': changing_index_view, **all_kwargs}
+            logger.debug(f'Starting {user_role[self._label]} without organization sub-test')
+            self.__check_for_eula(**staff_kwargs)
+            # if user is an administrator or superuser, then try the admin URL also
+            if fdp_user.is_administrator or fdp_user.is_superuser:
+                self.__check_for_eula(**admin_kwargs)
+            logger.debug(f'Starting {user_role[self._label]} with organization sub-test')
+            # add organization to user
+            fdp_user.fdp_organization = fdp_organization
+            fdp_user.full_clean()
+            fdp_user.save()
+            self.__check_for_eula(**staff_kwargs)
+            # if user is an administrator or superuser, then try the admin URL also
+            if fdp_user.is_administrator or fdp_user.is_superuser:
+                self.__check_for_eula(**admin_kwargs)
+        logger.debug(_('\nSuccessfully finished test for enforcement of EULA requirements\n\n'))

@@ -6,7 +6,7 @@ from axes.admin import AccessAttemptAdmin, AccessLogAdmin
 from axes.models import AccessAttempt, AccessLog
 from cspreports.admin import CSPReportAdmin
 from cspreports.models import CSPReport
-from .models import FdpUser, FdpOrganization, PasswordReset, FdpCSPReport
+from .models import FdpUser, FdpOrganization, PasswordReset, FdpCSPReport, Eula
 from .forms import FdpUserChangeForm, FdpUserCreationForm
 from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, FdpInheritableBaseAdmin, HostOnlyAdmin, \
     HostOnlyBaseAdmin
@@ -40,7 +40,7 @@ class FdpUserAdmin(FdpInheritableAdmin, UserAdmin):
                 'is_active', 'is_host', 'is_administrator', 'is_superuser', 'fdp_organization', 'only_external_auth'
             )
         }),
-        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+        (_('Important dates'), {'fields': ('last_login', 'date_joined', 'agreed_to_eula')}),
     )
     add_fieldsets = (
         (None, {
@@ -102,7 +102,7 @@ class FdpUserAdmin(FdpInheritableAdmin, UserAdmin):
         """
         readonly_fields = super(FdpUserAdmin, self).get_readonly_fields(request=request, obj=obj)
         # these fields are read-only for all users
-        readonly_fields_for_all = [*readonly_fields, 'is_superuser']
+        readonly_fields_for_all = [*readonly_fields, 'is_superuser', 'agreed_to_eula']
         user = request.user
         # user is a superuser, so read-only fields are: defaults and is_superuser
         if user.is_superuser:
@@ -175,3 +175,32 @@ class FdpCSPReportAdmin(HostOnlyBaseAdmin, FdpInheritableBaseAdmin, CSPReportAdm
         :return: False always.
         """
         return False
+
+
+@admin.register(Eula)
+class EulaAdmin(HostOnlyAdmin):
+    """ Admin interface for user-uploaded end-user licence agreements (EULAs).
+
+    """
+    def has_change_permission(self, request, obj=None):
+        """ Disable ability to change EULAs through the admin interface.
+
+        :param request: Http request object.
+        :param obj: Object for which to check change permission.
+        :return: False always.
+        """
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """ Disable ability to delete EULAs through the admin interface.
+
+        :param request: Http request object.
+        :param obj: Object for which to check delete permission.
+        :return: False always.
+        """
+        return False
+
+    _list_display = ['timestamp', 'status']
+    list_display = _list_display
+    list_display_links = _list_display
+    ordering = ['-timestamp']

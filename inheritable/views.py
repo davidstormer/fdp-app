@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.shortcuts import redirect
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.core.files.storage import get_storage_class
@@ -11,13 +12,50 @@ from two_factor.views.mixins import OTPRequiredMixin
 from django.utils.translation import gettext as _
 from django.views.static import serve
 from django.conf import settings
+from django.template.response import TemplateResponse
 from fdpuser.models import FdpUser
 from fdp.settings import SITE_HEADER
 from reversion.views import RevisionMixin
 from reversion import set_comment as reversion_set_comment
 from .forms import PopupForm
-from .models import Archivable, Confidentiable, AbstractUrlValidator, AbstractJson, JsonError, AbstractFileValidator
+from .models import Archivable, Confidentiable, AbstractUrlValidator, AbstractJson, JsonError, AbstractFileValidator, \
+    AbstractConfiguration
 from json import loads as json_loads
+
+
+class EulaRequiredMixin(object):
+    """ Mixin that requires every user to agree to an end-user license agreement (EULA) before they can access the view.
+
+    """
+    def dispatch(self, request, *args, **kwargs):
+        """ Checks whether the EULA is enabled, and whether the user has already agreed to it, or not.
+
+        :param request: Http request object.
+        :param args:
+        :param kwargs:
+        :return: Expected Http response if EULA is disabled or if user has already agreed to it, otherwise a response
+        representing the EULA splash page.
+        """
+        # EULA splash page is enabled
+        if AbstractConfiguration.eula_splash_enabled():
+            # User is defined but has not yet agreed to a EULA
+            if request.user and not request.user.agreed_to_eula:
+                eula_model = apps.get_model(app_label='fdpuser', model_name='Eula')
+                eula = eula_model.objects.get_current_eula()
+                return TemplateResponse(
+                    context={
+                        'eula': eula,
+                        'next_url': request.path,
+                        'site_header': _(SITE_HEADER),
+                        'site_title': _('FDP System'),
+                        'title': _('End-user license agreement')
+                    },
+                    request=request,
+                    template='fdpuser/templates/eula_required.html',
+                    status=403,
+                )
+        # EULA splash page is disabled, OR user is not defined, OR user has already agreed to EULA
+        return super().dispatch(request, *args, **kwargs)
 
 
 class PostOrGetOnlyMixin(AccessMixin):
@@ -37,7 +75,7 @@ class PostOrGetOnlyMixin(AccessMixin):
         return super().dispatch(request, *args, **kwargs)
 
 
-class CoreAccessMixin(OTPRequiredMixin, LoginRequiredMixin, UserPassesTestMixin, PostOrGetOnlyMixin):
+class CoreButNoEulaAccessMixin(OTPRequiredMixin, LoginRequiredMixin, UserPassesTestMixin, PostOrGetOnlyMixin):
     """ Mixin limiting access for core elements to users who are authorized.
 
     Log in is required, and users must be able to view core data.
@@ -55,6 +93,19 @@ class CoreAccessMixin(OTPRequiredMixin, LoginRequiredMixin, UserPassesTestMixin,
         request = getattr(self, 'request', None)
         user = getattr(request, 'user', None)
         return FdpUser.can_view_core(user=user)
+
+
+class CoreAccessMixin(CoreButNoEulaAccessMixin, EulaRequiredMixin):
+    """ Mixin limiting access for core elements to users who are authorized.
+
+    Log in is required, and users must be able to view core data.
+
+    Only POST or GET request methods accepted.
+
+    Eula agreement required.
+
+    """
+    pass
 
 
 class AdminAccessMixin(CoreAccessMixin):
@@ -129,12 +180,8 @@ class PopupContextMixin:
         return reverse('changing:close_popup', kwargs={'popup_id': popup_id, 'pk': pk, 'str_rep': quote_plus(str_rep)})
 
 
-class SecuredSyncView(CoreAccessMixin, View):
-    """ Secure synchronously base view.
-
-    Log is in required, and users must be able to view core data.
-
-    Only POST or GET request methods accepted.
+class SyncView(View):
+    """ Synchronous base view.
 
     """
     @staticmethod
@@ -187,6 +234,30 @@ class SecuredSyncView(CoreAccessMixin, View):
         return redirect(sas_expiring_url)
 
 
+class SecuredSyncButNoEulaView(CoreButNoEulaAccessMixin, SyncView):
+    """ Secure synchronous base view.
+
+    Log is in required, and users must be able to view core data.
+
+    Only POST or GET request methods accepted.
+
+    Does not require a EULA agreement from the user.
+
+    """
+    pass
+
+
+class SecuredSyncView(CoreAccessMixin, SyncView):
+    """ Secure synchronous base view.
+
+    Log is in required, and users must be able to view core data.
+
+    Only POST or GET request methods accepted.
+
+    """
+    pass
+
+
 class SecuredSyncRedirectView(CoreAccessMixin, RedirectView):
     """ Secure synchronously redirected view.
 
@@ -237,6 +308,24 @@ class AdminSyncTemplateView(AdminAccessMixin, ContextDataMixin, TemplateView):
 
 class SecuredSyncFormView(CoreAccessMixin, ContextDataMixin, FormView):
     """ Secure synchronously rendered view rendering a form.
+
+    Log is in required, and users must be able to view core data.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as permissions and theme customization.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_context(context)
+
+
+class SecuredSyncNoEulaFormView(CoreButNoEulaAccessMixin, ContextDataMixin, FormView):
+    """ Secure synchronously rendered view rendering a form without requiring EULA agreement.
 
     Log is in required, and users must be able to view core data.
 
