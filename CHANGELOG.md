@@ -2,7 +2,7 @@
 
 All releases will be logged in this file.
 
-## [2.0.0] - 2021-08-XX
+## [2.0.0] - 2021-09-21
 Major release
 
 ### Added
