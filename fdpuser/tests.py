@@ -471,10 +471,12 @@ class FdpUserTestCase(AbstractTestCase):
         fdp_user.full_clean()
         fdp_user.save()
         with self.settings(FDP_EULA_SPLASH_ENABLE=False):
+            self.assertFalse(AbstractConfiguration.eula_splash_enabled())
             response = self._do_get(c=response.client, **success_kwargs)
             self.assertNotIn(eula_txt, str(response.content))
             self._assert_class_based_view(response=response, expected_view=expected_view)
             logger.debug(f'With EULA disabled, and without agreeing to EULA, user can access: {url}')
+        self.assertTrue(AbstractConfiguration.eula_splash_enabled())
         response = self._do_get(c=response.client, **forbidden_kwargs)
         self.assertIn(eula_txt, str(response.content))
         self.assertEqual(response.template_name, 'fdpuser/templates/eula_required.html')
