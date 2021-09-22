@@ -374,7 +374,7 @@ class WholesaleImport(Metable):
         help_text=_(
             'Template file containing data for import. Should be less than {s}MB.'.format(
                 s=AbstractFileValidator.get_megabytes_from_bytes(
-                    num_of_bytes=AbstractConfiguration.max_attachment_file_bytes()
+                    num_of_bytes=AbstractConfiguration.max_wholesale_file_bytes()
                 )
             )
         ),
@@ -918,13 +918,12 @@ class WholesaleImport(Metable):
         self.finish_import_without_raising_exception(err=err)
         raise StopWholesaleImportException()
 
-    def __get_field_metadata(self, field_name, model_name, model_class, model_fields):
+    def __get_field_metadata(self, field_name, model_name, model_class):
         """ Retrieves metadata for a model field which is used during the wholesale import.
 
         :param field_name: Name of field, as string.
         :param model_name: Name of model, in which field is declared, as string.
         :param model_class: Class defining model, in which field is declared, as string.
-        :param model_fields: List of fields for this particular model. This list will be used for update imports only.
         :return: A tuple:
                     [0] Categorization for field, such as __bool_type, __int_type, etc.; and
                     [1] Class defining model referenced by field if the field is a relation, or None otherwise.
@@ -941,8 +940,6 @@ class WholesaleImport(Metable):
         if field_name == f'id{self.external_id_suffix}':
             column_type = self.__external_pk_type
         else:
-            # record in list of fields model, which will only be used for update imports
-            model_fields.append(field_name)
             # boolean fields
             if isinstance(field, (models.BooleanField,)):
                 column_type = self.__bool_type
@@ -1024,7 +1021,7 @@ class WholesaleImport(Metable):
         # cycle through all heading columns
         for i, heading in enumerate(headings_row):
             model_name, field_name = self.__parse_template_heading(heading=heading)
-            heading_for_duplicate_check = f'{model_name}__{field_name}'
+            heading_for_duplicate_check = f'{model_name}.{field_name}'
             # heading has already been parsed, and so it a duplicate
             if heading_for_duplicate_check in duplicate_headings_check:
                 self.__finish_import_and_raise_exception(
@@ -1057,8 +1054,8 @@ class WholesaleImport(Metable):
                 field_name=field_name,
                 model_name=model_name,
                 model_class=model_class,
-                model_fields=model_fields
             )
+            # metadata for particular field
             rel_model_name = None if rel_model_class is None \
                 else ModelHelper.get_str_for_cls(model_class=rel_model_class)
             # metadata that corresponds to list CSV column indices
@@ -1075,7 +1072,9 @@ class WholesaleImport(Metable):
             # field is a many-to-many relation
             if field_type == self.__m2m_rel_type:
                 # metadata for many-to-many fields
-                m2m_field = getattr(model_class, field_name)
+                actual_field_name = field_name if not field_name.endswith(self.external_id_suffix) \
+                    else field_name[:-len(self.external_id_suffix)]
+                m2m_field = getattr(model_class, actual_field_name)
                 self.__add_to_m2m_metadata_by_model_name(
                     model_name=model_name,
                     rel_model_name=rel_model_name,
@@ -1900,7 +1899,12 @@ class WholesaleImport(Metable):
                     if m2m_field_name not in m2m_instance_cache:
                         m2m_instance_cache[m2m_field_name] = []
                     # specific field reference to relevant part of metadata dictionary
-                    m2m_field_metadata = m2m_metadata[m2m_field_name]
+                    # for example: m2m_field_name='traits' and m2m_metadata['traits__external']
+                    if m2m_field_name not in m2m_metadata and not m2m_field_name.endswith(self.external_id_suffix):
+                        m2m_field_metadata = m2m_metadata[f'{m2m_field_name}{self.external_id_suffix}']
+                    # for example: m2m_field_name='traits' and m2m_metadata['traits']
+                    else:
+                        m2m_field_metadata = m2m_metadata[m2m_field_name]
                     # name of field referencing model where many-to-many field was declared
                     through_pk_field = m2m_field_metadata[self.__through_pk_index]
                     # name of field referencing model to which many-to-many field "points"
@@ -2138,6 +2142,7 @@ class WholesaleImport(Metable):
             )
         # list of fields that reflect the changes
         fields_to_update = self._metadata_by_model_name[model_name][self.__model_fields_index]
+        #: TODO: What happens if external ID is among the fields_to_update??
         # external IDs already recorded in database
         external_to_internal_map, existing_external_ids = self.__get_existing_external_ids(
             model_name=model_name,
@@ -2443,16 +2448,17 @@ class WholesaleImport(Metable):
                                     rel_model_name=linked_model_name,
                                     cached_fields_to_add_by_model=cached_fields_to_add_by_model
                                 )
-                            # model to left does not have a primary key field
+                            # model to left doesn't have a primary key field, so link will be established by external ID
                             else:
-                                # link will be established by external ID
-                                self.__add_to_cached_fields_to_add_by_model(
-                                    model_name=model_name,
-                                    field_name=field_name,
-                                    has_pk_vals=False,
-                                    rel_model_name=linked_model_name,
-                                    cached_fields_to_add_by_model=cached_fields_to_add_by_model
-                                )
+                                # don't add field if its external version already exists
+                                if f'{field_name}{self.external_id_suffix}' not in csv_model_fields:
+                                    self.__add_to_cached_fields_to_add_by_model(
+                                        model_name=model_name,
+                                        field_name=field_name,
+                                        has_pk_vals=False,
+                                        rel_model_name=linked_model_name,
+                                        cached_fields_to_add_by_model=cached_fields_to_add_by_model
+                                    )
                                 # model to left doesn't have an external ID field, so it too will be added
                                 if not has_external_id:
                                     # link will be established by external ID
@@ -2488,15 +2494,20 @@ class WholesaleImport(Metable):
 
         """
         def __init__(
-                self, start, end, is_field_a_reference, orig_col_index, group, reference_group, model_name, field_name
+                self, is_first, is_last, start, end, last_end, is_field_a_reference,
+                orig_col_index, group, reference_group, model_name, field_name
         ):
             """ Creates an instance defining a field that will be added to the CSV template to facilitate making
             an implicit reference between models into an explicit reference.
 
+            :param is_first: True if this is the first field that will be added to the CSV template, false otherwise.
+            :param is_last: True if this is the last field that will be added to the CSV template, false otherwise.
             :param start: Starting index for slice from original CSV template. Can be used with a CSV row that is a
             list, i.e. [start:...]. Will be None if there is no relevant slice.
             :param end: Ending index for slice from original CSV template. Can be used with a CSV row that is a
             list, i.e. [...:end]. Will be None if there is no relevant slice.
+            :param last_end: Last defined ending index that was used for slice from original CSV template. See 'end'
+            argument.
             :param is_field_a_reference: True if the field to add is a reference to another model field, such as when
             adding a foreign key, one-to-one field or many-to-many field. False if the field to add is a primary
             key or external ID.
@@ -2511,8 +2522,11 @@ class WholesaleImport(Metable):
             :param field_name: Name of field to add.
             """
             super().__init__()
+            self.is_first = is_first
+            self.is_last = is_last
             self.start = start if end is not None else None
             self.end = end if start is not None else None
+            self.last_end = last_end if last_end is not None else None
             self.is_field_a_reference = is_field_a_reference
             self.orig_col_index = orig_col_index if is_field_a_reference else None
             self.group = group
@@ -2528,6 +2542,30 @@ class WholesaleImport(Metable):
             """
             return self.start is not None and self.end is not None
 
+        def __get_starting_slice(self, original_csv_row):
+            """ Retrieves a slice from the CSV row, if the current field to add is the first of the fields to add, but
+            not the first field in the CSV template.
+
+            :param original_csv_row: Original CSV template row.
+            :return: Empty list if no relevant slice is retrieved, otherwise a list that represents a slice from the
+            original CSV row.
+            """
+            return [] if not self.is_first else ([] if self.start == 0 else original_csv_row[0: self.start])
+
+        def __get_ending_slice(self, original_csv_row):
+            """ Retrieves a slice from the CSV row, if the current field to add is the last of the fields to add, but
+            not the last field in the CSV template.
+
+            :param original_csv_row: Original CSV template row.
+            :return: Empty list if no relevant slice is retrieved, otherwise a list that represents a slice from the
+            original CSV row.
+            """
+            original_end = len(original_csv_row)
+            actual_start = self.end if self.end is not None else (self.last_end if self.last_end is not None else 0)
+            return [] if not self.is_last else (
+                [] if self.end == original_end else original_csv_row[actual_start: original_end]
+            )
+
         def get_new_heading_slice(self, original_csv_row, field_heading):
             """ Retrieves the slice of a headings row to build a new CSV template, which includes the field, and in some
             cases a slice of a headings row from the original CSV template.
@@ -2537,12 +2575,14 @@ class WholesaleImport(Metable):
             :return: List of cells that represents a new CSV template headings row.
             """
             new_cell = [field_heading]
+            end_cells = self.__get_ending_slice(original_csv_row=original_csv_row)
             # a slice from the original CSV template should be appended to the field
             if self.has_original_slice:
-                return new_cell + original_csv_row[self.start: self.end]
+                start_cells = self.__get_starting_slice(original_csv_row=original_csv_row)
+                return start_cells + new_cell + original_csv_row[self.start: self.end] + end_cells
             # no slice from the original CSV template is relevant for this field
             else:
-                return new_cell
+                return new_cell + end_cells
 
         def get_new_data_slice(self, original_csv_row, auto_external_id, reference_auto_external_id):
             """ Retrieves the slice of a data row to build a new CSV template, which includes the field, and in some
@@ -2573,12 +2613,14 @@ class WholesaleImport(Metable):
             # field is an external ID
             else:
                 new_cell = [auto_external_id]
+            end_cells = self.__get_ending_slice(original_csv_row=original_csv_row)
             # a slice from the original CSV template should be appended to the field
             if self.has_original_slice:
-                return new_cell + original_csv_row[self.start: self.end]
+                start_cells = self.__get_starting_slice(original_csv_row=original_csv_row)
+                return start_cells + new_cell + original_csv_row[self.start: self.end] + end_cells
             # no slice from the original CSV template is relevant for this field
             else:
-                return new_cell
+                return new_cell + end_cells
 
     def __get_end_col_index_for_model(self, start, model_name):
         """ Retrieves the column index for the original CSV template, for which the fields for the current model end,
@@ -2677,6 +2719,8 @@ class WholesaleImport(Metable):
         fields_to_add = []
         # models for which the fields to add have already been noted
         done_models = []
+        # records the previous ending index used for a slice from the original CSV row, if defined
+        last_end = None
         # cycle through fields recorded in metadata, and create fields to add that will be used to rebuild the CSV
         for col_num, by_col_tuple in enumerate(self._metadata_by_col_index):
             # name of model for CSV column
@@ -2718,8 +2762,11 @@ class WholesaleImport(Metable):
                     dont_change_field = is_pk or not is_field_a_reference
                     fields_to_add.append(
                         self.FieldToAdd(
+                            is_first=True if not fields_to_add else False,
+                            is_last=False,
                             start=start,
                             end=end,
+                            last_end=last_end,
                             is_field_a_reference=is_field_a_reference,
                             orig_col_index=orig_col_index,
                             group=group,
@@ -2728,6 +2775,16 @@ class WholesaleImport(Metable):
                             field_name=field_name if dont_change_field else f'{field_name}{self.external_id_suffix}'
                         )
                     )
+                    # current ending index was defined
+                    if end is not None:
+                        # no previous ending index was recorded
+                        if last_end is None:
+                            last_end = end
+                        else:
+                            # only update previous ending index, if it is to the left of the current ending index
+                            last_end = last_end if last_end >= end else end
+        # mark the "last" field to add
+        (fields_to_add[-1]).is_last = True
         return fields_to_add
 
     def __write_new_headings_row(self, reader, writer, fields_to_add):
