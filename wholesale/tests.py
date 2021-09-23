@@ -42,8 +42,8 @@ class WholesaleTestCase(AbstractTestCase):
 
     (6) Test that data integrity is preserved during "add" imports, including for combinations when:
                 (A) Models may or may not have external IDs defined;
-                (B) Models may reference foreign keys via PK, name or external ID;
-                (C) Models may reference many-to-many fields via PK, name or external ID; and
+                (B) Models may reference foreign keys via PK, new name, existing name, or external ID;
+                (C) Models may reference many-to-many fields via PK, new name, existing name, or external ID; and
                 (D) Models may reference other models on the same row through explicit references, on the same row
                     through implicit references, or on a different row through explicit references.
 
@@ -166,16 +166,18 @@ class WholesaleTestCase(AbstractTestCase):
             )
             setattr(instance, self.__test_external_id_attr, bulk_import.pk_imported_from)
 
-    def __get_traits_callables(self):
+    def __get_traits_callables(self, num_of_rows):
         """ Retrieves the by primary key, by name, and by external ID callables for the Traits model that can be used
         in instances of FieldToImport.
 
         These callables are used to retrieve the correct trait(s) depending on the row number in the CSV import.
 
+        :param num_of_rows: Total number for rows for which traits will be added.
         :return: A tuple:
                     [0] Traits by primary key callable;
-                    [1] Traits by name callable; and
-                    [2] Traits by external ID callable.
+                    [1] Traits that already exist in the database, by name callable;
+                    [2] Traits that don't yet exist in the database, by name callable; and
+                    [3] Traits by external ID callable.
         """
         trait_class_name = ModelHelper.get_str_for_cls(model_class=Trait)
         three_traits = Trait.objects.all()[:3]
@@ -185,24 +187,30 @@ class WholesaleTestCase(AbstractTestCase):
             else f'{getattr(three_traits[1], attr_name)}, {getattr(three_traits[2], attr_name)}'
         )
         traits_by_pk_callable = lambda row_num: traits_callable(row_num=row_num, attr_name='pk')
-        traits_by_name_callable = lambda row_num: traits_callable(row_num=row_num, attr_name='name')
+        traits_by_existing_name_callable = lambda row_num: traits_callable(row_num=row_num, attr_name='name')
+        traits_by_new_name_callable = lambda row_num: \
+            f'wholesaletestnewfirsttrait{row_num % num_of_rows}, wholesaletestnewsecondtrait{row_num % num_of_rows}'
         traits_by_ext_callable = lambda row_num: traits_callable(
             row_num=row_num,
             attr_name=self.__test_external_id_attr
         )
-        return traits_by_pk_callable, traits_by_name_callable, traits_by_ext_callable
+        return (
+            traits_by_pk_callable, traits_by_existing_name_callable, traits_by_new_name_callable, traits_by_ext_callable
+        )
 
-    def __get_person_identifier_types_callables(self):
+    def __get_person_identifier_types_callables(self, num_of_rows):
         """ Retrieves the by primary key, by name, and by external ID callables for the PersonIdentifierType model
         that can be used in instances of FieldToImport.
 
         These callables are used to retrieve the correct person identifier type(s) depending on the row number in the
         CSV import.
 
+        :param num_of_rows: Total number for rows for which traits will be added.
         :return: A tuple:
                     [0] Person identifier types by primary key callable;
-                    [1] Person identifier types by name callable; and
-                    [2] Person identifier types by external ID callable.
+                    [1] Person identifier types that already exist in the database, by name callable;
+                    [2] Person identifier types that don't yet exist in the database, by name callable; and
+                    [3] Person identifier types by external ID callable.
         """
         identifier_type_class_name = ModelHelper.get_str_for_cls(model_class=PersonIdentifierType)
         three_identifier_types = PersonIdentifierType.objects.all()[:3]
@@ -212,15 +220,21 @@ class WholesaleTestCase(AbstractTestCase):
             row_num=row_num,
             attr_name='pk'
         )
-        identifier_type_by_name_callable = lambda row_num: identifier_type_callable(
+        identifier_type_by_existing_name_callable = lambda row_num: identifier_type_callable(
             row_num=row_num,
             attr_name='name'
         )
+        identifier_type_by_new_name_callable = lambda row_num: f'wholesaletestnewtype{row_num % num_of_rows}'
         identifier_type_by_ext_callable = lambda row_num: identifier_type_callable(
             row_num=row_num,
             attr_name=self.__test_external_id_attr
         )
-        return identifier_type_by_pk_callable, identifier_type_by_name_callable, identifier_type_by_ext_callable
+        return (
+            identifier_type_by_pk_callable,
+            identifier_type_by_existing_name_callable,
+            identifier_type_by_new_name_callable,
+            identifier_type_by_ext_callable
+        )
 
     @staticmethod
     def __get_csv_rows_for_import(num_of_rows, fields_to_import):
@@ -329,6 +343,34 @@ class WholesaleTestCase(AbstractTestCase):
             'expected_status_code': 302,
             'login_startswith': reverse('wholesale:log', kwargs={'pk': next_val})
         }
+
+    @staticmethod
+    def __get_all_trait_names(traits_callable, num_of_rows):
+        """ Retrieve all trait names that are expected to be added to the database.
+
+        :param traits_callable: Callable used to generate trait names for each row.
+        :param num_of_rows: Total number of rows for which trait names will be generated.
+        :return: List of all trait names that are expected to be added to the database.
+        """
+        trait_names = [
+            one_trait.strip() for multiple_traits in [
+                unsplit_trait.split(',') for unsplit_trait in [
+                    traits_callable(row_num=row_num) for row_num in range(0, num_of_rows)
+                ]
+            ] for one_trait in multiple_traits
+        ]
+        return trait_names
+
+    @staticmethod
+    def __get_all_person_identifier_type_names(identifier_type_callable, num_of_rows):
+        """ Retrieves all person identifier type names that are expected to be added to the database.
+
+        :param identifier_type_callable: Callable used to generate person identifier type names for each row.
+        :param num_of_rows: Total number of rows for which person identifier type names will be generated.
+        :return: List of all person identifier type names that are expected to be added to the database.
+        """
+        person_identifier_type_names = [identifier_type_callable(row_num=row_num) for row_num in range(0, num_of_rows)]
+        return person_identifier_type_names
 
     @staticmethod
     def __can_user_access_host_admin_only(fdp_user):
@@ -619,7 +661,8 @@ class WholesaleTestCase(AbstractTestCase):
         explicit_different_row = 'explicit on a different row'
         txt_ext = 'external ID'
         txt_pk = 'PK'
-        txt_name = 'name'
+        txt_existing_name = 'name (exists in DB)'
+        txt_new_name = 'name (will be added to DB)'
         txt_alias = implicit if not cur_combo['is_person_alias_to_person_explicit'] else (
             explicit_same_row if cur_combo['person_alias_to_person_callable'] == cur_combo['person_ext_id_callable']
             else explicit_different_row
@@ -630,12 +673,19 @@ class WholesaleTestCase(AbstractTestCase):
             else explicit_different_row
         )
         txt_trait = txt_ext if cur_combo['trait_callable'] == cur_combo['traits_by_ext_callable'] else (
-            txt_pk if cur_combo['trait_callable'] == cur_combo['traits_by_pk_callable'] else txt_name
+            txt_pk if cur_combo['trait_callable'] == cur_combo['traits_by_pk_callable'] else (
+                txt_existing_name if cur_combo['trait_callable'] == cur_combo['traits_by_existing_name_callable']
+                else txt_new_name
+            )
         )
         txt_type = txt_ext if cur_combo['identifier_type_callable'] == cur_combo['identifier_types_by_ext_callable'] \
             else (
                 txt_pk if cur_combo['identifier_type_callable'] == cur_combo['identifier_types_by_pk_callable']
-                else txt_name
+                else (
+                    txt_existing_name
+                    if cur_combo['identifier_type_callable'] == cur_combo['identifier_types_by_existing_name_callable']
+                    else txt_new_name
+                )
             )
         logger.debug(
             f'Starting sub-test where person {has if cur_combo["person_has_ext_id"] else hasnt} external ID, '
@@ -938,6 +988,31 @@ class WholesaleTestCase(AbstractTestCase):
             two_factor_status_code=200,
             will_login_succeed=True
         )
+        if cur_combo['are_traits_added']:
+            trait_names = self.__get_all_trait_names(
+                traits_callable=cur_combo['traits_by_new_name_callable'],
+                num_of_rows=num_of_rows
+            )
+            traits = Trait.objects.filter(name__in=trait_names)
+            self.assertEqual(len(trait_names), num_of_rows * 2)
+            self.assertEqual(len(trait_names), traits.count())
+            trait_content_type = ContentType.objects.get(app_label='supporting', model='trait')
+            # two traits added per row, see __get_traits_callables(...)
+            self.assertEqual(Version.objects.filter(content_type=trait_content_type).count(), num_of_rows * 2)
+            for trait in traits:
+                self.__verify_one_version(response=response, app_label='supporting', instance=trait)
+        if cur_combo['are_identifier_types_added']:
+            identifier_type_names = self.__get_all_person_identifier_type_names(
+                identifier_type_callable=cur_combo['identifier_types_by_new_name_callable'],
+                num_of_rows=num_of_rows
+            )
+            identifier_types = PersonIdentifierType.objects.filter(name__in=identifier_type_names)
+            self.assertEqual(len(identifier_type_names), num_of_rows)
+            self.assertEqual(len(identifier_type_names), identifier_types.count())
+            identifier_type_content_type = ContentType.objects.get(app_label='supporting', model='personidentifiertype')
+            self.assertEqual(Version.objects.filter(content_type=identifier_type_content_type).count(), num_of_rows)
+            for identifier_type in identifier_types:
+                self.__verify_one_version(response=response, app_label='supporting', instance=identifier_type)
         self.__verify_integrity_person_by_person(
             response=response,
             cur_combo=cur_combo,
@@ -948,10 +1023,15 @@ class WholesaleTestCase(AbstractTestCase):
             uuid=uuid
         )
 
-    @staticmethod
-    def __delete_integrity_subtest_data():
+    @classmethod
+    def __delete_integrity_subtest_data(cls, traits_callable, identifier_types_callable, num_of_rows):
         """ Remove the test data that was added during one sub-test for wholesale import integrity.
 
+        :param traits_callable: Callable used to generate trait names by row number. Will be None, if no new trait
+        records were added to the database.
+        :param identifier_types_callable: Callable used to generate person identifier type names by row number. Will be
+        None, if no new person identifier type records were added to the database.
+        :param num_of_rows: Number of rows in the imported CSV template.
         :return: Nothing.
         """
         Version.objects.all().delete()
@@ -962,6 +1042,17 @@ class WholesaleTestCase(AbstractTestCase):
         PersonAlias.objects.all().delete()
         PersonIdentifier.objects.all().delete()
         Person.objects.all().delete()
+        # only remove traits that were added by name to the database
+        if traits_callable is not None:
+            trait_names = cls.__get_all_trait_names(traits_callable=traits_callable, num_of_rows=num_of_rows)
+            Trait.objects.filter(name__in=trait_names).delete()
+        # only remove person identifier types that were added by name to the database
+        if identifier_types_callable:
+            identifier_type_names = cls.__get_all_person_identifier_type_names(
+                identifier_type_callable=identifier_types_callable,
+                num_of_rows=num_of_rows
+            )
+            PersonIdentifierType.objects.filter(name__in=identifier_type_names).delete()
 
     @local_test_settings_required
     def test_wholesale_host_admin_only_access(self):
@@ -1099,8 +1190,8 @@ class WholesaleTestCase(AbstractTestCase):
     def test_wholesale_import_add_integrity(self):
         """ Test that data integrity is preserved during "add" imports, including for combinations when:
                 (A) Models may or may not have external IDs defined;
-                (B) Models may reference foreign keys via PK, name or external ID;
-                (C) Models may reference many-to-many fields via PK, name or external ID; and
+                (B) Models may reference foreign keys via PK, new name, existing name, or external ID;
+                (C) Models may reference many-to-many fields via PK, new name, existing name, or external ID; and
                 (D) Models may reference other models on the same row through explicit references, on the same row
                     through implicit references, or on a different row through explicit references.
 
@@ -1108,7 +1199,8 @@ class WholesaleTestCase(AbstractTestCase):
         """
         logger.debug(_('\nStarting test for the wholesale import "add" integrity'))
         num_of_rows = 10
-        self.__delete_integrity_subtest_data()
+        row_kwargs = {'num_of_rows': num_of_rows}
+        self.__delete_integrity_subtest_data(traits_callable=None, identifier_types_callable=None, **row_kwargs)
         person_class_name = ModelHelper.get_str_for_cls(model_class=Person)
         person_alias_class_name = ModelHelper.get_str_for_cls(model_class=PersonAlias)
         person_identifier_class_name = ModelHelper.get_str_for_cls(model_class=PersonIdentifier)
@@ -1140,18 +1232,22 @@ class WholesaleTestCase(AbstractTestCase):
             (False,)
         )
         traits_col = f'{person_class_name}.traits'
-        traits_by_pk_callable, traits_by_name_callable, traits_by_ext_callable = self.__get_traits_callables()
+        traits_by_pk_callable, traits_by_existing_name_callable, traits_by_new_name_callable, traits_by_ext_callable = \
+            self.__get_traits_callables(**row_kwargs)
         traits_tuples = (
             (traits_by_pk_callable, traits_col),
-            (traits_by_name_callable, traits_col),
+            (traits_by_existing_name_callable, traits_col),
+            (traits_by_new_name_callable, traits_col),
             (traits_by_ext_callable, f'{traits_col}{external_suffix}')
         )
         identifier_type_col = f'{person_identifier_class_name}.person_identifier_type'
-        identifier_types_by_pk_callable, identifier_types_by_name_callable, identifier_types_by_ext_callable = \
-            self.__get_person_identifier_types_callables()
+        identifier_types_by_pk_callable, identifier_types_by_existing_name_callable, \
+        identifier_types_by_new_name_callable, identifier_types_by_ext_callable = \
+            self.__get_person_identifier_types_callables(**row_kwargs)
         identifier_type_tuples = (
             (identifier_types_by_pk_callable, identifier_type_col),
-            (identifier_types_by_name_callable, identifier_type_col),
+            (identifier_types_by_existing_name_callable, identifier_type_col),
+            (identifier_types_by_new_name_callable, identifier_type_col),
             (identifier_types_by_ext_callable, f'{identifier_type_col}{external_suffix}')
         )
         # cycle through all possible combinations of format for the dummy CSV import
@@ -1161,7 +1257,8 @@ class WholesaleTestCase(AbstractTestCase):
                 # how persons are referenced by person aliases and person identifiers, i.e. through external IDs on the
                 # same row, on different rows, through implicit references
                 person_alias_to_person_tuple, person_identifier_to_person_tuple,
-                # how traits and identifier types are referenced, i.e. by PK, by name or by external ID
+                # how traits and identifier types are referenced, i.e. by PK, by existing name, by new name, or by
+                # external ID
                 traits_tuples, identifier_type_tuples
         ):
             person_has_ext_id = product_tuple[0]
@@ -1172,7 +1269,11 @@ class WholesaleTestCase(AbstractTestCase):
             # can only have explicit reference to person, if person has external ID defined
             is_person_identifier_to_person_explicit = person_identifier_to_person_ref_tuple[0] and person_has_ext_id
             trait_tuple = product_tuple[5]
+            trait_callable = trait_tuple[0]
             identifier_type_tuple = product_tuple[6]
+            identifier_type_callable = identifier_type_tuple[0]
+            are_traits_added = (trait_callable == traits_by_new_name_callable)
+            are_identifier_types_added = (identifier_type_callable == identifier_types_by_new_name_callable)
             cur_combo = {
                 'person_class_name': person_class_name,
                 'person_alias_class_name': person_alias_class_name,
@@ -1203,17 +1304,27 @@ class WholesaleTestCase(AbstractTestCase):
                 else person_identifier_to_person_ref_tuple[1],
                 'person_identifier_to_person_callable': None if not is_person_identifier_to_person_explicit
                 else person_identifier_to_person_ref_tuple[2],
-                'trait_callable': trait_tuple[0],
+                'trait_callable': trait_callable,
                 'trait_col': trait_tuple[1],
                 'traits_by_pk_callable': traits_by_pk_callable,
                 'traits_by_ext_callable': traits_by_ext_callable,
-                'identifier_type_callable': identifier_type_tuple[0],
+                'traits_by_existing_name_callable': traits_by_existing_name_callable,
+                'traits_by_new_name_callable': traits_by_new_name_callable,
+                'identifier_type_callable': identifier_type_callable,
                 'identifier_type_col': identifier_type_tuple[1],
                 'identifier_types_by_pk_callable': identifier_types_by_pk_callable,
                 'identifier_types_by_ext_callable': identifier_types_by_ext_callable,
+                'identifier_types_by_existing_name_callable': identifier_types_by_existing_name_callable,
+                'identifier_types_by_new_name_callable': identifier_types_by_new_name_callable,
+                'are_traits_added': are_traits_added,
+                'are_identifier_types_added': are_identifier_types_added
             }
             self.__print_integrity_subtest_message(cur_combo=cur_combo)
             self.__do_integrity_subtest_import(num_of_rows=num_of_rows, cur_combo=cur_combo)
             self.__verify_integrity_subtest_import(num_of_rows=num_of_rows, cur_combo=cur_combo)
-            self.__delete_integrity_subtest_data()
+            self.__delete_integrity_subtest_data(
+                traits_callable=traits_by_new_name_callable if are_traits_added else None,
+                identifier_types_callable=identifier_types_by_new_name_callable if are_identifier_types_added else None,
+                **row_kwargs
+            )
         logger.debug(_('\nSuccessfully finished test for the wholesale import "add" integrity\n\n'))
