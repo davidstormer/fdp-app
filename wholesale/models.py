@@ -25,6 +25,7 @@ from uuid import uuid4
 from functools import reduce
 from sys import exc_info
 from os.path import basename, dirname
+from codecs import BOM_UTF8
 
 
 class ModelHelper(models.Model):
@@ -1075,6 +1076,11 @@ class WholesaleImport(Metable):
         duplicate_headings_check = []
         # cycle through all heading columns
         for i, heading in enumerate(headings_row):
+            # remove from first heading the byte order mark (BOM) character that may have been placed into the CSV
+            if i == 0:
+                bom_utf8 = BOM_UTF8.decode(self.csv_encoding)
+                if heading.startswith(bom_utf8):
+                    heading = heading[len(bom_utf8):]
             model_name, field_name = self.__parse_template_heading(heading=heading)
             heading_for_duplicate_check = f'{model_name}.{field_name}'
             # heading has already been parsed, and so it a duplicate
@@ -2274,11 +2280,11 @@ class WholesaleImport(Metable):
         # update the corresponding bulk import records in the database, but skip external IDs
         m2m_metadata_for_model = self._m2m_metadata_by_model_name.get(model_name, {})
         m2m_fields = m2m_metadata_for_model.keys()
-        model_class.objects.bulk_update(
-            instances_to_update,
-            # cannot do bulk_update on external fields or many-to-many fields
-            [f for f in fields_to_update if f not in m2m_fields and not f.endswith(self.external_id_suffix)]
-        )
+        # cannot do bulk_update on external fields or many-to-many fields
+        bulk_fields = [f for f in fields_to_update if f not in m2m_fields and not f.endswith(self.external_id_suffix)]
+        # only do bulk update, if there are fields besides external and many-to-many fields
+        if bulk_fields:
+            model_class.objects.bulk_update(instances_to_update, bulk_fields)
         # create reversion history
         self.__add_versions_to_database(model_class=model_class, model_instances=instances_to_update)
         # create the corresponding bulk import records in the database
@@ -2923,8 +2929,8 @@ class WholesaleImport(Metable):
                 # ...
                 # }
                 cached_fields_to_add_by_model = self.__get_fields_to_convert_implicit_references()
-                # number of data rows (subtract one to exclude heading row)
-                self._num_of_data_rows = len([1 for _ in reader]) - 1
+                # number of data rows
+                self._num_of_data_rows = len([1 for _ in reader])
                 # if there are some fields to add
                 if cached_fields_to_add_by_model:
                     # rewind the memory stream position, to read the heading row again
