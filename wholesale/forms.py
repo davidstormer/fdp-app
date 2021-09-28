@@ -25,19 +25,19 @@ class WholesaleTemplateForm(forms.Form):
     models.widget.attrs.update({'class': 'multiselect'})
 
     @staticmethod
-    def __get_relevant_whitelisted_models():
-        """ Retrieves a list of relevant whitelisted models.
+    def __get_relevant_models_in_allowlist():
+        """ Retrieves a list of relevant models in the allowlist.
 
         :return: List strings representing model names.
         """
         relevant_models = ModelHelper.get_relevant_models()
-        whitelisted_models = sorted(
+        models_in_allowlist = sorted(
             [
                 ModelHelper.get_str_for_cls(model_class=m) for m in relevant_models
-                if ModelHelper.get_str_for_cls(model_class=m) in AbstractConfiguration.whitelisted_wholesale_models()
+                if ModelHelper.get_str_for_cls(model_class=m) in AbstractConfiguration.models_in_wholesale_allowlist()
             ]
         )
-        return whitelisted_models
+        return models_in_allowlist
 
     def __init__(self, *args, **kwargs):
         """ Defines the list of all possible models for which templates can be generated.
@@ -46,18 +46,18 @@ class WholesaleTemplateForm(forms.Form):
         :param kwargs:
         """
         super().__init__(*args, **kwargs)
-        relevant_whitelisted_models = self.__get_relevant_whitelisted_models()
-        self.fields['models'].choices = [(m, m) for m in relevant_whitelisted_models]
+        relevant_models_in_allowlist = self.__get_relevant_models_in_allowlist()
+        self.fields['models'].choices = [(m, m) for m in relevant_models_in_allowlist]
 
     def clean_models(self):
-        """ Ensures that the submitted list of models for which to generate a template adheres to the whitelist.
+        """ Ensures that the submitted list of models for which to generate a template adheres to the allowlist.
 
-        :return: List of whitelisted models.
+        :return: List of models in the allowlist.
         """
         models = self.cleaned_data['models']
         for model in models:
-            if model not in AbstractConfiguration.whitelisted_wholesale_models():
-                raise ValidationError(_(f'Model {model} is not whitelisted for the wholesale import tool'))
+            if model not in AbstractConfiguration.models_in_wholesale_allowlist():
+                raise ValidationError(_(f'Model {model} is not in the allowlist for the wholesale import tool'))
         return models
 
     @staticmethod
@@ -89,7 +89,7 @@ class WholesaleTemplateForm(forms.Form):
             app_name = ModelHelper.get_app_name(model=model)
             # model is in none of the expected apps
             if not app_name:
-                raise Exception(_('Wholesale import tool model is whitelisted but does not '
+                raise Exception(_('Wholesale import tool model is in the allowlist but does not '
                                   'appear in the sourcing, core or supporting apps'))
             # load the model class
             model_class = ModelHelper.get_model_class(app_name=app_name, model_name=model)
@@ -217,8 +217,8 @@ class WholesaleTemplateForm(forms.Form):
                     # exclude relations that are not defined on the model
                     ModelHelper.is_field_a_relation(field=f)
                     or
-                    # exclude blacklisted fields
-                    f.name in AbstractConfiguration.blacklisted_wholesale_fields()
+                    # exclude denylist fields
+                    f.name in AbstractConfiguration.fields_in_wholesale_denylist()
                 ):
                     model = ModelHelper.get_str_for_cls(model_class=model_class)
                     # primary key fields are automatically converted to external ID fields, and are therefore excluded
@@ -242,7 +242,7 @@ class WholesaleTemplateForm(forms.Form):
 
         :return: List of column headings.
         """
-        # assume self.clean_models(...) has already ensured only whitelisted models are included
+        # assume self.clean_models(...) has already ensured only models in the allowlist are included
         models = self.cleaned_data['models']
         # identify the apps for the models
         models_with_apps_and_classes = self.__load_model_classes(models=models)
@@ -253,16 +253,16 @@ class WholesaleTemplateForm(forms.Form):
         return col_headings
 
     @classmethod
-    def __get_related_models_for_model(cls, model_name, relevant_whitelisted_models):
+    def __get_related_models_for_model(cls, model_name, relevant_models_in_allowlist):
         """ Retrieves list of models related to a particular model.
 
         A related model is a model that links to the model in question such as through a foreign key, one-to-one field
         or many-to-many field.
 
-        Each related model must also be a member of the relevant whitelisted models.
+        Each related model must also be a member of the relevant models in the allowlist.
 
         :param model_name: Name of model for which to retrieve related models.
-        :param relevant_whitelisted_models: List of all relevant and whitelisted model names.
+        :param relevant_models_in_allowlist: List of all relevant and model names in the allowlist.
         :return: List of related models.
         """
         app_name = ModelHelper.get_app_name(model=model_name)
@@ -274,8 +274,8 @@ class WholesaleTemplateForm(forms.Form):
             if ModelHelper.is_field_a_relation(field=field):
                 related_model_class = field.related_model
                 related_model_name = ModelHelper.get_str_for_cls(model_class=related_model_class)
-                # related model is in relevant whitelisted models
-                if related_model_name in relevant_whitelisted_models:
+                # related model is in relevant models in the allowlist
+                if related_model_name in relevant_models_in_allowlist:
                     related_model_names.append(related_model_name)
         return related_model_names
 
@@ -285,19 +285,30 @@ class WholesaleTemplateForm(forms.Form):
 
         :return: Dictionary with keys as model names, and values as lists of related models.
         """
-        relevant_whitelisted_models = cls.__get_relevant_whitelisted_models()
+        relevant_models_in_allowlist = cls.__get_relevant_models_in_allowlist()
         return {
             model_name: cls.__get_related_models_for_model(
                 model_name=model_name,
-                relevant_whitelisted_models=relevant_whitelisted_models
-            ) for model_name in relevant_whitelisted_models
+                relevant_models_in_allowlist=relevant_models_in_allowlist
+            ) for model_name in relevant_models_in_allowlist
         }
 
 
-class WholesaleStartImportForm(forms.ModelForm):
-    """ Synchronous form for the wholesale import tool that is submitted to start an import process.
+class WholesaleCreateImportForm(forms.ModelForm):
+    """ Synchronous form for the wholesale import tool that is submitted to create a batch of data that can eventually
+    be imported.
 
     """
     class Meta:
         model = WholesaleImport
         fields = ['file', 'action']
+
+
+class WholesaleStartImportForm(forms.Form):
+    """ Synchronous form for the wholesale import tool that is submitted to start importing a batch of data.
+
+    Fields:
+        None.
+
+    """
+    pass

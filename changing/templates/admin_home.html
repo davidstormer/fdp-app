@@ -45,7 +45,7 @@
     {% if user.is_host or user.is_superuser %}
     <div class="column wholesale">
         <a href="{%url 'wholesale:index' %}"><i class="fas fa-tasks"></i></a>
-        <h3><a href="{%url 'wholesale:index' %}">{% translate 'Wholesale' %}</a></h3>
+        <h3><a href="{%url 'wholesale:index' %}">{% translate 'Importer' %}</a></h3>
         <p>{% translate 'Add and update large volumes of data using a simplified and automated process.' %}</p>
     </div>
     {% endif %}

@@ -154,8 +154,8 @@ CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES = [
 ]
 
 
-#: A list of names of models that are whitelisted for use through the wholesale import tool.
-CONST_WHOLESALE_WHITELISTED_MODELS = [
+#: A list of names of models that are in the allowlist for use through the wholesale import tool.
+CONST_WHOLESALE_MODELS_ALLOWLIST = [
     # From the 'sourcing' app
     'Attachment',
     'Content',
@@ -188,5 +188,5 @@ CONST_WHOLESALE_WHITELISTED_MODELS = [
 ]
 
 
-#: A list of names of fields that are blacklisted from use through the wholesale import tool.
-CONST_WHOLESALE_BLACKLISTED_FIELDS = []
+#: A list of names of fields that are excluded from use through the wholesale import tool.
+CONST_WHOLESALE_FIELDS_DENYLIST = []
