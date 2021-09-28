@@ -122,8 +122,10 @@ For hosting in Microsoft Azure, it is recommended that the most sensitive settin
 | Required | | FDP_DATABASE_HOST | | Host for database access. |
 | | | FDP_DATABASE_PORT | `'5432'` | Port for database access. |
 | Required | FDP-QUERYSTRING-PASSWORD | | | URL-safe base64-encoded 32-byte key for querystring encryption. |
-| Required | | FDP_AZURE_STORAGE_ACCOUNT_NAME | | Name for Azure Storage account. |
-| Required | FDP-AZURE-STORAGE-ACCOUNT-KEY *(specify access key value)* | FDP_AZURE_STORAGE_ACCOUNT_KEY *(specify reference to secret)* | | Access key for Azure Storage account. Specify both in Azure Key Vault (using access key value), and in Azure App Service Application Setting (using reference to secret). |
+| Required | | FDP_AZURE_STATIC_STORAGE_ACCOUNT_NAME | | Name for Azure Storage account with static container. |
+| Required | FDP-AZURE-STATIC-STORAGE-ACCOUNT-KEY *(specify access key value)* | FDP_AZURE_STATIC_STORAGE_ACCOUNT_KEY *(specify reference to secret)* | | Access key for Azure Storage account with static container. Specify both in Azure Key Vault (using access key value), and in Azure App Service Application Setting (using reference to secret). |
+| Required | | FDP_AZURE_MEDIA_STORAGE_ACCOUNT_NAME | | Name for Azure Storage account with media container. |
+| Required | FDP-AZURE-MEDIA-STORAGE-ACCOUNT-KEY *(specify access key value)* | FDP_AZURE_MEDIA_STORAGE_ACCOUNT_KEY *(specify reference to secret)* | | Access key for Azure Storage account with media container. Specify both in Azure Key Vault (using access key value), and in Azure App Service Application Setting (using reference to secret). |
 | | | FDP_AZURE_STORAGE_ACCOUNT_SUFFIX | `'blob.core.windows.net'` | Suffix for Azure Storage account. |
 | | | FDP_AZURE_STATIC_CONTAINER | `'static'` | Name for static files container. |
 | | | FDP_AZURE_STATIC_EXPIRY | `None` | Seconds for static file expiration. |
