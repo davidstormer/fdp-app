@@ -217,11 +217,11 @@ def handle_import_errors(func):
         :param args: Positional arguments for decorated instance method, starting with a reference to the
         instance itself, i.e. "self".
         :param kwargs: Keyword arguments for decorated instance method.
-        :return: Instance for which instance method was called.
+        :return: Nothing.
         """
         self = args[0]
         try:
-            return func(*args, **kwargs)
+            func(*args, **kwargs)
         except StopWholesaleImportException as err:
             # exception was raised that was already handled to some degree
             self.finish_import_without_raising_exception(err=err)
@@ -247,7 +247,6 @@ def handle_import_errors(func):
             )
             self.full_clean()
             self.save()
-        return self
     return decorator
 
 
@@ -262,7 +261,9 @@ class WholesaleImport(Metable):
     """ Import of data adding to or updating the database through the wholesale import tool.
 
     Attributes:
-        :started_timestamp (datetime): Automatically added timestamp recording when wholesale import was started.
+        :created_timestamp (datetime): Automatically added timestamp recording when wholesale import was created.
+        :started_timestamp (datetime): Timestamp recording when wholesale import was started.
+        :ended_timestamp (datetime): Timestamp recording when wholesale import was ended.
         :action (str): The nature of the database change that is intended with the import such as add or update.
         :file (file): Template file containing data for wholesale import.
         :user (str): User starting import.
@@ -274,6 +275,9 @@ class WholesaleImport(Metable):
         corresponding reversion records.
 
     Properties:
+        :is_started (bool): True if wholesale import was started, false if it was created but not yet started.
+        :is_ended (bool): True if wholesale import was ended, false if it was created and started but not yet ended.
+        :is_ready_for_import (bool): True if record is ready for its data to be imported, false otherwise.
         :has_errors (bool): True if wholesale import encountered errors, false otherwise.
         :import_models_as_str (str): Retrieves the main models that were imported through this wholesale import as a
         single string.
@@ -343,12 +347,28 @@ class WholesaleImport(Metable):
     #: Name of external unique identifier columns.
     _id_external_col = f'{_id_col}{external_id_suffix}'
 
-    started_timestamp = models.DateTimeField(
+    created_timestamp = models.DateTimeField(
         null=False,
         blank=False,
         auto_now_add=True,
-        help_text=_('Automatically added timestamp recording when data was imported.'),
-        verbose_name=_('timestamp'),
+        help_text=_('Automatically added timestamp recording when batch was created.'),
+        verbose_name=_('created timestamp'),
+        db_index=True
+    )
+
+    started_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Timestamp recording when import of data was started.'),
+        verbose_name=_('started timestamp'),
+        db_index=True
+    )
+
+    ended_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Timestamp recording when import of data was ended.'),
+        verbose_name=_('ended timestamp'),
         db_index=True
     )
 
@@ -441,6 +461,36 @@ class WholesaleImport(Metable):
             return True
         else:
             return False
+
+    @property
+    def is_started(self):
+        """ Checks whether the wholesale import was started.
+
+        :return: True if wholesale import was started, false if it was created but not yet started.
+        """
+        return True if self.started_timestamp else False
+
+    @property
+    def is_ended(self):
+        """ Checks whether the wholesale import was ended.
+
+        :return: True if wholesale import was ended, false if it was created and started, but not yet ended.
+        """
+        return True if self.ended_timestamp else False
+
+    @property
+    def is_ready_for_import(self):
+        """ Checks whether the data for this record is ready to be imported.
+
+        Data is ready to be imported if:
+            (1) No errors are already noted for this import; some could have been noted while converting implicit model
+                references to explicit model references).
+            (2) Import has not yet been started.
+            (3) Import has not yet been ended.
+
+        :return: True if the data is ready to be imported, false otherwise.
+        """
+        return not (self.is_started or self.is_ended or self.has_errors)
 
     @property
     def import_models_as_str(self):
@@ -777,6 +827,9 @@ class WholesaleImport(Metable):
         self._by_external_id_m2m_rel_data_by_model_name = {}
         # Groups revision records for import for the django-reversion package. Set in __add_revision_to_database(...).
         self._revision = None
+        #  Stores the number of data rows that appear in the template. Will only be defined during the conversion of
+        # implicit model references, i.e. in convert_implicit_references(...).
+        self._num_of_data_rows = None
 
     def __init__(self, *args, **kwargs):
         """ Initializes data structures for metadata about the import such as the models to be imported, their fields,
@@ -821,9 +874,10 @@ class WholesaleImport(Metable):
 
         :return: String representing content in file.
         """
+        file = getattr(self, 'file')
         # ensure that file handle offset is always at the beginning before reading
-        self.__rewind_io(io_to_rewind=self.file)
-        return self.file.read().decode(self.csv_encoding)
+        self.__rewind_io(io_to_rewind=file)
+        return file.read().decode(self.csv_encoding)
 
     @staticmethod
     def __rewind_io(io_to_rewind):
@@ -906,6 +960,7 @@ class WholesaleImport(Metable):
         :param err: Optional exception that may have been encountered.
         :return: Nothing.
         """
+        self.ended_timestamp = now()
         self.__add_to_import_errors(err=err)
 
     def __finish_import_and_raise_exception(self, err):
@@ -1033,9 +1088,9 @@ class WholesaleImport(Metable):
             # check cache, if this model has already been processed
             if model_name not in cached_model_classes:
                 # ensure model can be imported
-                if model_name not in AbstractConfiguration.whitelisted_wholesale_models():
+                if model_name not in AbstractConfiguration.models_in_wholesale_allowlist():
                     self.__finish_import_and_raise_exception(
-                        err=f'Model {model_name} is not whitelisted for wholesale import'
+                        err=f'Model {model_name} is not in the allowlist for wholesale import'
                     )
                 # check if this model has somehow already been added to the import list
                 elif model_name in import_models:
@@ -1047,8 +1102,8 @@ class WholesaleImport(Metable):
             else:
                 model_class = cached_model_classes[model_name]
             # check if field can be imported
-            if field_name in AbstractConfiguration.blacklisted_wholesale_fields():
-                self.__finish_import_and_raise_exception(err=f'Field {field_name} is blacklisted for wholesale import')
+            if field_name in AbstractConfiguration.fields_in_wholesale_denylist():
+                self.__finish_import_and_raise_exception(err=f'Field {field_name} is in denylist for wholesale import')
             # metadata for particular field
             field_type, rel_model_class = self.__get_field_metadata(
                 field_name=field_name,
@@ -1970,7 +2025,7 @@ class WholesaleImport(Metable):
         comment = f'Changed through an "{action_txt}" wholesale import with UUID: {self.uuid}'
         # Contains metadata about a revision, and groups together all reversion.models.Version instances created in
         # that revision. See: https://django-reversion.readthedocs.io/en/stable/api.html#reversion-models-revision
-        revision = Revision.objects.create(
+        revision = (getattr(Revision, 'objects')).create(
             date_created=now(),
             user=FdpUser.objects.get(email=self.user),
             comment=comment
@@ -2338,10 +2393,11 @@ class WholesaleImport(Metable):
     def do_import(self):
         """ Perform wholesale import.
 
-        :return: Wholesale import model instance that represents this import, i.e. "self".
+        :return: Nothing.
         """
-        # only import, if there were no errors found while converting implicit references to explicit
-        if not self.has_errors:
+        if self.is_ready_for_import:
+            # start import
+            self.started_timestamp = now()
             # creates and populates metadata for import, perform validation checks and prepares data for import
             self.__before_import()
             try:
@@ -2368,8 +2424,6 @@ class WholesaleImport(Metable):
                 self.finish_import_without_raising_exception(err=err)
                 self.full_clean()
                 self.save()
-            # retrieve wholesale import model instance
-        return self
 
     @staticmethod
     def __add_to_cached_fields_to_add_by_model(
@@ -2851,43 +2905,44 @@ class WholesaleImport(Metable):
 
         If implicit references are found in the CSV template, then it will be updated and the original overwritten.
 
-        :return: Wholesale import model instance that represents this import, i.e. "self".
+        :return: Nothing.
         """
-        new_csv_file = None
-        file_changed = False
-        filename = self.file.name
-        decoded_string_content = self.__get_decoded_string_content()
-        with StringIO(decoded_string_content) as read_string_io:
-            reader = self.__get_csv_reader(string_io=read_string_io)
-            # creates and populates data structures to store metadata used during the import such as models involved,
-            # their fields, and those fields' types
-            self.__make_import_metadata(reader=reader)
-            # fields to add, in the format of: {
-            # 'model_1': [(field_1, is_pk_1, rel_model_1), (field_2, is_pk_2, rel_model_2), ...],
-            # 'model_2': [...],
-            # ...
-            # }
-            cached_fields_to_add_by_model = self.__get_fields_to_convert_implicit_references()
-            # if there are some fields to add
-            if cached_fields_to_add_by_model:
-                # rewind the memory stream position, to read the heading row again
-                self.__rewind_io(io_to_rewind=read_string_io)
-                # list of CSV slice object instances that can be used to define a new CSV row
-                fields_to_add = self.get_fields_to_add(cached_fields_to_add_by_model=cached_fields_to_add_by_model)
-                # rebuild CSV using CSV slices
-                with StringIO() as write_string_io:
-                    writer = self.__get_csv_writer(string_io=write_string_io)
-                    self.__write_new_headings_row(reader=reader, writer=writer, fields_to_add=fields_to_add)
-                    self.__write_new_data_rows(reader=reader, writer=writer, fields_to_add=fields_to_add)
-                    # wrap the file
-                    new_csv_file = ContentFile(write_string_io.getvalue().encode(self.csv_encoding))
-                    file_changed = True
-        # re-initialize data structures
-        self.__init_data_structures()
-        # only re-save object if CSV template file has been changed to make explicit the implicit references
-        if file_changed:
-            self.file.save(f'mod_{filename}', new_csv_file)
-        return self
+        if self.is_ready_for_import:
+            new_csv_file = None
+            file_changed = False
+            filename = self.file.name
+            decoded_string_content = self.__get_decoded_string_content()
+            with StringIO(decoded_string_content) as read_string_io:
+                reader = self.__get_csv_reader(string_io=read_string_io)
+                # creates and populates data structures to store metadata used during the import such as models
+                # involved, their fields, and those fields' types
+                self.__make_import_metadata(reader=reader)
+                # fields to add, in the format of: {
+                # 'model_1': [(field_1, is_pk_1, rel_model_1), (field_2, is_pk_2, rel_model_2), ...],
+                # 'model_2': [...],
+                # ...
+                # }
+                cached_fields_to_add_by_model = self.__get_fields_to_convert_implicit_references()
+                # number of data rows (subtract one to exclude heading row)
+                self._num_of_data_rows = len([1 for _ in reader]) - 1
+                # if there are some fields to add
+                if cached_fields_to_add_by_model:
+                    # rewind the memory stream position, to read the heading row again
+                    self.__rewind_io(io_to_rewind=read_string_io)
+                    # list of CSV slice object instances that can be used to define a new CSV row
+                    fields_to_add = self.get_fields_to_add(cached_fields_to_add_by_model=cached_fields_to_add_by_model)
+                    # rebuild CSV using CSV slices
+                    with StringIO() as write_string_io:
+                        writer = self.__get_csv_writer(string_io=write_string_io)
+                        self.__write_new_headings_row(reader=reader, writer=writer, fields_to_add=fields_to_add)
+                        self.__write_new_data_rows(reader=reader, writer=writer, fields_to_add=fields_to_add)
+                        # wrap the file
+                        new_csv_file = ContentFile(write_string_io.getvalue().encode(self.csv_encoding))
+                        file_changed = True
+            # only re-save object if CSV template file has been changed to make explicit the implicit references
+            if file_changed:
+                file = getattr(self, 'file')
+                file.save(f'mod_{filename}', new_csv_file)
 
     @staticmethod
     def get_col_heading_name(model, field):
@@ -2898,6 +2953,35 @@ class WholesaleImport(Metable):
         :return: String representing column heading.
         """
         return f'{model}.{field}'
+
+    def get_models_with_fields(self):
+        """ Retrieves a list of tuples that represent the models and their corresponding fields that are intended for
+        this import.
+
+        Ensure that this is only called once the _metadata_by_model_name data structure has been populated.
+
+        :return: List of tuples, where for each tuple:
+                    [0] String representation of model name; and
+                    [1] Iterable of field names for model.
+        """
+        return [
+            (
+                # string representation of model name
+                model_name,
+                # iterable of field names for model
+                self._metadata_by_model_name[model_name][self.__model_fields_index]
+            ) for model_name in self._metadata_by_model_name
+        ]
+
+    def get_num_of_data_rows(self):
+        """ Retrieves the number of rows of data to be imported.
+
+        Ensure that this is only called once the _num_of_data_rows attribute has been set during the conversion of
+        implicit model references, i.e. in convert_implicit_references(...).
+
+        :return: Number of rows of data to be imported, or None if not known.
+        """
+        return self._num_of_data_rows
 
     class Meta:
         db_table = '{d}wholesale_import'.format(d=settings.DB_PREFIX)
