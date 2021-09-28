@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
+from django.utils.timezone import now
 from inheritable.models import AbstractConfiguration, AbstractSql
 from inheritable.tests import AbstractTestCase, local_test_settings_required
 from bulk.models import BulkImport
@@ -26,29 +27,33 @@ class WholesaleTestCase(AbstractTestCase):
 
     (1) Test that wholesale views are accessible by admin host users only.
 
-    (2) Test wholesale import models whitelist, specifically that:
-            (A) Models omitted from whitelist are not available in the dropdown during template generation;
-            (B) Models omitted from whitelist cannot be submitted for template generation; and
-            (C) Models omitted from whitelist cannot be imported.
+    (2) Test wholesale import models allowlist, specifically that:
+            (A) Models omitted from allowlist are not available in the dropdown during template generation;
+            (B) Models omitted from allowlist cannot be submitted for template generation; and
+            (C) Models omitted from allowlist cannot be imported.
 
-    (3) Test wholesale import model fields blacklist, specifically that:
-            (A) Fields included in blacklist are not available in the dropdown during template generation;
-            (B) Fields included in blacklist cannot be submitted for template generation; and
-            (C) Fields included in blacklist cannot be imported.
+    (3) Test wholesale import model fields denylist, specifically that:
+            (A) Fields included in denylist are not available in the dropdown during template generation;
+            (B) Fields included in denylist cannot be submitted for template generation; and
+            (C) Fields included in denylist cannot be imported.
 
     (4) Test that there are no ambiguous model names across apps relevant to wholesale import.
 
     (5) Test that internal primary key column is excluded from generated templates.
 
     (6) Test that data integrity is preserved during "add" imports, including for combinations when:
-                (A) Models may or may not have external IDs defined;
-                (B) Models may reference foreign keys via PK, new name, existing name, or external ID;
-                (C) Models may reference many-to-many fields via PK, new name, existing name, or external ID; and
-                (D) Models may reference other models on the same row through explicit references, on the same row
-                    through implicit references, or on a different row through explicit references.
+            (A) Models may or may not have external IDs defined;
+            (B) Models may reference foreign keys via PK, new name, existing name, or external ID;
+            (C) Models may reference many-to-many fields via PK, new name, existing name, or external ID; and
+            (D) Models may reference other models on the same row through explicit references, on the same row
+                through implicit references, or on a different row through explicit references.
+
+    (7) Test that imports which are not ready for import, cannot be imported, including when the import:
+            (A) Was already started;
+            (B) Was already ended; and
+            (C) Already has errors.
 
     #: TODO: Ensure bulk import records created, and no duplication.
-    #: TODO: Ensure version record created for each added record including main models and models referenced by name.
     #: TODO: Add with PK column, add with PK column and external ID column.
     #: TODO: Update without PK column and without external ID column.
     #: TODO: Update with PK column with some values missing.
@@ -94,10 +99,9 @@ class WholesaleTestCase(AbstractTestCase):
             **self.__create_host_admin_user_kwargs,
             email_counter=1 + FdpUser.objects.all().count()
         )
-        self.assertTrue(WholesaleImport.objects.all().exists())
         # setup URLs reused throughout this class
         self.__template_url = reverse('wholesale:template')
-        self.__start_import_url = reverse('wholesale:start_import')
+        self.__create_import_url = reverse('wholesale:create_import')
         # Dictionary that can be expanded into unchanging keyword arguments when expecting a successful response to a
         # GET or POST request through _get_response_from_get_request(...) and _get_response_from_post_request(...).
         self.__unchanging_success_kwargs = {
@@ -116,12 +120,6 @@ class WholesaleTestCase(AbstractTestCase):
             cls._create_fdp_user_without_assert(
                 **cls.__create_host_admin_user_kwargs,
                 email_counter=1 + FdpUser.objects.all().count()
-            )
-        if not WholesaleImport.objects.all().exists():
-            WholesaleImport.objects.create(
-                action=WholesaleImport.add_value,
-                file=SimpleUploadedFile(name='empty.csv', content=''),
-                user=(FdpUser.objects.all().first()).email
             )
         # need at least 3 traits
         while Trait.objects.all().count() < 3:
@@ -182,20 +180,32 @@ class WholesaleTestCase(AbstractTestCase):
         trait_class_name = ModelHelper.get_str_for_cls(model_class=Trait)
         three_traits = Trait.objects.all()[:3]
         self.__add_external_ids(instances=three_traits, class_name=trait_class_name)
-        traits_callable = lambda row_num, attr_name: '' if row_num % 3 == 0 else (
-            getattr(three_traits[0], attr_name) if row_num % 3 == 1
-            else f'{getattr(three_traits[1], attr_name)}, {getattr(three_traits[2], attr_name)}'
-        )
-        traits_by_pk_callable = lambda row_num: traits_callable(row_num=row_num, attr_name='pk')
-        traits_by_existing_name_callable = lambda row_num: traits_callable(row_num=row_num, attr_name='name')
-        traits_by_new_name_callable = lambda row_num: \
-            f'wholesaletestnewfirsttrait{row_num % num_of_rows}, wholesaletestnewsecondtrait{row_num % num_of_rows}'
-        traits_by_ext_callable = lambda row_num: traits_callable(
-            row_num=row_num,
-            attr_name=self.__test_external_id_attr
-        )
+
+        def __traits_callable(row_num, attr_name):
+            """ Generic callable used to reference traits by PK, name or external ID.
+
+            :param row_num: Row number on which trait(s) appear.
+            :param attr_name: Attribute on each trait that is used to reference it.
+            :return: Representation of trait(s) that appear on row.
+            """
+            return '' if row_num % 3 == 0 else (
+                getattr(three_traits[0], attr_name) if row_num % 3 == 1
+                else f'{getattr(three_traits[1], attr_name)}, {getattr(three_traits[2], attr_name)}'
+            )
+
         return (
-            traits_by_pk_callable, traits_by_existing_name_callable, traits_by_new_name_callable, traits_by_ext_callable
+            # Callable for traits by PK
+            lambda row_num: __traits_callable(row_num=row_num, attr_name='pk'),
+            # Callable for traits by name, where records already exist
+            lambda row_num: __traits_callable(row_num=row_num, attr_name='name'),
+            # Callable for traits by name, where records not yet added
+            lambda row_num: f'wholesaletestnewfirsttrait{row_num % num_of_rows}, '
+                            f'wholesaletestnewsecondtrait{row_num % num_of_rows}',
+            # Callable for traits by external ID
+            lambda row_num: __traits_callable(
+                row_num=row_num,
+                attr_name=self.__test_external_id_attr
+            )
         )
 
     def __get_person_identifier_types_callables(self, num_of_rows):
@@ -215,25 +225,25 @@ class WholesaleTestCase(AbstractTestCase):
         identifier_type_class_name = ModelHelper.get_str_for_cls(model_class=PersonIdentifierType)
         three_identifier_types = PersonIdentifierType.objects.all()[:3]
         self.__add_external_ids(instances=three_identifier_types, class_name=identifier_type_class_name)
-        identifier_type_callable = lambda row_num, attr_name: getattr(three_identifier_types[(row_num % 3)], attr_name)
-        identifier_type_by_pk_callable = lambda row_num: identifier_type_callable(
-            row_num=row_num,
-            attr_name='pk'
-        )
-        identifier_type_by_existing_name_callable = lambda row_num: identifier_type_callable(
-            row_num=row_num,
-            attr_name='name'
-        )
-        identifier_type_by_new_name_callable = lambda row_num: f'wholesaletestnewtype{row_num % num_of_rows}'
-        identifier_type_by_ext_callable = lambda row_num: identifier_type_callable(
-            row_num=row_num,
-            attr_name=self.__test_external_id_attr
-        )
+
+        def __identifier_type_callable(row_num, attr_name):
+            """ Generic callable used to reference person identifier types by PK, name or external ID.
+
+            :param row_num: Row number on which person identifier type appears.
+            :param attr_name: Attribute on each person identifier type that is used to reference it.
+            :return: Representation of person identifier type that appears on row.
+            """
+            return getattr(three_identifier_types[(row_num % 3)], attr_name)
+
         return (
-            identifier_type_by_pk_callable,
-            identifier_type_by_existing_name_callable,
-            identifier_type_by_new_name_callable,
-            identifier_type_by_ext_callable
+            # Callable for person identifier type by PK
+            lambda row_num: __identifier_type_callable(row_num=row_num, attr_name='pk'),
+            # Callable for person identifier type by name, where records already exist
+            lambda row_num: __identifier_type_callable(row_num=row_num, attr_name='name'),
+            # Callable for person identifier type by name, where records not yet added
+            lambda row_num: f'wholesaletestnewtype{row_num % num_of_rows}',
+            # Callable for person identifier type by external ID
+            lambda row_num: __identifier_type_callable(row_num=row_num, attr_name=self.__test_external_id_attr)
         )
 
     @staticmethod
@@ -314,8 +324,58 @@ class WholesaleTestCase(AbstractTestCase):
         person_class_name = ModelHelper.get_str_for_cls(model_class=Person)
         return f'{person_class_name}.{self.__field_for_person}{self.__csv_lineterminator}{unique_person_name}'
 
-    def __get_start_import_post_data(self, action, str_content):
-        """ Retrieves the data that can be submitted via POST to start a wholesale import.
+    @staticmethod
+    def __get_wholesale_import(filter_kwargs, create_kwargs):
+        """ Retrieves a wholesale import record with a particular configuration, if it exists; and creates the record
+        if it does not already exist.
+
+        :param filter_kwargs: Dictionary that can be expanded into keyword arguments for filtering the Django queryset
+        of wholesale import records.
+        :param create_kwargs: Dictionary that can be expanded into keyword arguments to create a wholesale import
+        record with a particular configuration. Do not include 'action', 'file' and 'user' attributes as these will
+        automatically be set.
+        :return: Instance of wholesale import record with a particular configuration.
+        """
+        if not WholesaleImport.objects.filter(**filter_kwargs).exists():
+            return WholesaleImport.objects.create(
+                action=WholesaleImport.add_value,
+                file=SimpleUploadedFile(name='empty.csv', content=''),
+                user=(FdpUser.objects.all().first()).email,
+                uuid=WholesaleImport.get_uuid(),
+                **create_kwargs
+            )
+        else:
+            return WholesaleImport.objects.filter(**filter_kwargs).order_by('-pk').first()
+
+    def __get_wholesale_ready_for_import(self):
+        """ Retrieves a wholesale import record that is in a state where it is ready to be imported.
+
+        :return: Instance of wholesale import record that is ready for import.
+        """
+        return self.__get_wholesale_import(
+            filter_kwargs={'started_timestamp__isnull': True, 'ended_timestamp__isnull': True},
+            create_kwargs={}
+        )
+
+    def __get_wholesale_imported(self):
+        """ Retrieves a wholesale import record that is in a state where it has already been imported.
+
+        :return: Instance of wholesale import record that has already been imported.
+        """
+        return self.__get_wholesale_import(
+            filter_kwargs={'started_timestamp__isnull': False, 'ended_timestamp__isnull': False},
+            create_kwargs={'started_timestamp': now(), 'ended_timestamp': now()}
+        )
+
+    def __get_start_import_url(self):
+        """ Retrieves the "start import" URL for a wholesale import record that is ready for import.
+
+        :return: "Start import" URL for a wholesale import record that is ready for import.
+        """
+        return reverse('wholesale:start_import', kwargs={'pk': (self.__get_wholesale_ready_for_import()).pk})
+
+    def __get_create_import_post_data(self, action, str_content):
+        """ Retrieves the data that can be submitted via POST to create a wholesale import.
 
         :param action: Action intended through import. Use WholesaleImport.add_value for adds and
         WholesaleImport.update_value for updates.
@@ -329,19 +389,32 @@ class WholesaleTestCase(AbstractTestCase):
             self.__post_field_field: SimpleUploadedFile(name=f'wholesale_test{num_of_imports}.csv', content=content)
         }
 
+    def __get_create_import_unchanging_kwargs(self):
+        """ Retrieves a dictionary that can be expanded into unchanging keyword arguments
+        for _get_response_from_post_request(...) when submitting a POST request to create a wholesale import.
+
+        :return: Dictionary that can be expanded into keyword arguments.
+        """
+        table = WholesaleImport.get_db_table()
+        # every time NEXTVAL(...) is called, the PostgreSQL sequence will increase
+        self.wholesale_next_val = \
+            AbstractSql.exec_single_val_sql(sql_query=f"SELECT NEXTVAL('{table}_id_seq')", sql_params=[]) + 1
+        return {
+            'fdp_user': self.__host_admin_user,
+            'expected_status_code': 302,
+            'login_startswith': reverse('wholesale:start_import', kwargs={'pk': self.wholesale_next_val})
+        }
+
     def __get_start_import_unchanging_kwargs(self):
         """ Retrieves a dictionary that can be expanded into unchanging keyword arguments
         for _get_response_from_post_request(...) when submitting a POST request to start a wholesale import.
 
         :return: Dictionary that can be expanded into keyword arguments.
         """
-        table = WholesaleImport.get_db_table()
-        # every time NEXTVAL(...) is called, the PostgreSQL sequence will increase
-        next_val = AbstractSql.exec_single_val_sql(sql_query=f"SELECT NEXTVAL('{table}_id_seq')", sql_params=[]) + 1
         return {
             'fdp_user': self.__host_admin_user,
             'expected_status_code': 302,
-            'login_startswith': reverse('wholesale:log', kwargs={'pk': next_val})
+            'login_startswith': reverse('wholesale:log', kwargs={'pk': (self.__get_wholesale_ready_for_import()).pk})
         }
 
     @staticmethod
@@ -372,6 +445,50 @@ class WholesaleTestCase(AbstractTestCase):
         person_identifier_type_names = [identifier_type_callable(row_num=row_num) for row_num in range(0, num_of_rows)]
         return person_identifier_type_names
 
+    def __create_and_start_import(self, csv_content):
+        """ Creates and starts a wholesale import based on a template.
+
+        :param csv_content: String representation of the content defining the CSV template to import.
+        :return: Nothing.
+        """
+        create_kwargs = self.__get_create_import_unchanging_kwargs()
+        fdp_user = create_kwargs['fdp_user']
+        client = Client(**self._local_client_kwargs)
+        client.logout()
+        two_factor = self._create_2fa_record(user=fdp_user)
+        response = self._do_login(
+            c=client,
+            username=fdp_user.email,
+            password=self._password,
+            two_factor=two_factor,
+            login_status_code=200,
+            two_factor_status_code=200,
+            will_login_succeed=True
+        )
+        # create the import
+        response = self._do_post(
+            c=response.client,
+            url=self.__create_import_url,
+            data=self.__get_create_import_post_data(
+                action=WholesaleImport.add_value,
+                str_content=csv_content
+            ),
+            expected_status_code=create_kwargs['expected_status_code'],
+            login_startswith=create_kwargs['login_startswith']
+        )
+        # navigate to the confirmation page, so that implicit conversion can be performed
+        start_url = response.url
+        response = self._do_get(c=response.client, url=start_url, expected_status_code=200, login_startswith=None)
+        # start the import
+        self._do_post(
+            c=response.client,
+            url=start_url,
+            data={},
+            expected_status_code=302,
+            # self.wholesale_next_val is set in __get_create_import_unchanging_kwargs(...)
+            login_startswith=reverse('wholesale:log', kwargs={'pk': self.wholesale_next_val})
+        )
+
     @staticmethod
     def __can_user_access_host_admin_only(fdp_user):
         """ Checks whether a user can access a view that is restricted to host administrators only.
@@ -393,9 +510,10 @@ class WholesaleTestCase(AbstractTestCase):
         get_urls = (
             reverse('wholesale:index'),
             self.__template_url,
-            self.__start_import_url,
+            self.__create_import_url,
+            self.__get_start_import_url(),
             reverse('wholesale:logs'),
-            reverse('wholesale:log', kwargs={'pk': (WholesaleImport.objects.all().first()).pk})
+            reverse('wholesale:log', kwargs={'pk': (self.__get_wholesale_imported()).pk})
         )
         can_user_access_host_admin_only = self.__can_user_access_host_admin_only(fdp_user=fdp_user)
         expected_status_code = 200 if can_user_access_host_admin_only else 403
@@ -420,28 +538,41 @@ class WholesaleTestCase(AbstractTestCase):
         # submitted through those POST requests
         post_tuples = (
             (
-                self.__template_url,
-                {self.__post_models_field: (AbstractConfiguration.whitelisted_wholesale_models())[0]},
-                200  # expected successful HTTP status code
+                self.__template_url,  # NOT a callable
+                {self.__post_models_field: (AbstractConfiguration.models_in_wholesale_allowlist())[0]},
+                200,  # expected successful HTTP status code
+                None  # login_startswith, NOT a callable
             ),
             (
-                self.__start_import_url,
-                self.__get_start_import_post_data(action=WholesaleImport.add_value, str_content='a,b,c'),
-                302  # expected successful HTTP status code
-            )
+                self.__create_import_url,  # NOT a callable
+                self.__get_create_import_post_data(action=WholesaleImport.add_value, str_content='a,b,c'),
+                302,  # expected successful HTTP status code
+                self.__get_create_import_unchanging_kwargs  # login_startswith, callable
+            ),
+            (
+                self.__get_start_import_url,  # callable
+                {},  # starting an import does not require any data to be submitted
+                302,  # expected successful HTTP status code
+                self.__get_start_import_unchanging_kwargs  # login_startswith, callable
+            ),
         )
         can_user_access_host_admin_only = self.__can_user_access_host_admin_only(fdp_user=fdp_user)
         # cycle through URLs and corresponding POST data
         for post_tuple in post_tuples:
-            post_url = post_tuple[0]
+            maybe_callable_url = post_tuple[0]
+            post_url = maybe_callable_url if not callable(maybe_callable_url) else maybe_callable_url()
             post_data = post_tuple[1]
             expected_successful_status_code = post_tuple[2]
             expected_status_code = expected_successful_status_code if can_user_access_host_admin_only else 403
             logger.debug(f'Checking POST request for {post_url} with expected status code {expected_status_code}')
+            maybe_callable_login_startswith = post_tuple[3]
+            login_startswith = maybe_callable_login_startswith if not callable(maybe_callable_login_startswith) \
+                else maybe_callable_login_startswith()['login_startswith']
             # note number of imports before POSTing
             num_of_imports = WholesaleImport.objects.all().count()
-            login_startswith = None if expected_status_code != 302 \
-                else (self.__get_start_import_unchanging_kwargs())['login_startswith']
+            # note most recent record that is ready for import
+            ready_for_import = self.__get_wholesale_ready_for_import()
+            self.assertTrue(ready_for_import.is_ready_for_import)
             self._get_response_from_post_request(
                 fdp_user=fdp_user,
                 url=post_url,
@@ -449,16 +580,30 @@ class WholesaleTestCase(AbstractTestCase):
                 login_startswith=login_startswith,
                 post_data=post_data
             )
-            # if POST was to start an import
-            if post_url == self.__start_import_url:
-                # if import was expected to start
+            # POST created an import
+            if maybe_callable_url == self.__create_import_url:
+                # import expected to be created
                 if expected_status_code == 302:
-                    # assert that import was recorded
                     self.assertEqual(num_of_imports + 1, WholesaleImport.objects.all().count())
-                # if import was not expected to start
+                # import expected not to be created
                 else:
-                    # assert that import was not recorded
                     self.assertEqual(num_of_imports, WholesaleImport.objects.all().count())
+            # POST started an import
+            elif maybe_callable_url == self.__get_start_import_url:
+                # get updated record from the database
+                was_ready_for_import = WholesaleImport.objects.get(pk=ready_for_import.pk)
+                # next record that is ready for import
+                next_ready_for_import = self.__get_wholesale_ready_for_import()
+                # import expected to be started
+                if expected_status_code == 302:
+                    self.assertNotEqual(next_ready_for_import.pk, ready_for_import.pk)
+                    self.assertFalse(was_ready_for_import.is_ready_for_import)
+                    self.assertIsNotNone(was_ready_for_import.started_timestamp)
+                # import expected not to be started
+                else:
+                    self.assertEqual(next_ready_for_import.pk, ready_for_import.pk)
+                    self.assertTrue(was_ready_for_import.is_ready_for_import)
+                    self.assertIsNone(was_ready_for_import.started_timestamp)
 
     def __check_if_can_download_wholesale_import_file(self, fdp_user):
         """ Checks whether a user can download a wholesale import file.
@@ -491,8 +636,8 @@ class WholesaleTestCase(AbstractTestCase):
         logger.debug(f'Checking import file download with expected status code {expected_status_code}')
         self._do_get(c=response.client, url=url, expected_status_code=expected_status_code, login_startswith=None)
 
-    def __check_blacklisted_field(self, unique_name, all_unique_names_callable, csv_content, class_name, field_name):
-        """ Check the views that are relevant for a field that is blacklisted for wholesale import.
+    def __check_field_in_denylist(self, unique_name, all_unique_names_callable, csv_content, class_name, field_name):
+        """ Check the views that are relevant for a field that is in the denylist for wholesale import.
 
         :param unique_name: Unique name that will identify a dummy model instance to attempt to import through an "add".
         :param all_unique_names_callable: A callable such as __get_all_user_emails(...) or __get_all_person_names(...)
@@ -502,8 +647,8 @@ class WholesaleTestCase(AbstractTestCase):
         :param field_name: String representation of field to which unique name is attempted to be assigned.
         :return: Nothing.
         """
-        self.assertIn(class_name, AbstractConfiguration.whitelisted_wholesale_models())
-        self.assertIn(field_name, AbstractConfiguration.blacklisted_wholesale_fields())
+        self.assertIn(class_name, AbstractConfiguration.models_in_wholesale_allowlist())
+        self.assertIn(field_name, AbstractConfiguration.fields_in_wholesale_denylist())
         str_response = self._get_response_from_get_request(url=self.__template_url, **self.__unchanging_success_kwargs)
         self.assertIn(f'"{class_name}"', str_response)
         logger.debug(f'Model {class_name} is selectable when generating a template')
@@ -518,20 +663,16 @@ class WholesaleTestCase(AbstractTestCase):
         self.assertNotIn(f'{class_name}.{field_name},', str_response)
         logger.debug(f'Model {class_name} can be submitted for template generation '
                      f'and generated template does not include field {field_name}')
-        self._get_response_from_post_request(
-            url=self.__start_import_url,
-            post_data=self.__get_start_import_post_data(action=WholesaleImport.add_value, str_content=csv_content),
-            **self.__get_start_import_unchanging_kwargs()
-        )
+        self.__create_and_start_import(csv_content=csv_content)
         self.assertNotIn(unique_name, all_unique_names_callable())
         self.assertEqual(
-            f'Field {field_name} is blacklisted for wholesale import.',
+            f'Field {field_name} is in denylist for wholesale import.',
             (WholesaleImport.objects.all().order_by('-pk').first()).import_errors
         )
         logger.debug(f'Field {field_name} cannot be imported')
 
-    def __check_not_whitelisted_model(self, unique_name, all_unique_names_callable, csv_content, class_name):
-        """ Check the views that are relevant for a model that is not whitelisted for wholesale import.
+    def __check_model_not_in_allowlist(self, unique_name, all_unique_names_callable, csv_content, class_name):
+        """ Check the views that are relevant for a model that is not in the allowlist for wholesale import.
 
         :param unique_name: Unique name that will identify a dummy model instance to attempt to import through an "add".
         :param all_unique_names_callable: A callable such as __get_all_user_emails(...) or __get_all_person_names(...)
@@ -540,7 +681,7 @@ class WholesaleTestCase(AbstractTestCase):
         :param class_name: String representation of model class to which dummy model instance belongs.
         :return: Nothing.
         """
-        self.assertNotIn(class_name, AbstractConfiguration.whitelisted_wholesale_models())
+        self.assertNotIn(class_name, AbstractConfiguration.models_in_wholesale_allowlist())
         str_response = self._get_response_from_get_request(url=self.__template_url, **self.__unchanging_success_kwargs)
         self.assertNotIn(f'"{class_name}"', str_response)
         logger.debug(f'Model {class_name} is not selectable when generating a template')
@@ -550,23 +691,19 @@ class WholesaleTestCase(AbstractTestCase):
         )
         self.assertIn(f'{class_name} is not one of the available choices.', str_response)
         logger.debug(f'Model {class_name} cannot be submitted for template generation')
-        self._get_response_from_post_request(
-            url=self.__start_import_url,
-            post_data=self.__get_start_import_post_data(action=WholesaleImport.add_value, str_content=csv_content),
-            **self.__get_start_import_unchanging_kwargs()
-        )
+        self.__create_and_start_import(csv_content=csv_content)
         self.assertNotIn(unique_name, all_unique_names_callable())
         self.assertEqual(
-            f'Model {class_name} is not whitelisted for wholesale import.',
+            f'Model {class_name} is not in the allowlist for wholesale import.',
             (WholesaleImport.objects.all().order_by('-pk').first()).import_errors
         )
         logger.debug(f'Model {class_name} cannot be imported')
 
-    def __check_whitelisted_model_and_not_blacklisted_field(
+    def __check_model_in_allowlist_and_field_not_in_denylist(
             self, unique_name, all_unique_names_callable, csv_content, class_name, field_name
     ):
-        """ Check the views that are relevant for a model that is whitelisted and a field that is not blacklisted
-        for wholesale import.
+        """ Check the views that are relevant for a model that is in the allowlist and a field that is not in the
+        denylist for wholesale import.
 
         :param unique_name: Unique name that will identify a dummy model instance to attempt to import through an "add".
         :param all_unique_names_callable: A callable such as __get_all_user_emails(...) or __get_all_person_names(...)
@@ -576,8 +713,8 @@ class WholesaleTestCase(AbstractTestCase):
         :param field_name: String representation of field to which unique name is attempted to be assigned.
         :return: Nothing.
         """
-        self.assertIn(class_name, AbstractConfiguration.whitelisted_wholesale_models())
-        self.assertNotIn(field_name, AbstractConfiguration.blacklisted_wholesale_fields())
+        self.assertIn(class_name, AbstractConfiguration.models_in_wholesale_allowlist())
+        self.assertNotIn(field_name, AbstractConfiguration.fields_in_wholesale_denylist())
         str_response = self._get_response_from_get_request(
             url=self.__template_url,
             **self.__unchanging_success_kwargs
@@ -595,18 +732,15 @@ class WholesaleTestCase(AbstractTestCase):
         self.assertIn(f'{class_name}.{field_name},', str_response)
         logger.debug(f'Model {class_name} can be submitted for template generation '
                      f'and generated template includes field {field_name}')
-        self._get_response_from_post_request(
-            url=self.__start_import_url,
-            post_data=self.__get_start_import_post_data(action=WholesaleImport.add_value, str_content=csv_content),
-            **self.__get_start_import_unchanging_kwargs()
-        )
+        # create and start import
+        self.__create_and_start_import(csv_content=csv_content)
         self.assertIn(unique_name, all_unique_names_callable())
         logger.debug(f'Model {class_name} and field {field_name} can be imported')
 
-    def __check_whitelist_for_person(self, is_whitelisted):
-        """ Check the views that are relevant for whitelisted models using dummy import data with the Person model.
+    def __check_allowlist_for_person(self, in_allowlist):
+        """ Check the views that are relevant for models in the allowlist using dummy import data with the Person model.
 
-        :param is_whitelisted: True if the Person model is whitelisted, false if it is not whitelisted.
+        :param in_allowlist: True if the Person model is in the allowlist, false if it is not in the allowlist.
         :return: Nothing.
         """
         unique_person_name = self.__get_unique_person_name()
@@ -616,20 +750,20 @@ class WholesaleTestCase(AbstractTestCase):
             'csv_content': self.__get_person_csv_content(unique_person_name=unique_person_name),
             'class_name': ModelHelper.get_str_for_cls(model_class=Person)
         }
-        # person model is whitelisted
-        if is_whitelisted:
-            self.__check_whitelisted_model_and_not_blacklisted_field(
+        # person model is in allowlist
+        if in_allowlist:
+            self.__check_model_in_allowlist_and_field_not_in_denylist(
                 field_name=self.__field_for_person,
                 **unchanging_kwargs
             )
-        # person model is not whitelisted
+        # person model is not in allowlist
         else:
-            self.__check_not_whitelisted_model(**unchanging_kwargs)
+            self.__check_model_not_in_allowlist(**unchanging_kwargs)
 
-    def __check_blacklist_for_person_name(self, is_blacklisted):
-        """ Check the views that are relevant for blacklisted fields using dummy import data with the Person model.
+    def __check_denylist_for_person_name(self, is_in_denylist):
+        """ Check the views that are relevant for fields in the denylist using dummy import data with the Person model.
 
-        :param is_blacklisted: True if the name field is blacklisted, false if it is not blacklisted.
+        :param is_in_denylist: True if the name field is in the denylist, false if it is not in the denylist.
         :return: Nothing.
         """
         unique_person_name = self.__get_unique_person_name()
@@ -640,12 +774,36 @@ class WholesaleTestCase(AbstractTestCase):
             'class_name': ModelHelper.get_str_for_cls(model_class=Person),
             'field_name': self.__field_for_person
         }
-        # name field is not blacklisted
-        if not is_blacklisted:
-            self.__check_whitelisted_model_and_not_blacklisted_field(**unchanging_kwargs)
-        # name field is blacklisted
+        # name field is not in denylist
+        if not is_in_denylist:
+            self.__check_model_in_allowlist_and_field_not_in_denylist(**unchanging_kwargs)
+        # name field is in denylist
         else:
-            self.__check_blacklisted_field(**unchanging_kwargs)
+            self.__check_field_in_denylist(**unchanging_kwargs)
+
+    def __check_cannot_start_import(self, wholesale_import, finished_kwargs):
+        """ Checks that an import, which is not ready for import, cannot be started.
+
+        :param wholesale_import: Instance of wholesale import that is not ready for import.
+        :param finished_kwargs: Dictionary that can be expanded into keyword arguments to represent a finished import
+        redirection in _get_response_from_get_request(...) and _get_response_from_post_request(...).
+        :return: Nothing.
+        """
+        self.assertFalse(wholesale_import.is_ready_for_import)
+        self._get_response_from_get_request(**finished_kwargs)
+        self._get_response_from_post_request(post_data={}, **finished_kwargs)
+
+    def __check_can_start_import(self, wholesale_import):
+        """ Checks that an import, which is ready for import, can be started.
+
+        :param wholesale_import: Instance of wholesale import that is ready for import.
+        :return: Nothing.
+        """
+        self.assertTrue(wholesale_import.is_ready_for_import)
+        self._get_response_from_get_request(
+            url=reverse('wholesale:start_import', kwargs={'pk': wholesale_import.pk}),
+            **self.__unchanging_success_kwargs
+        )
 
     @staticmethod
     def __print_integrity_subtest_message(cur_combo):
@@ -764,14 +922,8 @@ class WholesaleTestCase(AbstractTestCase):
             for csv_row in csv_rows:
                 writer.writerow(csv_row)
             csv_content = string_io.getvalue()
-            self._get_response_from_post_request(
-                url=self.__start_import_url,
-                post_data=self.__get_start_import_post_data(
-                    action=WholesaleImport.add_value,
-                    str_content=csv_content
-                ),
-                **self.__get_start_import_unchanging_kwargs()
-            )
+        # create and start import
+        self.__create_and_start_import(csv_content=csv_content)
 
     def __verify_one_version(self, response, app_label, instance):
         """ Verifies that a single version has been created and can be successfully loaded for a model instance.
@@ -942,7 +1094,7 @@ class WholesaleTestCase(AbstractTestCase):
         self.assertEqual(
             set(list(wholesale_import.import_models)), {person_class, person_alias_class, person_identifier_class}
         )
-        fdp_user = (self.__get_start_import_unchanging_kwargs())['fdp_user']
+        fdp_user = (self.__get_create_import_unchanging_kwargs())['fdp_user']
         self.assertEqual(wholesale_import.user, fdp_user.email)
         self.assertEqual(wholesale_import_records.count(), num_of_expected_records)
         self.assertEqual(wholesale_import_records.filter(errors='').count(), num_of_expected_records)
@@ -1034,6 +1186,8 @@ class WholesaleTestCase(AbstractTestCase):
         :param num_of_rows: Number of rows in the imported CSV template.
         :return: Nothing.
         """
+        WholesaleImportRecord.objects.all().delete()
+        WholesaleImport.objects.all().delete()
         Version.objects.all().delete()
         getattr(Revision, 'objects').all().delete()
         BulkImport.objects.filter(table_imported_to='Person').delete()
@@ -1090,56 +1244,56 @@ class WholesaleTestCase(AbstractTestCase):
         logger.debug(_('\nSuccessfully finished test that only host administrators can access wholesale views\n\n'))
 
     @local_test_settings_required
-    def test_wholesale_import_model_whitelist(self):
-        """ Test the wholesale import models whitelist, specifically that:
-            (A) Models omitted from whitelist are not available in the dropdown during template generation;
-            (B) Models omitted from whitelist cannot be submitted for template generation; and
-            (C) Models omitted from whitelist cannot be imported.
+    def test_wholesale_import_model_allowlist(self):
+        """ Test the wholesale import models allowlist, specifically that:
+            (A) Models omitted from allowlist are not available in the dropdown during template generation;
+            (B) Models omitted from allowlist cannot be submitted for template generation; and
+            (C) Models omitted from allowlist cannot be imported.
 
         :return: Nothing.
         """
-        logger.debug(_('\nStarting test for the wholesale import models whitelist'))
+        logger.debug(_('\nStarting test for the wholesale import models allowlist'))
         person_class_name = ModelHelper.get_str_for_cls(model_class=Person)
-        # person model is in whitelist
-        logger.debug(f'Starting sub-tests for person model that is whitelisted')
-        self.__check_whitelist_for_person(is_whitelisted=True)
-        # person model is removed from whitelist
-        logger.debug(f'Starting sub-tests for person model that is not whitelisted')
+        # person model is in allowlist
+        logger.debug(f'Starting sub-tests for person model that is in the allowlist')
+        self.__check_allowlist_for_person(in_allowlist=True)
+        # person model is removed from allowlist
+        logger.debug(f'Starting sub-tests for person model that is not in the allowlist')
         with self.settings(
-                FDP_WHOLESALE_WHITELISTED_MODELS=[
-                    m for m in AbstractConfiguration.whitelisted_wholesale_models() if m != person_class_name
+                FDP_WHOLESALE_MODELS_ALLOWLIST=[
+                    m for m in AbstractConfiguration.models_in_wholesale_allowlist() if m != person_class_name
                 ]
         ):
-            self.__check_whitelist_for_person(is_whitelisted=False)
-        # user model was never in whitelist, and its app is not even checked
-        logger.debug(f'Starting sub-tests for user model that was never whitelisted')
+            self.__check_allowlist_for_person(in_allowlist=False)
+        # user model was never in allowlist, and its app is not even checked
+        logger.debug(f'Starting sub-tests for user model that was never in the allowlist')
         unique_user_email = self.__get_unique_user_email()
-        self.__check_not_whitelisted_model(
+        self.__check_model_not_in_allowlist(
             unique_name=unique_user_email,
             all_unique_names_callable=self.__get_all_user_emails,
             csv_content=self.__get_user_csv_content(unique_user_email=unique_user_email),
             class_name=ModelHelper.get_str_for_cls(model_class=FdpUser)
         )
-        logger.debug(_('\nSuccessfully finished test for the wholesale import models whitelist\n\n'))
+        logger.debug(_('\nSuccessfully finished test for the wholesale import models allowlist\n\n'))
 
     @local_test_settings_required
-    def test_wholesale_import_field_blacklist(self):
-        """ Test wholesale import model fields blacklist, specifically that:
-            (A) Fields included in blacklist are not available in the dropdown during template generation;
-            (B) Fields included in blacklist cannot be submitted for template generation; and
-            (C) Fields included in blacklist cannot be imported.
+    def test_wholesale_import_field_denylist(self):
+        """ Test wholesale import model fields denylist, specifically that:
+            (A) Fields included in denylist are not available in the dropdown during template generation;
+            (B) Fields included in denylist cannot be submitted for template generation; and
+            (C) Fields included in denylist cannot be imported.
 
         :return: Nothing.
         """
-        logger.debug(_('\nStarting test for the wholesale import fields blacklist'))
-        # name field is not in blacklist
-        logger.debug(f'Starting sub-tests for name field that is not blacklisted')
-        self.__check_blacklist_for_person_name(is_blacklisted=False)
-        # name field is added to blacklist
-        logger.debug(f'Starting sub-tests for name field that is blacklisted')
-        with self.settings(FDP_WHOLESALE_BLACKLISTED_FIELDS=['name']):
-            self.__check_blacklist_for_person_name(is_blacklisted=True)
-        logger.debug(_('\nSuccessfully finished test for the wholesale import fields blacklist\n\n'))
+        logger.debug(_('\nStarting test for the wholesale import fields denylist'))
+        # name field is not in denylist
+        logger.debug(f'Starting sub-tests for name field that is not in denylist')
+        self.__check_denylist_for_person_name(is_in_denylist=False)
+        # name field is added to denylist
+        logger.debug(f'Starting sub-tests for name field that is in denylist')
+        with self.settings(FDP_WHOLESALE_FIELDS_DENYLIST=['name']):
+            self.__check_denylist_for_person_name(is_in_denylist=True)
+        logger.debug(_('\nSuccessfully finished test for the wholesale import fields denylist\n\n'))
 
     @local_test_settings_required
     def test_wholesale_import_ambiguous_model_names(self):
@@ -1167,11 +1321,11 @@ class WholesaleTestCase(AbstractTestCase):
         :return: Nothing.
         """
         logger.debug(_('\nStarting test for the wholesale import templates excluding PK columns'))
-        whitelisted_wholesale_models = AbstractConfiguration.whitelisted_wholesale_models()
+        models_in_wholesale_allowlist = AbstractConfiguration.models_in_wholesale_allowlist()
         for app_to_check in self.__relevant_apps:
             for model_class in list(apps.get_app_config(app_to_check).get_models()):
                 model_name = ModelHelper.get_str_for_cls(model_class=model_class)
-                if model_name in whitelisted_wholesale_models:
+                if model_name in models_in_wholesale_allowlist:
                     logger.debug(f'Checking that template generated for model {model_name} does not include '
                                  f'an internal primary key column')
                     bytes_response = self._get_response_from_post_request(
@@ -1189,11 +1343,11 @@ class WholesaleTestCase(AbstractTestCase):
     @local_test_settings_required
     def test_wholesale_import_add_integrity(self):
         """ Test that data integrity is preserved during "add" imports, including for combinations when:
-                (A) Models may or may not have external IDs defined;
-                (B) Models may reference foreign keys via PK, new name, existing name, or external ID;
-                (C) Models may reference many-to-many fields via PK, new name, existing name, or external ID; and
-                (D) Models may reference other models on the same row through explicit references, on the same row
-                    through implicit references, or on a different row through explicit references.
+            (A) Models may or may not have external IDs defined;
+            (B) Models may reference foreign keys via PK, new name, existing name, or external ID;
+            (C) Models may reference many-to-many fields via PK, new name, existing name, or external ID; and
+            (D) Models may reference other models on the same row through explicit references, on the same row
+                through implicit references, or on a different row through explicit references.
 
         :return: Nothing.
         """
@@ -1207,27 +1361,43 @@ class WholesaleTestCase(AbstractTestCase):
         external_suffix = WholesaleImport.external_id_suffix
         person_alias_person_col = f'{person_alias_class_name}.person{external_suffix}'
         person_identifier_person_col = f'{person_identifier_class_name}.person{external_suffix}'
-        person_ext_id_callable = lambda row_num: f'wholesaletestperson{row_num}'
-        # shift rows so that references are not on the same row
-        person_mixed_ext_id_callable = lambda row_num: person_ext_id_callable(
-            row_num=(row_num + 5) if (row_num + 5) < num_of_rows else (num_of_rows - row_num - 1)
-        )
+
+        def __person_ext_id_callable(row_num):
+            """ Callable used to reference persons by external ID that appear on the same row as the referencing model
+            instance.
+
+            :param row_num: Row number on which persons appear.
+            :return: External ID for person appearing on row.
+            """
+            return f'wholesaletestperson{row_num}'
+
+        def __person_mixed_ext_id_callable(row_num):
+            """ Callable used to reference persons by external ID that appear on a row that is different than the one
+            where the referencing model instance exists.
+
+            :param row_num: Row number on which referencing model instance appears.
+            :return: External ID for person.
+            """
+            return __person_ext_id_callable(
+                row_num=(row_num + 5) if (row_num + 5) < num_of_rows else (num_of_rows - row_num - 1)
+            )
+
         person_has_ext_id_tuple = (True, False)
         person_alias_has_ext_id_tuple = (True, False)
         person_identifier_has_ext_id_tuple = (True, False)
         person_alias_to_person_tuple = (
             # explicit reference to person with external ID on same CSV row
-            (True, person_alias_person_col, person_ext_id_callable),
+            (True, person_alias_person_col, __person_ext_id_callable),
             # explicit reference to person with external ID on different CSV row
-            (True, person_alias_person_col, person_mixed_ext_id_callable),
+            (True, person_alias_person_col, __person_mixed_ext_id_callable),
             # implicit reference to person based on same CSV row
             (False,)
         )
         person_identifier_to_person_tuple = (
             # explicit reference to person with external ID on same CSV row
-            (True, person_identifier_person_col, person_ext_id_callable),
+            (True, person_identifier_person_col, __person_ext_id_callable),
             # explicit reference to person with external ID on different CSV row
-            (True, person_identifier_person_col, person_mixed_ext_id_callable),
+            (True, person_identifier_person_col, __person_mixed_ext_id_callable),
             # implicit reference to person based on same CSV row
             (False,)
         )
@@ -1242,7 +1412,7 @@ class WholesaleTestCase(AbstractTestCase):
         )
         identifier_type_col = f'{person_identifier_class_name}.person_identifier_type'
         identifier_types_by_pk_callable, identifier_types_by_existing_name_callable, \
-        identifier_types_by_new_name_callable, identifier_types_by_ext_callable = \
+            identifier_types_by_new_name_callable, identifier_types_by_ext_callable = \
             self.__get_person_identifier_types_callables(**row_kwargs)
         identifier_type_tuples = (
             (identifier_types_by_pk_callable, identifier_type_col),
@@ -1290,7 +1460,7 @@ class WholesaleTestCase(AbstractTestCase):
                 'person_ext_id_col': f'{person_class_name}.id{external_suffix}',
                 'person_alias_ext_id_col': f'{person_alias_class_name}.id{external_suffix}',
                 'person_identifier_ext_id_col': f'{person_identifier_class_name}.id{external_suffix}',
-                'person_ext_id_callable': person_ext_id_callable,
+                'person_ext_id_callable': __person_ext_id_callable,
                 'person_has_ext_id': person_has_ext_id,
                 'person_alias_has_ext_id': product_tuple[1],
                 'person_identifier_has_ext_id': product_tuple[2],
@@ -1328,3 +1498,63 @@ class WholesaleTestCase(AbstractTestCase):
                 **row_kwargs
             )
         logger.debug(_('\nSuccessfully finished test for the wholesale import "add" integrity\n\n'))
+
+    @local_test_settings_required
+    def test_is_ready_for_import(self):
+        """ Test that imports which are not ready for import, cannot be imported, including when the import:
+            (A) Was already started;
+            (B) Was already ended; and
+            (C) Already has errors.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test that imports which are not ready for import, cannot be imported'))
+        self._get_response_from_post_request(
+            url=self.__create_import_url,
+            post_data=self.__get_create_import_post_data(
+                action=WholesaleImport.add_value,
+                str_content=self.__get_person_csv_content(unique_person_name=self.__get_unique_person_name())
+            ),
+            **self.__get_create_import_unchanging_kwargs()
+        )
+        logger.debug(f'Starting an import that is ready for import')
+        wholesale_import = WholesaleImport.objects.all().order_by('-pk').first()
+        pk = wholesale_import.pk
+        finished_kwargs = {
+            'fdp_user': self.__host_admin_user,
+            'url': reverse('wholesale:start_import', kwargs={'pk': pk}),
+            'expected_status_code': 302,
+            'login_startswith': reverse('wholesale:log', kwargs={'pk': pk}),
+        }
+        self.__check_can_start_import(wholesale_import=wholesale_import)
+        self._get_response_from_post_request(post_data={}, **finished_kwargs)
+        logger.debug(f'Trying to start an import that was already imported')
+        wholesale_import = WholesaleImport.objects.get(pk=pk)
+        self.__check_cannot_start_import(wholesale_import=wholesale_import, finished_kwargs=finished_kwargs)
+        logger.debug(f'Trying to start an import that was started but not ended')
+        wholesale_import.ended_timestamp = None
+        wholesale_import.full_clean()
+        wholesale_import.save()
+        self.__check_cannot_start_import(wholesale_import=wholesale_import, finished_kwargs=finished_kwargs)
+        logger.debug(f'Trying to start an import that was ended but not started')
+        wholesale_import.started_timestamp = None
+        wholesale_import.ended_timestamp = now()
+        wholesale_import.full_clean()
+        wholesale_import.save()
+        self.__check_cannot_start_import(wholesale_import=wholesale_import, finished_kwargs=finished_kwargs)
+        logger.debug(f'Trying to start an import that already has errors')
+        wholesale_import.started_timestamp = now()
+        wholesale_import.import_errors = 'Dummy error'
+        wholesale_import.full_clean()
+        wholesale_import.save()
+        self.__check_cannot_start_import(wholesale_import=wholesale_import, finished_kwargs=finished_kwargs)
+        # double check that resetting the started and ended timestamps, and clearing the errors, makes the import ready
+        wholesale_import.started_timestamp = None
+        wholesale_import.ended_timestamp = None
+        wholesale_import.import_errors = ''
+        wholesale_import.full_clean()
+        wholesale_import.save()
+        self.__check_can_start_import(wholesale_import=wholesale_import)
+        logger.debug(
+            _('\nSuccessfully finished test that imports which are not ready for import, cannot be imported\n\n')
+        )

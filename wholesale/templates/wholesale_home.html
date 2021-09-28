@@ -31,14 +31,14 @@
         <p>{% translate 'Generate templates for specific combinations of the data model.' %}</p>
     </div>
     <div class="column import">
-        <a href="{%url 'wholesale:start_import' %}"><i class="fas fa-upload"></i></a>
-        <h3><a href="{%url 'wholesale:start_import' %}">{% translate 'Import' %}</a></h3>
+        <a href="{%url 'wholesale:create_import' %}"><i class="fas fa-upload"></i></a>
+        <h3><a href="{%url 'wholesale:create_import' %}">{% translate 'Import' %}</a></h3>
         <p>{% translate 'Import data that adds new or changes existing records in the database.' %}</p>
     </div>
     <div class="column log">
         <a href="{%url 'wholesale:logs' %}"><i class="fas fa-scroll"></i></a>
-        <h3><a href="{%url 'wholesale:logs' %}">{% translate 'Logs' %}</a></h3>
-        <p>{% translate 'Review logs from previous imports.' %}</p>
+        <h3><a href="{%url 'wholesale:logs' %}">{% translate 'Batches' %}</a></h3>
+        <p>{% translate 'Review batches of previously imported data.' %}</p>
     </div>
 </div>
 
