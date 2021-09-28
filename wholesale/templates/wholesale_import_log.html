@@ -20,9 +20,9 @@
     &rsaquo;
     <a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a>
     &rsaquo;
-    <a href="{% url 'wholesale:index' %}">{% translate 'Wholesale' %}</a>
+    <a href="{% url 'wholesale:index' %}">{% translate 'Importer' %}</a>
     &rsaquo;
-    <a href="{% url 'wholesale:logs' %}">{% translate 'Logs' %}</a>
+    <a href="{% url 'wholesale:logs' %}">{% translate 'Batches' %}</a>
     &rsaquo;
     {{ title }}
 </div>
@@ -33,8 +33,8 @@
     <table>
         <thead>
             <tr>
-                <th>{% translate 'ID' %}</th>
-                <th>{% translate 'Started' %}</th>
+                <th>{% translate 'Batch' %}</th>
+                <th>{% translate 'Created' %}</th>
                 <th>{% translate 'By' %}</th>
                 <th>{% translate 'Type' %}</th>
                 <th>{% translate 'File' %}</th>
@@ -42,12 +42,14 @@
                 <th>{% translate 'Errors' %}</th>
                 <th>{% translate 'Rows imported' %}</th>
                 <th>{% translate 'Rows with errors' %}</th>
+                <th>{% translate 'Started' %}</th>
+                <th>{% translate 'Ended' %}</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td>{{ wholesale_import.pk }}</td>
-                <td>{{ wholesale_import.started_timestamp|date }}</td>
+                <td>{{ wholesale_import.created_timestamp|date }}</td>
                 <td>{{ wholesale_import.user }}</td>
                 <td>{{ wholesale_import.get_action_display }}</td>
                 <td>{% if wholesale_import.file %}<a href="{{ wholesale_import.file.url }}" rel="noopener noreferrer" target="_blank" download><i class="fas fa-file-download"></i></a>{% endif %}</td>
@@ -55,6 +57,8 @@
                 <td>{{ wholesale_import.import_errors }}</td>
                 <td>{{ wholesale_import.imported_rows }}</td>
                 <td>{{ wholesale_import.error_rows }}</td>
+                <td>{% if wholesale_import.is_started %}<i class="ok fas fa-check-circle"></i>{% endif %}</td>
+                <td>{% if wholesale_import.is_ended %}<i class="ok fas fa-check-circle"></i>{% endif %}</td>
             </tr>
         </tbody>
     </table>
@@ -62,7 +66,7 @@
     <table class="recs">
         <thead>
             <tr>
-                <th>{% translate 'Link' %}</th>
+                <th>{% translate 'Reference' %}</th>
                 <th>{% translate 'Model' %}</th>
                 <th>{% translate 'CSV Row' %}</th>
                 <th>{% translate 'Database PK' %}</th>

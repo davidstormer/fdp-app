@@ -98,13 +98,13 @@ To enable the requirement that each user agree to an end-user license agreement 
 
 ## Wholesale import tool
 
-The default list of models that are whitelisted for use through the wholesale import tool can be modified by specifying a new list of model names: 
+The default list of models that are in the allowlist, and so allowed for use through the wholesale import tool, can be modified by specifying a new list of model names: 
 
-    FDP_WHOLESALE_WHITELISTED_MODELS = ['Attachment', 'Content', 'ContentIdentifier', ...]
+    FDP_WHOLESALE_MODELS_ALLOWLIST = ['Attachment', 'Content', 'ContentIdentifier', ...]
 
-The default list of fields that are blacklisted from use through the wholesale import tool can be modified by specifying a new list of field names: 
+The default list of fields that are in the denylist, and so denied from use through the wholesale import tool, can be modified by specifying a new list of field names: 
 
-    FDP_WHOLESALE_BLACKLISTED_FIELDS = ['is_archived', ...]
+    FDP_WHOLESALE_FIELDS_DENYLIST = ['is_archived', ...]
 
 ## FDP Settings for Azure
 

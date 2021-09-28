@@ -9,7 +9,7 @@ from django.utils.timezone import now
 from django.utils._os import safe_join
 from fdp.configuration.abstract.constants import CONST_AZURE_AD_PROVIDER, CONST_MAX_ATTACHMENT_FILE_BYTES, \
     CONST_MAX_PERSON_PHOTO_FILE_BYTES, CONST_SUPPORTED_ATTACHMENT_FILE_TYPES, CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES, \
-    CONST_WHOLESALE_WHITELISTED_MODELS, CONST_WHOLESALE_BLACKLISTED_FIELDS, CONST_MAX_WHOLESALE_FILE_BYTES, \    
+    CONST_WHOLESALE_MODELS_ALLOWLIST, CONST_WHOLESALE_FIELDS_DENYLIST, CONST_MAX_WHOLESALE_FILE_BYTES, \
     CONST_SUPPORTED_WHOLESALE_FILE_TYPES, CONST_SUPPORTED_EULA_FILE_TYPES, CONST_MAX_EULA_FILE_BYTES
 from datetime import date
 from os import path
@@ -1088,7 +1088,7 @@ class AbstractFileValidator(models.Model):
     """
     # Maximum length for the VARCHAR(...) file field storing the attachment path and filename
     MAX_ATTACHMENT_FILE_LEN = settings.MAX_NAME_LEN
-    
+
     # Maximum length for the VARCHAR(...) file field storing the wholesale import path and filename
     MAX_WHOLESALE_FILE_LEN = settings.MAX_NAME_LEN
 
@@ -1302,9 +1302,9 @@ class AbstractUrlValidator(models.Model):
     """
     # leftmost section of URLs used in the context of end-user license agreements
     EULA_BASE_URL = 'eula/'
-    
+
     # leftmost section of URLs used in the context of wholesale import tool
-    WHOLESALE_BASE_URL = 'wholesale/'
+    WHOLESALE_BASE_URL = 'importer/'
 
     # relative URL for the wholesale import tool home page from which user selects their usage of the tool
     WHOLESALE_HOME_URL = '{b}home/'.format(b=WHOLESALE_BASE_URL)
@@ -1315,14 +1315,17 @@ class AbstractUrlValidator(models.Model):
     # leftmost section of URLs used in the context of importing data through the wholesale import tool
     WHOLESALE_IMPORT_BASE_URL = '{b}import/'.format(b=WHOLESALE_BASE_URL)
 
-    # relative URL for the wholesale import tool page from which to import data
+    # relative URL for the wholesale import tool page from which to create an import batch
+    WHOLESALE_CREATE_IMPORT_URL = '{b}create/'.format(b=WHOLESALE_IMPORT_BASE_URL)
+
+    # relative URL for the wholesale import tool page from which to start importing data in an import batch
     WHOLESALE_START_IMPORT_URL = '{b}start/'.format(b=WHOLESALE_IMPORT_BASE_URL)
 
     # relative URL for the wholesale import tool page from which to review records for a specific import
-    WHOLESALE_LOG_URL = '{b}log/'.format(b=WHOLESALE_BASE_URL)
+    WHOLESALE_LOG_URL = '{b}batch/'.format(b=WHOLESALE_BASE_URL)
 
     # relative URL for the wholesale import tool page from which to review previous imports
-    WHOLESALE_LOGS_URL = '{b}logs/'.format(b=WHOLESALE_BASE_URL)
+    WHOLESALE_LOGS_URL = '{b}batches/'.format(b=WHOLESALE_BASE_URL)
 
     # leftmost section of URLs used in the context of data management wizard
     CHANGING_BASE_URL = 'changing/'
@@ -3153,6 +3156,8 @@ class AbstractConfiguration(models.Model):
         :return: List of tuples, each with two items.
         """
         return getattr(settings, 'FDP_SUPPORTED_EULA_FILE_TYPES',  CONST_SUPPORTED_EULA_FILE_TYPES)
+
+    @staticmethod
     def max_wholesale_file_bytes():
         """ Checks the necessary setting to retrieve the maximum number of bytes that a user-uploaded file can have
         for an instance of the WholesaleImport model.
@@ -3211,6 +3216,24 @@ class AbstractConfiguration(models.Model):
         return getattr(settings, 'FDP_SUPPORTED_PERSON_PHOTO_FILE_TYPES',  CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES)
 
     @staticmethod
+    def models_in_wholesale_allowlist():
+        """ Checks the necessary setting to retrieve a list of names of models that are in the allowlist for use through
+        the wholesale import tool.
+
+        :return: List of model names.
+        """
+        return getattr(settings, 'FDP_WHOLESALE_MODELS_ALLOWLIST', CONST_WHOLESALE_MODELS_ALLOWLIST)
+
+    @staticmethod
+    def fields_in_wholesale_denylist():
+        """ Checks the necessary setting to retrieve a list of names of fields that are in the denylist, and so
+         excluded from use through the wholesale import tool.
+
+        :return: List of field names.
+        """
+        return getattr(settings, 'FDP_WHOLESALE_FIELDS_DENYLIST', CONST_WHOLESALE_FIELDS_DENYLIST)
+
+    @staticmethod
     def eula_splash_enabled():
         """ Checks the necessary setting to retrieve whether the EULA splash page is enabled or disabled. Enabling the
         EULA splash page requires each user to agree to the most current EULA, before they can access any secured view.
@@ -3218,23 +3241,6 @@ class AbstractConfiguration(models.Model):
         :return: True if EULA splash page is enabled, false otherwise.
         """
         return getattr(settings, 'FDP_EULA_SPLASH_ENABLE', False)
-        
-    def whitelisted_wholesale_models():
-        """ Checks the necessary setting to retrieve a list of names of models that are whitelisted for use through
-        the wholesale import tool.
-
-        :return: List of model names.
-        """
-        return getattr(settings, 'FDP_WHOLESALE_WHITELISTED_MODELS', CONST_WHOLESALE_WHITELISTED_MODELS)
-
-    @staticmethod
-    def blacklisted_wholesale_fields():
-        """ Checks the necessary setting to retrieve a list of names of fields that are blacklisted from use through
-        the wholesale import tool.
-
-        :return: List of field names.
-        """
-        return getattr(settings, 'FDP_WHOLESALE_BLACKLISTED_FIELDS', CONST_WHOLESALE_BLACKLISTED_FIELDS)
 
     class Meta:
         abstract = True
