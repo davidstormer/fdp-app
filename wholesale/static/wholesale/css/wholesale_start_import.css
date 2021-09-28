@@ -1,19 +1,7 @@
-/* help text below the field, matching Django 3.2 styling */
-span.helptext {
-    display: block;
-    font-size: 11px;
-    color: #999;
-    margin-top: 1em;
-}
-
-label {
-    /* all labels are styled as "required", matching Django 3.2 styling */
-    font-weight: bold;
-    color: #333;
-    /* label pushed corresponding field over to the right */
-    margin-right: 1em;
-}
-/* generate button */
-input[type="submit"] {
-    margin-top: 1em;
-}
+/* icon asking whether user wishes to start */
+i.start { color: #C4547F; margin-right: 4px; }
+/* action taken during import such as "add" or "update" */
+strong.action { text-transform: lowercase; }
+/* list of models and their corresponding fields */
+ul.review li { margin-bottom: 1em; }
+ul.review { margin-top: 2em; margin-bottom: 2em;}

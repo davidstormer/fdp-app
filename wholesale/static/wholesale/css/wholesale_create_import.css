@@ -1,0 +1,19 @@
+/* help text below the field, matching Django 3.2 styling */
+span.helptext {
+    display: block;
+    font-size: 11px;
+    color: #999;
+    margin-top: 1em;
+}
+
+label {
+    /* all labels are styled as "required", matching Django 3.2 styling */
+    font-weight: bold;
+    color: #333;
+    /* label pushed corresponding field over to the right */
+    margin-right: 1em;
+}
+/* create button */
+input[type="submit"] {
+    margin-top: 1em;
+}
