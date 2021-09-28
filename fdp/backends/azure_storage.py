@@ -13,8 +13,8 @@ if getattr(settings, 'USE_AZURE_SETTINGS', False):
 
         :param module_as_str: Fully qualified module as a string, e.g. my_package.my_module.
         :param err_msg: Exception message if module is not available.
-        :param raise_exception: True if an exception should be raised if the module cannot be loaded, False if None should
-        be returned.
+        :param raise_exception: True if an exception should be raised if the module cannot be loaded, False if None
+        should be returned.
         :return: Loaded module, or None if raise_exception is False and the module cannot be loaded.
         """
         spec_for_module = find_spec(module_as_str)
@@ -61,9 +61,9 @@ if getattr(settings, 'USE_AZURE_SETTINGS', False):
 
         """
         #: Azure Storage account name
-        account_name = settings.AZURE_ACCOUNT_NAME
+        account_name = settings.AZURE_MEDIA_ACCOUNT_NAME
         #: Azure Storage access key
-        account_key = getattr(settings, 'AZURE_ACCOUNT_KEY', None)
+        account_key = getattr(settings, 'AZURE_MEDIA_ACCOUNT_KEY', None)
         #: Azure Storage user-uploaded media files container
         azure_container = getattr(settings, 'AZURE_MEDIA_CONTAINER', None)
         #: Number of seconds for URL to expire to media file in Azure Storage
@@ -126,9 +126,9 @@ if getattr(settings, 'USE_AZURE_SETTINGS', False):
 
         """
         #: Azure Storage account name
-        account_name = settings.AZURE_ACCOUNT_NAME
+        account_name = settings.AZURE_STATIC_ACCOUNT_NAME
         #: Azure Storage access key
-        account_key = getattr(settings, 'AZURE_ACCOUNT_KEY', None)
+        account_key = getattr(settings, 'AZURE_STATIC_ACCOUNT_KEY', None)
         #: Azure Storage static files container
         azure_container = getattr(settings, 'AZURE_STATIC_CONTAINER', None)
         #: Number of seconds for URL to expire to static file in Azure Storage
