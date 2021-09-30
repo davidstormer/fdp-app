@@ -26,6 +26,7 @@ from functools import reduce
 from sys import exc_info
 from os.path import basename, dirname
 from codecs import BOM_UTF8
+from ast import literal_eval
 
 
 class ModelHelper(models.Model):
@@ -282,6 +283,8 @@ class WholesaleImport(Metable):
         :has_errors (bool): True if wholesale import encountered errors, false otherwise.
         :import_models_as_str (str): Retrieves the main models that were imported through this wholesale import as a
         single string.
+        :is_add (bool): True if wholesale import is an "add" import, false otherwise.
+        :is_update (bool): True if wholesale import is an "update" import, false otherwise.
     """
     #: A one-character string used to separate fields. It defaults to ','.
     csv_delimiter = ','
@@ -309,6 +312,9 @@ class WholesaleImport(Metable):
 
     #: A one-character string used to separate multiple values that are placed into one column for many-to-many fields.
     m2m_delimiter = ','
+
+    #: An iterable that contains all possible values that represent an empty CSV cell.
+    empty_cell_vals = (None, '')
 
     #: Categories used to type each column of a wholesale import.
     __external_pk_type = 0  # only external ID for database primary key, i.e. excludes any FKs, O2O, and M2M
@@ -500,6 +506,22 @@ class WholesaleImport(Metable):
         :return: Single string representing imported main models.
         """
         return '' if not self.import_models else ', '.join(self.import_models)
+
+    @property
+    def is_add(self):
+        """ Checks whether this record is an "add" import.
+
+        :return: True if this record is an "add" import, false otherwise.
+        """
+        return self.action == self.add_value
+
+    @property
+    def is_update(self):
+        """ Checks whether this record is an "update" import.
+
+        :return: True if this record is an "update" import, false otherwise.
+        """
+        return self.action == self.update_value
 
     objects = WholesaleImportManager()
 
@@ -1172,9 +1194,6 @@ class WholesaleImport(Metable):
         """
         # all models must have "id" or "id__external" if import action is update
         # all models must not have "id" or "id__external" if import action is add
-        # true if import action is add, false if import action is update
-        is_update = self.action == self.update_value
-        is_add = self.action == self.add_value
         pk_err = ''
         num_of_cols = len(self._metadata_by_col_index)
         # no columns were found
@@ -1199,11 +1218,11 @@ class WholesaleImport(Metable):
             # check if this is the last column, or if the next column is a new model
             if i+1 >= num_of_cols or self._metadata_by_col_index[i+1][self.__model_name_index] != model_name:
                 # direct or indirect PK column was not found and the import is an update action
-                if is_update and not (found_id_col or found_external_id_col):
+                if self.is_update and not (found_id_col or found_external_id_col):
                     pk_err += f' Model {model_name} does not have an "{self._id_col}" or "{self._id_external_col}" ' \
                               f'column that is required to update.'
                 # direct PK column was found and the import is an add action
-                elif found_id_col and is_add:
+                elif found_id_col and self.is_add:
                     pk_err += f' Model {model_name} has an "{self._id_col}" column that is not allowed during adds.'
                 # get next model, if it exists
                 model_name = '' if i+1 >= num_of_cols else self._metadata_by_col_index[i+1][self.__model_name_index]
@@ -1247,6 +1266,9 @@ class WholesaleImport(Metable):
         the record.
         :return: Value as an external primary key.
         """
+        # external primary keys must be defined
+        if cell in self.empty_cell_vals:
+            self.__skip_record_due_to_value(field_val=cell, expected_type='external PK', **skip_rec_dict)
         external_pk = str(cell).strip()
         # external primary keys must be defined
         if not external_pk:
@@ -1254,19 +1276,23 @@ class WholesaleImport(Metable):
         return external_pk
 
     def __get_val_as_boolean(self, typed_val, cell, skip_rec_dict):
-        """ Retrieves a value as a boolean, or raises an exception if the value cannot be cast as such.
+        """ Retrieves a value as a boolean, or None if value is undefined, or raises an exception if the value cannot
+        be cast as such.
 
         :param typed_val: Default to which the typed value is initialized.
         :param cell: Cell that contains value to cast.
         :param skip_rec_dict: Dictionary that can be expanded into keyword arguments when raising an exception to skip
         the record.
-        :return: Value as a boolean.
+        :return: Value as a boolean, or None if the value is undefined.
         """
         # value is already a boolean
         if isinstance(cell, bool):
             typed_val = cell
         # not yet a boolean
         else:
+            # cell is empty
+            if cell in self.empty_cell_vals:
+                return None
             str_cell = str(cell).lower()
             # value is true
             if str_cell in self.true_booleans:
@@ -1280,19 +1306,23 @@ class WholesaleImport(Metable):
         return typed_val
 
     def __get_val_as_int(self, typed_val, cell, skip_rec_dict):
-        """Retrieves a value as an int, or raises an exception if the value cannot be cast as such.
+        """Retrieves a value as an int, or None if value is undefined, or raises an exception if the value cannot be
+        cast as such.
 
         :param typed_val: Default to which the typed value is initialized.
         :param cell: Cell that contains value to cast.
         :param skip_rec_dict: Dictionary that can be expanded into keyword arguments when raising an exception to skip
         the record.
-        :return: Value as an int.
+        :return: Value as an int, or None if the value is undefined.
         """
         # value is already an int
         if isinstance(cell, int):
             typed_val = cell
         # not yet an int
         else:
+            # cell is empty
+            if cell in self.empty_cell_vals:
+                return None
             try:
                 typed_val = int(cell)
             except ValueError:
@@ -1300,56 +1330,67 @@ class WholesaleImport(Metable):
         return typed_val
 
     def __get_val_as_decimal(self, typed_val, cell, skip_rec_dict):
-        """Retrieves a value as a decimal, or raises an exception if the value cannot be cast as such.
+        """Retrieves a value as a decimal, or None if value is undefined, or raises an exception if the value cannot
+        be cast as such.
 
         :param typed_val: Default to which the typed value is initialized.
         :param cell: Cell that contains value to cast.
         :param skip_rec_dict: Dictionary that can be expanded into keyword arguments when raising an exception to skip
         the record.
-        :return: Value as a decimal.
+        :return: Value as a decimal, or None if the value is undefined.
         """
         # value is already a decimal
         if isinstance(cell, Decimal):
             typed_val = cell
         # not yet a decimal
         else:
+            # cell is empty
+            if cell in self.empty_cell_vals:
+                return None
             try:
                 typed_val = Decimal(cell)
             except ValueError:
                 self.__skip_record_due_to_value(field_val=cell, expected_type='decimal', **skip_rec_dict)
         return typed_val
 
-    @staticmethod
-    def __get_val_as_str(cell):
-        """Retrieves a value as a str.
+    @classmethod
+    def __get_val_as_str(cls, cell):
+        """Retrieves a value as a str, or blank/empty string if value is undefined.
 
         :param cell: Cell that contains value to cast.
-        :return: Value as a str.
+        :return: Value as a str, or blank/empty string if the value is undefined.
         """
         # value is already a string
         if isinstance(cell, str):
             typed_val = cell
         # not yet a string
         else:
+            # cell is empty
+            if cell in cls.empty_cell_vals:
+                return ''
             typed_val = str(cell)
         # strip superfluous whitespace
         typed_val = typed_val.strip()
         return typed_val
 
     def __get_val_as_date(self, typed_val, cell, skip_rec_dict):
-        """Retrieves a value as a date, or raises an exception if the value cannot be cast as such.
+        """Retrieves a value as a date, or None if value is undefined, or raises an exception if the value cannot be
+        cast as such.
 
         :param typed_val: Default to which the typed value is initialized.
         :param cell: Cell that contains value to cast.
         :param skip_rec_dict: Dictionary that can be expanded into keyword arguments when raising an exception to skip
         the record.
-        :return: Value as a date.
+        :return: Value as a date, or None if the value is undefined.
         """
         # value is already a date
         if isinstance(cell, date):
             typed_val = cell
         # not yet a date
         else:
+            # cell is empty
+            if cell in self.empty_cell_vals:
+                return None
             try:
                 # Passing a datetime to a date field will successfully create a version through the django-reversion
                 # package, but this version cannot then be loaded through the History view in the Admin.
@@ -1360,19 +1401,23 @@ class WholesaleImport(Metable):
         return typed_val
 
     def __get_val_as_datetime(self, typed_val, cell, skip_rec_dict):
-        """Retrieves a value as a datetime, or raises an exception if the value cannot be cast as such.
+        """Retrieves a value as a datetime, or None if value is undefined, or raises an exception if the value cannot
+        be cast as such.
 
         :param typed_val: Default to which the typed value is initialized.
         :param cell: Cell that contains value to cast.
         :param skip_rec_dict: Dictionary that can be expanded into keyword arguments when raising an exception to skip
         the record.
-        :return: Value as a datetime.
+        :return: Value as a datetime, or None if the value is undefined.
         """
         # value is already a datetime
         if isinstance(cell, datetime):
             typed_val = cell
         # not yet a datetime
         else:
+            # cell is empty
+            if cell in self.empty_cell_vals:
+                return None
             try:
                 typed_val = datetime.strptime(str(cell).strip(), self.datetime_format)
             except ValueError:
@@ -1380,20 +1425,30 @@ class WholesaleImport(Metable):
         return typed_val
 
     def __get_val_as_json(self, typed_val, cell, skip_rec_dict):
-        """Retrieves a value as JSON, or raises an exception if the value cannot be cast as such.
+        """Retrieves a value as JSON, or None if value is undefined, or raises an exception if the value cannot
+        be cast as such.
 
         :param typed_val: Default to which the typed value is initialized.
         :param cell: Cell that contains value to cast.
         :param skip_rec_dict: Dictionary that can be expanded into keyword arguments when raising an exception to skip
         the record.
-        :return: Value as JSON.
+        :return: Value as JSON, or None if the value is undefined.
         """
+        # cell is empty
+        if cell in self.empty_cell_vals:
+            return None
         # value is a string, so attempt to decode
         if isinstance(cell, str):
+            # decoding JSON with double quotes, i.e. {"key": value}
             try:
                 typed_val = json_loads(cell)
             except JSONDecodeError:
-                self.__skip_record_due_to_value(field_val=cell, expected_type='json', **skip_rec_dict)
+                # decoding JSON with single quotes, i.e. {'key': value}
+                try:
+                    # see: https://docs.python.org/3/library/ast.html#ast.literal_eval
+                    typed_val = literal_eval(cell)
+                except ValueError:
+                    self.__skip_record_due_to_value(field_val=cell, expected_type='json', **skip_rec_dict)
         # value is not a string, so attempt to encode it
         else:
             try:
@@ -1408,15 +1463,22 @@ class WholesaleImport(Metable):
     ):
         """ Prepares for import a single relation field such as a foreign key, one-to-one field or many-to-many field.
 
-        Uses _by_name_non_m2m_rel_data_by_model_name and _by_external_id_non_m2m_rel_data_by_model_name data structures
-        for foreign keys and one-to-one fields.
+        For empty cells:
+            For many-to-many fields, do nothing.
 
-        Uses _by_name_m2m_rel_data_by_model_name and _by_external_id_m2m_rel_data_by_model_name data structures
-        for many-to-many fields.
+            For other fields, sets the field value to None.
 
-        These data structures will be evaluated and/or imported before the main model instances are imported, and
-        during this process the evaluated and/or imported references will be linked back to the main model instances
-        such as through the _data_by_model_name data structure.
+        For non-empty cells:
+
+            Uses _by_name_non_m2m_rel_data_by_model_name and _by_external_id_non_m2m_rel_data_by_model_name data
+            structures for foreign keys and one-to-one fields.
+
+            Uses _by_name_m2m_rel_data_by_model_name and _by_external_id_m2m_rel_data_by_model_name data structures
+            for many-to-many fields.
+
+            These data structures will be evaluated and/or imported before the main model instances are imported, and
+            during this process the evaluated and/or imported references will be linked back to the main model instances
+            such as through the _data_by_model_name data structure.
 
         :param is_m2m: True if relation is a defined through a many-to-many field, false otherwise.
         :param row_num: Row number in the CSV template to which this relation corresponds, starting at 0.
@@ -1430,6 +1492,20 @@ class WholesaleImport(Metable):
         Use __get_data_for_m2m_in_data_by_model_name(...) to generate tuples.
         :return: Nothing.
         """
+        # cell is empty
+        if cell in self.empty_cell_vals:
+            # this is a relation through a many-to-many field
+            if is_m2m:
+                # many-to-many relations will be automatically cleared during "update" imports
+                # see clear_first parameter in __add_many_to_many_to_database(...)
+                pass
+            # this is a relation that is not through a many-to-many field
+            else:
+                actual_field_name = \
+                    field_name[:-len(self.external_id_suffix)] if field_name.endswith(self.external_id_suffix) \
+                    else field_name
+                attr_dict[actual_field_name] = None
+            return
         # for many-to-many relations the cell may contains several values separated by commas, for all other relations
         # it contains a single value
         actual_cell_vals = [cell] if not is_m2m else str(cell).split(self.m2m_delimiter)
@@ -1521,76 +1597,78 @@ class WholesaleImport(Metable):
                     model_name = metadata_for_col[self.__model_name_index]
                     field_name = metadata_for_col[self.__field_name_index]
                     field_type = metadata_for_col[self.__field_type_index]
-                    # ignore blank cells, and only process field if we're not skipping the record
-                    if cell not in (None, '') and not skip_record:
-                        typed_val = None
-                        # unchanging keyword arguments for __skip_record_due_to_value(...)
-                        skip_rec_dict = {'model_name': model_name, 'field_name': field_name}
-                        # unchanging keyword arguments for __get_val_as_<type>(...)
-                        get_val_dict = {'cell': cell, 'typed_val': typed_val, 'skip_rec_dict': skip_rec_dict}
-                        try:
-                            # field is not on the model, and should be used to create a record that stores the
-                            # instance's external ID
-                            if field_type == self.__external_pk_type:
-                                external_pk = self.__get_val_as_external_pk(cell=cell, skip_rec_dict=skip_rec_dict)
-                            # field expects a boolean
-                            elif field_type == self.__bool_type:
-                                typed_val = self.__get_val_as_boolean(**get_val_dict)
-                            # field expects an int
-                            elif field_type == self.__int_type:
-                                typed_val = self.__get_val_as_int(**get_val_dict)
-                            # field excepts a decimal
-                            elif field_type == self.__decimal_type:
-                                typed_val = self.__get_val_as_decimal(**get_val_dict)
-                            # field excepts a string
-                            elif field_type == self.__str_type:
-                                typed_val = self.__get_val_as_str(cell=cell)
-                            # field expects a date
-                            elif field_type == self.__date_type:
-                                typed_val = self.__get_val_as_date(**get_val_dict)
-                            # field expects a datetime
-                            elif field_type == self.__datetime_type:
-                                typed_val = self.__get_val_as_datetime(**get_val_dict)
-                            # field expects JSON
-                            elif field_type == self.__json_type:
-                                typed_val = self.__get_val_as_json(**get_val_dict)
-                            # field is a relation that is not many-to-many
-                            elif field_type == self.__non_m2m_rel_type:
-                                self.__prepare_a_relation_for_import(
-                                    is_m2m=False,
-                                    row_num=data_row_num,
-                                    column_index=i,
-                                    model_name=model_name,
-                                    field_name=field_name,
-                                    cell=cell,
-                                    attr_dict=attr_dict,
-                                    instance_m2ms=instance_m2ms
-                                )
-                            # field is a relation that is many-to-many
-                            elif field_type == self.__m2m_rel_type:
-                                self.__prepare_a_relation_for_import(
-                                    is_m2m=True,
-                                    row_num=data_row_num,
-                                    column_index=i,
-                                    model_name=model_name,
-                                    field_name=field_name,
-                                    cell=cell,
-                                    attr_dict=attr_dict,
-                                    instance_m2ms=instance_m2ms
-                                )
-                            # field is unexpected
-                            else:
-                                raise SkipWholesaleImportRecord(
-                                    f'Field {field_name} for model {model_name} did not have a known type'
-                                )
-                            # only add the field/value combination to the attribute dictionary defining the model
-                            # instance, if the value is defined
-                            if typed_val is not None:
-                                attr_dict[field_name] = typed_val
-                        # some exception occurred
-                        except SkipWholesaleImportRecord as err:
-                            skip_record = True
-                            err_msgs.append(str(err))
+                    # if not skipping the record
+                    if not skip_record:
+                        # ignore blank cells during adds but parse them during updates
+                        if (cell not in self.empty_cell_vals and self.is_add) or self.is_update:
+                            typed_val = None
+                            # unchanging keyword arguments for __skip_record_due_to_value(...)
+                            skip_rec_dict = {'model_name': model_name, 'field_name': field_name}
+                            # unchanging keyword arguments for __get_val_as_<type>(...)
+                            get_val_dict = {'cell': cell, 'typed_val': typed_val, 'skip_rec_dict': skip_rec_dict}
+                            try:
+                                # field is not on the model, and should be used to create a record that stores the
+                                # instance's external ID
+                                if field_type == self.__external_pk_type:
+                                    external_pk = self.__get_val_as_external_pk(cell=cell, skip_rec_dict=skip_rec_dict)
+                                # field expects a boolean
+                                elif field_type == self.__bool_type:
+                                    typed_val = self.__get_val_as_boolean(**get_val_dict)
+                                # field expects an int
+                                elif field_type == self.__int_type:
+                                    typed_val = self.__get_val_as_int(**get_val_dict)
+                                # field excepts a decimal
+                                elif field_type == self.__decimal_type:
+                                    typed_val = self.__get_val_as_decimal(**get_val_dict)
+                                # field excepts a string
+                                elif field_type == self.__str_type:
+                                    typed_val = self.__get_val_as_str(cell=cell)
+                                # field expects a date
+                                elif field_type == self.__date_type:
+                                    typed_val = self.__get_val_as_date(**get_val_dict)
+                                # field expects a datetime
+                                elif field_type == self.__datetime_type:
+                                    typed_val = self.__get_val_as_datetime(**get_val_dict)
+                                # field expects JSON
+                                elif field_type == self.__json_type:
+                                    typed_val = self.__get_val_as_json(**get_val_dict)
+                                # field is a relation that is not many-to-many
+                                elif field_type == self.__non_m2m_rel_type:
+                                    self.__prepare_a_relation_for_import(
+                                        is_m2m=False,
+                                        row_num=data_row_num,
+                                        column_index=i,
+                                        model_name=model_name,
+                                        field_name=field_name,
+                                        cell=cell,
+                                        attr_dict=attr_dict,
+                                        instance_m2ms=instance_m2ms
+                                    )
+                                # field is a relation that is many-to-many
+                                elif field_type == self.__m2m_rel_type:
+                                    self.__prepare_a_relation_for_import(
+                                        is_m2m=True,
+                                        row_num=data_row_num,
+                                        column_index=i,
+                                        model_name=model_name,
+                                        field_name=field_name,
+                                        cell=cell,
+                                        attr_dict=attr_dict,
+                                        instance_m2ms=instance_m2ms
+                                    )
+                                # field is unexpected
+                                else:
+                                    raise SkipWholesaleImportRecord(
+                                        f'Field {field_name} for model {model_name} did not have a known type'
+                                    )
+                                # only add the field/value combination to the attribute dictionary defining the model
+                                # instance, if the value is defined
+                                if typed_val is not None:
+                                    attr_dict[field_name] = typed_val
+                            # some exception occurred
+                            except SkipWholesaleImportRecord as err:
+                                skip_record = True
+                                err_msgs.append(str(err))
                     # check if this is the last column in row, or if the next column is a new model
                     if i + 1 >= num_of_cols or self._metadata_by_col_index[i+1][self.__model_name_index] != model_name:
                         # skipping this record because of an error
@@ -1933,7 +2011,7 @@ class WholesaleImport(Metable):
         lists, to add to the database, in the format of: [...[(m2m_field_name_X, m2m_field_values_X),  ...], ...].
         :param for_instances: List of instances that were created or update, for which the many-to-many field "through"
         model instances should be added.
-        :param clear_first: True if each instances many-to-many field should be cleared of all values prior to adding
+        :param clear_first: True if each instance's many-to-many field should be cleared of all values prior to adding
         new values, false otherwise.
         :return: Nothing.
         """
@@ -1948,8 +2026,6 @@ class WholesaleImport(Metable):
             m2m_instance_cache = {}
             # maps field names to "through" model classes
             m2m_field_cache = {}
-            # maps field names to the field name that references the model instance declaring the many-to-many field
-            m2m_pk_field_cache = {}
             # cycle through all many-to-many tuples list for each model instance
             for m2m_list, for_instance in zip(m2ms_to_add, for_instances):
                 # cycle through all field/values combinations
@@ -1975,7 +2051,6 @@ class WholesaleImport(Metable):
                     # field has not yet been processed for "through" model mapping or "through" reference field mapping
                     if m2m_field_name not in m2m_field_cache:
                         m2m_field_cache[m2m_field_name] = through_model_class
-                        m2m_pk_field_cache[m2m_field_name] = through_pk_field
                     # cycle through all values for this many-to-many field for this model instance that should be added
                     for m2m_field_value in m2m_field_values:
                         (m2m_instance_cache[m2m_field_name]).append(
@@ -1983,14 +2058,22 @@ class WholesaleImport(Metable):
                                 **{through_pk_field: for_instance.pk, through_fk_field: m2m_field_value}
                             )
                         )
+            # if there exist model instances for which to clear many-to-many fields before adding new values
+            if clear_for_pks:
+                # cycle through all many-to-many fields for model without taking into account their values
+                # redundant so that models with only instances that have no many-to-many values defined, can still have
+                # their fields cleared, i.e. those models will not appear in m2m_instance_cache
+                for field_name_to_clear in m2m_metadata:
+                    field_to_clear_metadata = m2m_metadata[field_name_to_clear]
+                    # name of field referencing model where many-to-many field was declared
+                    through_pk_field_to_clear = field_to_clear_metadata[self.__through_pk_index]
+                    # class defining "through" model for many-to-many field
+                    through_model_class = field_to_clear_metadata[self.__through_model_class_index]
+                    through_model_class.objects.filter(**{f'{through_pk_field_to_clear}__in': clear_for_pks}).delete()
             # cycle through fully processed many-to-many fields and add their respective values to the database
             for m2m_field_name in m2m_instance_cache:
                 through_model_class = m2m_field_cache[m2m_field_name]
-                through_pk_field = m2m_pk_field_cache[m2m_field_name]
                 through_model_instances = m2m_instance_cache[m2m_field_name]
-                # if there exist model instances for which to clear many-to-many fields before adding new values
-                if clear_for_pks:
-                    through_model_class.objects.filter(**{f'{through_pk_field}__in': clear_for_pks}).delete()
                 through_model_class.objects.bulk_create(through_model_instances)
 
     @staticmethod
@@ -2203,7 +2286,6 @@ class WholesaleImport(Metable):
             )
         # list of fields that reflect the changes
         fields_to_update = self._metadata_by_model_name[model_name][self.__model_fields_index]
-        #: TODO: What happens if external ID is among the fields_to_update??
         # external IDs already recorded in database
         external_to_internal_map, existing_external_ids = self.__get_existing_external_ids(
             model_name=model_name,
@@ -2231,21 +2313,26 @@ class WholesaleImport(Metable):
             }
         # primary key in fields to update, so external ID is only for additional/later reference
         else:
-            ids_dict = {
-                # NOTE: assumption is as of Python 3.8, the key is evaluated before the value during dictionary
-                # comprehension, as per https://www.python.org/dev/peps/pep-0572/
-                # otherwise, "id" appears in attribute dictionary that defines updates
-                # primary key for record
-                str(attr_dict.pop('id')): {
-                    # attribute dictionary defining updated values for record
-                    'a': attr_dict,
-                    # external ID for record
-                    'e': external_id_tuple[0],
-                    # row number in CSV template for record
-                    'r': external_id_tuple[1]
+            try:
+                ids_dict = {
+                    # NOTE: assumption is as of Python 3.8, the key is evaluated before the value during dictionary
+                    # comprehension, as per https://www.python.org/dev/peps/pep-0572/
+                    # otherwise, "id" appears in attribute dictionary that defines updates
+                    # primary key for record
+                    str(attr_dict.pop('id')): {
+                        # attribute dictionary defining updated values for record
+                        'a': attr_dict,
+                        # external ID for record
+                        'e': external_id_tuple[0],
+                        # row number in CSV template for record
+                        'r': external_id_tuple[1]
+                    }
+                    for external_id_tuple, attr_dict in zip(external_ids_to_add, attr_dicts)
                 }
-                for external_id_tuple, attr_dict in zip(external_ids_to_add, attr_dicts)
-            }
+            except KeyError:
+                raise StopWholesaleImportException(
+                    f'Cannot update {model_name} model in database. At least one record was missing a primary key.'
+                )
         ids_to_update = ids_dict.keys()
         a = len(ids_to_update)
         if a != b:
@@ -2281,7 +2368,10 @@ class WholesaleImport(Metable):
         m2m_metadata_for_model = self._m2m_metadata_by_model_name.get(model_name, {})
         m2m_fields = m2m_metadata_for_model.keys()
         # cannot do bulk_update on external fields or many-to-many fields
-        bulk_fields = [f for f in fields_to_update if f not in m2m_fields and not f.endswith(self.external_id_suffix)]
+        bulk_fields = [
+            f for f in fields_to_update
+            if f not in m2m_fields and not f.endswith(self.external_id_suffix) and not f == 'id'
+        ]
         # only do bulk update, if there are fields besides external and many-to-many fields
         if bulk_fields:
             model_class.objects.bulk_update(instances_to_update, bulk_fields)
@@ -2326,9 +2416,7 @@ class WholesaleImport(Metable):
         :return: Nothing.
         """
         wholesale_import_records = []
-        is_add = self.action == self.add_value
-        is_update = self.action == self.update_value
-        if not (is_add or is_update):
+        if not (self.is_add or self.is_update):
             raise StopWholesaleImportException('Only wholesale import adds and updates are currently supported.')
         # cycle through each main model to import
         for model_name in self.import_models:
@@ -2367,7 +2455,7 @@ class WholesaleImport(Metable):
                         f'contains: {instance_tuple}.'
                     )
             # import is an add
-            if is_add:
+            if self.is_add:
                 self.__add_models_to_database(
                     model_name=model_name,
                     m2ms_to_add=m2ms_to_add,
@@ -2376,7 +2464,7 @@ class WholesaleImport(Metable):
                     wholesale_import_records=wholesale_import_records
                 )
             # import is an update
-            elif is_update:
+            elif self.is_update:
                 self.__update_models_in_database(
                     model_name=model_name,
                     m2ms_to_add=m2ms_to_add,
@@ -2395,6 +2483,31 @@ class WholesaleImport(Metable):
         # save in the database the model instances that represent each record imported
         WholesaleImportRecord.objects.bulk_create(wholesale_import_records)
 
+    def __end_import_due_to_errors(self):
+        """ Ends the import due to errors that were encountered during population of the data structures storing the
+        data to import.
+
+        See __before_import(...).
+
+        :return: Nothing.
+        """
+        # cycle through the data structure storing the data to import and look for the errors among the model instances
+        # to import
+        for model_name in self._data_by_model_name:
+            model_instances = self._data_by_model_name[model_name]
+            # cycle through each model instance and check for errors
+            for row_num, errors_list in enumerate(model_instances):
+                # this model instance cannot be imported (otherwise it would be an instance of a tuple)
+                if isinstance(errors_list, list):
+                    errors = ' '.join(errors_list)
+                    self.__add_to_import_errors(err=f'Row {row_num + 1} for model {model_name}: {errors}')
+        self.error_rows = 0
+        self.imported_rows = 0
+        # save in the database the model instance that represents the entire import
+        self.finish_import_without_raising_exception(err=None)
+        self.full_clean()
+        self.save()
+
     @handle_import_errors
     def do_import(self):
         """ Perform wholesale import.
@@ -2406,6 +2519,10 @@ class WholesaleImport(Metable):
             self.started_timestamp = now()
             # creates and populates metadata for import, perform validation checks and prepares data for import
             self.__before_import()
+            # end the import due to errors encountered while populating the data structures for import
+            if self.error_rows > 0:
+                self.__end_import_due_to_errors()
+                return
             try:
                 # disable versioning to improve performance
                 # If manage_manually=True, versions will not be saved when a model’s save() method is called.
@@ -2993,7 +3110,7 @@ class WholesaleImport(Metable):
         db_table = '{d}wholesale_import'.format(d=settings.DB_PREFIX)
         verbose_name = _('wholesale import')
         verbose_name_plural = _('wholesale imports')
-        ordering = ['-started_timestamp']
+        ordering = ['-ended_timestamp', '-started_timestamp']
 
 
 class WholesaleImportRecordManager(models.Manager):

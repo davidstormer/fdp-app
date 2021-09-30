@@ -5,10 +5,11 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import now
+from django.db.models import DateTimeField
 from inheritable.models import AbstractConfiguration, AbstractSql
 from inheritable.tests import AbstractTestCase, local_test_settings_required
 from bulk.models import BulkImport
-from core.models import Person, PersonAlias, PersonIdentifier
+from core.models import Person, PersonAlias, PersonIdentifier, Incident, PersonIncident, PersonPayment
 from fdpuser.models import FdpUser, FdpOrganization
 from supporting.models import Trait, PersonIdentifierType
 from .models import WholesaleImport, WholesaleImportRecord, ModelHelper
@@ -16,6 +17,8 @@ from reversion.models import Revision, Version
 from csv import writer as csv_writer
 from json import dumps as json_dumps
 from itertools import product
+from datetime import datetime
+from decimal import Decimal
 from io import StringIO
 import logging
 
@@ -53,12 +56,46 @@ class WholesaleTestCase(AbstractTestCase):
             (B) Was already ended; and
             (C) Already has errors.
 
-    #: TODO: Ensure bulk import records created, and no duplication.
-    #: TODO: Add with PK column, add with PK column and external ID column.
-    #: TODO: Update without PK column and without external ID column.
-    #: TODO: Update with PK column with some values missing.
-    #: TODO: Add/update with external ID column with some values missing.
-    #: TODO: Add/update with duplicate columns.
+    (8) Test that boolean values are imported as expected.
+
+    (9) Test that string values are imported as expected.
+
+    (10) Test that date values are imported as expected.
+
+    (11) Test that datetime values are imported as expected.
+
+    (12) Test that JSON values are imported as expected.
+
+    (13) Test that integer values are imported as expected.
+
+    (13) Test that decimal values are imported as expected.
+
+    (14) Test an "add" import with:
+            (A) An internal primary key column; and
+            (B) Both an internal and an external primary key column.
+
+    (15) Test an "update" import without either internal or external primary key columns.
+
+    (16) Test duplicate columns during an:
+            (A) "Add" import; and during an
+            (B) "Update" import.
+
+    (17) Test an "update" import with some invalid primary key column values, specifically:
+            (A) Missing values; and
+            (B) Incorrect values.
+
+    (18) Test an "update" import with some invalid external ID column values, specifically:
+            (A) Missing values; and
+            (B) Incorrect values.
+
+    (19) Test an "add" import with some invalid external ID values, specifically:
+                (A) Missing values.
+
+    #: TODO: Test creating bulk import record during "add" and "update" imports with duplication in the template, and
+    #: TODO: between the template and the database.
+    #: TODO: Test setting FKs to None during "add" and "update" imports.
+    #: TODO: Test setting M2Ms to None during "add" and "update" imports.
+    #: TODO: Test data integrity for "update" imports, similar to existing data integrity test for "add" imports.
 
     """
     #: Dictionary that can be expanded into unchanging keyword arguments
@@ -80,6 +117,24 @@ class WholesaleTestCase(AbstractTestCase):
 
     #: Name of field through which dummy person records are imported and tested.
     __field_for_person = 'name'
+
+    #: Name of field through which boolean values are tested during imports.
+    __field_for_bool_test = 'for_admin_only'
+
+    #: Name of field through which string values are tested during imports.
+    __field_for_string_test = 'description'
+
+    #: Name of field through which date values are tested during imports.
+    __field_for_date_test = 'birth_date_range_start'
+
+    #: Name of field through which JSON values are tested during imports.
+    __field_for_json_test = 'known_info'
+
+    #: Name of field through which integer values are tested during imports.
+    __field_for_int_test = 'start_year'
+
+    #: Name of field through which integer values are tested during imports.
+    __field_for_dec_test = 'base_salary'
 
     #: List of all app names that are relevant when importing models through the wholesale import.
     __relevant_apps = ['core', 'sourcing', 'supporting']
@@ -163,6 +218,36 @@ class WholesaleTestCase(AbstractTestCase):
                 data_imported=json_dumps({}, default=str)
             )
             setattr(instance, self.__test_external_id_attr, bulk_import.pk_imported_from)
+
+    @staticmethod
+    def __get_unique_external_id():
+        """ Retrieves a unique external ID that is not yet recorded in the BulkImport table in the database.
+
+        :return: Unique external ID that is not yet in the database.
+        """
+        ext_base = 'wholesaletestuniqueexternalid'
+        ext_suffix = 1
+        while f'{ext_base}{ext_suffix}' in list(BulkImport.objects.all().values_list('pk_imported_from', flat=True)):
+            ext_suffix += 1
+        unique_external_id = f'{ext_base}{ext_suffix}'
+        return unique_external_id
+
+    def __add_three_persons(self, add_external_ids):
+        """ Add three persons, each with a unique name, to the database. Optionally add corresponding external IDs for
+        each person.
+
+        :param add_external_ids: True if external IDs should be added for each person, false otherwise.
+        :return: A tuple:
+                    [0] First person instance added to database;
+                    [1] Second person instance added to database; and
+                    [2] Third person instance added to database.
+        """
+        first_person = Person.objects.create(name=self.__get_unique_person_name())
+        second_person = Person.objects.create(name=self.__get_unique_person_name())
+        third_person = Person.objects.create(name=self.__get_unique_person_name())
+        if add_external_ids:
+            self.__add_external_ids(instances=(first_person, second_person, third_person), class_name='Person')
+        return first_person, second_person, third_person
 
     def __get_traits_callables(self, num_of_rows):
         """ Retrieves the by primary key, by name, and by external ID callables for the Traits model that can be used
@@ -296,6 +381,20 @@ class WholesaleTestCase(AbstractTestCase):
         user_class_name = ModelHelper.get_str_for_cls(model_class=FdpUser)
         return f'{user_class_name}.email{self.__csv_lineterminator}{unique_user_email}'
 
+    def __get_unique_incident_description(self):
+        """ Retrieves a unique incident description that does not exist in the database.
+
+        :return: Unique incident description that does not exist in the database.
+        """
+        base_unique_incident_description = 'Random description #'
+        num_of_incidents = Incident.objects.all().count()
+        unique_incident_description = f'{base_unique_incident_description}{num_of_incidents}'
+        self.assertNotIn(
+            unique_incident_description,
+            list(Incident.objects.all().values_list('description', flat=True))
+        )
+        return unique_incident_description
+
     @classmethod
     def __get_all_person_names(cls):
         """ Retrieves all person names that are currently in the database.
@@ -323,6 +422,87 @@ class WholesaleTestCase(AbstractTestCase):
         """
         person_class_name = ModelHelper.get_str_for_cls(model_class=Person)
         return f'{person_class_name}.{self.__field_for_person}{self.__csv_lineterminator}{unique_person_name}'
+
+    def __get_boolean_test_csv_content(self, unique_person_name, boolean_value):
+        """ Retrieves CSV content to test a particular boolean value during an "add" import.
+
+        :param unique_person_name: Unique person name with which boolean value is associated.
+        :param boolean_value: Boolean value tested during import.
+        :return: String representing CSV content.
+        """
+        model = ModelHelper.get_str_for_cls(model_class=Person)
+        comma = WholesaleImport.csv_delimiter
+        newline = self.__csv_lineterminator
+        return f'{model}.{self.__field_for_person}{comma}{model}.{self.__field_for_bool_test}{newline}' \
+               f'{unique_person_name}{comma}{boolean_value}'
+
+    def __get_string_test_csv_content(self, unique_person_name, string_value):
+        """ Retrieves CSV content to test a particular string value during an "add" import.
+
+        :param unique_person_name: Unique person name with which string value is associated.
+        :param string_value: String value tested during import.
+        :return: String representing CSV content.
+        """
+        model = ModelHelper.get_str_for_cls(model_class=Person)
+        comma = WholesaleImport.csv_delimiter
+        newline = self.__csv_lineterminator
+        return f'{model}.{self.__field_for_person}{comma}{model}.{self.__field_for_string_test}{newline}' \
+               f'{unique_person_name}{comma}{string_value}'
+
+    def __get_date_test_csv_content(self, unique_person_name, date_value):
+        """ Retrieves CSV content to test a particular date value during an "add" import.
+
+        :param unique_person_name: Unique person name with which date value is associated.
+        :param date_value: Date value tested during import.
+        :return: String representing CSV content.
+        """
+        model = ModelHelper.get_str_for_cls(model_class=Person)
+        comma = WholesaleImport.csv_delimiter
+        newline = self.__csv_lineterminator
+        return f'{model}.{self.__field_for_person}{comma}{model}.{self.__field_for_date_test}{newline}' \
+               f'{unique_person_name}{comma}{date_value}'
+
+    def __get_json_test_csv_content(self, person, incident, json_value):
+        """ Retrieves CSV content to test a particular json value during an "add" import.
+
+        :param person: Person linked to the person incident with which the JSON value is associated.
+        :param incident: Incident linked to the person incident with which the JSON value is associated.
+        :param json_value: JSON value tested during import.
+        :return: String representing CSV content.
+        """
+        model = ModelHelper.get_str_for_cls(model_class=PersonIncident)
+        comma = WholesaleImport.csv_delimiter
+        newline = self.__csv_lineterminator
+        double_quote = WholesaleImport.csv_quotechar
+        return f'{model}.person_id{comma}{model}.incident_id{comma}{model}.{self.__field_for_json_test}{newline}' \
+               f'{person.pk}{comma}{incident.pk}{comma}{double_quote}{json_value}{double_quote}'
+
+    def __get_int_test_csv_content(self, unique_incident_description, int_value):
+        """ Retrieves CSV content to test a particular integer value during an "add" import.
+
+        :param unique_incident_description: Unique incident description with which integer value is associated.
+        :param int_value: Integer value tested during import.
+        :return: String representing CSV content.
+        """
+        model = ModelHelper.get_str_for_cls(model_class=Incident)
+        comma = WholesaleImport.csv_delimiter
+        newline = self.__csv_lineterminator
+        return f'{model}.description{comma}{model}.{self.__field_for_int_test}{newline}' \
+               f'{unique_incident_description}{comma}{int_value}'
+
+    def __get_dec_test_csv_content(self, unique_person_name, dec_value):
+        """ Retrieves CSV content to test a particular decimal value during an "add" import.
+
+        :param unique_person_name: Unique person name with which decimal value is associated.
+        :param dec_value: Decimal value tested during import.
+        :return: String representing CSV content.
+        """
+        p = ModelHelper.get_str_for_cls(model_class=Person)
+        pp = ModelHelper.get_str_for_cls(model_class=PersonPayment)
+        comma = WholesaleImport.csv_delimiter
+        newline = self.__csv_lineterminator
+        return f'{p}.{self.__field_for_person}{comma}{pp}.{self.__field_for_dec_test}{newline}' \
+               f'{unique_person_name}{comma}{dec_value}'
 
     @staticmethod
     def __get_wholesale_import(filter_kwargs, create_kwargs):
@@ -445,10 +625,11 @@ class WholesaleTestCase(AbstractTestCase):
         person_identifier_type_names = [identifier_type_callable(row_num=row_num) for row_num in range(0, num_of_rows)]
         return person_identifier_type_names
 
-    def __create_and_start_import(self, csv_content):
+    def __create_and_start_import(self, csv_content, action=WholesaleImport.add_value):
         """ Creates and starts a wholesale import based on a template.
 
         :param csv_content: String representation of the content defining the CSV template to import.
+        :param action: Action to take during the import. Use WholesaleImport.add_value or WholesaleImport.update_value.
         :return: Nothing.
         """
         create_kwargs = self.__get_create_import_unchanging_kwargs()
@@ -469,10 +650,7 @@ class WholesaleTestCase(AbstractTestCase):
         response = self._do_post(
             c=response.client,
             url=self.__create_import_url,
-            data=self.__get_create_import_post_data(
-                action=WholesaleImport.add_value,
-                str_content=csv_content
-            ),
+            data=self.__get_create_import_post_data(action=action, str_content=csv_content),
             expected_status_code=create_kwargs['expected_status_code'],
             login_startswith=create_kwargs['login_startswith']
         )
@@ -1208,6 +1386,206 @@ class WholesaleTestCase(AbstractTestCase):
             )
             PersonIdentifierType.objects.filter(name__in=identifier_type_names).delete()
 
+    def __assert_one_wholesale_import_record(self, model_name):
+        """ Asserts that the wholesale import was successful with one wholesale import record for the expected model.
+
+        :param model_name: String representation of model that was imported.
+        :return: Wholesale import record that was asserted.
+        """
+        wholesale_import = WholesaleImport.objects.get(pk=self.wholesale_next_val)
+        self.assertEqual(wholesale_import.import_errors, '')
+        self.assertEqual(wholesale_import.imported_rows, 1)
+        self.assertEqual(WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import).count(), 1)
+        wholesale_import_record = WholesaleImportRecord.objects.get(wholesale_import=wholesale_import)
+        self.assertEqual(wholesale_import_record.errors, '')
+        self.assertEqual(wholesale_import_record.row_num, 1)
+        self.assertEqual(wholesale_import_record.model_name, model_name)
+        return wholesale_import_record
+
+    def __assert_person_not_imported(self, wholesale_import, expected_err, unique_person_name):
+        """ Asserts that the wholesale import encountered an expected error and that the person defined through the
+        import's data template was not imported.
+
+        :param wholesale_import: Instance of wholesale import through which person was attempted to be imported.
+        :param expected_err: String representation of the error that is expected.
+        :param unique_person_name: Unique name used to identify the person.
+        :return: Nothing.
+        """
+        self.assertEqual(wholesale_import.import_errors, expected_err)
+        self.assertEqual(wholesale_import.imported_rows, 0)
+        self.assertEqual(WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import).count(), 0)
+        self.assertEqual(Person.objects.filter(name=unique_person_name).count(), 0)
+
+    def __check_a_value_for_person_import(self, unique_person_name, field_to_check, expected_field_value):
+        """ Checks that a boolean, string or date value that was imported as a single row through an "add" import for a
+        single person instance, was imported as expected.
+
+        :param unique_person_name: Unique name of person, through which instance can be identified.
+        :param field_to_check: Person field, whose value should be checked.
+        :param expected_field_value: Expected value of person field.
+        :return: Nothing.
+        """
+        wholesale_import_record = self.__assert_one_wholesale_import_record(model_name='Person')
+        self.assertEqual(Person.objects.filter(name=unique_person_name).count(), 1)
+        person = Person.objects.get(name=unique_person_name)
+        self.assertEqual(wholesale_import_record.instance_pk, person.pk)
+        self.assertEqual(getattr(person, field_to_check), expected_field_value)
+
+    def __check_boolean_value_import(self, boolean_value, expected_boolean_interpretation):
+        """ Checks that a boolean value is imported as expected.
+
+        :param boolean_value: Boolean value to import.
+        :param expected_boolean_interpretation: Expected interpretation of boolean value. Must be either True or False.
+        :return: Nothing.
+        """
+        unique_person_name = self.__get_unique_person_name()
+        self.__create_and_start_import(
+            csv_content=self.__get_boolean_test_csv_content(
+                unique_person_name=unique_person_name,
+                boolean_value=boolean_value
+            )
+        )
+        self.__check_a_value_for_person_import(
+            unique_person_name=unique_person_name,
+            field_to_check=self.__field_for_bool_test,
+            expected_field_value=expected_boolean_interpretation
+        )
+
+    def __check_string_value_import(self, string_value):
+        """ Checks that a string value is imported as expected.
+
+        :param string_value: String value to import.
+        :return: Nothing.
+        """
+        unique_person_name = self.__get_unique_person_name()
+        self.__create_and_start_import(
+            csv_content=self.__get_string_test_csv_content(
+                unique_person_name=unique_person_name,
+                string_value=string_value
+            )
+        )
+        self.__check_a_value_for_person_import(
+            unique_person_name=unique_person_name,
+            field_to_check=self.__field_for_string_test,
+            expected_field_value=string_value
+        )
+
+    def __check_date_value_import(self, date_value, expected_date_interpretation):
+        """ Checks that a date value is imported as expected.
+
+        :param date_value: Date value to import.
+        :param expected_date_interpretation: Expected interpretation of date value.
+        :return: Nothing.
+        """
+        unique_person_name = self.__get_unique_person_name()
+        self.__create_and_start_import(
+            csv_content=self.__get_date_test_csv_content(
+                unique_person_name=unique_person_name,
+                date_value=date_value
+            )
+        )
+        self.__check_a_value_for_person_import(
+            unique_person_name=unique_person_name,
+            field_to_check=self.__field_for_date_test,
+            expected_field_value=expected_date_interpretation
+        )
+
+    def __check_json_value_import(self, person, incident, json_string, json_object):
+        """ Checks that a JSON value is imported as expected.
+
+        :param person: Person linked to person incident for which to import JSON value.
+        :param incident: Incident linked to person incident for which to import JSON value.
+        :param json_string: String representation of JSON.
+        :param json_object: Object representation of JSON.
+        :return: Nothing.
+        """
+        filter_kwargs = {'person': person, 'incident': incident}
+        csv_content = self.__get_json_test_csv_content(person=person, incident=incident, json_value=json_string)
+        self.__create_and_start_import(csv_content=csv_content)
+        wholesale_import_record = self.__assert_one_wholesale_import_record(model_name='PersonIncident')
+        self.assertEqual(PersonIncident.objects.filter(**filter_kwargs).count(), 1)
+        person_incident = PersonIncident.objects.get(**filter_kwargs)
+        self.assertEqual(wholesale_import_record.instance_pk, person_incident.pk)
+        self.assertEqual(getattr(person_incident, self.__field_for_json_test), json_object)
+
+    def __check_int_value_import(self, int_value, expected_int_interpretation):
+        """ Checks that an integer value is imported as expected.
+
+        :param int_value: Integer value to import.
+        :param expected_int_interpretation: Expected interpretation of integer value.
+        :return: Nothing.
+        """
+        unique_incident_description = self.__get_unique_incident_description()
+        filter_kwargs = {'description': unique_incident_description}
+        self.__create_and_start_import(
+            csv_content=self.__get_int_test_csv_content(
+                unique_incident_description=unique_incident_description,
+                int_value=int_value
+            )
+        )
+        wholesale_import_record = self.__assert_one_wholesale_import_record(model_name='Incident')
+        self.assertEqual(Incident.objects.filter(**filter_kwargs).count(), 1)
+        incident = Incident.objects.get(**filter_kwargs)
+        self.assertEqual(wholesale_import_record.instance_pk, incident.pk)
+        self.assertEqual(getattr(incident, self.__field_for_int_test), expected_int_interpretation)
+
+    def __check_dec_value_import(self, dec_value, expected_dec_interpretation):
+        """ Checks that a decimal value is imported as expected.
+
+        :param dec_value: Decimal value to import.
+        :param expected_dec_interpretation: Expected interpretation of decimal value.
+        :return: Nothing.
+        """
+        unique_person_name = self.__get_unique_person_name()
+        filter_kwargs = {'name': unique_person_name}
+        self.__create_and_start_import(
+            csv_content=self.__get_dec_test_csv_content(
+                unique_person_name=unique_person_name,
+                dec_value=dec_value
+            )
+        )
+        wholesale_import = WholesaleImport.objects.get(pk=self.wholesale_next_val)
+        self.assertEqual(wholesale_import.import_errors, '')
+        self.assertEqual(wholesale_import.imported_rows, 2)
+        self.assertEqual(WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import).count(), 2)
+        first_wholesale_import_record = WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import)[0]
+        self.assertEqual(first_wholesale_import_record.errors, '')
+        self.assertEqual(first_wholesale_import_record.row_num, 1)
+        self.assertEqual(first_wholesale_import_record.model_name, 'Person')
+        second_wholesale_import_record = WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import)[1]
+        self.assertEqual(second_wholesale_import_record.errors, '')
+        self.assertEqual(second_wholesale_import_record.row_num, 1)
+        self.assertEqual(second_wholesale_import_record.model_name, 'PersonPayment')
+        self.assertEqual(Person.objects.filter(**filter_kwargs).count(), 1)
+        person = Person.objects.get(**filter_kwargs)
+        filter_kwargs = {'person': person}
+        self.assertEqual(PersonPayment.objects.filter(**filter_kwargs).count(), 1)
+        person_payment = PersonPayment.objects.get(**filter_kwargs)
+        self.assertEqual(first_wholesale_import_record.instance_pk, person.pk)
+        self.assertEqual(second_wholesale_import_record.instance_pk, person_payment.pk)
+        self.assertEqual(getattr(person_payment, self.__field_for_dec_test), expected_dec_interpretation)
+
+    def __check_invalid_pk_import(self, csv_content, expected_error, first_person, second_person, third_person, suffix):
+        """ Checks that an "update" import with three people is not successful if some internal or external primary
+        key values are invalid.
+
+        :param csv_content: String representation of CSV defining data to import.
+        :param expected_error: String representation of exception that is expected.
+        :param first_person: First person included in "update" import.
+        :param second_person: Second person included in "update" import.
+        :param third_person: Third person included in "update" import.
+        :param suffix: Suffix that would be added to each person's name, if the import was successful.
+        :return: Nothing.
+        """
+        self.__create_and_start_import(csv_content=csv_content, action=WholesaleImport.update_value)
+        wholesale_import = WholesaleImport.objects.get(pk=self.wholesale_next_val)
+        self.assertEqual(wholesale_import.import_errors, expected_error)
+        self.assertEqual(wholesale_import.imported_rows, 0)
+        self.assertEqual(WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import).count(), 0)
+        self.assertEqual(Person.objects.filter(name=f'{first_person}{suffix}').count(), 0)
+        self.assertEqual(Person.objects.filter(name=f'{second_person}{suffix}').count(), 0)
+        self.assertEqual(Person.objects.filter(name=f'{third_person}{suffix}').count(), 0)
+
     @local_test_settings_required
     def test_wholesale_host_admin_only_access(self):
         """ Test that wholesale views are accessible by admin host users only.
@@ -1558,3 +1936,364 @@ class WholesaleTestCase(AbstractTestCase):
         logger.debug(
             _('\nSuccessfully finished test that imports which are not ready for import, cannot be imported\n\n')
         )
+
+    @local_test_settings_required
+    def test_boolean_value_import(self):
+        """ Test that boolean values are imported as expected.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test to import boolean values'))
+        for boolean_value in WholesaleImport.true_booleans:
+            logger.debug(f'Checking that "{boolean_value}" is imported as a True boolean value')
+            self.__check_boolean_value_import(boolean_value=boolean_value, expected_boolean_interpretation=True)
+        for boolean_value in WholesaleImport.false_booleans:
+            logger.debug(f'Checking that "{boolean_value}" is imported as a False boolean value')
+            self.__check_boolean_value_import(boolean_value=boolean_value, expected_boolean_interpretation=False)
+        boolean_field = ModelHelper.get_field(model=Person, field_name=self.__field_for_bool_test)
+        default_for_field = boolean_field.get_default()
+        logger.debug(f'Checking that a blank value is imported as the '
+                     f'default {default_for_field} boolean value for {self.__field_for_bool_test}')
+        self.__check_boolean_value_import(boolean_value='', expected_boolean_interpretation=default_for_field)
+        logger.debug(
+            _('\nSuccessfully finished test to import boolean values\n\n')
+        )
+
+    @local_test_settings_required
+    def test_string_value_import(self):
+        """ Test that string values are imported as expected.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test to import string values'))
+        for string_value in ('A very random string', ''):
+            logger.debug(f'Checking "{string_value}"')
+            self.__check_string_value_import(string_value=string_value)
+        logger.debug(
+            _('\nSuccessfully finished test to import string values\n\n')
+        )
+
+    @local_test_settings_required
+    def test_date_value_import(self):
+        """ Test that date values are imported as expected.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test to import date values'))
+        for date_value in ('1970-1-27', '1982-10-1', '1963-05-3', '1954-12-12', '1998-9-08'):
+            logger.debug(f'Checking "{date_value}"')
+            self.__check_date_value_import(
+                date_value=date_value,
+                expected_date_interpretation=datetime.strptime(date_value, '%Y-%m-%d').date()
+            )
+        logger.debug(f'Checking that a blank value is imported as None for {self.__field_for_date_test}')
+        self.__check_date_value_import(date_value='', expected_date_interpretation=None)
+        logger.debug(
+            _('\nSuccessfully finished test to import date values\n\n')
+        )
+
+    @local_test_settings_required
+    def test_datetime_value_import(self):
+        """ Test that datetime values are imported as expected.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test to assert that no datetime values can be imported through wholesale'))
+        for relevant_model in ModelHelper.get_relevant_models():
+            model_name = ModelHelper.get_str_for_cls(model_class=relevant_model)
+            for field_to_check in ModelHelper.get_fields(model=relevant_model):
+                field_name = field_to_check.name
+                logger.debug(f'Checking model {model_name} and field {field_name}')
+                self.assertNotIsInstance(field_to_check, DateTimeField)
+        logger.debug(
+            _('\nSuccessfully finished test to assert that no datetime values can be imported through wholesale\n\n')
+        )
+
+    @local_test_settings_required
+    def test_json_value_import(self):
+        """ Test that JSON values are imported as expected.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test to import JSON values'))
+        person = Person.objects.create(name=self.__get_unique_person_name())
+        incident = Incident.objects.create()
+        json_object = {
+            'list_of_int_values': [1, 2, 3],
+            'list_of_decimal_values': [1.5, 2.6, 3.7],
+            'list_of_boolean_values': [True, False, True],
+            'date_value': '1995-1-1',
+            'datetime_value': '1990-7-13 2:45:23',
+            'string_value': 'A random string'
+        }
+        json_string = json_dumps(json_object)
+        # the quotechar appears in the JSON
+        if WholesaleImport.csv_quotechar in json_string:
+            json_string = json_string.replace(WholesaleImport.csv_quotechar, "'")
+        # lowercase true should be converted to camelcase True
+        lowercase_true = 'true'
+        if lowercase_true in json_string:
+            json_string = json_string.replace(lowercase_true, 'True')
+        # lowercase false should be converted to camelcase False
+        lowercase_false = 'false'
+        if lowercase_false in json_string:
+            json_string = json_string.replace(lowercase_false, 'False')
+        logger.debug(f'Checking \'{json_string}\'')
+        self.__check_json_value_import(
+            person=person,
+            incident=incident,
+            json_string=json_string,
+            json_object=json_object
+        )
+        PersonIncident.objects.filter(person=person, incident=incident).delete()
+        logger.debug(f'Checking that a blank value is imported as None for {self.__field_for_json_test}')
+        self.__check_json_value_import(person=person, incident=incident, json_string='', json_object=None)
+        logger.debug(_('\nSuccessfully finished test to import JSON values\n\n'))
+
+    @local_test_settings_required
+    def test_int_value_import(self):
+        """ Test that integer values are imported as expected.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test to import integer values'))
+        for int_value in (1995, 0):
+            logger.debug(f'Checking "{int_value}"')
+            self.__check_int_value_import(int_value=int_value, expected_int_interpretation=int_value)
+        int_field = ModelHelper.get_field(model=Incident, field_name=self.__field_for_int_test)
+        default_for_field = int_field.get_default()
+        logger.debug(f'Checking that a blank value is imported as the '
+                     f'default {default_for_field} integer value for {self.__field_for_int_test}')
+        self.__check_int_value_import(int_value='', expected_int_interpretation=default_for_field)
+        logger.debug(_('\nSuccessfully finished test to import integer values\n\n'))
+
+    @local_test_settings_required
+    def test_dec_value_import(self):
+        """ Test that decimal values are imported as expected.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test to import decimal values'))
+        for dec_value in (123456.78, 0.01, 0.0, 12000.00):
+            logger.debug(f'Checking "{dec_value}"')
+            self.__check_dec_value_import(dec_value=dec_value, expected_dec_interpretation=Decimal(str(dec_value)))
+        logger.debug(f'Checking that a blank value is imported as None for {self.__field_for_dec_test}')
+        self.__check_dec_value_import(dec_value='', expected_dec_interpretation=None)
+        logger.debug(_('\nSuccessfully finished test to import decimal values\n\n'))
+
+    @local_test_settings_required
+    def test_pk_column_during_add_import(self):
+        """ Test an "add" import with:
+                (A) An internal primary key column; and
+                (B) Both an internal and an external primary key column.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for "add" import with a primary key column'))
+        unique_person_name = self.__get_unique_person_name()
+        expected_err = 'Model Person has an "id" column that is not allowed during adds.'
+        p = ModelHelper.get_str_for_cls(model_class=Person)
+        comma = WholesaleImport.csv_delimiter
+        logger.debug(f'Starting sub-test with just the internal primary key column')
+        csv_content = f'{p}.id{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
+                      f'248976{comma}{unique_person_name}'
+        self.__create_and_start_import(csv_content=csv_content)
+        wholesale_import = WholesaleImport.objects.get(pk=self.wholesale_next_val)
+        self.__assert_person_not_imported(
+            wholesale_import=wholesale_import,
+            expected_err=expected_err,
+            unique_person_name=unique_person_name
+        )
+        logger.debug(f'Starting sub-test with both the internal and external primary key columns')
+        ext_id = 'wholesaletestpersonexternalidpktest'
+        csv_content = f'{p}.id{comma}{p}.id{WholesaleImport.external_id_suffix}{comma}{p}.{self.__field_for_person}' \
+                      f'{self.__csv_lineterminator}' \
+                      f'87124{comma}{ext_id}{comma}{unique_person_name}'
+        self.__create_and_start_import(csv_content=csv_content)
+        wholesale_import = WholesaleImport.objects.get(pk=self.wholesale_next_val)
+        self.__assert_person_not_imported(
+            wholesale_import=wholesale_import,
+            expected_err=expected_err,
+            unique_person_name=unique_person_name
+        )
+        logger.debug(_('\nSuccessfully finished test for "add" import with a primary key column'))
+
+    @local_test_settings_required
+    def test_no_pk_column_during_update_import(self):
+        """ Test an "update" import without either internal or external primary key columns.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for "update" import without any primary key columns'))
+        expected_err = 'Model Person does not have an "id" or "id__external" column that is required to update.'
+        unique_person_name = self.__get_unique_person_name()
+        csv_content = self.__get_person_csv_content(unique_person_name=unique_person_name)
+        self.assertNotIn(f'id{WholesaleImport.external_id_suffix}', csv_content)
+        self.assertNotIn('id', csv_content)
+        self.__create_and_start_import(csv_content=csv_content, action=WholesaleImport.update_value)
+        wholesale_import = WholesaleImport.objects.get(pk=self.wholesale_next_val)
+        self.__assert_person_not_imported(
+            wholesale_import=wholesale_import,
+            expected_err=expected_err,
+            unique_person_name=unique_person_name
+        )
+        logger.debug(_('\nSuccessfully finished test for "update" import without any primary key columns'))
+
+    @local_test_settings_required
+    def test_duplicate_columns_during_import(self):
+        """ Test duplicate columns during an:
+                (A) "Add" import; and during an
+                (B) "Update" import.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for duplicate columns during an import'))
+        unique_person_name = self.__get_unique_person_name()
+        expected_err = 'Field name appears more than once for model Person.'
+        p = ModelHelper.get_str_for_cls(model_class=Person)
+        comma = WholesaleImport.csv_delimiter
+        logger.debug(f'Starting sub-test for duplicate columns during an "add" import')
+        csv_content = f'{p}.{self.__field_for_person}{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
+                      f'{unique_person_name}{comma}{unique_person_name}'
+        self.__create_and_start_import(csv_content=csv_content)
+        wholesale_import = WholesaleImport.objects.get(pk=self.wholesale_next_val)
+        self.__assert_person_not_imported(
+            wholesale_import=wholesale_import,
+            expected_err=expected_err,
+            unique_person_name=unique_person_name
+        )
+        logger.debug(f'Starting sub-test for duplicate columns during an "update" import')
+        csv_content = f'{p}.id{comma}{p}.{self.__field_for_person}{comma}{p}.{self.__field_for_person}' \
+                      f'{self.__csv_lineterminator}' \
+                      f'1{comma}{unique_person_name}{comma}{unique_person_name}'
+        self.__create_and_start_import(csv_content=csv_content, action=WholesaleImport.update_value)
+        wholesale_import = WholesaleImport.objects.get(pk=self.wholesale_next_val)
+        self.__assert_person_not_imported(
+            wholesale_import=wholesale_import,
+            expected_err=expected_err,
+            unique_person_name=unique_person_name
+        )
+        logger.debug(_('\nSuccessfully finished test for duplicate columns during an import'))
+
+    @local_test_settings_required
+    def test_invalid_pks_during_update_import(self):
+        """ Test an "update" import with some invalid primary key column values, specifically:
+                (A) Missing values; and
+                (B) Incorrect values.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for "update" import with invalid primary key column values'))
+        p = ModelHelper.get_str_for_cls(model_class=Person)
+        comma = WholesaleImport.csv_delimiter
+        suffix = 'X'
+        first_person, second_person, third_person = self.__add_three_persons(add_external_ids=False)
+        unchanging_kwargs = {
+            'first_person': first_person,
+            'second_person': second_person,
+            'third_person': third_person,
+            'suffix': suffix
+        }
+        logger.debug(f'Starting sub-test for missing PKs during an "update" import')
+        csv_content = f'{p}.id{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
+                      f'{first_person.pk}{comma}{first_person.name}{suffix}{self.__csv_lineterminator}' \
+                      f'{comma}{second_person.name}{suffix}{self.__csv_lineterminator}' \
+                      f'{third_person.pk}{comma}{third_person.name}{suffix}'
+        self.__check_invalid_pk_import(
+            csv_content=csv_content,
+            expected_error='Cannot update Person model in database. At least one record was missing a primary key.',
+            **unchanging_kwargs
+        )
+        logger.debug(f'Starting sub-test for incorrect PKs during an "update" import')
+        missing_pk = 1
+        while missing_pk in list(Person.objects.all().values_list('id', flat=True)):
+            missing_pk += 1
+        self.assertFalse(Person.objects.filter(pk=missing_pk).exists())
+        expected_error = 'Cannot update models in database. Length of instances found in the database (2) must be ' \
+                         'equal to length of corresponding IDs to update (3). This may be caused because some ' \
+                         'instances specified for update could not be found in the database.'
+        csv_content = f'{p}.id{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
+                      f'{first_person.pk}{comma}{first_person.name}{suffix}{self.__csv_lineterminator}' \
+                      f'{missing_pk}{comma}{second_person.name}{suffix}{self.__csv_lineterminator}' \
+                      f'{third_person.pk}{comma}{third_person.name}{suffix}'
+        self.__check_invalid_pk_import(csv_content=csv_content, expected_error=expected_error, **unchanging_kwargs)
+        logger.debug(_('\nSuccessfully finished test for "update" import with missing primary key column values'))
+
+    @local_test_settings_required
+    def test_invalid_external_ids_during_update_import(self):
+        """ Test an "update" import with some invalid external ID values, specifically:
+                (A) Missing values; and
+                (B) Incorrect values.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for "update" import with invalid external ID values'))
+        p = ModelHelper.get_str_for_cls(model_class=Person)
+        comma = WholesaleImport.csv_delimiter
+        external_col = f'id{WholesaleImport.external_id_suffix}'
+        suffix = 'X'
+        first_person, second_person, third_person = self.__add_three_persons(add_external_ids=True)
+        unchanging_kwargs = {
+            'first_person': first_person,
+            'second_person': second_person,
+            'third_person': third_person,
+            'suffix': suffix
+        }
+        first_person_ext_id = getattr(first_person, self.__test_external_id_attr)
+        third_person_ext_id = getattr(third_person, self.__test_external_id_attr)
+        logger.debug(f'Starting sub-test for missing external IDs during an "update" import')
+        csv_content = f'{p}.{external_col}{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
+                      f'{first_person_ext_id}{comma}{first_person.name}{suffix}{self.__csv_lineterminator}' \
+                      f'{comma}{second_person.name}{suffix}{self.__csv_lineterminator}' \
+                      f'{third_person_ext_id}{comma}{third_person.name}{suffix}'
+        expected_error = \
+            'Row 2 for model Person: Field id__external for model Person expects external PK values but was assigned:.'
+        self.__check_invalid_pk_import(
+            csv_content=csv_content,
+            expected_error=expected_error,
+            **unchanging_kwargs
+        )
+        logger.debug(f'Starting sub-test for incorrect PKs during an "update" import')
+        missing_external_id = self.__get_unique_external_id()
+        self.assertFalse(BulkImport.objects.filter(pk_imported_from=f'{missing_external_id}').exists())
+        expected_error = 'Cannot update models in database. Length of external ID tuples (3) must be equal to length ' \
+                         'of corresponding existing external IDs (2). This may be caused because some external IDs ' \
+                         'are not recorded in the database, or are recorded multiple times.'
+        csv_content = f'{p}.{external_col}{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
+                      f'{first_person_ext_id}{comma}{first_person.name}{suffix}{self.__csv_lineterminator}' \
+                      f'{missing_external_id}{comma}{second_person.name}{suffix}{self.__csv_lineterminator}' \
+                      f'{third_person_ext_id}{comma}{third_person.name}{suffix}'
+        self.__check_invalid_pk_import(csv_content=csv_content, expected_error=expected_error, **unchanging_kwargs)
+        logger.debug(_('\nSuccessfully finished test for "update" import with invalid external ID values'))
+
+    @local_test_settings_required
+    def test_invalid_external_ids_during_add_import(self):
+        """ Test an "add" import with some invalid external ID values, specifically:
+                (A) Missing values.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for "add" import with invalid external ID values'))
+        p = ModelHelper.get_str_for_cls(model_class=Person)
+        comma = WholesaleImport.csv_delimiter
+        external_col = f'id{WholesaleImport.external_id_suffix}'
+        suffix = 'X'
+        first_person, second_person, third_person = self.__add_three_persons(add_external_ids=False)
+        first_external_id = self.__get_unique_external_id()
+        second_external_id = f'{first_external_id}xyz'
+        logger.debug(f'Starting sub-test for missing external IDs during an "add" import')
+        csv_content = f'{p}.{external_col}{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
+                      f'{first_external_id}{comma}{first_person.name}{suffix}{self.__csv_lineterminator}' \
+                      f'{comma}{second_person.name}{suffix}{self.__csv_lineterminator}' \
+                      f'{second_external_id}{comma}{third_person.name}{suffix}'
+        expected_error = \
+            'Row 2 for model Person: Field id__external for model Person expects external PK values but was assigned:.'
+        self.__check_invalid_pk_import(
+            csv_content=csv_content,
+            expected_error=expected_error,
+            first_person=first_person,
+            second_person=second_person,
+            third_person=third_person,
+            suffix=suffix
+        )
+        logger.debug(_('\nSuccessfully finished test for "add" import with invalid external ID values'))
