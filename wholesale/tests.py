@@ -12,6 +12,7 @@ from bulk.models import BulkImport
 from core.models import Person, PersonAlias, PersonIdentifier, Incident, PersonIncident, PersonPayment
 from fdpuser.models import FdpUser, FdpOrganization
 from supporting.models import Trait, PersonIdentifierType
+from sourcing.models import Attachment, AttachmentType
 from .models import WholesaleImport, WholesaleImportRecord, ModelHelper
 from reversion.models import Revision, Version
 from csv import writer as csv_writer
@@ -91,10 +92,18 @@ class WholesaleTestCase(AbstractTestCase):
     (19) Test an "add" import with some invalid external ID values, specifically:
                 (A) Missing values.
 
-    #: TODO: Test creating bulk import record during "add" and "update" imports with duplication in the template, and
-    #: TODO: between the template and the database.
-    #: TODO: Test setting FKs to None during "add" and "update" imports.
-    #: TODO: Test setting M2Ms to None during "add" and "update" imports.
+    (20) Test duplicate external ID values, including for combinations when:
+                (A) Import is "add" or "update";
+                (B) Duplication exists entirely in CSV template, or between database and CSV template.
+
+    (21) Test setting foreign keys to None during:
+                (A) "Add" imports; and
+                (B) "Update" imports.
+
+    (22) Test setting many-to-many fields to None during:
+                (A) "Add" imports; and
+                (B) "Update" imports.
+
     #: TODO: Test data integrity for "update" imports, similar to existing data integrity test for "add" imports.
 
     """
@@ -176,6 +185,12 @@ class WholesaleTestCase(AbstractTestCase):
                 **cls.__create_host_admin_user_kwargs,
                 email_counter=1 + FdpUser.objects.all().count()
             )
+        if not AttachmentType.objects.all().exists():
+            num_of_attachment_types = AttachmentType.objects.all().count() + 1
+            AttachmentType.objects.create(name=f'wholesale_test_attachment_type{num_of_attachment_types}')
+        # need at least 2 FDP organizations
+        while FdpOrganization.objects.all().count() < 2:
+            FdpOrganization.objects.create(name=f'wholesale_test_fdp_org{FdpOrganization.objects.all().count()}')
         # need at least 3 traits
         while Trait.objects.all().count() < 3:
             Trait.objects.create(name=f'wholesale_test{Trait.objects.all().count()}')
@@ -1586,6 +1601,30 @@ class WholesaleTestCase(AbstractTestCase):
         self.assertEqual(Person.objects.filter(name=f'{second_person}{suffix}').count(), 0)
         self.assertEqual(Person.objects.filter(name=f'{third_person}{suffix}').count(), 0)
 
+    def __check_duplicate_external_id_import(
+            self, csv_content, action, expected_error, imported_person_name, duplicate_external_id,
+            does_external_id_exist
+    ):
+        """ Checks that an import with duplicate external IDs is not successful.
+
+        :param csv_content: String representation of CSV defining data to import.
+        :param action: Action to take during the import. Use WholesaleImport.add_value or WholesaleImport.update_value.
+        :param expected_error: String representation of exception that is expected.
+        :param imported_person_name: Name(s) of person(s) that would have been imported if the import were successful.
+        :param duplicate_external_id: External ID that is duplicated.
+        :param does_external_id_exist: True if the external ID that is duplicated already exists in the database, false
+        if it does not exist in the database.
+        :return: Nothing.
+        """
+        self.__create_and_start_import(csv_content=csv_content, action=action)
+        wholesale_import = WholesaleImport.objects.get(pk=self.wholesale_next_val)
+        self.assertEqual(wholesale_import.import_errors, expected_error)
+        self.assertEqual(wholesale_import.imported_rows, 0)
+        self.assertEqual(WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import).count(), 0)
+        self.assertEqual(Person.objects.filter(name=imported_person_name).count(), 0)
+        self.assertEqual(BulkImport.objects.filter(pk_imported_from=duplicate_external_id).count(),
+                         1 if does_external_id_exist else 0)
+
     @local_test_settings_required
     def test_wholesale_host_admin_only_access(self):
         """ Test that wholesale views are accessible by admin host users only.
@@ -1955,9 +1994,7 @@ class WholesaleTestCase(AbstractTestCase):
         logger.debug(f'Checking that a blank value is imported as the '
                      f'default {default_for_field} boolean value for {self.__field_for_bool_test}')
         self.__check_boolean_value_import(boolean_value='', expected_boolean_interpretation=default_for_field)
-        logger.debug(
-            _('\nSuccessfully finished test to import boolean values\n\n')
-        )
+        logger.debug(_('\nSuccessfully finished test to import boolean values\n\n'))
 
     @local_test_settings_required
     def test_string_value_import(self):
@@ -2116,7 +2153,7 @@ class WholesaleTestCase(AbstractTestCase):
             expected_err=expected_err,
             unique_person_name=unique_person_name
         )
-        logger.debug(_('\nSuccessfully finished test for "add" import with a primary key column'))
+        logger.debug(_('\nSuccessfully finished test for "add" import with a primary key column\n\n'))
 
     @local_test_settings_required
     def test_no_pk_column_during_update_import(self):
@@ -2137,7 +2174,7 @@ class WholesaleTestCase(AbstractTestCase):
             expected_err=expected_err,
             unique_person_name=unique_person_name
         )
-        logger.debug(_('\nSuccessfully finished test for "update" import without any primary key columns'))
+        logger.debug(_('\nSuccessfully finished test for "update" import without any primary key columns\n\n'))
 
     @local_test_settings_required
     def test_duplicate_columns_during_import(self):
@@ -2173,7 +2210,7 @@ class WholesaleTestCase(AbstractTestCase):
             expected_err=expected_err,
             unique_person_name=unique_person_name
         )
-        logger.debug(_('\nSuccessfully finished test for duplicate columns during an import'))
+        logger.debug(_('\nSuccessfully finished test for duplicate columns during an import\n\n'))
 
     @local_test_settings_required
     def test_invalid_pks_during_update_import(self):
@@ -2217,7 +2254,7 @@ class WholesaleTestCase(AbstractTestCase):
                       f'{missing_pk}{comma}{second_person.name}{suffix}{self.__csv_lineterminator}' \
                       f'{third_person.pk}{comma}{third_person.name}{suffix}'
         self.__check_invalid_pk_import(csv_content=csv_content, expected_error=expected_error, **unchanging_kwargs)
-        logger.debug(_('\nSuccessfully finished test for "update" import with missing primary key column values'))
+        logger.debug(_('\nSuccessfully finished test for "update" import with missing primary key column values\n\n'))
 
     @local_test_settings_required
     def test_invalid_external_ids_during_update_import(self):
@@ -2264,7 +2301,7 @@ class WholesaleTestCase(AbstractTestCase):
                       f'{missing_external_id}{comma}{second_person.name}{suffix}{self.__csv_lineterminator}' \
                       f'{third_person_ext_id}{comma}{third_person.name}{suffix}'
         self.__check_invalid_pk_import(csv_content=csv_content, expected_error=expected_error, **unchanging_kwargs)
-        logger.debug(_('\nSuccessfully finished test for "update" import with invalid external ID values'))
+        logger.debug(_('\nSuccessfully finished test for "update" import with invalid external ID values\n\n'))
 
     @local_test_settings_required
     def test_invalid_external_ids_during_add_import(self):
@@ -2297,3 +2334,123 @@ class WholesaleTestCase(AbstractTestCase):
             suffix=suffix
         )
         logger.debug(_('\nSuccessfully finished test for "add" import with invalid external ID values'))
+
+    @local_test_settings_required
+    def test_duplicate_external_ids_during_import(self):
+        """ Test duplicate external ID values, including for combinations when:
+                (A) Import is "add" or "update"; and
+                (B) Duplication exists entirely in CSV template, or between database and CSV template.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for duplicate external IDs during imports'))
+        p = ModelHelper.get_str_for_cls(model_class=Person)
+        comma = WholesaleImport.csv_delimiter
+        external_col = f'id{WholesaleImport.external_id_suffix}'
+        unique_person_name = self.__get_unique_person_name()
+        self.assertFalse(Person.objects.filter(name=unique_person_name).exists())
+        unique_external_id = self.__get_unique_external_id()
+        # external IDs duplicated in template
+        self.assertFalse(BulkImport.objects.filter(pk_imported_from=unique_external_id).exists())
+        csv_content = f'{p}.{external_col}{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
+                      f'{unique_external_id}{comma}{unique_person_name}{self.__csv_lineterminator}' \
+                      f'{unique_external_id}{comma}{unique_person_name}'
+        unchanging_kwargs = {
+            'csv_content': csv_content,
+            'expected_error': f'The following external IDs appear more than once: 2 X for {unique_external_id}.',
+            'imported_person_name': unique_person_name,
+            'duplicate_external_id': unique_external_id,
+            'does_external_id_exist': False
+        }
+        logger.debug(f'Starting sub-test for duplicate external IDs in template during an "add" import')
+        self.__check_duplicate_external_id_import(action=WholesaleImport.add_value, **unchanging_kwargs)
+        logger.debug(f'Starting sub-test for duplicate external IDs in template during an "update" import')
+        self.__check_duplicate_external_id_import(action=WholesaleImport.update_value, **unchanging_kwargs)
+        # external IDs duplicate between template and database
+        person = Person.objects.create(name='Unnamed')
+        self.__add_external_ids(instances=(person,), class_name='Person')
+        unique_external_id = getattr(person, self.__test_external_id_attr)
+        self.assertEqual(BulkImport.objects.filter(pk_imported_from=unique_external_id).count(), 1)
+        csv_content = f'{p}.{external_col}{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
+                      f'{unique_external_id}{comma}{unique_person_name}'
+        logger.debug(f'Starting sub-test for duplicate external IDs in template and DB during an "add" import')
+        self.__check_duplicate_external_id_import(
+            action=WholesaleImport.add_value,
+            csv_content=csv_content,
+            expected_error=f'Cannot add models in database. '
+                           f'The following external IDs already exist: {unique_external_id}.',
+            imported_person_name=unique_person_name,
+            duplicate_external_id=unique_external_id,
+            does_external_id_exist=True
+        )
+        # skip this test since "update" imports reference existing external IDs by default
+        logger.debug(f'Skipping sub-test for duplicate external IDs between template and DB during an "update" import')
+        logger.debug(_('\nSuccessfully finished test for duplicate external IDs during imports\n\n'))
+
+    @local_test_settings_required
+    def test_none_fk_import(self):
+        """ Test setting foreign keys to None during:
+                (A) "Add" imports; and
+                (B) "Update" imports.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for imports setting foreign keys to None'))
+        num_of_attachments = Attachment.objects.all().count()
+        a = ModelHelper.get_str_for_cls(model_class=Attachment)
+        comma = WholesaleImport.csv_delimiter
+        csv_content = f'{a}.name{comma}{a}.link{comma}{a}.type{self.__csv_lineterminator}' \
+                      f'Unnamed{comma}https://www.google.ca{comma}'
+        logger.debug(f'Starting sub-test for setting foreign keys to None during an "add" import')
+        self.__create_and_start_import(csv_content=csv_content, action=WholesaleImport.add_value)
+        wholesale_import_record = self.__assert_one_wholesale_import_record(model_name='Attachment')
+        self.assertEqual(num_of_attachments + 1, Attachment.objects.all().count())
+        attachment_pk = wholesale_import_record.instance_pk
+        attachment = Attachment.objects.get(pk=attachment_pk)
+        self.assertIsNone(attachment.type)
+        logger.debug(f'Starting sub-test for setting foreign keys to None during an "update" import')
+        attachment.type = AttachmentType.objects.all().first()
+        attachment.full_clean()
+        attachment.save()
+        self.assertIsNotNone((Attachment.objects.get(pk=attachment_pk)).type)
+        csv_content = f'{a}.id{comma}{a}.type{self.__csv_lineterminator}{attachment_pk}{comma}'
+        self.__create_and_start_import(csv_content=csv_content, action=WholesaleImport.update_value)
+        wholesale_import_record = self.__assert_one_wholesale_import_record(model_name='Attachment')
+        self.assertEqual(attachment_pk, wholesale_import_record.instance_pk)
+        self.assertIsNone((Attachment.objects.get(pk=attachment_pk)).type)
+        logger.debug(_('\nSuccessfully finished test for imports setting foreign keys to None\n\n'))
+
+    @local_test_settings_required
+    def test_none_m2m_import(self):
+        """ Test setting many-to-many fields to None during:
+                (A) "Add" imports; and
+                (B) "Update" imports.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for imports setting many-to-many fields to None'))
+        num_of_attachments = Attachment.objects.all().count()
+        a = ModelHelper.get_str_for_cls(model_class=Attachment)
+        comma = WholesaleImport.csv_delimiter
+        csv_content = f'{a}.name{comma}{a}.link{comma}{a}.fdp_organizations{self.__csv_lineterminator}' \
+                      f'Unnamed{comma}https://www.google.ca{comma}'
+        logger.debug(f'Starting sub-test for setting many-to-many fields to None during an "add" import')
+        self.__create_and_start_import(csv_content=csv_content, action=WholesaleImport.add_value)
+        wholesale_import_record = self.__assert_one_wholesale_import_record(model_name='Attachment')
+        self.assertEqual(num_of_attachments + 1, Attachment.objects.all().count())
+        attachment_pk = wholesale_import_record.instance_pk
+        attachment = Attachment.objects.get(pk=attachment_pk)
+        self.assertEqual(attachment.fdp_organizations.all().count(), 0)
+        logger.debug(f'Starting sub-test for setting many-to-many fields to None during an "update" import')
+        all_fdp_organizations = FdpOrganization.objects.all()
+        attachment.fdp_organizations.add(all_fdp_organizations[0], all_fdp_organizations[1])
+        attachment.full_clean()
+        attachment.save()
+        self.assertEqual((Attachment.objects.get(pk=attachment_pk)).fdp_organizations.all().count(), 2)
+        csv_content = f'{a}.id{comma}{a}.fdp_organizations{self.__csv_lineterminator}{attachment_pk}{comma}'
+        self.__create_and_start_import(csv_content=csv_content, action=WholesaleImport.update_value)
+        wholesale_import_record = self.__assert_one_wholesale_import_record(model_name='Attachment')
+        self.assertEqual(attachment_pk, wholesale_import_record.instance_pk)
+        self.assertEqual((Attachment.objects.get(pk=attachment_pk)).fdp_organizations.all().count(), 0)
+        logger.debug(_('\nSuccessfully finished test for imports setting many-to-many fields to None\n\n'))
+
