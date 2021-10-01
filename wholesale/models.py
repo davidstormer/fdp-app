@@ -27,6 +27,7 @@ from sys import exc_info
 from os.path import basename, dirname
 from codecs import BOM_UTF8
 from ast import literal_eval
+from collections import defaultdict
 
 
 class ModelHelper(models.Model):
@@ -2103,6 +2104,32 @@ class WholesaleImport(Metable):
         existing_external_ids = [e for e in external_to_internal_map.keys()]
         return external_to_internal_map, existing_external_ids
 
+    @staticmethod
+    def __check_for_duplicate_external_ids(external_ids_to_add):
+        """ Checks for duplicate external IDs that may have been defined through the CSV template and
+        raises an exception if any are found.
+
+        :param external_ids_to_add: List of tuples representing the external IDs that are intended to be added to the
+        database. Use the first tuple item for the external ID value, i.e. external_id_tuple[0].
+        :return: Nothing.
+        """
+        # all external IDs for particular model that were defined in the CSV template, excludes "undefined" IDs,
+        # i.e. empty values
+        all_defined_external_ids = \
+            [external_id_tuple[0] for external_id_tuple in external_ids_to_add if external_id_tuple[0] is not None]
+        # deduplicated list of external IDs, in a different order than above
+        deduplicated_external_ids = list(set(all_defined_external_ids))
+        # some external IDs appeared multiple times
+        if len(all_defined_external_ids) != len(deduplicated_external_ids):
+            count_dict = defaultdict(int)
+            # count number of occurrences for each external ID
+            for external_id in all_defined_external_ids:
+                count_dict[external_id] += 1
+            # only external IDs that appear more than once
+            duplicates = ''.join([f'{count_dict[external_id]} X for {external_id}'
+                                  for external_id in count_dict if count_dict[external_id] > 1])
+            raise StopWholesaleImportException(f'The following external IDs appear more than once: {duplicates}.')
+
     def __add_revision_to_database(self):
         """ Adds a revision record to the database that is used to group records for the django-reversion package.
 
@@ -2355,13 +2382,14 @@ class WholesaleImport(Metable):
             )
         # cycle through retrieved primary keys
         for pk in in_bulk_dict:
+            str_pk = str(pk)
             # only process this if it was in the original IDs dictionary
-            if pk in ids_dict:
-                id_dict = ids_dict[pk]
+            if str_pk in ids_dict:
+                id_dict = ids_dict[str_pk]
                 # cycle through attributes in attribute dictionary
                 for attr in id_dict['a']:
                     # update the attribute with a new value
-                    setattr(in_bulk_dict[pk], attr, ids_dict[pk]['a'][attr])
+                    setattr(in_bulk_dict[pk], attr, ids_dict[str_pk]['a'][attr])
         # list of instances to update, with their updated values
         instances_to_update = [in_bulk_dict[pk] for pk in in_bulk_dict]
         # update the corresponding bulk import records in the database, but skip external IDs
@@ -2454,6 +2482,8 @@ class WholesaleImport(Metable):
                         f'The _data_by_model_name data structure is corrupted at ["{model_name}"][{row_num}], and '
                         f'contains: {instance_tuple}.'
                     )
+            # check for duplicate external IDs
+            self.__check_for_duplicate_external_ids(external_ids_to_add=external_ids_to_add)
             # import is an add
             if self.is_add:
                 self.__add_models_to_database(
