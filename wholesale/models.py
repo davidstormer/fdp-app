@@ -2380,25 +2380,27 @@ class WholesaleImport(Metable):
                 f'length of corresponding IDs to update ({a}). This may be caused because some instances '
                 f'specified for update could not be found in the database.'
             )
+        # in_bulk(...) may re-order instances, so ensure the order is correct
+        ordered_in_bulk_dict = {str_pk: in_bulk_dict[int(str_pk)] for str_pk in ids_to_update}
         # cycle through retrieved primary keys
-        for pk in in_bulk_dict:
-            str_pk = str(pk)
+        for str_pk in ordered_in_bulk_dict:
             # only process this if it was in the original IDs dictionary
             if str_pk in ids_dict:
                 id_dict = ids_dict[str_pk]
                 # cycle through attributes in attribute dictionary
                 for attr in id_dict['a']:
                     # update the attribute with a new value
-                    setattr(in_bulk_dict[pk], attr, ids_dict[str_pk]['a'][attr])
+                    setattr(ordered_in_bulk_dict[str_pk], attr, ids_dict[str_pk]['a'][attr])
         # list of instances to update, with their updated values
-        instances_to_update = [in_bulk_dict[pk] for pk in in_bulk_dict]
+        instances_to_update = [ordered_in_bulk_dict[str_pk] for str_pk in ordered_in_bulk_dict]
         # update the corresponding bulk import records in the database, but skip external IDs
         m2m_metadata_for_model = self._m2m_metadata_by_model_name.get(model_name, {})
         m2m_fields = m2m_metadata_for_model.keys()
         # cannot do bulk_update on external fields or many-to-many fields
         bulk_fields = [
-            f for f in fields_to_update
-            if f not in m2m_fields and not f.endswith(self.external_id_suffix) and not f == 'id'
+            f if not f.endswith(self.external_id_suffix) else f[:-len(self.external_id_suffix)]
+            for f in fields_to_update
+            if f not in m2m_fields and not f == self._id_external_col and not f == self._id_col
         ]
         # only do bulk update, if there are fields besides external and many-to-many fields
         if bulk_fields:
@@ -2444,6 +2446,7 @@ class WholesaleImport(Metable):
         :return: Nothing.
         """
         wholesale_import_records = []
+        has_errors = False
         if not (self.is_add or self.is_update):
             raise StopWholesaleImportException('Only wholesale import adds and updates are currently supported.')
         # cycle through each main model to import
@@ -2459,6 +2462,8 @@ class WholesaleImport(Metable):
             for row_num, instance_tuple in enumerate(model_instances):
                 # this model instance cannot be imported
                 if isinstance(instance_tuple, list):
+                    if not has_errors:
+                        has_errors = True
                     errors_list = instance_tuple
                     wholesale_import_records.append(
                         WholesaleImportRecord(
@@ -2506,18 +2511,35 @@ class WholesaleImport(Metable):
             self.__import_relation_models_by_name(import_these_models=(model_name,))
             # update any model instances that may reference the just imported instances by external ID
             self.__import_relation_models_by_external_id(import_these_models=(model_name,))
-        # save in the database the model instance that represents the entire import
-        self.finish_import_without_raising_exception(err=None)
-        self.full_clean()
-        self.save()
-        # save in the database the model instances that represent each record imported
-        WholesaleImportRecord.objects.bulk_create(wholesale_import_records)
+        #: TODO: Separate out errors using WholesaleImportRecord instances.
+        #: TODO: Similar to __end_import_due_to_errors(...)
+        if has_errors:
+            for wholesale_import_record in wholesale_import_records:
+                if wholesale_import_record.errors:
+                    self.__add_to_import_errors(err=f'Row {wholesale_import_record.row_num} for model '
+                                                    f'{wholesale_import_record.model_name}: '
+                                                    f'{wholesale_import_record.errors}')
+            self.imported_rows = 0
+            self.error_rows = 0
+            self.finish_import_without_raising_exception(err=None)
+            self.full_clean()
+            self.save()
+        else:
+            # save in the database the model instance that represents the entire import
+            self.finish_import_without_raising_exception(err=None)
+            self.full_clean()
+            self.save()
+            # save in the database the model instances that represent each record imported
+            WholesaleImportRecord.objects.bulk_create(wholesale_import_records)
 
     def __end_import_due_to_errors(self):
         """ Ends the import due to errors that were encountered during population of the data structures storing the
         data to import.
 
         See __before_import(...).
+
+        TODO: Separate out errors using WholesaleImportRecord instances.
+        TODO: Similar to __import_main_models(...).
 
         :return: Nothing.
         """
@@ -2618,6 +2640,9 @@ class WholesaleImport(Metable):
         # ...
         # }
         cached_fields_to_add_by_model = {}
+        # no implicit conversion during updates
+        if self.is_update:
+            return cached_fields_to_add_by_model
         # models that have already been checked, in the format of: {'model_1': (has_id_1, has_external_id_1), ...}
         cached_models_to_the_left = {}
         # cycle through each model
