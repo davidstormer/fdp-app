@@ -112,7 +112,7 @@ CONST_WHOLESALE_MODELS_ALLOWLIST = [
     'ContentPersonPenalty',
     # From the 'core' app
     'Person',
-    'PersonContent',
+    'PersonContact',
     'PersonAlias',
     'PersonPhoto',
     'PersonIdentifier',
