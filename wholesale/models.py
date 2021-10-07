@@ -194,6 +194,13 @@ class ModelHelper(models.Model):
         abstract = True
 
 
+class EndedWithErrorsWholesaleImportException(Exception):
+    """ Exception raised when a wholesale import process ended with errors.
+
+    """
+    pass
+
+
 class StopWholesaleImportException(Exception):
     """ Exception raised to stop a wholesale import process.
 
@@ -2275,7 +2282,7 @@ class WholesaleImport(Metable):
             wholesale_import_records.append(
                 WholesaleImportRecord(
                     wholesale_import=self,
-                    row_num=external_id_tuple[1] + 1,
+                    row_num=external_id_tuple[1] + 2,
                     model_name=model_name,
                     instance_pk=created_instance.pk,
                     errors=''
@@ -2433,7 +2440,7 @@ class WholesaleImport(Metable):
             wholesale_import_records.append(
                 WholesaleImportRecord(
                     wholesale_import=self,
-                    row_num=ids_dict[pk]['r'] + 1,
+                    row_num=ids_dict[pk]['r'] + 2,
                     model_name=model_name,
                     instance_pk=pk,
                     errors=''
@@ -2446,7 +2453,6 @@ class WholesaleImport(Metable):
         :return: Nothing.
         """
         wholesale_import_records = []
-        has_errors = False
         if not (self.is_add or self.is_update):
             raise StopWholesaleImportException('Only wholesale import adds and updates are currently supported.')
         # cycle through each main model to import
@@ -2462,13 +2468,11 @@ class WholesaleImport(Metable):
             for row_num, instance_tuple in enumerate(model_instances):
                 # this model instance cannot be imported
                 if isinstance(instance_tuple, list):
-                    if not has_errors:
-                        has_errors = True
                     errors_list = instance_tuple
-                    wholesale_import_records.append(
+                    self.__error_wholesale_import_records.append(
                         WholesaleImportRecord(
                             wholesale_import=self,
-                            row_num=row_num + 1,
+                            row_num=row_num + 2,
                             model_name=model_name,
                             errors=' '.join(errors_list)
                         )
@@ -2511,54 +2515,12 @@ class WholesaleImport(Metable):
             self.__import_relation_models_by_name(import_these_models=(model_name,))
             # update any model instances that may reference the just imported instances by external ID
             self.__import_relation_models_by_external_id(import_these_models=(model_name,))
-        #: TODO: Separate out errors using WholesaleImportRecord instances.
-        #: TODO: Similar to __end_import_due_to_errors(...)
-        if has_errors:
-            for wholesale_import_record in wholesale_import_records:
-                if wholesale_import_record.errors:
-                    self.__add_to_import_errors(err=f'Row {wholesale_import_record.row_num} for model '
-                                                    f'{wholesale_import_record.model_name}: '
-                                                    f'{wholesale_import_record.errors}')
-            self.imported_rows = 0
-            self.error_rows = 0
-            self.finish_import_without_raising_exception(err=None)
-            self.full_clean()
-            self.save()
-        else:
-            # save in the database the model instance that represents the entire import
-            self.finish_import_without_raising_exception(err=None)
-            self.full_clean()
-            self.save()
-            # save in the database the model instances that represent each record imported
-            WholesaleImportRecord.objects.bulk_create(wholesale_import_records)
-
-    def __end_import_due_to_errors(self):
-        """ Ends the import due to errors that were encountered during population of the data structures storing the
-        data to import.
-
-        See __before_import(...).
-
-        TODO: Separate out errors using WholesaleImportRecord instances.
-        TODO: Similar to __import_main_models(...).
-
-        :return: Nothing.
-        """
-        # cycle through the data structure storing the data to import and look for the errors among the model instances
-        # to import
-        for model_name in self._data_by_model_name:
-            model_instances = self._data_by_model_name[model_name]
-            # cycle through each model instance and check for errors
-            for row_num, errors_list in enumerate(model_instances):
-                # this model instance cannot be imported (otherwise it would be an instance of a tuple)
-                if isinstance(errors_list, list):
-                    errors = ' '.join(errors_list)
-                    self.__add_to_import_errors(err=f'Row {row_num + 1} for model {model_name}: {errors}')
-        self.error_rows = 0
-        self.imported_rows = 0
         # save in the database the model instance that represents the entire import
         self.finish_import_without_raising_exception(err=None)
         self.full_clean()
         self.save()
+        # save in the database the model instances that represent each record imported
+        WholesaleImportRecord.objects.bulk_create(wholesale_import_records)
 
     @handle_import_errors
     def do_import(self):
@@ -2571,10 +2533,8 @@ class WholesaleImport(Metable):
             self.started_timestamp = now()
             # creates and populates metadata for import, perform validation checks and prepares data for import
             self.__before_import()
-            # end the import due to errors encountered while populating the data structures for import
-            if self.error_rows > 0:
-                self.__end_import_due_to_errors()
-                return
+            # stores wholesale import records that hold errors for rows
+            self.__error_wholesale_import_records = []
             try:
                 # disable versioning to improve performance
                 # If manage_manually=True, versions will not be saved when a model’s save() method is called.
@@ -2592,11 +2552,23 @@ class WholesaleImport(Metable):
                     self.__import_relation_models_by_external_id(import_these_models=())
                     # import main model instances that were defined in the CSV template
                     self.__import_main_models()
-            except StopWholesaleImportException as err:
+                    # import is now finished, check if there were any issues
+                    if self.__error_wholesale_import_records:
+                        raise EndedWithErrorsWholesaleImportException
+            except (StopWholesaleImportException, EndedWithErrorsWholesaleImportException) as err:
+                # did not finish the wholesale import
                 # exception was raised during actual import, i.e. adding/updating records in the database
+                if isinstance(err, StopWholesaleImportException):
+                    self.error_rows = 0
+                    self.finish_import_without_raising_exception(err=err)
+                # finished the wholesale import
+                elif isinstance(err, EndedWithErrorsWholesaleImportException):
+                    # some errors were noted per record
+                    if self.__error_wholesale_import_records:
+                        # save in database the model instances that represent each record to be imported with an error
+                        WholesaleImportRecord.objects.bulk_create(self.__error_wholesale_import_records)
+                    self.finish_import_without_raising_exception(err=None)
                 self.imported_rows = 0
-                self.error_rows = 0
-                self.finish_import_without_raising_exception(err=err)
                 self.full_clean()
                 self.save()
 
