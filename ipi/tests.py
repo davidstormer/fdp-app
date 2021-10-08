@@ -1,7 +1,8 @@
 import pdb
 
-from django.test import LiveServerTestCase, SimpleTestCase
-from .import_person_identifiers import import_person_identifiers, parse_natural_boolean_string, NoNaturalBooleanValueFound
+from django.test import LiveServerTestCase, SimpleTestCase, TransactionTestCase
+from .import_person_identifiers import import_person_identifiers, parse_natural_boolean_string, \
+    NoNaturalBooleanValueFound
 from core.models import Person, PersonIdentifier
 from supporting.models import PersonIdentifierType
 from bulk.models import BulkImport
@@ -44,6 +45,120 @@ def make_fake_people(csv_file_name):
         csv_reader = csv.DictReader(f)
         for person in csv_reader:
             generate_test_person(person['PersonIdentifier.person__external'])
+
+
+class DatabaseTransactions(TransactionTestCase):
+    def test_rollback_on_error(self):
+        csv_reader = [
+            # Good
+            {'PersonIdentifier.description': '',
+             'PersonIdentifier.id__external': '1',
+             'PersonIdentifier.identifier': '1',
+             'PersonIdentifier.person__external': 'ext-id-1',  # Does exist
+             'PersonIdentifier.person_identifier_type': 'Type1',
+             },
+            # BAD
+            {'PersonIdentifier.description': '',
+             'PersonIdentifier.id__external': '2',
+             'PersonIdentifier.identifier': '2',
+             'PersonIdentifier.person__external': 'ext-id-2',  # Reference a Person record that doesn't exist
+             'PersonIdentifier.person_identifier_type': 'Type2',
+             },
+            # Good
+            {'PersonIdentifier.description': '',
+             'PersonIdentifier.id__external': '3',
+             'PersonIdentifier.identifier': '3',
+             'PersonIdentifier.person__external': 'ext-id-1',  # Does exist
+             'PersonIdentifier.person_identifier_type': 'Type3',
+             },
+            # BAD
+            {'PersonIdentifier.end_year': 'NOT A NUMBER',  # Bad value
+             'PersonIdentifier.description': '',
+             'PersonIdentifier.id__external': '4',
+             'PersonIdentifier.identifier': '4',
+             'PersonIdentifier.person__external': 'ext-id-1',  # Does exist
+             'PersonIdentifier.person_identifier_type': 'Type4',
+             },
+        ]
+
+        # Take note of how many PersonIdentifier records in the system before botched import (zero)
+        pids_before = PersonIdentifier.objects.all()
+        self.assertEqual(0, len(pids_before))
+        # And PersonIdentifierType records
+        self.assertEqual(0, len(PersonIdentifierType.objects.all()))
+
+        # Create dependency Person record
+        generate_test_person('ext-id-1')
+
+        # Run the importer
+        errors_count = import_person_identifiers(csv_reader)
+
+        # Two bad records, two errors
+        self.assertEqual(errors_count, 2)
+
+        # Because there were errors the import rolled back,
+        # thus the good records proceeding the errors shouldn't be in the db either.
+        # No new PersonIdentifier records in the system after failed import
+        pids_after = PersonIdentifier.objects.all()
+        self.assertEqual(len(pids_before), len(pids_after))
+
+        # I shouldn't see PersonIdentifierType records either
+        self.assertEqual(0, len(PersonIdentifierType.objects.all()))
+
+    def test_force_mode(self):
+        csv_reader = [
+            # Good
+            {'PersonIdentifier.description': '',
+             'PersonIdentifier.id__external': '1',
+             'PersonIdentifier.identifier': '1',
+             'PersonIdentifier.person__external': 'ext-id-1',  # Does exist
+             'PersonIdentifier.person_identifier_type': 'Type1',
+             },
+            # BAD
+            {'PersonIdentifier.description': '',
+             'PersonIdentifier.id__external': '2',
+             'PersonIdentifier.identifier': '2',
+             'PersonIdentifier.person__external': 'ext-id-2',  # Reference a Person record that doesn't exist
+             'PersonIdentifier.person_identifier_type': 'Type2',
+             },
+            # BAD
+            {'PersonIdentifier.end_year': 'NOT A NUMBER',  # Bad value
+             'PersonIdentifier.description': '',
+             'PersonIdentifier.id__external': '4',
+             'PersonIdentifier.identifier': '4',
+             'PersonIdentifier.person__external': 'ext-id-1',  # Does exist
+             'PersonIdentifier.person_identifier_type': 'Type4',
+             },
+            # Good
+            {'PersonIdentifier.description': '',
+             'PersonIdentifier.id__external': '3',
+             'PersonIdentifier.identifier': '3',
+             'PersonIdentifier.person__external': 'ext-id-1',  # Does exist
+             'PersonIdentifier.person_identifier_type': 'Type3',
+             },
+        ]
+
+        # Take note of how many PersonIdentifier records in the system before botched import (zero)
+        pids_before = PersonIdentifier.objects.all()
+        self.assertEqual(0, len(pids_before))
+
+        # Create dependency Person record
+        generate_test_person('ext-id-1')
+
+        # Run the importer, in FORCE MODE
+        errors_count = import_person_identifiers(csv_reader, force_mode=True)
+
+        # Two bad records, two errors
+        self.assertEqual(errors_count, 2)
+
+        # Even though there were errors the import should have saved what records imported successfully
+        # Two good records, two saved in the db
+        pids_after = PersonIdentifier.objects.all()
+        self.assertEqual(2, len(pids_after))
+
+        # I should see three dependency PersonIdentifierType records too
+        # Fourth one is missing because the system choked on the bad field contents before creating it
+        self.assertEqual(3, len(PersonIdentifierType.objects.all()))
 
 
 class ImportPersonIdentifierTestCase(LiveServerTestCase):
