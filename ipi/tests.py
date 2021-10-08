@@ -7,6 +7,7 @@ from supporting.models import PersonIdentifierType
 from bulk.models import BulkImport
 from faker import Faker
 from pprint import pprint
+import logging
 import csv
 import json
 
@@ -22,18 +23,20 @@ def csv_to_list_dict(csv_reader):
     pprint(data)
 
 
-def generate_test_person(external_id: str) -> Person:
-    """Take a list of external ids and populates the database with fake people.
-    Use this while writing tests when you need person records to link to.
-    """
-    person = Person.objects.create(name=faker.name())
-    BulkImport.objects.create(
-        pk_imported_to=person.pk,
-        pk_imported_from=external_id,
-        table_imported_to=Person.get_db_table(),
-        data_imported=''
-    )
-    return person
+def generate_test_person(external_id: str) -> Person or None:
+    try:
+        BulkImport.objects.get(pk_imported_from=external_id)
+        logging.warning(f"Person with external id {external_id} already exists. Skipping!")
+        return None
+    except BulkImport.DoesNotExist as e:
+        person = Person.objects.create(name=faker.name())
+        BulkImport.objects.create(
+            pk_imported_to=person.pk,
+            pk_imported_from=external_id,
+            table_imported_to=Person.get_db_table(),
+            data_imported=''
+        )
+        return person
 
 
 def make_fake_people(csv_file_name):
@@ -44,6 +47,10 @@ def make_fake_people(csv_file_name):
 
 
 class ImportPersonIdentifierTestCase(LiveServerTestCase):
+
+    def test_generate_test_person_skip_ext_id_dupes(self):
+        self.assertEqual(type(generate_test_person('same_id')), type(Person()))
+        self.assertEqual(type(generate_test_person('same_id')), type(None))
 
     def test_run_importer(self):
         csv_reader = [{'PersonIdentifier.as_of': 'TRUE',
