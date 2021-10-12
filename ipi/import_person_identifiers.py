@@ -158,7 +158,8 @@ def import_person_identifiers(csv_reader: csv.DictReader, force_mode: bool = Fal
                 errors_count = main_loop(csv_reader)
                 if errors_count > 0:
                     raise ImportErrors  # If any errors, raise an exception to cancel the atomic transaction
-        except ImportErrors:  # Catch the import errors exception, after transaction was cancelled, so we
+        except ImportErrors:
+            # Catch the import errors exception, after transaction was cancelled, so we
             # can return the error count
             return errors_count
         return errors_count
