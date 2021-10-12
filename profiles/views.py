@@ -1,4 +1,4 @@
-from inheritable.models import AbstractUrlValidator, AbstractSearchValidator, AbstractDateValidator, \
+from inheritable.models import AbstractUrlValidator, AbstractSearchValidator, \
     AbstractFileValidator
 from inheritable.views import SecuredSyncFormView, SecuredSyncListView, SecuredSyncDetailView, SecuredSyncView, \
     SecuredSyncTemplateView
@@ -522,29 +522,11 @@ class OfficerDetailView(SecuredSyncDetailView):
         """
         obj = super(OfficerDetailView, self).get_object(queryset=queryset)
         # COMMAND
-        officer_end_date = None
-        officer_start_date = None
         officer_command = None
         # if the officer has commands, then cycle through and find the first active person-grouping link
         # assumes that commands are already ordered by date
         if obj.officer_commands:
             officer_command = obj.officer_commands.pop(0)
-            if officer_command.is_inactive:
-                officer_end_date = AbstractDateValidator.get_display_text_from_date(
-                    year=officer_command.end_year,
-                    month=officer_command.end_month,
-                    day=officer_command.end_day,
-                    prefix=''
-                )
-            else:
-                officer_start_date = AbstractDateValidator.get_display_text_from_date(
-                    year=officer_command.start_year,
-                    month=officer_command.start_month,
-                    day=officer_command.start_day,
-                    prefix=''
-                )
-        obj.officer_start_date = officer_start_date
-        obj.officer_end_date = officer_end_date
         obj.officer_command = officer_command
         # RANK
         officer_title = None
