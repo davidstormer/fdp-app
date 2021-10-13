@@ -3,19 +3,25 @@
 All releases will be logged in this file.
 
 
-## [2.1.0] - 2021-10-12
+## [3.0.0] - 2021-10-12
 
 ### Added
+- Add EULA upload feature and change splash page feature to be separate from 2FA workflow pages
 - Add demo content via fixture file
 - Add database schema report file data_model.md
 
 ### Changed
-- Add EULA upload feature and change splash page feature to be separate from 2FA workflow pages
 - Rename content identifier field label from "Number" to "Identifier"
 
 ### Removed
 - Officer profile page: Remove 'Active from ...' feature
 
+### Upgrading
+The new EULA feature requires a database migration. Run:
+```shell
+python3 manage.py migrate
+```
+to apply these migrations to the database. You will get a 500 error until you do this.
 
 ## [2.0.0] - 2021-09-21
 Major release
