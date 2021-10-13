@@ -11,6 +11,7 @@ All releases will be logged in this file.
 
 ### Changed
 - Add EULA upload feature and change splash page feature to be separate from 2FA workflow pages
+- Rename content identifier field label from "Number" to "Identifier"
 
 ### Removed
 - Officer profile page: Remove 'Active from ...' feature
