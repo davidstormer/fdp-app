@@ -227,6 +227,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -243,6 +244,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -259,6 +261,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -286,6 +289,7 @@
         - get_end_date_sql()
         - get_fk_model()
         - get_start_date_sql()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -320,6 +324,7 @@
         - get_end_date_sql()
         - get_fk_model()
         - get_start_date_sql()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -361,6 +366,7 @@
         - get_officer_profile_queryset()
         - get_person_incident_query()
         - get_title_sql()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -377,6 +383,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -399,6 +406,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -428,6 +436,7 @@
         - get_fk_model()
         - get_select_related()
         - get_start_date_sql()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -455,6 +464,7 @@
         - get_end_date_sql()
         - get_fk_model()
         - get_start_date_sql()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -475,6 +485,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -508,6 +519,7 @@
         - get_end_date_sql()
         - get_fk_model()
         - get_start_date_sql()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -524,6 +536,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -551,6 +564,7 @@
         - get_end_date_sql()
         - get_fk_model()
         - get_start_date_sql()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -577,6 +591,7 @@
         - get_end_date_sql()
         - get_fk_model()
         - get_start_date_sql()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -689,6 +704,21 @@
         - get_previous_by_date()
 
 
+# fdpuser.Eula
+    - Fields:
+        - id - AutoField
+        - file - FileField
+        - timestamp - DateTimeField
+    - Methods (non-private/internal):
+        - get_db_table()
+        - get_db_table_for_many_to_many()
+        - get_fk_model()
+        - get_next_by_timestamp()
+        - get_previous_by_timestamp()
+        - get_verbose_name()
+        - get_verbose_name_plural()
+
+
 # fdpuser.FdpCSPReport
     - Fields:
         - id - AutoField
@@ -735,6 +765,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -766,9 +797,11 @@
         - is_active - BooleanField
         - only_external_auth - BooleanField
         - fdp_organization - ForeignKey
+        - agreed_to_eula - DateTimeField
         - groups - ManyToManyField
         - user_permissions - ManyToManyField
     - Methods (non-private/internal):
+        - agrees_to_eula()
         - can_view_admin()
         - can_view_core()
         - check_password()
@@ -1038,6 +1071,7 @@
         - get_db_table_for_many_to_many()
         - get_fk_model()
         - get_prefetch()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1065,6 +1099,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1095,6 +1130,7 @@
         - get_prefetch()
         - get_select_related()
         - get_start_date_sql()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1117,6 +1153,7 @@
         - get_db_table_for_many_to_many()
         - get_fk_model()
         - get_prefetch()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1139,6 +1176,7 @@
         - get_db_table_for_many_to_many()
         - get_filtered_queryset()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1158,6 +1196,7 @@
         - get_db_table_for_many_to_many()
         - get_fk_model()
         - get_select_related()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1176,6 +1215,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1191,6 +1231,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1206,6 +1247,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1221,6 +1263,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1236,6 +1279,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1251,6 +1295,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1266,6 +1311,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1285,6 +1331,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1300,6 +1347,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1315,6 +1363,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1332,6 +1381,7 @@
         - get_db_table_for_many_to_many()
         - get_fk_model()
         - get_hierarchy_display()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1347,6 +1397,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1362,6 +1413,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1377,6 +1429,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1393,6 +1446,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1408,6 +1462,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1423,6 +1478,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1438,6 +1494,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1455,6 +1512,7 @@
         - get_db_table_for_many_to_many()
         - get_fk_model()
         - get_hierarchy_display()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1471,6 +1529,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1487,6 +1546,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1503,6 +1563,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1519,6 +1580,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1534,6 +1596,7 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1573,6 +1636,7 @@
         - get_fk_model()
         - get_next_by_timestamp()
         - get_previous_by_timestamp()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1593,6 +1657,7 @@
         - get_fk_model()
         - get_next_by_timestamp()
         - get_previous_by_timestamp()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
@@ -1609,7 +1674,8 @@
         - get_db_table()
         - get_db_table_for_many_to_many()
         - get_fk_model()
+        - get_verbose_name()
         - get_verbose_name_plural()
 
 
-# Total Models Listed: 87
+# Total Models Listed: 88
