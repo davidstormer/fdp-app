@@ -3,6 +3,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.util import random_hex
 from django_otp.oath import totp
 from django.utils.translation import ugettext_lazy as _
+from django.utils.timezone import now
 from django.urls import reverse, reverse_lazy
 from django.conf import settings
 from django.apps import apps
@@ -516,8 +517,13 @@ class AbstractTestCase(TestCase):
             base_url=AbstractUrlValidator.ATTACHMENT_BASE_URL
         )
 
-    def _create_fdp_user(self, is_host, is_administrator, is_superuser, password=None, email=None, email_counter=None):
-        """ Create a FDP user in the test database.
+    @classmethod
+    def _create_fdp_user_without_assert(
+            cls, is_host, is_administrator, is_superuser, password=None, email=None, email_counter=None
+    ):
+        """ Create a FDP user in the test database but does not assert its creation.
+
+        Use when creating FDP users in class methods such as in setUpTestData(...).
 
         :param password: Password to use for the FDP user. Omit to use default.
         :param is_host: True if FDP user is a host, false if it is a guest.
@@ -529,7 +535,7 @@ class AbstractTestCase(TestCase):
         :return: FDP user created in the test database.
         """
         if password is None:
-            password = self._password
+            password = cls._password
         if email is None:
             if email_counter is None:
                 email = 'donotreply@google.com'
@@ -542,8 +548,34 @@ class AbstractTestCase(TestCase):
             is_administrator=is_administrator,
             is_superuser=is_superuser
         )
+        # add agreement to EULA, so splash page does not interrupt view tests
+        fdp_user.agreed_to_eula = now()
         fdp_user.full_clean()
         fdp_user.save()
+        return fdp_user
+
+    def _create_fdp_user(self, is_host, is_administrator, is_superuser, password=None, email=None, email_counter=None):
+        """ Create a FDP user in the test database and asserts its creation.
+
+        Use when creating FDP users in instance methods.
+
+        :param password: Password to use for the FDP user. Omit to use default.
+        :param is_host: True if FDP user is a host, false if it is a guest.
+        :param is_administrator: True if FDP user is an administrator, false otherwise.
+        :param is_superuser: True if FDP user is a super user, false otherwise.
+        :param email: Email address for the FDP user. Omit to use default.
+        :param email_counter: Counter index to used to create unique email addresses. Will be ignored if email is
+        defined.
+        :return: FDP user created in the test database.
+        """
+        fdp_user = self._create_fdp_user_without_assert(
+            is_host=is_host,
+            is_administrator=is_administrator,
+            is_superuser=is_superuser,
+            password=password,
+            email=email,
+            email_counter=email_counter
+        )
         self.assertTrue(
             FdpUser.objects.filter(
                 pk=fdp_user.pk, is_host=is_host, is_administrator=is_administrator, is_superuser=is_superuser
@@ -692,7 +724,7 @@ class AbstractTestCase(TestCase):
         an FDP user.
 
         :param fdp_user: FDP user for which to send HTTP request through a GET method.
-        :param url: Url to which to send HTTP request throuhg a GET method.
+        :param url: Url to which to send HTTP request through a GET method.
         :param expected_status_code: Expected HTTP status code that is returned in the response.
         :param login_startswith: Url to which response may be redirected. Only used when HTTP status code is 302.
         :return: String representation of the HTTP response.

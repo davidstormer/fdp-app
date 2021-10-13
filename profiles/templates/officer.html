@@ -87,15 +87,6 @@
                     <label class="ident">{% translate 'Age' %}</label> <span class="identval">{{ object.age }}</span>
                 </div>
                 {% endif %}
-                {% if object.officer_start_date or object.officer_end_dates %}
-                <div>
-                    {% if object.officer_start_date %}
-                    <label class="ident">{% translate 'Active from' %}</label> <span class="identval">{{ object.officer_start_date }}</span>
-                    {% elif object.officer_end_date %}
-                    <label class="ident">{% translate 'Inactive since' %}</label> <span class="identval">{{ object.officer_end_date }}</span>
-                    {% endif %}
-                </div>
-                {% endif %}
                 {% if object.officer_traits %}
                 <div>
                     <label class="ident">{% translate 'Traits' %}</label>

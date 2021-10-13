@@ -9,12 +9,9 @@ from django.contrib.auth import logout
 from django.core.mail import mail_admins
 from django.core.validators import validate_ipv46_address, ValidationError
 from inheritable.models import Archivable, AbstractForeignKeyValidator, AbstractIpAddressValidator, \
-    AbstractConfiguration
+    AbstractConfiguration, Metable, AbstractFileValidator, AbstractUrlValidator
 from datetime import timedelta
 from cspreports.models import CSPReport
-from json import JSONDecodeError, loads as json_loads, dumps as json_dumps
-from ast import literal_eval
-from django.utils.safestring import mark_safe
 
 
 class FdpCSPReport(CSPReport):
@@ -160,6 +157,7 @@ class FdpUser(AbstractUser):
         :only_external_auth (bool): True if user can only be authenticated through an external authentication mechanism
         such as Azure Active Directory, false otherwise.
         :fdp_organization (fk): Organization to which user belongs. Blank is user is a host organization staff member.
+        :agreed_to_eula (datetime): Date and time that the user agreed to a EULA. None if user has not agreed to a EULA.
 
     Properties:
         :is_staff (bool): True if user has access to admin section, false otherwise.
@@ -244,6 +242,13 @@ class FdpUser(AbstractUser):
         help_text=_('Organization to which user belongs. If user belongs to the host organization, this can be left '
                     'blank.'),
         verbose_name=_('organization')
+    )
+
+    agreed_to_eula = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Date and time that the user agreed to a EULA. None if user has not agreed to a EULA.'),
+        verbose_name=_('EULA agreement')
     )
 
     @property
@@ -530,6 +535,15 @@ class FdpUser(AbstractUser):
                     # request completed. The user may have logged out in a concurrent request, for example.
                     session.delete()
 
+    def agrees_to_eula(self):
+        """ Records in the database the timestamp when a user agrees to the end-user license agreement.
+
+        :return: Nothing.
+        """
+        self.agreed_to_eula = now()
+        self.full_clean()
+        self.save()
+
     class Meta:
         db_table = '{d}fdp_user'.format(d=settings.DB_PREFIX)
         verbose_name = _('FDP User')
@@ -702,3 +716,81 @@ class PasswordReset(models.Model):
         db_table = '{d}password_reset'.format(d=settings.DB_PREFIX)
         verbose_name = _('Password reset')
         ordering = ['timestamp']
+
+
+class EulaManager(models.Manager):
+    """ Manager for a end-user license agreement (EULA).
+
+    """
+    def get_current_eula(self):
+        """ Retrieves the current EULA.
+
+        :return: Model instance representing current EULA, or None if no EULAs exist.
+        """
+        # no EULAs exist
+        if not self.all().exists():
+            return None
+        # some EULAs exist
+        else:
+            return self.all().order_by('-timestamp').first()
+
+
+class Eula(Metable):
+    """ An end-user license agreement (EULA).
+
+    Attributes:
+        :file (file): File containing EULA.
+        :timestamp (datetime): Automatically added timestamp for when EULA was uploaded.
+    """
+    file = models.FileField(
+        upload_to=f'{AbstractUrlValidator.EULA_BASE_URL}%Y/%m/%d/%H/%M/%S/',
+        blank=False,
+        null=False,
+        validators=[
+            AbstractFileValidator.validate_eula_file_size,
+            AbstractFileValidator.validate_eula_file_extension
+        ],
+        max_length=AbstractFileValidator.MAX_EULA_FILE_LEN,
+        verbose_name=_('File'),
+        help_text=_('End-user license agreement file. Should be less than {s}MB.'.format(
+            s=AbstractFileValidator.get_megabytes_from_bytes(
+                num_of_bytes=AbstractConfiguration.max_eula_file_bytes()
+            )
+        )),
+        unique=True,
+    )
+
+    timestamp = models.DateTimeField(
+        null=False,
+        blank=False,
+        auto_now_add=True,
+        help_text=_('Automatically added timestamp for when EULA was uploaded'),
+        verbose_name=_('timestamp')
+    )
+
+    @property
+    def status(self):
+        """ Retrieves the status for the EULA.
+
+        If this is the most recently added EULA, it is considered current. Otherwise, it is considered archived.
+
+        :return: String representation of the status for the EULA.
+        """
+        current_eula = Eula.objects.get_current_eula()
+        return _('Current') if current_eula is None or self.timestamp >= current_eula.timestamp else _('Archived')
+
+    objects = EulaManager()
+
+    def __str__(self):
+        """ Defines string representation for an end-user license agreement.
+
+        :return: String representation for an end-user license agreement.
+        """
+        added = _('added')
+        return f'{self.get_verbose_name()} {added} {self.timestamp}'
+
+    class Meta:
+        db_table = '{d}eula'.format(d=settings.DB_PREFIX)
+        verbose_name = _('EULA')
+        verbose_name_plural = _('EULAs')
+        ordering = ['-timestamp']
