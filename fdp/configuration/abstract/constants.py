@@ -45,6 +45,11 @@ CONST_AZURE_AUTH_BACKEND = 'social_core.backends.azuread_tenant.AzureADTenantOAu
 CONST_AZURE_AD_PROVIDER = 'azuread-tenant-oauth2'
 
 
+#: Value for the default maximum number of bytes that a user-uploaded file can have for an instance of the
+# Eula (end-user license agreement) model.
+CONST_MAX_EULA_FILE_BYTES = 104857600
+
+
 #: Value for the default maximum number of bytes that a user-uploaded file can have for an instance of the Attachment
 # model.
 CONST_MAX_ATTACHMENT_FILE_BYTES = 104857600
@@ -52,6 +57,15 @@ CONST_MAX_ATTACHMENT_FILE_BYTES = 104857600
 
 #: Value for the maximum number of bytes that a user-uploaded file can have for an instance of the Person Photo model.
 CONST_MAX_PERSON_PHOTO_FILE_BYTES = 2097152
+
+
+#: A list of tuples that define the types of user-uploaded files that are supported for an instance of the
+# Eula (end-user license agreement) model. Each tuple has two items: the first is a user-friendly short description of
+# the supported file type; the second is the expected extension of the supported file type.
+CONST_SUPPORTED_EULA_FILE_TYPES = [
+    ('Adobe PDF', 'pdf'), ('Microsoft Word 97-2003', 'doc'), ('Microsoft Word 2007+', 'docx'), ('Text file', 'txt'),
+    ('Rich-text format', 'rtf')
+]
 
 
 #: A list of tuples that define the types of user-uploaded files that are supported for an instance of the Attachment

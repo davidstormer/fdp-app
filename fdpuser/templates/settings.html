@@ -5,6 +5,7 @@
 
 {% block extrastyle %}
     {{ block.super }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
     {% compress css %}
     <link rel="stylesheet" type="text/css" href="{% static 'fdpuser/css/settings.css' %}">
     {% endcompress %}
@@ -13,7 +14,7 @@
 {% if not is_popup %}
 {% block breadcrumbs %}
 <div class="breadcrumbs">
-    <a href="{% url 'profiles:index' %}">{% trans 'Home' %}</a>
+    <a href="{% url 'profiles:index' %}">{% translate 'Home' %}</a>
     &rsaquo;
     {{ title }}
 </div>
@@ -28,28 +29,47 @@
 
     {% if email %}
     <div class="labelvalue">
-        <label>{% trans 'Email' %}</label> <span>{{ email }}</span>
+        <label>{% translate 'Email' %}</label> <span>{{ email }}</span>
     </div>
     <div class="clear"></div>
     {% endif %}
 
     {% if name %}
     <div class="labelvalue">
-        <label>{% trans 'Name' %}</label> <span>{{ name }}</span>
+        <label>{% translate 'Name' %}</label> <span>{{ name }}</span>
     </div>
     <div class="clear"></div>
     {% endif %}
 
     {% if role %}
     <div class="labelvalue">
-        <label>{% trans 'Role' %}</label> <span>{{ role }}</span>
+        <label>{% translate 'Role' %}</label> <span>{{ role }}</span>
     </div>
     <div class="clear"></div>
     {% endif %}
 
     {% if fdp_organization %}
     <div class="labelvalue">
-        <label>{% trans 'Organization' %}</label> <span>{{ fdp_organization }}</span>
+        <label>{% translate 'Organization' %}</label> <span>{{ fdp_organization }}</span>
+    </div>
+    <div class="clear"></div>
+    {% endif %}
+
+    {% is_eula_splash_enabled as has_eula %}
+    {% if has_eula %}
+    <div class="labelvalue">
+        <label>{% if eula_agreement %}<i class="ok fas fa-check-circle"></i>{% else %}<i class="notok fas fa-exclamation-circle"></i>{% endif %}</label>
+        <span>{% if eula_agreement %}{% translate 'I agreed on' %}
+            {{ eula_agreement }}
+            {% translate 'to' %}
+                {% if current_eula %}
+                <a class="eula" href="{{ current_eula.file.url }}" rel="noopener noreferrer" target="_blank" download>{% translate 'the end-user license agreement' %}</a>
+                {% else %}
+                {% translate 'the end-user license agreement to be added' %}
+                {% endif %}
+            {% else %}{% translate 'No end-user license agreement' %}
+            {% endif %}
+        </span>
     </div>
     <div class="clear"></div>
     {% endif %}
@@ -60,7 +80,7 @@
 
     {% else %}
     <div class="labelvalue">
-        <a href="{% url 'two_factor:profile' %}">{% trans 'Manage Two-Factor Authentication' %}</a>
+        <a href="{% url 'two_factor:profile' %}">{% translate 'Manage Two-Factor Authentication' %}</a>
     </div>
     <div class="clear"></div>
     {% endif %}
@@ -68,7 +88,7 @@
     {% is_password_reset_configured as has_password_reset %}
     {% if has_password_reset and user.has_usable_password and user.has_changeable_password %}
     <div class="labelvalue">
-        <a href="{% url 'fdpuser:confirm_password_change' %}">{% trans 'Change password' %}</a>
+        <a href="{% url 'fdpuser:confirm_password_change' %}">{% translate 'Change password' %}</a>
     </div>
     <div class="clear"></div>
     {% endif %}

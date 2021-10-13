@@ -1,37 +1,7 @@
 {% extends "two_factor/_base_focus.html" %}
 {% load i18n static %}
 
-{% block extrahead %}
-    {{ block.super }}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-{% endblock %}
-
 {% block content %}
-  <div id="terms">
-    <h1>{% trans "End User License Agreement" %}</h1>
-    <p>
-      {% trans 'Please review and accept the' %}
-      <a class="eula" href="{% static 'pdf/eula.pdf' %}" rel="noopener noreferrer" target="_blank" download>
-        {% trans 'end user license agreement' %}</a>.
-    </p>
-    <p>
-      <input id="agreed" type="checkbox" name="agreed" />
-      <script type="text/javascript" nonce="{{ request.csp_nonce }}">
-        $( document ).ready(function() {
-          $("#agreed").one("click", function () {
-            $("#terms").hide();
-            $("#enable").show();
-          });
-        });
-      </script>
-      {% trans 'I' %}
-      <strong>{% trans 'understand and agree' %}</strong>
-      {% trans 'to the end user license agreement.' %}
-    </p>
-
-  </div>
-
-  <div id="enable">
     <h1>{% block title %}{% trans "Enable 2FA" %}{% endblock %}</h1>
 
     <p>{% blocktrans %}The page you requested enforces users to verify using
@@ -45,5 +15,4 @@
       <a href="{% url 'two_factor:setup' %}" class="btn btn-primary">
       {% trans "Enable Two-Factor Authentication" %}</a>
     </p>
-  </div>
 {% endblock %}

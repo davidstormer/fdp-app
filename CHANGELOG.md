@@ -4,7 +4,14 @@ All releases will be logged in this file.
 
 
 ## [2.1.0] - 2021-10-12
-Bug fix release
+
+### Added
+- Add demo content via fixture file
+- Add database schema report file data_model.md
+
+### Changed
+- Add EULA upload feature and change splash page feature to be separate from 2FA workflow pages
+- Rename content identifier field label from "Number" to "Identifier"
 
 ### Removed
 - Officer profile page: Remove 'Active from ...' feature
