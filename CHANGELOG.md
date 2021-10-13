@@ -2,6 +2,12 @@
 
 All releases will be logged in this file.
 
+## [2.1.0] - 2021-10-12
+Bug fix release
+
+### Removed
+- Officer profile page: Remove 'Active from ...' feature
+
 ## [2.0.0] - 2021-08-XX
 Major release
 
