@@ -2,6 +2,20 @@
 
 All releases will be logged in this file.
 
+
+## [2.1.0] - 2021-10-12
+
+### Added
+- Add demo content via fixture file
+- Add database schema report file data_model.md
+
+### Changed
+- Add EULA upload feature and change splash page feature to be separate from 2FA workflow pages
+
+### Removed
+- Officer profile page: Remove 'Active from ...' feature
+
+
 ## [2.0.0] - 2021-09-21
 Major release
 
