@@ -1,5 +1,6 @@
 {% extends "common/fdp_base_site.html" %}
 {% load i18n admin_urls static compress profiles_extras %}
+{% block bodyclass %}profile officer fdpbody{% endblock %}
 
 {% block extrahead %}
     {{ block.super }}
@@ -15,6 +16,7 @@
     {% compress css %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/responsive_grid.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/collapsible.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/profile.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/officer.css' %}">
     {% endcompress %}
 {% endblock %}
@@ -33,31 +35,14 @@
 {% endblock %}
 {% endif %}
 
+{% block content_title %} {% endblock %}
+
 {% block content %}
 
-    <h2>
-        <span class="h2main">{{ object.name }}</span>
-        {% if has_attachments %}
-        <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
-            <span class="h2lower"><i class="fas fa-file-archive"></i></span>
-            <span class="h2upper">{% translate 'Download' %}</span>
-            <span class="h2upper">{% translate 'All' %}</span>
-        </span></a>
-        {% endif %}
-        <span class="h2wrap" id="i_expandall">
-            <span class="h2lower"><i class="fas fa-plus-square"></i></span>
-            <span class="h2upper">{% translate 'Expand' %}</span>
-            <span class="h2upper">{% translate 'All' %}</span>
-        </span>
-        <span class="h2wrap" id="i_collapseall">
-            <span class="h2lower"><i class="fas fa-minus-square"></i></span>
-            <span class="h2upper">{% translate 'Collapse' %}</span>
-            <span class="h2upper">{% translate 'All' %}</span>
-        </span>
-    </h2>
+    <h1>{{ object.name }}</h1>
 
-    <button type="button" class="collapsible expanded">{% translate 'Identification' %}</button>
-    <div class="collapsible">
+    <section class="identification">
+        <h2>Identification</h2>
         <div class="gridrow gridgroup">
             <div class="gridcol gridcell_1_of_3">
 
@@ -141,11 +126,10 @@
 
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
         </div> <!-- div.gridrow.gridgroup -->
+    </section> <!-- section.identification -->
 
-    </div> <!-- div.collapsible -->
-
-    <button type="button" class="collapsible expanded">{% translate 'Payroll' %}</button>
-    <div class="collapsible">
+    <section class="payroll">
+        <h2>{% translate 'Payroll' %}</h2>
         {% if object.officer_payments %}
             <table>
                 <thead>
@@ -178,9 +162,9 @@
         {% else %}
             <p class="nodata">{% translate 'No payroll is recorded for this officer.' %}</p>
         {% endif %}
-    </div> <!-- div.collapsible -->
-    <button type="button" class="collapsible expanded">{% translate 'Associates' %}</button>
-    <div class="collapsible">
+    </section> <!-- section.payroll -->
+    <section class="associates">
+        <h2>Associates</h2>
         {% if object.officer_relationships %}
             <ul class="rel">
                 {% for officer_relationship in object.officer_relationships %}
@@ -199,10 +183,9 @@
         {% else %}
             <p class="nodata">{% translate 'No associates are recorded for this officer.' %}</p>
         {% endif %}
-    </div> <!-- div.collapsible -->
-    <button type="button" class="collapsible expanded">{% translate 'Snapshot' %}</button>
-    <div class="collapsible">
-
+    </section> <!-- section.associates -->
+    <section class="snapshot">
+        <h2>Snapshot</h2>
         <div class="gridrow gridgroup">
             <div class="gridcol gridcell_1_of_3">
 
@@ -254,10 +237,38 @@
 
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
         </div> <!-- div.gridrow.gridgroup -->
-    </div> <!-- div.collapsible -->
+    </section> <!-- section.snapshot -->
 
-    <button type="button" class="collapsible expanded">{% translate 'Misconduct' %}</button>
-    <div class="collapsible">
+    <section class="misconduct">
+
+        <h2>Misconduct</h2>
+
+        <!--
+                {% if has_attachments %}
+        <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
+            <span class="h2lower"><i class="fas fa-file-archive"></i></span>
+            <span class="h2upper">{% translate 'Download' %}</span>
+            <span class="h2upper">{% translate 'All' %}</span>
+        </span></a>
+        {% endif %}
+
+
+        -->
+
+        <div class="collapsible-controls">
+            <span class="h2wrap" id="i_expandall">
+                <span class="h2lower"><i class="fas fa-plus-square"></i></span>
+                <span class="h2upper">{% translate 'Expand' %}</span>
+                <span class="h2upper">{% translate 'All' %}</span>
+            </span>
+            &nbsp;
+            <span class="h2wrap" id="i_collapseall">
+                <span class="h2lower"><i class="fas fa-minus-square"></i></span>
+                <span class="h2upper">{% translate 'Collapse' %}</span>
+                <span class="h2upper">{% translate 'All' %}</span>
+            </span>
+        </div>
+
         {% if object.officer_misconducts or object.officer_contents %}
         {% for officer_misconduct in object.officer_misconducts %}
         <div class="mispad">
@@ -441,7 +452,7 @@
         {% else %}
             <p class="nodata">{% translate 'No misconduct is recorded for this officer.' %}</p>
         {% endif %}
-    </div> <!-- div.collapsible -->
+    </section> <!-- section.misconduct -->
 
 {% endblock %}
 
