@@ -1,0 +1,36 @@
+/* Detail pages */
+
+body.profile.officer div.main {
+    margin-top: 2em;
+}
+
+body.profile.officer h1 {
+    font-size: 3em;
+}
+
+h2 {
+    color: #417690
+}
+section {
+    margin-top: 3em;
+}
+section h2 {
+    overflow: hidden;
+    margin-bottom: 2em;
+}
+
+section h2:after {
+    background-color: #417690;
+    content: "";
+    display: inline-block;
+    height: 1px;
+    position: relative;
+    vertical-align: middle;
+    width: 100%;
+    left: 2em;
+    margin-right: -50%;
+}
+
+div.collapsible-controls {
+    margin-bottom: 1em;
+}
