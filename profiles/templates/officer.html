@@ -272,7 +272,7 @@
         {% if object.officer_misconducts or object.officer_contents %}
         {% for officer_misconduct in object.officer_misconducts %}
         <div class="mispad">
-            <button type="button" class="collapsible expanded">{% if not officer_misconduct.incident.exact_bounding_dates %}{% translate 'On an unknown date' %}{% else %}{{ officer_misconduct.incident.exact_bounding_dates|capfirst }}{% endif %}</button>
+            <h3><button type="button" class="collapsible expanded">{% if not officer_misconduct.incident.exact_bounding_dates %}{% translate 'On an unknown date' %}{% else %}{{ officer_misconduct.incident.exact_bounding_dates|capfirst }}{% endif %}</button></h3>
             <div class="collapsible">
                 <div class="gridrow gridgroup">
                     <div class="gridcol gridcell_1_of_2">
@@ -362,14 +362,14 @@
         {% for content_person in object.officer_contents %}
         {% with content=content_person.content %}
         <div class="mispad">
-            <button type="button" class="collapsible expanded">
+            <h3><button type="button" class="collapsible expanded">
                 {% if content.type %}{{ content.type }}{% endif %}
                 {% for content_identifier in content.officer_content_identifiers %}
                     {{ content_identifier.identifier }}{% if not forloop.last %},{% endif %}
                 {% empty %}
                     {% translate 'Unnamed' %}
                 {% endfor %}
-            </button>
+            </button></h3>
             <div class="collapsible">
                 <div class="gridrow gridgroup">
                     <div class="gridcol gridcell_1_of_2">
