@@ -1,5 +1,7 @@
 /* Detail pages */
-
+.primary-color {
+    color: #417690;
+}
 body.profile.officer div.main {
     margin-top: 2em;
 }
@@ -8,18 +10,30 @@ body.profile.officer div.main h1 {
     font-size: 3em;
 }
 
-h2 {
-    color: #417690
+body.profile.officer h2 {
+    color: #417690;
+    font-size: 32px !important;
+    font-weight: normal;
 }
 section {
     margin-top: 3em;
 }
-section h2 {
+
+section div.section-heading h2 {
+    display: inline;
+    margin-right: .7em;
+}
+
+section div.section-heading {
     overflow: hidden;
     margin-bottom: 2em;
 }
 
-section h2:after {
+section div.section-heading i.fas {
+    vertical-align: 10%;
+}
+
+section div.section-heading:after {
     background-color: #417690;
     content: "";
     display: inline-block;
