@@ -12,6 +12,7 @@ from supporting.models import State, Trait, PersonRelationshipType, Location, Pe
     Title, GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
     PersonIncidentTag, LeaveStatus, SituationRole, TraitType
 from fdpuser.models import FdpOrganization
+from django.urls import reverse
 from datetime import date
 
 
@@ -82,6 +83,10 @@ class Person(Confidentiable, Descriptable):
     #: Fields to display in the model form.
     form_fields = \
         ['name', 'birth_date_range_start', 'birth_date_range_end', 'traits'] + Confidentiable.confidentiable_form_fields
+
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_person', args=(self.pk,))
 
     def __get_birth_date(self):
         """ Retrieve the human-friendly version of the person's birth date.

@@ -6,6 +6,7 @@ from core.models import Person, PersonIncident, Incident, PersonRelationship, Gr
 from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase
 from supporting.models import PersonRelationshipType, ContentIdentifierType
 from os.path import splitext
+from django.test import Client
 import logging
 
 logger = logging.getLogger(__name__)

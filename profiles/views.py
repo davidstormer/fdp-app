@@ -356,7 +356,7 @@ class OfficerDetailView(SecuredSyncDetailView):
             'settlement_amount_total_key': self.__settlement_amount_total_key,
             'attachments_key': self.__attachments_key,
             'strings_key': self.__strings_key,
-            'links_key': self.__links_key
+            'links_key': self.__links_key,
         })
         return context
 

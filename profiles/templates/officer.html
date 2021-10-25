@@ -39,10 +39,17 @@
 
 {% block content %}
 
-    <h1>{{ object.name }}</h1>
+    <h1>{{ object.name }} </h1>
 
     <section class="identification">
-        <h2>Identification</h2>
+        <div class="section-heading">
+            <h2>Identification</h2>
+            {% if is_admin %}
+            <span class="admin-actions">
+                <a href="{{ object.get_edit_url }}"> <i class="fas fa-edit" aria-hidden="true"></i> edit</a>
+            </span>
+            {% endif %}
+        </div>
         <div class="gridrow gridgroup">
             <div class="gridcol gridcell_1_of_3">
 
@@ -129,7 +136,14 @@
     </section> <!-- section.identification -->
 
     <section class="payroll">
-        <h2>{% translate 'Payroll' %}</h2>
+        <div class="section-heading">
+            <h2>{% translate 'Payroll' %}</h2>
+            {% if is_admin %}
+            <span class="admin-actions">
+                <a href="{{ object.get_edit_url }}"> <i class="fas fa-edit" aria-hidden="true"></i> edit</a>
+            </span>
+            {% endif %}
+        </div>
         {% if object.officer_payments %}
             <table>
                 <thead>
@@ -164,7 +178,14 @@
         {% endif %}
     </section> <!-- section.payroll -->
     <section class="associates">
-        <h2>Associates</h2>
+        <div class="section-heading">
+            <h2>{% translate 'Associates' %}</h2>
+            {% if is_admin %}
+            <span class="admin-actions">
+                <a href="{{ object.get_edit_url }}"> <i class="fas fa-edit" aria-hidden="true"></i> edit</a>
+            </span>
+            {% endif %}
+        </div>
         {% if object.officer_relationships %}
             <ul class="rel">
                 {% for officer_relationship in object.officer_relationships %}
@@ -185,7 +206,14 @@
         {% endif %}
     </section> <!-- section.associates -->
     <section class="snapshot">
-        <h2>Snapshot</h2>
+        <div class="section-heading">
+            <h2>{% translate 'Snapshot' %}</h2>
+            {% if is_admin %}
+            <span class="admin-actions">
+                <i class="fas fa-lock primary-color" aria-hidden="true" title="System generated. Cannot be edited directly."></i>
+            </span>
+            {% endif %}
+        </div>
         <div class="gridrow gridgroup">
             <div class="gridcol gridcell_1_of_3">
 
@@ -241,33 +269,27 @@
 
     <section class="misconduct">
 
-        <h2>Misconduct</h2>
-
-        <!--
+        <div class="section-heading">
+            <h2>Misconduct</h2>
+            <span class="admin-actions">
                 {% if has_attachments %}
-        <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
-            <span class="h2lower"><i class="fas fa-file-archive"></i></span>
-            <span class="h2upper">{% translate 'Download' %}</span>
-            <span class="h2upper">{% translate 'All' %}</span>
-        </span></a>
-        {% endif %}
-
-
-        -->
-
-        <div class="collapsible-controls">
-            <span class="h2wrap" id="i_expandall">
-                <span class="h2lower"><i class="fas fa-plus-square"></i></span>
-                <span class="h2upper">{% translate 'Expand' %}</span>
-                <span class="h2upper">{% translate 'All' %}</span>
-            </span>
-            &nbsp;
-            <span class="h2wrap" id="i_collapseall">
-                <span class="h2lower"><i class="fas fa-minus-square"></i></span>
-                <span class="h2upper">{% translate 'Collapse' %}</span>
-                <span class="h2upper">{% translate 'All' %}</span>
+                <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
+                    <span class="h2lower"><i class="fas fa-file-archive"></i></span>
+                    <span class="h2upper">{% translate 'Download all attachments' %}</span>
+                </span></a>
+                {% endif %}
             </span>
         </div>
+
+        <span id="i_expandall">
+            <span>{% translate 'Expand' %}</span>
+            <span>{% translate 'All' %}</span>
+        </span>
+        |
+        <span id="i_collapseall">
+            <span>{% translate 'Collapse' %}</span>
+            <span>{% translate 'All' %}</span>
+        </span>
 
         {% if object.officer_misconducts or object.officer_contents %}
         {% for officer_misconduct in object.officer_misconducts %}
