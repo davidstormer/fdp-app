@@ -29,7 +29,6 @@ from core.models import Person, PersonIdentifier, Grouping, GroupingAlias, Group
 from abc import abstractmethod
 from urllib.parse import urlparse
 import logging
-from django.contrib.messages.views import SuccessMessageMixin
 
 logger = logging.getLogger(__name__)
 
@@ -1447,14 +1446,13 @@ class PersonCreateView(AdminSyncCreateView, AbstractPersonView):
         return self.form_invalid(form=form)
 
 
-class PersonUpdateView(SuccessMessageMixin, AdminSyncUpdateView, AbstractPersonView):
+class PersonUpdateView(AdminSyncUpdateView, AbstractPersonView):
     """ Page through which existing person can be updated.
 
     """
     model = AbstractPersonView._model
     form_class = AbstractPersonView._form_class
     template_name = AbstractPersonView._template_name
-    success_message = "%(name)s updated"
 
     def get_success_url(self):
         """ Send the user to the default success url (data management home page),
@@ -1878,7 +1876,7 @@ class IncidentCreateView(AdminSyncCreateView, AbstractIncidentView):
 
 class IncidentUpdateView(AdminSyncUpdateView, AbstractIncidentView):
     """ Page through which existing incident can be updated.
-
+    At the end, either bounce to the next= path or go to the default success url (e.g. homepage)
     """
     model = AbstractIncidentView._model
     form_class = AbstractIncidentView._form_class
@@ -1962,6 +1960,18 @@ class IncidentUpdateView(AdminSyncUpdateView, AbstractIncidentView):
         if next_incident_id is not None:
             return reverse('changing:edit_incident', kwargs={'pk': next_incident_id, 'content_id': self.content_id})
         # there are no more incidents to update
+
+        next_parsed_path = urlparse(self.request.GET.get('next'))
+
+        # Check for suspicious/malformed submissions
+        if next_parsed_path.netloc or next_parsed_path.scheme:
+            logger.warning(f"PersonUpdateView: {self.request.GET.get('next')} suspicious 'next' path.")
+            return self._get_success_url()
+
+        # If there is a valid path take me there
+        if next_parsed_path.path:
+            return next_parsed_path.path
+
         else:
             return self._get_success_url()
 

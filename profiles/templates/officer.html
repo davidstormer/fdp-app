@@ -300,7 +300,7 @@
                     {% if is_admin %}
                     &nbsp;
                     <span class="admin-actions">
-                        <a href="{{ officer_misconduct.incident.get_edit_url }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                        <a href="{{ officer_misconduct.incident.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
                     </span>
                     {% endif %}
 
