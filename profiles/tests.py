@@ -1315,3 +1315,35 @@ class ProfileTestCase(AbstractTestCase):
         self.__test_content_identifier_for_command_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         logger.debug(_('\nSuccessfully finished test for for Command Profile view for '
                 'all permutations of user roles, confidentiality levels and relevant models\n\n'))
+
+    @local_test_settings_required
+    def test_edit_links_visible_to_admins_only(self):
+        # Given there is a Person record in the system
+        person_record = Person.objects.create(name="Test person")
+        # Given I'm logged in as an admin user
+        email_counter = FdpUser.objects.all().count()
+        fdp_user = self._create_fdp_user(
+            is_host=True,
+            is_administrator=True,
+            is_superuser=False,
+            email_counter=email_counter
+        )
+        client = Client(**self._local_client_kwargs)
+        two_factor = self._create_2fa_record(user=fdp_user)
+        # log in user
+        login_response = self._do_login(
+            c=client,
+            username=fdp_user.email,
+            password=self._password,
+            two_factor=two_factor,
+            login_status_code=200,
+            two_factor_status_code=200,
+            will_login_succeed=True
+        )
+
+        # When I go to a person profile page
+        response = client.get(reverse(self._officer_profile_view_name, kwargs={'pk': person_record.pk}),
+                                   follow=True)
+        # Then I should see edit links
+        print(response.content)
+        self.assertContains(response, 'edit')

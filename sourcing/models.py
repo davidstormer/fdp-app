@@ -11,6 +11,7 @@ from supporting.models import ContentType, Court, ContentIdentifierType, Content
     AttachmentType, SituationRole, Allegation, AllegationOutcome
 from fdpuser.models import FdpOrganization
 from core.models import Person, Incident
+from django.urls import reverse
 
 
 class Attachment(Confidentiable, Descriptable):
@@ -378,6 +379,9 @@ class Content(Confidentiable, Descriptable):
             models.UniqueConstraint(fields=['link'], name='uq_content_link', condition=Q(~Q(link__iexact='')))
         ]
 
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_content', kwargs={"pk": self.pk})
 
 class ContentIdentifier(Confidentiable, Descriptable):
     """ Identifier for content such as a lawsuit number, IAB case number, etc.

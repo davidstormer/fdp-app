@@ -10,18 +10,25 @@ body.profile.officer div.main h1 {
     font-size: 3em;
 }
 
-body.profile.officer h2 {
+body.profile.officer div.main h2 {
     color: #417690;
     font-size: 32px !important;
     font-weight: normal;
 }
+
+/* edit links for each incident (within accordion <button> element...) */
+body.profile.officer div.main button.collapsible span.admin-actions {
+    font-size: 14px;
+    vertical-align: 10%;
+}
+
 section {
     margin-top: 3em;
 }
 
 section div.section-heading h2 {
     display: inline;
-    margin-right: .7em;
+    margin-right: .2em;
 }
 
 section div.section-heading {
@@ -47,4 +54,8 @@ section div.section-heading:after {
 
 div.collapsible-controls {
     margin-bottom: 1em;
+}
+
+button.collapsible:before {
+    display: none;
 }
