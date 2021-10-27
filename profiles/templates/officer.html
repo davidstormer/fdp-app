@@ -46,7 +46,7 @@
             <h2>Identification</h2>
             {% if is_admin %}
             <span class="admin-actions">
-                <a href="{{ object.get_edit_url }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                <a href="{{ object.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
             </span>
             {% endif %}
         </div>
@@ -140,7 +140,7 @@
             <h2>{% translate 'Payroll' %}</h2>
             {% if is_admin %}
             <span class="admin-actions">
-                <a href="{{ object.get_edit_url }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                <a href="{{ object.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
             </span>
             {% endif %}
         </div>
@@ -182,7 +182,7 @@
             <h2>{% translate 'Associates' %}</h2>
             {% if is_admin %}
             <span class="admin-actions">
-                <a href="{{ object.get_edit_url }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                <a href="{{ object.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
             </span>
             {% endif %}
         </div>
