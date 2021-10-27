@@ -1793,6 +1793,7 @@ class IncidentCreateView(AdminSyncCreateView, AbstractIncidentView):
             for_host_only = content_data.get(AbstractUrlValidator.GET_FOR_HOST_ONLY_PARAM, None)
             for_admin_only = content_data.get(AbstractUrlValidator.GET_FOR_ADMIN_ONLY_PARAM, None)
             fdp_orgs = content_data.get(AbstractUrlValidator.GET_ORGS_PARAM, None)
+
             initial.update(
                 {
                     'incident_started': DateWithComponentsField.compress_vals(

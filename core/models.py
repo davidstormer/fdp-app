@@ -2114,6 +2114,10 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         )
         return str_rep
 
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_incident', kwargs={"pk": self.pk, "content_id": 0})
+
     @classmethod
     def filter_for_admin(cls, queryset, user):
         """ Filter a queryset for the admin interfaces.
