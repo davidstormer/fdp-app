@@ -6,6 +6,7 @@ from core.models import Person, PersonIncident, Incident, PersonRelationship, Gr
 from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase
 from supporting.models import PersonRelationshipType, ContentIdentifierType
 from os.path import splitext
+from django.test import Client
 import logging
 
 logger = logging.getLogger(__name__)
@@ -1316,3 +1317,36 @@ class ProfileTestCase(AbstractTestCase):
         self.__test_content_identifier_for_command_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         logger.debug(_('\nSuccessfully finished test for for Command Profile view for '
                 'all permutations of user roles, confidentiality levels and relevant models\n\n'))
+
+    @local_test_settings_required
+    def test_strange_404(self):
+        # Given there is a Person record in the system
+        person_record = Person.objects.create(name="Test person record")
+        # Given I'm logged in as an admin user
+        email_counter = FdpUser.objects.all().count()
+        fdp_user = self._create_fdp_user(
+            is_host=True,
+            is_administrator=True,
+            is_superuser=False,
+            email_counter=email_counter
+        )
+        client = Client(**self._local_client_kwargs)
+        two_factor = self._create_2fa_record(user=fdp_user)
+        login_response = self._do_login(
+            c=client,
+            username=fdp_user.email,
+            password=self._password,
+            two_factor=two_factor,
+            login_status_code=200,
+            two_factor_status_code=200,
+            will_login_succeed=True
+        )
+        # Given when I go to the homepage I get a 200 not a 400
+        self.assertEqual(200, client.get('/', follow=True).status_code)
+
+        # When I go to a person profile page
+        print(f"Going to {reverse(self._officer_profile_view_name, kwargs={'pk': person_record.pk})}")
+        response = client.get(reverse(self._officer_profile_view_name, kwargs={'pk': person_record.pk}),
+                              follow=True)
+        # Then I should get a 200
+        self.assertEqual(200, response.status_code)

@@ -332,6 +332,13 @@ class OfficerDetailView(SecuredSyncDetailView):
     #: Links key in the dictionary for the profile parsed content section
     __links_key = 'links'
 
+    def get(self, *args, **kwargs):
+        print("~~ OfficerDetailView.get() called! ~~")
+        print(f"args: {args}")
+        print(f"kwargs: {kwargs}")
+        print(f"Person.objects.get(pk=kwargs['pk'])): {Person.objects.get(pk=kwargs['pk'])}")
+        return super(OfficerDetailView, self).get(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """ Adds the title, description and search form to the view context.
 
