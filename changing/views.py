@@ -27,6 +27,12 @@ from .forms import WizardSearchForm, GroupingModelForm, GroupingAliasModelFormSe
 from core.models import Person, PersonIdentifier, Grouping, GroupingAlias, GroupingRelationship, Incident, \
     PersonGrouping, PersonRelationship, PersonIncident, GroupingIncident
 from abc import abstractmethod
+from urllib.parse import urlparse
+import logging
+from django.contrib.messages.views import SuccessMessageMixin
+
+logger = logging.getLogger(__name__)
+
 # Load a customized algorithm for person searches
 ChangingPersonSearch = AbstractImport.load_changing_search(
     file_setting='FDP_PERSON_CHANGING_SEARCH_FILE',
@@ -1441,19 +1447,34 @@ class PersonCreateView(AdminSyncCreateView, AbstractPersonView):
         return self.form_invalid(form=form)
 
 
-class PersonUpdateView(AdminSyncUpdateView, AbstractPersonView):
+class PersonUpdateView(SuccessMessageMixin, AdminSyncUpdateView, AbstractPersonView):
     """ Page through which existing person can be updated.
 
     """
     model = AbstractPersonView._model
     form_class = AbstractPersonView._form_class
     template_name = AbstractPersonView._template_name
+    success_message = "%(name)s updated"
 
     def get_success_url(self):
-        """ Retrieves the link to the data management home page.
+        """ Send the user to the default success url (data management home page),
+        or if provided, bounce them to the next= argument passed via the URL.
 
         :return: Link to data management home page.
         """
+
+        next_parsed_path = urlparse(self.request.GET.get('next'))
+
+        # Check for suspicious/malformed submissions
+        if next_parsed_path.netloc or next_parsed_path.scheme:
+            logger.warning(f"PersonUpdateView: {self.request.GET.get('next')} suspicious 'next' path.")
+            return self._get_success_url()
+
+        # If there is a valid path take me there
+        if next_parsed_path.path:
+            return next_parsed_path.path
+
+        # If all else fails take me to the default success url
         return self._get_success_url()
 
     def get_context_data(self, **kwargs):
