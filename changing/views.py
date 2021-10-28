@@ -62,6 +62,24 @@ ChangingGroupingSearch = AbstractImport.load_changing_search(
 )
 
 
+def get_next_url(next_path: str, fallback: str) -> str:
+    """Helper function that returns the default success url (data management home page),
+    or if provided, the next= argument passed via the URL."""
+
+    next_parsed_path = urlparse(next_path)
+
+    # Check for suspicious/malformed submissions
+    if next_parsed_path.netloc or next_parsed_path.scheme:
+        logger.warning(f"PersonUpdateView: {next_path} suspicious 'next' path.")
+        return fallback
+
+    # If there is a valid path take me there
+    if next_parsed_path.path:
+        return next_parsed_path.path
+
+    # If all else fails take me to the default success url
+    return fallback
+
 class AbstractPopupView(PopupContextMixin):
     """ Abstract view from which pages adding and editing models in a popup context inherit.
 
@@ -1461,19 +1479,7 @@ class PersonUpdateView(AdminSyncUpdateView, AbstractPersonView):
         :return: Link to data management home page.
         """
 
-        next_parsed_path = urlparse(self.request.GET.get('next'))
-
-        # Check for suspicious/malformed submissions
-        if next_parsed_path.netloc or next_parsed_path.scheme:
-            logger.warning(f"PersonUpdateView: {self.request.GET.get('next')} suspicious 'next' path.")
-            return self._get_success_url()
-
-        # If there is a valid path take me there
-        if next_parsed_path.path:
-            return next_parsed_path.path
-
-        # If all else fails take me to the default success url
-        return self._get_success_url()
+        return get_next_url(self.request.GET.get('next'), self._get_success_url())
 
     def get_context_data(self, **kwargs):
         """ Adds the title, description and user details to the view context.
@@ -1960,20 +1966,8 @@ class IncidentUpdateView(AdminSyncUpdateView, AbstractIncidentView):
         if next_incident_id is not None:
             return reverse('changing:edit_incident', kwargs={'pk': next_incident_id, 'content_id': self.content_id})
         # there are no more incidents to update
-
-        next_parsed_path = urlparse(self.request.GET.get('next'))
-
-        # Check for suspicious/malformed submissions
-        if next_parsed_path.netloc or next_parsed_path.scheme:
-            logger.warning(f"PersonUpdateView: {self.request.GET.get('next')} suspicious 'next' path.")
-            return self._get_success_url()
-
-        # If there is a valid path take me there
-        if next_parsed_path.path:
-            return next_parsed_path.path
-
         else:
-            return self._get_success_url()
+            return get_next_url(self.request.GET.get('next'), self._get_success_url())
 
     def __get_persons_from_content_links(self):
         """ Retrieves a queryset of persons that are linked to the content to which this incident is linked, but are
@@ -2352,7 +2346,7 @@ class ContentUpdateView(AdminSyncUpdateView, AbstractContentView):
 
         :return: Link to data management home page.
         """
-        return self._get_success_url()
+        return get_next_url(self.request.GET.get('next'), self._get_success_url())
 
     def get_context_data(self, **kwargs):
         """ Adds the title, description and user details to the view context.
