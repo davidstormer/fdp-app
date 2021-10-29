@@ -533,6 +533,16 @@ class Person(Confidentiable, Descriptable):
                         queryset=cls.__get_content_query(
                             user=user,
                             filter_by_dict={},
+                            filter_by_exists=None,
+                            person_filter_dict={'pk': pk}
+                        ),
+                        to_attr='officer_incident_contents'
+                    ),
+                    Prefetch(
+                        'incident__contents',
+                        queryset=cls.__get_content_query(
+                            user=user,
+                            filter_by_dict={},
                             filter_by_exists=Exists(
                                 # don't need to filter for confidentiality, since both content and person is filtered
                                 # in the outer queries
@@ -543,7 +553,7 @@ class Person(Confidentiable, Descriptable):
                             ),
                             person_filter_dict={'pk': pk}
                         ),
-                        to_attr='officer_contents'
+                        to_attr='officer_snapshot_contents'
                     )
                 ),
                 to_attr='officer_misconducts'
@@ -634,7 +644,7 @@ class Person(Confidentiable, Descriptable):
         officer = qs.get(pk=pk)
         # Attachments within the Misconduct section
         for misconduct in officer.officer_misconducts:
-            for content in misconduct.incident.officer_contents:
+            for content in misconduct.incident.officer_incident_contents:
                 for attachment in content.officer_attachments:
                     if attachment.file:
                         files_to_zip.append(attachment.file)
