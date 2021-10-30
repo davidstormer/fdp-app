@@ -7,6 +7,7 @@ from inheritable.models import AbstractDateValidator
 from inheritable.forms import AbstractWizardModelForm, DateWithComponentsField, DateWithCalendarInput, \
     RelationshipField, AbstractWizardInlineFormSet, AbstractWizardModelFormSet, DateWithCalendarAndSplitInput, \
     DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField
+from .models import LawEnforcementCategories
 from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPerson, Attachment, \
     ContentPersonAllegation, ContentPersonPenalty
 from core.models import Grouping, GroupingAlias, GroupingRelationship, Person, PersonAlias, PersonIdentifier, \
@@ -65,6 +66,50 @@ class WizardSearchForm(forms.Form):
         max_length=max_type_length,
         widget=forms.HiddenInput()
     )
+
+
+class AbstractIsLawEnforcementModelForm(AbstractWizardModelForm):
+    """ Abstract model form from which all model forms inherit that are can be categorized as either belonging to law
+    enforcement or not using the is_law_enforcement boolean field.
+
+    Fields:
+        :law_enforcement (str): A UI wrapper in the form of a select element around the "is_law_enforcement" boolean
+        field.
+
+    """
+    law_enforcement = forms.ChoiceField(
+        required=True,
+        label=_('Is law enforcement'),
+        help_text=_('Is this entity part of law enforcement'),
+        choices=LawEnforcementCategories.choices,
+    )
+
+    #: String representation of form field name used as a UI wrapper for the model field.
+    __form_field_name = 'law_enforcement'
+
+    def __init__(self, *args, **kwargs):
+        """ Set the value of the UI select element wrapper for the "is_law_enforcement" field, if an instance exists
+        from which to retrieve the value.
+
+        :param args:
+        :param kwargs:
+        """
+        super(AbstractIsLawEnforcementModelForm, self).__init__(*args, **kwargs)
+        # instance of model exists
+        if hasattr(self, 'instance') and self.instance:
+            instance = self.instance
+            self.fields[self.__form_field_name].initial = None if not instance.pk \
+                else LawEnforcementCategories.convert_to_select_val(boolean_val=instance.is_law_enforcement)
+
+    def save(self, commit=True):
+        """ Sets the "is_law_enforcement" field using the value of the UI select element wrapper.
+
+        :param commit: True if instance should be saved into the database, false otherwise.
+        :return: Model instance that was created through the form.
+        """
+        self.instance.is_law_enforcement = \
+            LawEnforcementCategories.convert_to_boolean(select_val=self.cleaned_data[self.__form_field_name])
+        return super(AbstractWizardModelForm, self).save(commit=commit)
 
 
 class GroupingAliasModelForm(AbstractWizardModelForm):
@@ -230,7 +275,12 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
         fields_order = grouping_relationship_form_fields.copy()
 
 
-class GroupingModelForm(AbstractWizardModelForm):
+#: Law enforcement select is added to grouping
+grouping_form_fields = Grouping.form_fields.copy()
+grouping_form_fields.insert(0, 'law_enforcement')
+
+
+class GroupingModelForm(AbstractIsLawEnforcementModelForm):
     """ Form used to create new and edit existing instances of grouping model.
 
     Fields:
@@ -242,7 +292,7 @@ class GroupingModelForm(AbstractWizardModelForm):
     )
 
     #: Fields to show in the form
-    fields_to_show = Grouping.form_fields
+    fields_to_show = grouping_form_fields.copy()
 
     def __init__(self, *args, **kwargs):
         """ Ensure counties selection can be wrapped in client-side wrapper for multiple selections.
@@ -273,8 +323,8 @@ class GroupingModelForm(AbstractWizardModelForm):
 
     class Meta:
         model = Grouping
-        fields = Grouping.form_fields
-        fields_order = Grouping.form_fields
+        fields = grouping_form_fields.copy()
+        fields_order = grouping_form_fields.copy()
         widgets = {
             'inception_date': DateWithCalendarInput(),
             'cease_date': DateWithCalendarInput(),
@@ -860,12 +910,13 @@ class PersonPhotoModelForm(AbstractWizardModelForm):
         fields_order = PersonPhoto.form_fields
 
 
-#: Known birth date are added to person
+#: Law enforcement select and known birth date are added to person
 person_form_fields = Person.form_fields.copy()
+person_form_fields.insert(0, 'law_enforcement')
 person_form_fields.insert(4, 'known_birth_date')
 
 
-class PersonModelForm(AbstractWizardModelForm):
+class PersonModelForm(AbstractIsLawEnforcementModelForm):
     """ Form used to create new and edit existing instances of person model.
 
     Fields:

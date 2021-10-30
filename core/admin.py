@@ -116,10 +116,10 @@ class GroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for groupings of people.
 
     """
-    _list_display = ['name', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_display
+    _list_display = ['name', 'is_law_enforcement', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
-    list_filter = ['counties', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_filter
+    list_filter = ['counties', 'is_law_enforcement', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_filter
     search_fields = ['name', 'phone_number', 'email', 'address']
     ordering = ['name']
 
