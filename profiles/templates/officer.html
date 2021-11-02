@@ -358,12 +358,12 @@
                         {% for officer_content_type in officer_misconduct.parsed_officer_content_types %}
                             <li class="misall">
                                 {% with content_dict=officer_misconduct.parsed_officer_contents|get_value:officer_content_type %}
-                                    {% with attachments=content_dict|get_value:attachments_key strings=content_dict|get_value:strings_key links=content_dict|get_value:links_key %}
-                                    {% for string in strings %}
+                                    {% with attachments=content_dict|get_value:attachments_key content_names=content_dict|get_value:strings_key links=content_dict|get_value:links_key %}
+                                    {% for content_name in content_names %}
                                         {% if links|get_item:forloop.counter0 %}
-                                            <a href="{{ links|get_item:forloop.counter0 }}"><span class="mish2">{{ string }}</span></a>
+                                            <a href="{{ links|get_item:forloop.counter0 }}"><span class="mish2">{{ content_name }}</span></a>
                                         {% else %}
-                                            <span class="mish2">{{ string }}</span>
+                                            <span class="mish2">{{ content_name }}</span>
                                         {% endif %}
                                     {% endfor %}
                                     {% if attachments %}

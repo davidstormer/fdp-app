@@ -370,6 +370,10 @@ class Content(Confidentiable, Descriptable):
             )
         )
 
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_content', kwargs={"pk": self.pk})
+
     class Meta:
         db_table = '{d}content'.format(d=settings.DB_PREFIX)
         verbose_name = _('content')
@@ -379,9 +383,6 @@ class Content(Confidentiable, Descriptable):
             models.UniqueConstraint(fields=['link'], name='uq_content_link', condition=Q(~Q(link__iexact='')))
         ]
 
-    @property
-    def get_edit_url(self):
-        return reverse('changing:edit_content', kwargs={"pk": self.pk})
 
 class ContentIdentifier(Confidentiable, Descriptable):
     """ Identifier for content such as a lawsuit number, IAB case number, etc.
