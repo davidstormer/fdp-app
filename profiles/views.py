@@ -554,6 +554,7 @@ class OfficerDetailView(SecuredSyncDetailView):
                     content_dict_keys=misconduct.parsed_officer_content_types,
                     content=content
                 )
+                import pdb; pdb.set_trace()
                 # content person in content
                 for content_person in content.officer_content_persons:
                     # allegations in content person
