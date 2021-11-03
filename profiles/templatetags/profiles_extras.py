@@ -5,6 +5,18 @@ register = template.Library()
 
 
 @register.filter
+def identifier_values(identifiers: list) -> str:
+    """Returns a concatenated string of the identifier values from a list of identifier objects
+    """
+    if identifiers:
+        identifiers_values = []
+        for identifier in identifiers:
+            identifiers_values.append(identifier.identifier)
+        return ', '.join(identifiers_values)
+    else:
+        return ''
+
+@register.filter
 def get_value(dictionary, key):
     """ Retrieve a value from a dictionary given a particular key.
 

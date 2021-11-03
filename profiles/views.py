@@ -538,6 +538,7 @@ class OfficerDetailView(SecuredSyncDetailView):
         # CONTENT
         snapshot_dict = {}
         # content directly connected to misconducts
+
         for misconduct in obj.officer_misconducts:
             misconduct.parsed_officer_content_person_allegations = {}
             misconduct.parsed_officer_content_person_penalties = []
@@ -554,7 +555,6 @@ class OfficerDetailView(SecuredSyncDetailView):
                     content_dict_keys=misconduct.parsed_officer_content_types,
                     content=content
                 )
-                import pdb; pdb.set_trace()
                 # content person in content
                 for content_person in content.officer_content_persons:
                     # allegations in content person
