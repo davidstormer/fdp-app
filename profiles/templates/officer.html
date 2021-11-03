@@ -39,6 +39,9 @@
 
 {% block content %}
 
+
+
+
     <h1>{{ object.name }} </h1>
 
     <section class="identification">
@@ -355,6 +358,13 @@
                         {% if officer_misconduct.parsed_officer_content_types and officer_misconduct.parsed_officer_contents %}
                         <span class="mish1">{% translate 'Sources' %}</span>
                         <ul class="misall">
+                        {% for content in officer_misconduct.incident.officer_contents %}
+                            <p>{% if content.type.name %}{{ content.type.name }}
+                                {% if content.officer_content_identifiers %}({{ content.officer_content_identifiers|identifier_values}}){% endif %} <a href="{{ content.get_edit_url }}">edit</a>
+                                {% else %} Other {% endif %}
+                            </p>
+                        {% endfor %}
+                            <hr>
                         {% for officer_content_type in officer_misconduct.parsed_officer_content_types %}
                             <li class="misall">
                                 {% with content_dict=officer_misconduct.parsed_officer_contents|get_value:officer_content_type %}
