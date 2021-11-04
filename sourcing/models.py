@@ -188,6 +188,17 @@ class Attachment(Confidentiable, Descriptable):
         """
         return queryset
 
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_attachment', args=(self.pk,))
+
+    @property
+    def get_file_url(self):
+        try:
+            self.file.url
+        except ValueError as e:
+            return None
+
     class Meta:
         db_table = '{d}attachment'.format(d=settings.DB_PREFIX)
         verbose_name = _('attachment')
