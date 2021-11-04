@@ -359,10 +359,15 @@
                         <span class="mish1">{% translate 'Sources' %}</span>
                         <ul class="misall">
                         {% for content in officer_misconduct.incident.officer_contents %}
-                            <p>{% if content.type.name %}{{ content.type.name }}
-                                {% if content.officer_content_identifiers %}({{ content.officer_content_identifiers|identifier_values}}){% endif %} <a href="{{ content.get_edit_url }}">edit</a>
-                                {% else %} Other {% endif %}
-                            </p>
+                            <li class="misall">
+                                {{ content.type.name|default:"Other" }}
+                                {{ content.officer_content_identifiers|format_identifiers }}
+                                {{ content.link }}
+                                <a href="{{ content.get_edit_url }}">
+                                    <i class="fas fa-edit" aria-hidden="true" title="edit"></i>
+                                    <span class="sr-only">edit</span>
+                                </a>
+                            </li>
                         {% endfor %}
                             <hr>
                         {% for officer_content_type in officer_misconduct.parsed_officer_content_types %}

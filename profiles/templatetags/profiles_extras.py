@@ -5,14 +5,14 @@ register = template.Library()
 
 
 @register.filter
-def identifier_values(identifiers: list) -> str:
+def format_identifiers(identifiers: list) -> str:
     """Returns a concatenated string of the identifier values from a list of identifier objects
     """
     if identifiers:
         identifiers_values = []
         for identifier in identifiers:
             identifiers_values.append(identifier.identifier)
-        return ', '.join(identifiers_values)
+        return f"({', '.join(identifiers_values)})"
     else:
         return ''
 
