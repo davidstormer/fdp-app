@@ -367,23 +367,9 @@
                                     <i class="fas fa-edit" aria-hidden="true" title="edit"></i>
                                     <span class="sr-only">edit</span>
                                 </a>
-                            </li>
-                        {% endfor %}
-                            <hr>
-                        {% for officer_content_type in officer_misconduct.parsed_officer_content_types %}
-                            <li class="misall">
-                                {% with content_dict=officer_misconduct.parsed_officer_contents|get_value:officer_content_type %}
-                                    {% with attachments=content_dict|get_value:attachments_key content_names=content_dict|get_value:strings_key links=content_dict|get_value:links_key %}
-                                    {% for content_name in content_names %}
-                                        {% if links|get_item:forloop.counter0 %}
-                                            <a href="{{ links|get_item:forloop.counter0 }}"><span class="mish2">{{ content_name }}</span></a>
-                                        {% else %}
-                                            <span class="mish2">{{ content_name }}</span>
-                                        {% endif %}
-                                    {% endfor %}
-                                    {% if attachments %}
+                                {% if content.officer_attachments %}
                                     <ul class="misall">
-                                    {% for attachment in attachments %}
+                                    {% for attachment in content.officer_attachments %}
                                         <li class="misall">
                                             {% if attachment.file %}
                                             <a class="misatt" href="{{ attachment.file.url }}" rel="noopener noreferrer" target="_blank" download><i class="fas fa-file-download"></i>
@@ -394,11 +380,10 @@
                                         </li>
                                     {% endfor %}
                                     </ul>
-                                    {% endif %}
-                                    {% endwith %}
-                                {% endwith %}
+                                {% endif %}
                             </li>
                         {% endfor %}
+
                         </ul>
                         {% endif %}
                     </div> <!-- div.gridcol.gridcell_1_of_2 -->
