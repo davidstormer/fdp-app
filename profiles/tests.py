@@ -1293,8 +1293,9 @@ class ProfileTestCase(AbstractTestCase):
         self.__test_attachment_for_officer_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_for_officer_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_identifier_for_officer_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
-        logger.debug(_('\nSuccessfully finished test for for Officer Profile Search Results view and Officer Profile view for '
-                'all permutations of user roles, confidentiality levels and relevant models\n\n'))
+        logger.debug(
+            _('\nSuccessfully finished test for for Officer Profile Search Results view and Officer Profile view for '
+              'all permutations of user roles, confidentiality levels and relevant models\n\n'))
 
     def test_command_profile_views(self):
         """ Test for Command profile search results and profile views for all permutations of user roles,
@@ -1314,21 +1315,16 @@ class ProfileTestCase(AbstractTestCase):
         self.__test_content_for_command_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_identifier_for_command_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         logger.debug(_('\nSuccessfully finished test for for Command Profile view for '
-                'all permutations of user roles, confidentiality levels and relevant models\n\n'))
+                       'all permutations of user roles, confidentiality levels and relevant models\n\n'))
 
-    @local_test_settings_required
-    def test_edit_links_visible_to_admins_only(self):
-        # Given there is a Person record in the system
-        person_record = Person.objects.create(name="Test person")
-        # Given I'm logged in as an admin user
-        email_counter = FdpUser.objects.all().count()
+    def log_in(self, is_host=True, is_administrator=False, is_superuser=False) -> object:
+        client = Client()
         fdp_user = self._create_fdp_user(
-            is_host=True,
-            is_administrator=True,
-            is_superuser=False,
-            email_counter=email_counter
+            is_host=is_host,
+            is_administrator=is_administrator,
+            is_superuser=is_superuser,
+            email_counter=FdpUser.objects.all().count()
         )
-        client = Client(**self._local_client_kwargs)
         two_factor = self._create_2fa_record(user=fdp_user)
         # log in user
         login_response = self._do_login(
@@ -1340,10 +1336,16 @@ class ProfileTestCase(AbstractTestCase):
             two_factor_status_code=200,
             will_login_succeed=True
         )
+        return client
 
+    @local_test_settings_required
+    def test_edit_links_visible_to_admins_only(self):
+        # Given there is an officer record Person record in the system set as law enforcement
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # and I'm logged in as an admin user
+        admin_client = self.log_in(is_administrator=True)
         # When I go to a person profile page
-        response = client.get(reverse(self._officer_profile_view_name, kwargs={'pk': person_record.pk}),
-                                   follow=True)
+        response = admin_client.get(reverse(self._officer_profile_view_name, kwargs={'pk': person_record.pk}),
+                                    follow=True)
         # Then I should see edit links
-        print(response.content)
         self.assertContains(response, 'edit')
