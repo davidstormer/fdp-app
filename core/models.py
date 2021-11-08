@@ -80,9 +80,8 @@ class Person(Confidentiable, Descriptable):
     )
 
     #: Fields to display in the model form.
-    form_fields = [
-                      'name', 'is_law_enforcement', 'birth_date_range_start', 'birth_date_range_end', 'traits'
-                  ] + Confidentiable.confidentiable_form_fields
+    form_fields = \
+        ['name', 'birth_date_range_start', 'birth_date_range_end', 'traits'] + Confidentiable.confidentiable_form_fields
 
     def __get_birth_date(self):
         """ Retrieve the human-friendly version of the person's birth date.
@@ -1410,6 +1409,7 @@ class Grouping(Archivable, Descriptable):
         :cease_date (date): Date grouping ceased to exist.
         :counties (m2m): Counties in which grouping operates.
         :is_inactive (bool): True if link between person and grouping is no longer active.
+        :is_law_enforcement (bool): True if grouping is part of law enforcement, false otherwise.
         :belongs_to_grouping (fk): The top-level grouping to which this grouping belongs.
     """
     name = models.CharField(
@@ -1452,6 +1452,14 @@ class Grouping(Archivable, Descriptable):
         default=False,
         verbose_name=_('Is inactive'),
         help_text=_('Select if the grouping is no longer active')
+    )
+
+    is_law_enforcement = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name=_('Is law enforcement'),
+        help_text=_('Select if grouping is part of law enforcement'),
     )
 
     inception_date = models.DateField(
@@ -1664,12 +1672,8 @@ class Grouping(Archivable, Descriptable):
 
         :return: Filtered queryset from which command will be retrieved.
         """
-        # ensure that only groupings with an officer are retrieved
-        qs = cls.active_objects.filter(
-            Exists(
-                PersonGrouping.active_objects.filter(Q(grouping_id=OuterRef('pk')) & Q(person__is_law_enforcement=True))
-            )
-        )
+        # ensure that only commands are retrieved
+        qs = cls.active_objects.filter(is_law_enforcement=True)
         # accessible officers for user
         accessible_officers = Person.active_objects.filter(is_law_enforcement=True).filter_for_confidential_by_user(
             user=user

@@ -34,7 +34,7 @@ class CoreTestCase(AbstractTestCase):
         if not PersonRelationshipType.objects.all().exists():
             PersonRelationshipType.objects.create(name='PersonRelationshipType1')
         if not Grouping.objects.all().exists():
-            Grouping.objects.create(name='Grouping1')
+            Grouping.objects.create(name='Grouping1', **cls._is_law_dict)
 
     def setUp(self):
         """ Ensure data required for tests has been created.

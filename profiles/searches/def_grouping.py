@@ -1,5 +1,5 @@
 from inheritable.models import Archivable, AbstractProfileSearch, AbstractSearchValidator
-from core.models import Person, PersonAlias, PersonGrouping, Grouping, GroupingAlias
+from core.models import Person, PersonAlias, Grouping, GroupingAlias
 
 
 class GroupingProfileSearch(AbstractProfileSearch):
@@ -83,14 +83,8 @@ class GroupingProfileSearch(AbstractProfileSearch):
                 ON "{grouping}"."id" = "{tmp_grouping_score}"."id"            
                 LEFT JOIN "{tmp_grouping_alias_score}"
                 ON "{grouping}"."id" = "{tmp_grouping_alias_score}"."id"                    
-            WHERE "{grouping}".{active_filter} 
-            AND EXISTS (
-                SELECT 'X' FROM "{person_grouping}"
-                INNER JOIN "{person}"
-                ON "{person_grouping}"."person_id" = "{person}"."id"
-                AND "{person}"."is_law_enforcement" = True
-                WHERE "{person_grouping}"."grouping_id" = "{grouping}"."id"
-            )
+            WHERE "{grouping}"."is_law_enforcement" = True
+            AND "{grouping}".{active_filter}             
             AND ( 
                    ("{tmp_grouping_score}"."id" IS NOT NULL)
                 OR ("{tmp_grouping_alias_score}"."id" IS NOT NULL)                
@@ -101,7 +95,6 @@ class GroupingProfileSearch(AbstractProfileSearch):
             grouping=Grouping.get_db_table(),
             person=Person.get_db_table(),
             person_alias=PersonAlias.get_db_table(),
-            person_grouping=PersonGrouping.get_db_table(),
             active_filter=Archivable.ACTIVE_FILTER
         )
         # SQL FROM PARAMS

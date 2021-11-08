@@ -232,7 +232,7 @@ class ProfileTestCase(AbstractTestCase):
         """
         self.assertEqual(Person.objects.all().count(), 0)
         # create data without restrictions
-        unrestricted_grouping = Grouping.objects.create(name='Name1')
+        unrestricted_grouping = Grouping.objects.create(name='Name1', **self._is_law_dict)
         # create data with restrictions
         # dictionaries containing data with different confidentiality levels
         person_ids = {}
@@ -292,7 +292,7 @@ class ProfileTestCase(AbstractTestCase):
         """
         self.assertEqual(Incident.objects.all().count(), 0)
         # create data without restrictions
-        unrestricted_grouping = Grouping.objects.create(name='Name1')
+        unrestricted_grouping = Grouping.objects.create(name='Name1', **self._is_law_dict)
         unrestricted_person = Person.objects.create(name='Name2', **self._is_law_dict, **self._not_confidential_dict)
         PersonGrouping.objects.create(person=unrestricted_person, grouping=unrestricted_grouping)
         # create data with restrictions
@@ -360,7 +360,7 @@ class ProfileTestCase(AbstractTestCase):
         """
         self.assertEqual(Attachment.objects.all().count(), 0)
         # create data without restrictions
-        unrestricted_grouping = Grouping.objects.create(name='Name1')
+        unrestricted_grouping = Grouping.objects.create(name='Name1', **self._is_law_dict)
         unrestricted_person = Person.objects.create(name='Name1', **self._is_law_dict, **self._not_confidential_dict)
         PersonGrouping.objects.create(person=unrestricted_person, grouping=unrestricted_grouping)
         unrestricted_incident = Incident.objects.create(description='Desc1', **self._not_confidential_dict)
@@ -450,7 +450,7 @@ class ProfileTestCase(AbstractTestCase):
         self.assertEqual(Content.objects.all().count(), 0)
         content_identifier_type = ContentIdentifierType.objects.all()[0]
         # create data without restrictions
-        unrestricted_grouping = Grouping.objects.create(name='Name1')
+        unrestricted_grouping = Grouping.objects.create(name='Name1', **self._is_law_dict)
         unrestricted_person = Person.objects.create(name='Name1', **self._is_law_dict, **self._not_confidential_dict)
         PersonGrouping.objects.create(person=unrestricted_person, grouping=unrestricted_grouping)
         unrestricted_incident = Incident.objects.create(description='Desc1', **self._not_confidential_dict)
@@ -529,7 +529,7 @@ class ProfileTestCase(AbstractTestCase):
         self.assertEqual(ContentIdentifier.objects.all().count(), 0)
         content_identifier_type = ContentIdentifierType.objects.all()[0]
         # create data without restrictions
-        unrestricted_grouping = Grouping.objects.create(name='Name1')
+        unrestricted_grouping = Grouping.objects.create(name='Name1', **self._is_law_dict)
         unrestricted_person = Person.objects.create(name='Name1', **self._is_law_dict, **self._not_confidential_dict)
         PersonGrouping.objects.create(person=unrestricted_person, grouping=unrestricted_grouping)
         unrestricted_incident = Incident.objects.create(description='Desc1', **self._not_confidential_dict)
