@@ -1339,13 +1339,73 @@ class ProfileTestCase(AbstractTestCase):
         return client
 
     @local_test_settings_required
-    def test_edit_links_visible_to_admins_only(self):
-        # Given there is an officer record Person record in the system set as law enforcement
+    def test_edit_links(self):
+        """Edit links show up on the officer profile page for admins
+        """
+        # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
-        # and I'm logged in as an admin user
+        # and there are three incident records linked to the person record
+        # and three content records linked under each incident record
+        incidents = []
+        contents = []
+        for i_incidents in range(2):
+            new_incident = Incident.objects.create(description=f"{i_incidents}")
+            incidents.append(new_incident)
+            PersonIncident.objects.create(person=person_record, incident=new_incident)
+            for i_contents in range(2):
+                new_content = Content.objects.create(name=f"{i_contents}")
+                contents.append(new_content)
+                new_content.incidents.add(new_incident)
+        # and there are three content records linked directly to the person
+        for i_contents_for_person in range(2):
+            new_content = Content.objects.create(name=f"{i_contents_for_person}")
+            ContentPerson.objects.create(person=person_record,content=new_content)
+            contents.append(new_content)
+        # and I'm logged into the system as an Admin
         admin_client = self.log_in(is_administrator=True)
-        # When I go to a person profile page
-        response = admin_client.get(reverse(self._officer_profile_view_name, kwargs={'pk': person_record.pk}),
-                                    follow=True)
-        # Then I should see edit links
-        self.assertContains(response, 'edit')
+
+        # When I go to the person profile page
+        response_admin_client = admin_client.get(reverse(
+            self._officer_profile_view_name,
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # Then I should see three person edit record links (for each section: Identification, Payroll, Associates)
+        self.assertContains(response_admin_client, person_record.get_edit_url, count=3)
+        # and I should see incident edit record links
+        for incident in incidents:
+            self.assertContains(response_admin_client, incident.get_edit_url)
+        # and I should see content edit record links
+        for content in contents:
+            self.assertContains(response_admin_client, content.get_edit_url)
+
+    @local_test_settings_required
+    def test_edit_links_visible_to_admins_only(self):
+        """Note: this is purely for usability reasons, not security.
+        """
+        # Given there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # and there is an incident record linked to the person record
+        incident_record = Incident.objects.create(description="noncanvassing")
+        PersonIncident.objects.create(person=person_record, incident=incident_record)
+        # and there is a content record linked to the incident
+        content_record_on_incident = Content.objects.create(name="trustmonger")
+        content_record_on_incident.incidents.add(incident_record)
+        # and there is a content record linked directly to the person
+        content_record_on_person = Content.objects.create(name="baptismally")
+        ContentPerson.objects.create(person=person_record, content=content_record_on_person)
+        # and I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # When I go to the person profile page
+        response_staff_client = staff_client.get(reverse(
+            self._officer_profile_view_name,
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # Then I should NOT see Person edit links
+        self.assertNotContains(response_staff_client, person_record.get_edit_url)
+        # and I should NOT see Incident edit links
+        self.assertNotContains(response_staff_client, incident_record.get_edit_url)
+        # and I should NOT see Content edit links linked under incidents
+        self.assertNotContains(response_staff_client, content_record_on_incident.get_edit_url)
+        # and I should NOT see Content edit links linked directly under the person
+        self.assertNotContains(response_staff_client, content_record_on_person.get_edit_url)

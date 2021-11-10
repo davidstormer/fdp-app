@@ -306,7 +306,6 @@
                         <a href="{{ officer_misconduct.incident.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
                     </span>
                     {% endif %}
-
                     </button>
                 </h3>
             <div class="collapsible">
@@ -363,10 +362,12 @@
                                 {{ content.type.name|default:"Other" }}
                                 {{ content.officer_content_identifiers|format_identifiers }}
                                 {{ content.link }}
+                                {% if is_admin %}
                                 <a href="{{ content.get_edit_url }}">
                                     <i class="fas fa-edit" aria-hidden="true" title="edit"></i>
                                     <span class="sr-only">edit</span>
                                 </a>
+                                {% endif %}
                                 {% if content.officer_attachments %}
                                     <ul class="misall">
                                     {% for attachment in content.officer_attachments %}
