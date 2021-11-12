@@ -1,3 +1,5 @@
+import uuid
+
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from inheritable.tests import AbstractTestCase, local_test_settings_required
@@ -1409,3 +1411,28 @@ class ProfileTestCase(AbstractTestCase):
         self.assertNotContains(response_staff_client, content_record_on_incident.get_edit_url)
         # and I should NOT see Content edit links linked directly under the person
         self.assertNotContains(response_staff_client, content_record_on_person.get_edit_url)
+
+    @local_test_settings_required
+    def test_incidents_displayed(self):
+        """Test that the profile page displays the associated incidents
+        """
+        # Given there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # and there are three incident records linked to the person record
+        descriptions = []
+        for i in range(2):
+            description = f"Incident description... {uuid.uuid4()}"
+            incident_record = Incident.objects.create(description=description)
+            descriptions.append(description)
+            PersonIncident.objects.create(person=person_record, incident=incident_record)
+        # and I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # When I go to the person profile page
+        response_staff_client = staff_client.get(reverse(
+            self._officer_profile_view_name,
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # Then I should see the incident records listed
+        for description in descriptions:
+            self.assertContains(response_staff_client, description)
