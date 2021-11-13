@@ -29,3 +29,19 @@ AUTHENTICATION_BACKENDS = [
     # Azure Active Directory: https://python-social-auth.readthedocs.io/en/latest/backends/azuread.html
     CONST_AZURE_AUTH_BACKEND
 ]
+
+
+#: Describes options that are listed on the federated login page. See fdpuser.views.FederatedLoginTemplateView.
+# In the format of: [
+#     {
+#         'label': '...text to display for option...',
+#         'url_pattern_name': '...name of url pattern including namespace if relevant...',
+#         'url_pattern_args': '...positional arguments for url pattern',
+#         'css': {'css_property_1': 'css_value_1', 'css_property_2': 'css_value_2', ...},
+#         'css_hover': {'css_property_1': 'css_value_1', 'css_property_2': 'css_value_2', ...},
+#     },
+#     {...}, ...
+# ]
+# If no options are listed, the federated login page will be skipped, and the user will be automatically redirected to
+# the primary login page.
+FEDERATED_LOGIN_OPTIONS = []

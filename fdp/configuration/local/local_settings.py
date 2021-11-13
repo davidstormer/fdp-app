@@ -122,3 +122,19 @@ SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
 # It must end in a slash if set to a non-empty value.
 # See the Django setting MEDIA_URL for similarities.
 FDP_MEDIA_URL = MEDIA_URL
+
+
+#: Describes options that are listed on the federated login page. See fdpuser.views.FederatedLoginTemplateView.
+# In the format of: [
+#     {
+#         'label': '...text to display for option...',
+#         'url_pattern_name': '...name of url pattern including namespace if relevant...',
+#         'url_pattern_args': '...positional arguments for url pattern',
+#         'css': {'css_property_1': 'css_value_1', 'css_property_2': 'css_value_2', ...},
+#         'css_hover': {'css_property_1': 'css_value_1', 'css_property_2': 'css_value_2', ...},
+#     },
+#     {...}, ...
+# ]
+# If no options are listed, the federated login page will be skipped, and the user will be automatically redirected to
+# the primary login page.
+FEDERATED_LOGIN_OPTIONS = []
