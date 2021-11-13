@@ -10,7 +10,6 @@
 
 {% block extrastyle %}
     {{ block.super }}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
     <link rel="stylesheet" type="text/css" href="{% static 'admin/css/login.css' %}">
     {% compress css %}
     <link rel="stylesheet" type="text/css" href="{% static 'fdpuser/css/eula_required.css' %}">
@@ -29,7 +28,7 @@
              {% else %}
                 {% translate 'Please review and accept the' %}
                 <a class="eula" href="{{ eula.file.url }}" rel="noopener noreferrer" target="_blank" download>
-                {% translate 'end user license agreement' %}<i class="fas fa-file-download"></i></a>.
+                {% translate 'end user license agreement' %} <i class="fas fa-file-download"></i></a>.
              {% endif %}
          </p>
         <div>

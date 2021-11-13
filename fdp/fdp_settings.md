@@ -92,6 +92,29 @@ To overwrite the *entire* list of supported file types for the `PersonPhoto` mod
         ... ('User-friendly description for file type', 'ext'), ...
     ]
 
+## Federated login page
+
+A federated login page can be enabled and the options that are displayed on it can be customized by configuring:  
+
+    FEDERATED_LOGIN_OPTIONS = [
+        {
+            'label': 'Sign in with FDP',
+            'url_pattern_name': 'two_factor:login',
+            'url_pattern_args': [],
+            'css': {'background-color': '#417690', 'color': '#FFF'},
+            'css_hover': {'color': '#f5dd5d'}
+        },
+        {
+            'label': 'Sign in Azure Active Directory',
+            'url_pattern_name': 'social:begin',
+            'url_pattern_args': ['inheritable.models.AbstractConfiguration.azure_active_directory_provider'],
+            'css': {'background-color': '#417690', 'color': '#FFF'},
+            'css_hover': {'color': '#f5dd5d'}
+        }
+    ]
+
+If no options are listed, the federated login page will be skipped, and the user will be automatically redirected to the primary login page depending on the system's configuration.
+
 ## EULA
 
 To enable the requirement that each user agree to an end-user license agreement (EULA) before they can access any secured views, set `FDP_EULA_SPLASH_ENABLE=True`. By default, this feature is disabled.

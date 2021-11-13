@@ -94,6 +94,19 @@ class CoreButNoEulaAccessMixin(OTPRequiredMixin, LoginRequiredMixin, UserPassesT
         user = getattr(request, 'user', None)
         return FdpUser.can_view_core(user=user)
 
+    def get_login_url(self):
+        """ Overrides AccessMixin.get_login_url(...) method to check if the configuration supports a federated login
+        page. If not, reverts to the default behaviour.
+
+        :return: URL for login page.
+        """
+        # Configured to support federated login page
+        if AbstractConfiguration.can_do_federated_login():
+            return reverse('federated_login')
+        # Not configured to support federated login page, so revert to default behaviour.
+        else:
+            return super().get_login_url()
+
 
 class CoreAccessMixin(CoreButNoEulaAccessMixin, EulaRequiredMixin):
     """ Mixin limiting access for core elements to users who are authorized.
@@ -161,7 +174,7 @@ class ContextDataMixin:
         request = getattr(self, 'request', None)
         user = getattr(request, 'user', None)
         context['is_admin'] = FdpUser.can_view_admin(user=user)
-        context['only_external_auth'] = user.only_external_auth
+        context['only_external_auth'] = getattr(user, 'only_external_auth', False)
         context['site_header'] = _(SITE_HEADER)
         context['site_title'] = _('FDP System')
         context['has_permission'] = True
@@ -252,6 +265,22 @@ class SyncView(View):
         sas_expiring_url = media_azure_storage.get_sas_expiring_url(name)
         # redirect
         return redirect(sas_expiring_url)
+
+
+class UnsecuredSyncTemplateView(PostOrGetOnlyMixin, ContextDataMixin, TemplateView):
+    """ Unsecured synchronously rendered view rendering a template.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as permissions and theme customization.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_context(context)
 
 
 class SecuredSyncButNoEulaView(CoreButNoEulaAccessMixin, SyncView):

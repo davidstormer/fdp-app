@@ -1,0 +1,37 @@
+{% extends "two_factor/core/login.html" %}
+{% load i18n static compress %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'fdpuser/css/federated_login.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% block content %}
+
+    {% if auth_options %}
+        <style type="text/css" nonce="{{ request.csp_nonce }}">
+            {% for auth_option in auth_options %}
+                {% if auth_option.css %}
+                .authopt{{ forloop.counter0 }} { {% for css_property, css_value in auth_option.css.items %}{{ css_property }}: {{ css_value }};{% endfor %} }
+                {% endif %}
+                {% if auth_option.css_hover %}
+                .authopt{{ forloop.counter0 }}:hover { {% for css_property, css_value in auth_option.css_hover.items %}{{ css_property }}: {{ css_value }};{% endfor %} }
+                {% endif %}
+            {% endfor %}
+        </style>
+
+        <div id="content-main">
+            <p class="signin">{% translate 'Please sign in' %}</p>
+            {% for auth_option in auth_options %}
+                <div class="auth-option authopt{{ forloop.counter0 }}{% if forloop.last %} last{% endif %}">
+                    <a href="{{ auth_option.link }}{{ next_url_querystring }}">{{ auth_option.label }} <i class="fas fa-arrow-right"></i></a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>{% translate 'The FDP federated login options are not properly configured.' %}</p>
+    {% endif %}
+
+{% endblock %}

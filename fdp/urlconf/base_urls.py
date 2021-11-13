@@ -4,7 +4,7 @@ from django.urls import path, re_path, include
 from django.conf import settings
 from django.views.defaults import page_not_found
 from two_factor.admin import AdminSiteOTPRequired
-from fdpuser.views import FdpPasswordResetView, DownloadEulaFileView
+from fdpuser.views import FdpPasswordResetView, DownloadEulaFileView, FederatedLoginTemplateView
 from inheritable.models import AbstractUrlValidator, AbstractConfiguration
 
 
@@ -73,3 +73,14 @@ can_do_password_reset_urlpatterns = [
     # URLs for resetting passwords through a tokenized link
     path('password/reset/', FdpPasswordResetView.as_view(), name='password_reset'),
 ]
+
+
+#: Only include the federated login link if the configuration supports it.
+if AbstractConfiguration.can_do_federated_login():
+    rest_urlpatterns += [
+        path(
+            AbstractUrlValidator.FDP_USER_FEDERATED_LOGIN_URL,
+            FederatedLoginTemplateView.as_view(),
+            name='federated_login'
+        )
+    ]

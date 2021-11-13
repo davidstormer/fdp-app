@@ -7,9 +7,10 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from django.utils.decorators import method_decorator
 from django.conf import settings
+from django.http import QueryDict
 from inheritable.models import AbstractIpAddressValidator, AbstractConfiguration, JsonData, AbstractUrlValidator
 from inheritable.views import SecuredSyncTemplateView, SecuredSyncRedirectView, SecuredAsyncJsonView, \
-    SecuredSyncNoEulaFormView, SecuredSyncButNoEulaView
+    SecuredSyncNoEulaFormView, SecuredSyncButNoEulaView, UnsecuredSyncTemplateView
 from .models import PasswordReset, FdpUser, Eula
 from .forms import FdpUserPasswordResetForm, FdpUserPasswordResetWithReCaptchaForm, AgreeToEulaForm
 from two_factor.views import LoginView
@@ -531,3 +532,46 @@ class DownloadEulaFileView(SecuredSyncButNoEulaView):
                     relative_base_url=AbstractUrlValidator.EULA_BASE_URL,
                     document_root=settings.MEDIA_ROOT
                 )
+
+
+class FederatedLoginTemplateView(UnsecuredSyncTemplateView):
+    """ View that displays the various authentication methods available for a user with which to log in.
+
+    """
+    template_name = 'federated_login.html'
+    #: Name of the GET parameter, i.e. appearing in the querystring, that stores the URL to which the user should be
+    # redirected after a successful login.
+    next_url_param = 'next'
+
+    def __get_querystring_for_next_url(self):
+        """ Retrieves the querystring that will store the URL to which the user should be redirected after a successful
+        login.
+
+        :return: String representing querystring in the form of: ?next=... , or an empty string if no redirection URL
+        could be found.
+        """
+        # Http request was made using the GET method
+        if self.request.GET:
+            # retrieve the optional ...next=... querystring parameter, if it exists
+            next_url = self.request.GET.get(self.next_url_param, None)
+            # redirection URL exists
+            if next_url:
+                querystring = QueryDict('', mutable=True)
+                querystring.update({self.next_url_param: next_url})
+                return f'?{querystring.urlencode()}'
+        return ''
+
+    def get_context_data(self, **kwargs):
+        """ Adds the title, description and user details to the view context.
+
+        :param kwargs:
+        :return: Context for view, including title, description and user details.
+        """
+        context = super(FederatedLoginTemplateView, self).get_context_data(**kwargs)
+        context.update({
+            'title': _('Full Disclosure Project'),
+            'description': _('Select authentication method to log in to the Full Disclosure Project.'),
+            'auth_options': AbstractConfiguration.federated_login_options(),
+            'next_url_querystring': self.__get_querystring_for_next_url()
+        })
+        return context
