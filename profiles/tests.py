@@ -1350,16 +1350,16 @@ class ProfileTestCase(AbstractTestCase):
         # and three content records linked under each incident record
         incidents = []
         contents = []
-        for i_incidents in range(2):
+        for i_incidents in range(3):
             new_incident = Incident.objects.create(description=f"{i_incidents}")
             incidents.append(new_incident)
             PersonIncident.objects.create(person=person_record, incident=new_incident)
-            for i_contents in range(2):
+            for i_contents in range(3):
                 new_content = Content.objects.create(name=f"{i_contents}")
                 contents.append(new_content)
                 new_content.incidents.add(new_incident)
         # and there are three content records linked directly to the person
-        for i_contents_for_person in range(2):
+        for i_contents_for_person in range(3):
             new_content = Content.objects.create(name=f"{i_contents_for_person}")
             ContentPerson.objects.create(person=person_record,content=new_content)
             contents.append(new_content)
@@ -1420,7 +1420,7 @@ class ProfileTestCase(AbstractTestCase):
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
         # and there are three incident records linked to the person record
         descriptions = []
-        for i in range(2):
+        for i in range(3):
             description = f"Incident description... {uuid.uuid4()}"
             incident_record = Incident.objects.create(description=description)
             descriptions.append(description)
