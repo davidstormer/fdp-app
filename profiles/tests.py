@@ -1438,6 +1438,47 @@ class ProfileTestCase(AbstractTestCase):
             self.assertContains(response_staff_client, description)
 
     @local_test_settings_required
+    def test_content_displayed_under_incident(self):
+        """Test that the profile page displays the incidents linked to the person
+        """
+        # Given there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # and there are three incident records linked to the person record
+        # and under each incident are linked three content records
+        identifier_type = ContentIdentifierType.objects.create(name='fakeidtype')
+        incident_descriptions = []
+        content_identifiers = []
+        for i in range(3):
+            description = f"Incident description... {uuid.uuid4()}"
+            new_incident_record = Incident.objects.create(description=description)
+            incident_descriptions.append(description)
+            PersonIncident.objects.create(person=person_record, incident=new_incident_record)
+            for j in range(3):
+                identifier_value = f"{uuid.uuid4()}"
+                new_content_record = Content.objects.create()
+                new_content_record.incidents.add(new_incident_record)
+                identifier = ContentIdentifier.objects.create(
+                    identifier=identifier_value,
+                    content_identifier_type=identifier_type,
+                    content=new_content_record
+                    )
+                content_identifiers.append(identifier_value)
+        # and I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # When I go to the person profile page
+        response_staff_client = staff_client.get(reverse(
+            self._officer_profile_view_name,
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # Then I should see the content records listed
+        for content_name in content_identifiers:
+            self.assertContains(
+                response_staff_client,
+                content_name,
+                msg_prefix="Couldn't find content under incident by id")
+
+    @local_test_settings_required
     def test_person_content_displayed(self):
         """Test that the profile page displays the contents linked to the person (rather than the ones that are
         linked to incidents.
