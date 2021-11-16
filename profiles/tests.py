@@ -1414,7 +1414,7 @@ class ProfileTestCase(AbstractTestCase):
 
     @local_test_settings_required
     def test_incidents_displayed(self):
-        """Test that the profile page displays the associated incidents
+        """Test that the profile page displays the incidents linked to the person
         """
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -1439,6 +1439,9 @@ class ProfileTestCase(AbstractTestCase):
 
     @local_test_settings_required
     def test_person_content_displayed(self):
+        """Test that the profile page displays the contents linked to the person (rather than the ones that are
+        linked to incidents.
+        """
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
         # and there are three content records linked directly to the person record
