@@ -1436,3 +1436,27 @@ class ProfileTestCase(AbstractTestCase):
         # Then I should see the incident records listed
         for description in descriptions:
             self.assertContains(response_staff_client, description)
+
+    @local_test_settings_required
+    def test_person_content_displayed(self):
+        # Given there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # and there are three content records linked directly to the person record
+        descriptions = []
+        for i in range(3):
+            name = f"Content name... {uuid.uuid4()}"
+            content_record_on_person = Content.objects.create(name=name)
+            ContentPerson.objects.create(person=person_record, content=content_record_on_person)
+            descriptions.append(name)
+
+        # and I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # When I go to the person profile page
+        response_staff_client = staff_client.get(reverse(
+            self._officer_profile_view_name,
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # Then I should see the content records listed
+        for description in descriptions:
+            self.assertContains(response_staff_client, description)
