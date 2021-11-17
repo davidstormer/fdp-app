@@ -29,12 +29,15 @@
       - name: "Set up python runtime environment"
         shell: |
           sudo -u vagrant bash
-          python3 -m venv venv-vagrant
-          source venv-vagrant/bin/activate
-          pip3 install wheel
-          pip3 install -r requirements.txt
+          cd /home/vagrant
+          python3 -m venv /home/vagrant/venv-vagrant
         args:
-          creates: /home/vagrant/venv-vagrant/lib/python3.8/site-packages/django
+          creates: /home/vagrant/venv-vagrant
+
+      - name: "Install python dependencies"
+        pip:
+          requirements: "/vagrant/requirements.txt"
+          virtualenv: "/home/vagrant/venv-vagrant"
 
       - name: "Set permissions on manage.py"
         file:
