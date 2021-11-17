@@ -10,6 +10,7 @@ from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifie
 from supporting.models import PersonRelationshipType, ContentIdentifierType
 from os.path import splitext
 from django.test import Client
+from datetime import datetime, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
@@ -1531,6 +1532,33 @@ class ProfileTestCase(AbstractTestCase):
             self.assertContains(response_staff_client, alias_value)
 
     @local_test_settings_required
+    def test_person_age_displayed(self):
+        # Given there is an 'officer record' (Person record in the system set as law enforcement)
+        # And the officer has a birthday set
+        age_to_find = 123
+        birthdate = datetime.now() - timedelta(days=365 * (age_to_find + 1))
+        person_record = Person.objects.create(
+            name="Test person",
+            is_law_enforcement=True,
+            birth_date_range_start=birthdate,
+            birth_date_range_end=birthdate
+        )
+
+        # and I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # When I go to the person profile page
+        response_staff_client = staff_client.get(reverse(
+            self._officer_profile_view_name,
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # Then I should see their age
+        self.assertContains(
+            response_staff_client,
+            f"<label class='ident'>Age</label> <span class='identval'>{age_to_find}</span>",
+            html=True)
+
+    @local_test_settings_required
     def test_person_titles_displayed(self):
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -1555,5 +1583,3 @@ class ProfileTestCase(AbstractTestCase):
         # Then I should see the aliases listed
         for value in values_to_find:
             self.assertContains(response_staff_client, value)
-
-        self.fail('finish me!')
