@@ -4,7 +4,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from inheritable.tests import AbstractTestCase, local_test_settings_required
 from fdpuser.models import FdpOrganization, FdpUser
-from core.models import Person, PersonIncident, Incident, PersonRelationship, Grouping, PersonGrouping, GroupingIncident
+from core.models import Person, PersonIncident, Incident, PersonRelationship, Grouping, PersonGrouping, \
+    GroupingIncident, PersonAlias, PersonTitle, Title
 from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase
 from supporting.models import PersonRelationshipType, ContentIdentifierType
 from os.path import splitext
@@ -1504,3 +1505,55 @@ class ProfileTestCase(AbstractTestCase):
         # Then I should see the content records listed
         for description in descriptions:
             self.assertContains(response_staff_client, description)
+
+    @local_test_settings_required
+    def test_person_aliases_displayed(self):
+        # Given there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+
+        # And they have aliases
+        alias_values = []
+        for i in range(3):
+            name = uuid.uuid4()
+            PersonAlias.objects.create(name=name, person=person_record)
+            alias_values.append(name)
+
+        # and I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # When I go to the person profile page
+        response_staff_client = staff_client.get(reverse(
+            self._officer_profile_view_name,
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # Then I should see the aliases listed
+        for alias_value in alias_values:
+            self.assertContains(response_staff_client, alias_value)
+
+    @local_test_settings_required
+    def test_person_titles_displayed(self):
+        # Given there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+
+        # And the officer has titles
+        values_to_find = []
+        for i in range(3):
+            value = uuid.uuid4()
+            PersonTitle.objects.create(
+                title=Title.objects.create(name=value),
+                person=person_record)
+            values_to_find.append(value)
+
+        # and I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # When I go to the person profile page
+        response_staff_client = staff_client.get(reverse(
+            self._officer_profile_view_name,
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # Then I should see the aliases listed
+        for value in values_to_find:
+            self.assertContains(response_staff_client, value)
+
+        self.fail('finish me!')
