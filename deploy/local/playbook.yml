@@ -45,16 +45,12 @@
           mode: a+x
 
       - name: "Run Django database model migrations"
-        django_manage:
-          command: migrate
-          virtualenv: /home/vagrant/venv-vagrant
-          app_path: /vagrant
+        shell: |
+          /home/vagrant/venv-vagrant/bin/python /vagrant/manage.py migrate
 
       - name: "Load demo data records"
-        django_manage:
-          command: "loaddata --ignorenonexistent deploy/local/demo_data/fixture.json"
-          virtualenv: /home/vagrant/venv-vagrant
-          app_path: /vagrant
+        shell: |
+          /home/vagrant/venv-vagrant/bin/python /vagrant/manage.py loaddata --ignorenonexistent /vagrant/deploy/local/demo_data/fixture.json
 
       - name: "Load demo data files"
         copy:
