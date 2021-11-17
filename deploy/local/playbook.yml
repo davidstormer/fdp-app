@@ -29,13 +29,12 @@
       - name: "Set up python runtime environment"
         shell: |
           sudo -u vagrant bash
-          cd /vagrant
           python3 -m venv venv-vagrant
           source venv-vagrant/bin/activate
           pip3 install wheel
           pip3 install -r requirements.txt
         args:
-          creates: /vagrant/venv-vagrant/lib/python3.8/site-packages/django
+          creates: /home/vagrant/venv-vagrant/lib/python3.8/site-packages/django
 
       - name: "Set permissions on manage.py"
         file:
@@ -45,13 +44,13 @@
       - name: "Run Django database model migrations"
         django_manage:
           command: migrate
-          virtualenv: /vagrant/venv-vagrant
+          virtualenv: /home/vagrant/venv-vagrant
           app_path: /vagrant
 
       - name: "Load demo data records"
         django_manage:
           command: "loaddata --ignorenonexistent deploy/local/demo_data/fixture.json"
-          virtualenv: /vagrant/venv-vagrant
+          virtualenv: /home/vagrant/venv-vagrant
           app_path: /vagrant
 
       - name: "Load demo data files"
@@ -63,7 +62,7 @@
         blockinfile:
           path: "/home/vagrant/.profile"
           block: |
-            source /vagrant/venv-vagrant/bin/activate
+            source /home/vagrant/venv-vagrant/bin/activate
             cd /vagrant
 
       - name: "Add helpful instructions on next steps using local instance"
