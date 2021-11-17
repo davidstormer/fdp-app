@@ -4,7 +4,7 @@ from django.urls import reverse
 from inheritable.tests import AbstractTestCase, local_test_settings_required
 from fdpuser.models import FdpOrganization, FdpUser
 from core.models import Person, PersonIncident, Incident, PersonRelationship, Grouping, PersonGrouping, \
-    GroupingIncident, PersonAlias, PersonTitle, Title
+    GroupingIncident, PersonAlias, PersonTitle, Title, PersonIdentifier, PersonIdentifierType
 from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase
 from supporting.models import PersonRelationshipType, ContentIdentifierType, Trait, TraitType
 from os.path import splitext
@@ -315,9 +315,16 @@ class PersonProfileTestCase(AbstractTestCase):
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
 
         # And the officer has identifiers
+        id_type_value = str(uuid.uuid4())
+        id_type = PersonIdentifierType.objects.create(name=id_type_value)
         values_to_find = []
         for i in range(3):
-            value = uuid.uuid4()
+            value = str(uuid.uuid4())
+            PersonIdentifier.objects.create(
+                person=person_record,
+                identifier=value,
+                person_identifier_type=id_type
+            )
             values_to_find.append(value)
 
         # and I'm logged in as a staff user (non-admin)
@@ -331,6 +338,8 @@ class PersonProfileTestCase(AbstractTestCase):
         # Then I should see the identifiers listed
         for value in values_to_find:
             self.assertContains(response_staff_client, value)
+        # and their identifier types
+        self.assertContains(response_staff_client, id_type_value, count=3)
 
     @local_test_settings_required
     def test_person_groups_displayed(self):
