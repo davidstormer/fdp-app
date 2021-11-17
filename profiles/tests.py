@@ -7,7 +7,7 @@ from fdpuser.models import FdpOrganization, FdpUser
 from core.models import Person, PersonIncident, Incident, PersonRelationship, Grouping, PersonGrouping, \
     GroupingIncident, PersonAlias, PersonTitle, Title
 from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase
-from supporting.models import PersonRelationshipType, ContentIdentifierType
+from supporting.models import PersonRelationshipType, ContentIdentifierType, Trait, TraitType
 from os.path import splitext
 from django.test import Client
 from datetime import datetime, timedelta
@@ -1581,5 +1581,32 @@ class ProfileTestCase(AbstractTestCase):
             kwargs={'pk': person_record.pk}), follow=True)
 
         # Then I should see the aliases listed
+        for value in values_to_find:
+            self.assertContains(response_staff_client, value)
+
+    @local_test_settings_required
+    def test_person_traits_displayed(self):
+        # Given there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+
+        # And the officer has traits
+        trait_type = TraitType.objects.create(name="test trait type")
+        values_to_find = []
+        for i in range(3):
+            value = uuid.uuid4()
+            person_record.traits.add(
+                Trait.objects.create(name=value, type=trait_type)
+            )
+            values_to_find.append(value)
+
+        # and I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # When I go to the person profile page
+        response_staff_client = staff_client.get(reverse(
+            self._officer_profile_view_name,
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # Then I should see the traits listed
         for value in values_to_find:
             self.assertContains(response_staff_client, value)
