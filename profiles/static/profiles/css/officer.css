@@ -1,3 +1,9 @@
+/* Common */
+/* Fix smaller font size on lists from base.css (django admin styling) */
+body.officer.profile ul li {
+    font-size: 14px;
+}
+
 /* Container for photos slider plug-in */
 /*.photos.slider, .slick-slide { width: 200px; }*/
 .photos.slider { border: 1px solid #000; }
@@ -14,29 +20,14 @@ button.slick-prev::before, button.slick-next::before {
 p.nodata {
     margin-top: 1em;
 }
-/* Labels in the Identification section */
-label.ident {
-    color: #666;
-    margin-bottom: 1em;
-    font-weight: bold;
-    display: inline-block;
-}
-/* Values for labels in the Identification section */
-span.identval {
-    font-weight: bold;
-}
-/* Simulate labels in identification section without bolding */
-span.labelsim {
-    display: inline-block;
-    margin-bottom: 1em;
-}
-/* Lists within the Identification section */
-ul.ident, li.ident {
-    color: #666;
-    margin: 0;
+/* Identification section*/
+ul.identifiers {
     padding: 0;
+}
+ul.identifiers li {
     list-style: none;
 }
+
 /* Sub-section in the Snapshot section */
 div.snap {
     margin-bottom: 1em;
