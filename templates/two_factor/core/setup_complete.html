@@ -7,16 +7,16 @@
   <p>{% blocktrans %}You've successfully enabled two-factor authentication.{% endblocktrans %}
 
   {% if not phone_methods %}
-    <p>
+    <p style="text-align:center;">
       <strong>Next Step:</strong>
     </p>
     <p>
         Now please create backup tokens
         for use when your token generating device is not available.
     </p>
-      <a href="{% url 'two_factor:profile' %}" class="pull-right btn btn-link">
-        <input type="submit" value="Create Backup Tokens"/>
-      </a>
+          <a class="pull-right btn btn-link" href="{% url 'two_factor:profile' %}">
+            <input class = "putright" type="submit" value="Create Backup Tokens"/>
+          </a>
   {% else %}
     <p>{% blocktrans %}However, it might happen that you don't have access to
       your primary token device. To enable account recovery, add a phone

@@ -46,6 +46,9 @@
     position: absolute;
     left:-9999px;
 }
+.login .putright{
+    float: right;
+}
 .login .qrimage {
     margin: 0 auto;
     display: block;
