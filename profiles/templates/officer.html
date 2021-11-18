@@ -71,66 +71,66 @@
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
             <div class="gridcol gridcell_1_of_3">
                 {% if object.officer_aliases %}
-                <div>
-                    <label class="ident">{% translate 'Aliases' %}</label>
-                    <span class="identval">{% for alias in object.officer_aliases %}{{ alias.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
-                </div>
+                <p>
+                    <span class="label">{% translate 'Aliases' %}:</span>
+                    <span>{% for alias in object.officer_aliases %}{{ alias.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
+                </p>
                 {% endif %}
                 {% if object.age %}
-                <div>
-                    <label class="ident">{% translate 'Age' %}</label> <span class="identval">{{ object.age }}</span>
-                </div>
+                <p>
+                    <span class="label">{% translate 'Age' %}:</span> <span>{{ object.age }}</span>
+                </p>
                 {% endif %}
                 {% if object.officer_traits %}
-                <div>
-                    <label class="ident">{% translate 'Traits' %}</label>
-                    <span class="identval">{% for trait in object.officer_traits %}{{ trait.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
-                </div>
+                <p>
+                    <span class="label">{% translate 'Traits' %}:</span>
+                    <span>{% for trait in object.officer_traits %}{{ trait.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
+                </p>
                 {% endif %}
 
                 {% if object.officer_title %}
-                <div>
-                    <label class="ident">{% if object.officer_titles %}{% translate 'Ranks' %}{% else %}{% translate 'Rank' %}{% endif %}</label>
-                </div>
-
-                <div>
-                    <span class="identval labelsim">{{ object.officer_title.title.name }}</span>
-                    {% if object.officer_title.at_least_since_bounding_dates %}{{ object.officer_title.at_least_since_bounding_dates }}{% endif %}
-                </div>
+                <h3>{% if object.officer_titles %}{% translate 'Ranks' %}{% else %}{% translate 'Rank' %}{% endif %}</h3>
+                <ul>
+                <li>
+                    <span>{{ object.officer_title.title.name }}</span>
+                    {% if object.officer_title.as_of_bounding_dates %}{{ object.officer_title.as_of_bounding_dates }}{% endif %}
+                </li>
 
                 {% for title in object.officer_titles %}
-                <div>
-                    <span class="labelsim">{{ title.title.name }}</span>
-                    {% if title.at_least_since_bounding_dates %}{{ title.at_least_since_bounding_dates }}{% endif %}
-                </div>
+                <li>
+                    <span>{{ title.title.name }}</span>
+                    {% if title.as_of_bounding_dates %}{{ title.as_of_bounding_dates }}{% endif %}
+                </li>
                 {% endfor %}
+                </ul>
                 {% endif %}
 
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
             <div class="gridcol gridcell_1_of_3">
+                {% if object.officer_identifiers %}
+                <ul class="identifiers">
                 {% for identifier in object.officer_identifiers %}
-                <div>
-                    <label class="ident">{{ identifier.person_identifier_type }}</label>
-                    <span class="identval">{{ identifier.identifier }}</span>
-                    {% if identifier.at_least_since_bounding_dates %}{{ identifier.at_least_since_bounding_dates }}{% endif %}
-                </div>
+                <li>
+                    <span>{{ identifier.person_identifier_type }}</span>
+                    <span>{{ identifier.identifier }}</span>
+                    <span>{% if identifier.as_of_bounding_dates %}{{ identifier.as_of_bounding_dates }}{% endif %}</span>
+                </li>
                 {% endfor %}
+                </ul>
+                {% endif %}
 
                 {% if object.officer_command %}
-                <div>
-                    <label class="ident">{% if object.officer_commands %}{% translate 'Commands' %}{% else %}{% translate 'Command' %}{% endif %}</label>
-                </div>
-
-                <div>
-                    <span class="identval labelsim">{{ object.officer_command.grouping.name }}</span>
-                    {% if object.officer_command.at_least_since_bounding_dates %}{{ object.officer_command.at_least_since_bounding_dates }}{% endif %}
-                </div>
-
+                <h3>{% if object.officer_commands %}{% translate 'Commands' %}{% else %}{% translate 'Command' %}{% endif %}</h3>
+                <ul>
+                    <li>
+                    <span>{{ object.officer_command.grouping.name }}</span>
+                    {% if object.officer_command.as_of_bounding_dates %}{{ object.officer_command.as_of_bounding_dates }}{% endif %}
+                    </li>
                 {% for command in object.officer_commands %}
-                <div>
-                    <span class="labelsim">{{ command.grouping.name }}</span>
-                    {% if command.at_least_since_bounding_dates %}{{ command.at_least_since_bounding_dates }}{% endif %}
-                </div>
+                <li>
+                    <span>{{ command.grouping.name }}</span>
+                    {% if command.as_of_bounding_dates %}{{ command.as_of_bounding_dates }}{% endif %}
+                </li>
                 {% endfor %}
                 {% endif %}
 
