@@ -7,15 +7,15 @@
   <p>{% blocktrans %}You've successfully enabled two-factor authentication.{% endblocktrans %}
 
   {% if not phone_methods %}
-    <p style="text-align:center;">
+    <p>
       <strong>Next Step:</strong>
     </p>
     <p>
         Now please create backup tokens
         for use when your token generating device is not available.
     </p>
-          <a class="pull-right btn btn-link" href="{% url 'two_factor:profile' %}">
-            <input class = "putright" type="submit" value="Create Backup Tokens"/>
+          <a class="link-button putright" href="{% url 'two_factor:profile' %}">
+            Create Backup Tokens
           </a>
   {% else %}
     <p>{% blocktrans %}However, it might happen that you don't have access to
