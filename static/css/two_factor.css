@@ -59,6 +59,12 @@
 .login .putright{
     float: right;
 }
+.login .successmsgborder{
+    border-radius: 5px;
+    border-color: #79CC0D;
+    border-style: solid;
+    padding: 5px 5px;
+}
 .login .qrimage {
     margin: 0 auto;
     display: block;

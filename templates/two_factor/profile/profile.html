@@ -50,6 +50,11 @@
     <p class="nextsection">
       To change your 2FA device (e.g. to a new phone), please <strong><a href="{% url 'fdpuser:confirm_2fa_reset' %}">{% trans 'Reset 2FA' %}</a></strong>
     </p>
+    {% if backup_tokens > 0 %}
+      <p class="successmsgborder">
+        <strong>Two-Factor Authentication and Backup tokens are set up. You can now go to the home page!</strong>
+      </p>
+    {% endif %}
     <p class="nextsection">
       {% trans 'Go to the' %} <strong><a href="{% url 'profiles:index' %}" class="pull-right btn btn-link">{% trans "home page" %}</a></strong>
     </p>
