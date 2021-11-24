@@ -154,7 +154,7 @@ class PersonProfileTestCase(AbstractTestCase):
             incident_descriptions.append(description)
             PersonIncident.objects.create(person=person_record, incident=new_incident_record)
             for j in range(3):
-                identifier_value = f"{uuid.uuid4()}"
+                identifier_value = f"content-identifier-{uuid.uuid4()}"
                 new_content_record = Content.objects.create()
                 new_content_record.incidents.add(new_incident_record)
                 identifier = ContentIdentifier.objects.create(
