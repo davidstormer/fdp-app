@@ -359,7 +359,7 @@
                         {% if officer_misconduct.parsed_officer_content_types and officer_misconduct.parsed_officer_contents %}
                         <span class="mish1">{% translate 'Sources' %}</span>
                         <ul class="misall">
-                        {% for content in officer_misconduct.incident.officer_contents %}
+                        {% for content in officer_misconduct.incident.officer_incident_contents %}
                             <li class="misall">
                                 {{ content.type.name|default:"Other" }}
                                 {{ content.officer_content_identifiers|format_identifiers }}
