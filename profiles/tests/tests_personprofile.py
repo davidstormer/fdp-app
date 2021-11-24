@@ -253,7 +253,7 @@ class PersonProfileTestCase(AbstractTestCase):
         # Then I should see their age
         self.assertContains(
             response_staff_client,
-            f"<label class='ident'>Age</label> <span class='identval'>{age_to_find}</span>",
+            f"<span class='label'>Age:</span> <span>{age_to_find}</span>",
             html=True)
 
     @local_test_settings_required

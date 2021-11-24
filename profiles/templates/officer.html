@@ -70,6 +70,7 @@
 
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
             <div class="gridcol gridcell_1_of_3">
+                <h3>Basic information</h3>
                 {% if object.officer_aliases %}
                 <p>
                     <span class="label">{% translate 'Aliases' %}:</span>
@@ -108,12 +109,13 @@
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
             <div class="gridcol gridcell_1_of_3">
                 {% if object.officer_identifiers %}
+                <h3>Identifiers</h3>
                 <ul class="identifiers">
                 {% for identifier in object.officer_identifiers %}
                 <li>
-                    <span>{{ identifier.person_identifier_type }}</span>
                     <span>{{ identifier.identifier }}</span>
                     <span>{% if identifier.as_of_bounding_dates %}{{ identifier.as_of_bounding_dates }}{% endif %}</span>
+                    <span>({{ identifier.person_identifier_type }})</span>
                 </li>
                 {% endfor %}
                 </ul>
