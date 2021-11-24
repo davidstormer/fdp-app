@@ -4,7 +4,7 @@ from django.urls import reverse
 from inheritable.tests import AbstractTestCase, local_test_settings_required
 from fdpuser.models import FdpOrganization, FdpUser
 from core.models import Person, PersonIncident, Incident, PersonRelationship, Grouping, PersonGrouping, \
-    GroupingIncident, PersonAlias, PersonTitle, Title, PersonIdentifier, PersonIdentifierType
+    GroupingIncident, PersonAlias, PersonTitle, Title, PersonIdentifier, PersonIdentifierType, PersonGroupingType
 from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase
 from supporting.models import PersonRelationshipType, ContentIdentifierType, Trait, TraitType
 from os.path import splitext
@@ -383,3 +383,32 @@ class PersonProfileTestCase(AbstractTestCase):
 
         # THEN I should NOT see the "Basic info" heading
         self.assertNotContains(response_staff_client, "Basic information")
+
+    @local_test_settings_required
+    def test_person_group_types_displayed(self):
+        # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+
+        # AND the officer is associated with groups
+        # AND the associations have given types
+        values_to_find = []
+        for i in range(3):
+            value = f"persongrouping-type-{uuid.uuid4()}"
+            person_grouping_type = PersonGroupingType.objects.create(name=value)
+            PersonGrouping.objects.create(
+                type=person_grouping_type,
+                person=person_record,
+                grouping=Grouping.objects.create(name=f"grouping-name-{uuid.uuid4()}"))
+            values_to_find.append(value)
+
+        # and I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # When I go to the person profile page
+        response_staff_client = staff_client.get(reverse(
+            'profiles:officer',
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # Then I should see the groups listed
+        for value in values_to_find:
+            self.assertContains(response_staff_client, value)
