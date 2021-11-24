@@ -70,23 +70,27 @@
 
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
             <div class="gridcol gridcell_1_of_3">
+                {% if object.officer_aliases or object.age or object.officer_traits %}
                 <h3>Basic information</h3>
-                {% if object.officer_aliases %}
-                <p>
-                    <span class="label">{% translate 'Aliases' %}:</span>
-                    <span>{% for alias in object.officer_aliases %}{{ alias.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
-                </p>
-                {% endif %}
-                {% if object.age %}
-                <p>
-                    <span class="label">{% translate 'Age' %}:</span> <span>{{ object.age }}</span>
-                </p>
-                {% endif %}
-                {% if object.officer_traits %}
-                <p>
-                    <span class="label">{% translate 'Traits' %}:</span>
-                    <span>{% for trait in object.officer_traits %}{{ trait.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
-                </p>
+                <div class="basic-information">
+                    {% if object.officer_aliases %}
+                    <p>
+                        <span class="label">{% translate 'Aliases' %}:</span>
+                        <span>{% for alias in object.officer_aliases %}{{ alias.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
+                    </p>
+                    {% endif %}
+                    {% if object.age %}
+                    <p>
+                        <span class="label">{% translate 'Age' %}:</span> <span>{{ object.age }}</span>
+                    </p>
+                    {% endif %}
+                    {% if object.officer_traits %}
+                    <p>
+                        <span class="label">{% translate 'Traits' %}:</span>
+                        <span>{% for trait in object.officer_traits %}{{ trait.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
+                    </p>
+                    {% endif %}
+                </div>
                 {% endif %}
 
                 {% if object.officer_title %}
@@ -94,13 +98,13 @@
                 <ul>
                 <li>
                     <span>{{ object.officer_title.title.name }}</span>
-                    {% if object.officer_title.as_of_bounding_dates %}{{ object.officer_title.as_of_bounding_dates }}{% endif %}
+                    <span class="dates">{% if object.officer_title.as_of_bounding_dates %}{{ object.officer_title.as_of_bounding_dates }}{% endif %}</span>
                 </li>
 
                 {% for title in object.officer_titles %}
                 <li>
                     <span>{{ title.title.name }}</span>
-                    {% if title.as_of_bounding_dates %}{{ title.as_of_bounding_dates }}{% endif %}
+                    <span class="dates">{% if title.as_of_bounding_dates %}{{ title.as_of_bounding_dates }}{% endif %}</span>
                 </li>
                 {% endfor %}
                 </ul>
@@ -113,9 +117,9 @@
                 <ul class="identifiers">
                 {% for identifier in object.officer_identifiers %}
                 <li>
+                    <span class="label">{{ identifier.person_identifier_type }}:</span>
                     <span>{{ identifier.identifier }}</span>
-                    <span>{% if identifier.as_of_bounding_dates %}{{ identifier.as_of_bounding_dates }}{% endif %}</span>
-                    <span>({{ identifier.person_identifier_type }})</span>
+                    <span class="dates">{% if identifier.as_of_bounding_dates %}{{ identifier.as_of_bounding_dates }}{% endif %}</span>
                 </li>
                 {% endfor %}
                 </ul>
@@ -126,12 +130,12 @@
                 <ul>
                     <li>
                     <span>{{ object.officer_command.grouping.name }}</span>
-                    {% if object.officer_command.as_of_bounding_dates %}{{ object.officer_command.as_of_bounding_dates }}{% endif %}
+                        <span class="dates">{% if object.officer_command.as_of_bounding_dates %}{{ object.officer_command.as_of_bounding_dates }}{% endif %}</span>
                     </li>
                 {% for command in object.officer_commands %}
                 <li>
                     <span>{{ command.grouping.name }}</span>
-                    {% if command.as_of_bounding_dates %}{{ command.as_of_bounding_dates }}{% endif %}
+                    <span class="dates">{% if command.as_of_bounding_dates %}{{ command.as_of_bounding_dates }}{% endif %}</span>
                 </li>
                 {% endfor %}
                 {% endif %}

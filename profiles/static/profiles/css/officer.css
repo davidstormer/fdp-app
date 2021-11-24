@@ -5,10 +5,10 @@ body.officer.profile ul li {
 }
 body.officer.profile h3 {
     color: #417690;
+    text-transform: uppercase;
 }
 
 body.officer.profile span.label {
-    color: #757575;
     font-weight: bold;
 }
 
@@ -31,11 +31,22 @@ p.nodata {
     margin-top: 1em;
 }
 /* Identification section*/
+div.basic-information {
+    margin-left: 1em;
+}
 section.identification ul {
     padding-left: 2em;
 }
 section.identification ul li {
-    margin-bottom: .25em;
+    margin-bottom: .5em;
+}
+section.identification span.dates:before {
+    content: '(';
+/* Undecided how to handle these */
+}
+section.identification span.dates:after {
+    content: ')';
+/* Undecided how to handle these */
 }
 
 /* Sub-section in the Snapshot section */
