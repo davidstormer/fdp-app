@@ -3,6 +3,16 @@
 body.officer.profile ul li {
     font-size: 14px;
 }
+body.officer.profile h3 {
+    color: #417690;
+}
+
+body.officer.profile span.label {
+    color: #757575;
+    font-weight: bold;
+}
+
+
 
 /* Container for photos slider plug-in */
 /*.photos.slider, .slick-slide { width: 200px; }*/
@@ -21,11 +31,11 @@ p.nodata {
     margin-top: 1em;
 }
 /* Identification section*/
-ul.identifiers {
-    padding: 0;
+section.identification ul {
+    padding-left: 2em;
 }
-ul.identifiers li {
-    list-style: none;
+section.identification ul li {
+    margin-bottom: .25em;
 }
 
 /* Sub-section in the Snapshot section */
