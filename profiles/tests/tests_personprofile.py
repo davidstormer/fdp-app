@@ -366,3 +366,20 @@ class PersonProfileTestCase(AbstractTestCase):
         # Then I should see the groups listed
         for value in values_to_find:
             self.assertContains(response_staff_client, value)
+
+    @local_test_settings_required
+    def test_no_basic_info(self):
+        # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # AND there is no basic info
+        pass
+        # AND I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # WHEN I go to the person profile page
+        response_staff_client = staff_client.get(reverse(
+            'profiles:officer',
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # THEN I should NOT see the "Basic info" heading
+        self.assertNotContains(response_staff_client, "Basic information")
