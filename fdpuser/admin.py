@@ -1,13 +1,23 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.contrib.auth.views import redirect_to_login
+from django.contrib.admin import AdminSite
 from django.utils.translation import gettext_lazy as _
+from django.shortcuts import resolve_url
+from django.utils.http import is_safe_url
+from django.urls import reverse
+from django.conf import settings
+from two_factor.admin import AdminSiteOTPRequired
+from two_factor.utils import monkeypatch_method
 from axes.admin import AccessAttemptAdmin, AccessLogAdmin
 from axes.models import AccessAttempt, AccessLog
 from cspreports.admin import CSPReportAdmin
 from cspreports.models import CSPReport
 from .models import FdpUser, FdpOrganization, PasswordReset, FdpCSPReport, Eula
 from .forms import FdpUserChangeForm, FdpUserCreationForm
+from inheritable.models import AbstractConfiguration
 from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, FdpInheritableBaseAdmin, HostOnlyAdmin, \
     HostOnlyBaseAdmin
 
@@ -204,3 +214,60 @@ class EulaAdmin(HostOnlyAdmin):
     list_display = _list_display
     list_display_links = _list_display
     ordering = ['-timestamp']
+
+
+class FdpAdminSiteOTPRequired(AdminSiteOTPRequired):
+    """ Overrides the class used by the Django Two-Factor Authentication package implementing 2FA in Django's admin
+    site to also optionally integrate the federated login page into Django's admin site.
+
+    """
+    def login(self, request, extra_context=None):
+        """ Redirects to the site login page for the given HttpRequest.
+
+        :param request: Http request.
+        :param extra_context:  Additional context that is ignored.
+        :return: Redirect to site login page.
+        """
+        # Configured to support federated login page.
+        # IF statement is based on two_factor.admin.AdminSiteOTPRequiredMixin.login(...) method with the additional
+        # argument of login_url passed to redirect_to_login(...) method.
+        if AbstractConfiguration.can_do_federated_login():
+            redirect_to = request.POST.get(REDIRECT_FIELD_NAME, request.GET.get(REDIRECT_FIELD_NAME))
+
+            if not redirect_to or not is_safe_url(url=redirect_to, allowed_hosts=[request.get_host()]):
+                redirect_to = resolve_url(settings.LOGIN_REDIRECT_URL)
+
+            return redirect_to_login(redirect_to, login_url=reverse('federated_login'))
+        # Not configured to support the federated login page.
+        else:
+            return super().login(request=request, extra_context=extra_context)
+
+
+def patch_fdp_admin():
+    """ Patches Django's admin site by default to optionally integrate the federated login page.
+
+    Based on two_factor.admin.patch_admin(...) function.
+
+    Also see the Django Two-Factor Authentication package documentation, particularly regarding the Admin site:
+
+    https://django-two-factor-auth.readthedocs.io/en/stable/implementing.html#admin-site
+
+    """
+    @monkeypatch_method(AdminSite)
+    def login(self, request, extra_context=None):
+        """ Redirects to the site login page for the given HttpRequest.
+
+        :param self:
+        :param request: Http request.
+        :param extra_context:  Additional context that is ignored.
+        :return: Redirect to site login page.
+        """
+        # Based on two_factor.admin.patch_admin(...).login(...) method with the optional additional argument of
+        # login_url passed to redirect_to_login(...) method if system is configured to support the federated login page.
+        extra_args = {'login_url': reverse('federated_login')} if AbstractConfiguration.can_do_federated_login() else {}
+        redirect_to = request.POST.get(REDIRECT_FIELD_NAME, request.GET.get(REDIRECT_FIELD_NAME))
+
+        if not redirect_to or not is_safe_url(url=redirect_to, allowed_hosts=[request.get_host()]):
+            redirect_to = resolve_url(settings.LOGIN_REDIRECT_URL)
+
+        return redirect_to_login(redirect_to, **extra_args)
