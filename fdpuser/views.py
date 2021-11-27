@@ -7,7 +7,6 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from django.utils.decorators import method_decorator
 from django.conf import settings
-from django.http import QueryDict
 from inheritable.models import AbstractIpAddressValidator, AbstractConfiguration, JsonData, AbstractUrlValidator
 from inheritable.views import SecuredSyncTemplateView, SecuredSyncRedirectView, SecuredAsyncJsonView, \
     SecuredSyncNoEulaFormView, SecuredSyncButNoEulaView, UnsecuredSyncTemplateView
@@ -539,27 +538,6 @@ class FederatedLoginTemplateView(UnsecuredSyncTemplateView):
 
     """
     template_name = 'federated_login.html'
-    #: Name of the GET parameter, i.e. appearing in the querystring, that stores the URL to which the user should be
-    # redirected after a successful login.
-    next_url_param = 'next'
-
-    def __get_querystring_for_next_url(self):
-        """ Retrieves the querystring that will store the URL to which the user should be redirected after a successful
-        login.
-
-        :return: String representing querystring in the form of: ?next=... , or an empty string if no redirection URL
-        could be found.
-        """
-        # Http request was made using the GET method
-        if self.request.GET:
-            # retrieve the optional ...next=... querystring parameter, if it exists
-            next_url = self.request.GET.get(self.next_url_param, None)
-            # redirection URL exists
-            if next_url:
-                querystring = QueryDict('', mutable=True)
-                querystring.update({self.next_url_param: next_url})
-                return f'?{querystring.urlencode()}'
-        return ''
 
     def get_context_data(self, **kwargs):
         """ Adds the title, description and user details to the view context.
@@ -572,6 +550,6 @@ class FederatedLoginTemplateView(UnsecuredSyncTemplateView):
             'title': _('Full Disclosure Project'),
             'description': _('Select authentication method to log in to the Full Disclosure Project.'),
             'auth_options': AbstractConfiguration.federated_login_options(),
-            'next_url_querystring': self.__get_querystring_for_next_url()
+            'next_url_querystring': self._get_querystring_for_next_url()
         })
         return context
