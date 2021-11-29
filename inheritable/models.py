@@ -3271,8 +3271,8 @@ class AbstractConfiguration(models.Model):
                         o['url_pattern_name'],
                         args=[locate(a) for a in o['url_pattern_args']]
                     ) if o['url_pattern_args'] else reverse(o['url_pattern_name']),
-                    'css': o['css'],
-                    'css_hover': o['css_hover']
+                    'css': o.get('css', {}),
+                    'css_hover': o.get('css_hover', {})
                 } for o in login_options
             ]
         else:

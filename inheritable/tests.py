@@ -33,8 +33,8 @@ def local_test_settings_required(func):
         if AbstractConfiguration.is_using_local_configuration():
             func(*args, **kwargs)
         else:
-            logger.warning('\nSkipped {t}. It requires local test settings and can be run with the command: {c}'.format(
-                t=func.__name__, c='python manage.py test --settings=fdp.configuration.test.test_local_settings'))
+            logger.warning(f'\nSkipped {func.__name__}. It requires local test settings and can be run with the '
+                           f'command: python manage.py test --settings=fdp.configuration.test.test_local_settings')
     return decorator
 
 
@@ -60,8 +60,8 @@ def azure_test_settings_required(func):
                 and not AbstractConfiguration.use_only_azure_active_directory():
             func(*args, **kwargs)
         else:
-            logger.warning('\nSkipped {t}. It requires Azure test settings and can be run with the command: {c}'.format(
-                t=func.__name__, c='python manage.py test --settings=fdp.configuration.test.test_azure_settings'))
+            logger.warning(f'\nSkipped {func.__name__}. It requires Azure test settings and can be run with the '
+                           f'command: python manage.py test --settings=fdp.configuration.test.test_azure_settings')
     return decorator
 
 
@@ -86,12 +86,8 @@ def azure_only_test_settings_required(func):
                 and AbstractConfiguration.use_only_azure_active_directory():
             func(*args, **kwargs)
         else:
-            logger.warning(
-                '\nSkipped {t}. It requires Azure only test settings and can be run with the command: {c}'.format(
-                    t=func.__name__,
-                    c='python manage.py test --settings=fdp.configuration.test.test_azure_only_settings'
-                )
-            )
+            logger.warning(f'\nSkipped {func.__name__}. It requires Azure only test settings and can be run with the '
+                           f'command: python manage.py test --settings=fdp.configuration.test.test_azure_only_settings')
     return decorator
 
 
