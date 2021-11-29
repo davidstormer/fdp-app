@@ -7,6 +7,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.apps import apps
 from django.views.generic.base import RedirectView
+from .admin import FdpAdminSiteOTPRequired
 from .models import FdpUser, PasswordReset, FdpOrganization, FdpCSPReport
 from .forms import FdpUserCreationForm, FdpUserChangeForm
 from .views import FdpLoginView
@@ -31,7 +32,6 @@ from data_wizard.sources.models import FileSource
 from axes.models import AccessLog, AccessAttempt
 from two_factor.models import PhoneDevice
 from two_factor.views import LoginView
-from two_factor.admin import AdminSiteOTPRequired
 from axes.models import AccessAttempt
 import secrets
 import logging
@@ -1122,7 +1122,7 @@ class FdpUserTestCase(AbstractTestCase):
         # default 2FA Login view is expected for username/password step
         self._assert_username_and_password_step_in_login_view(response=response, expected_view=LoginView)
         logger.debug('Checking that 2FA is enforced for the Admin site')
-        self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
+        self.assertEqual(admin.site.__class__, FdpAdminSiteOTPRequired)
         logger.debug(_('\nSuccessfully finished test for '
                 'login view, 2FA, URL patterns and file serving for local development configuration\n\n'))
 
@@ -1186,7 +1186,7 @@ class FdpUserTestCase(AbstractTestCase):
         # default 2FA Login view is expected for username/password step
         self._assert_username_and_password_step_in_login_view(response=response, expected_view=FdpLoginView)
         logger.debug('Checking that 2FA is enforced for the Admin site')
-        self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
+        self.assertEqual(admin.site.__class__, FdpAdminSiteOTPRequired)
         logger.debug('Checking that Azure users skip 2FA step')
         self.__check_azure_user_skips_2fa(has_django_auth_backend=True)
         logger.debug(_('\nSuccessfully finished test for '
@@ -1256,7 +1256,7 @@ class FdpUserTestCase(AbstractTestCase):
             login_startswith=None
         )
         logger.debug('Checking that 2FA is enforced for the Admin site')
-        self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
+        self.assertEqual(admin.site.__class__, FdpAdminSiteOTPRequired)
         logger.debug('Checking that Azure users skip 2FA step')
         self.__check_azure_user_skips_2fa(has_django_auth_backend=False)
         logger.debug(_('\nSuccessfully finished test for '
