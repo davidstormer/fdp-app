@@ -49,6 +49,35 @@ section.identification span.dates:after {
 /* Undecided how to handle these */
 }
 
+/* Payroll section (now nested under identification) */
+section.payroll {
+    margin-top: 0;
+}
+body.profile.officer div.main section.payroll h2 {
+   font-size: 14px !important;
+   font-weight: bold;
+}
+div.payrollcontainer {
+    height: 220px;
+    overflow: scroll;
+    box-shadow: inset 0 -1em 1em #aaa;
+    border: 1px solid lightgray;
+}
+div.payrollcontainer tr:nth-child(odd) {
+    background-color: rgba(255,255,255, .25);
+}
+div.payrollcontainer tr:nth-child(even) {
+    background-color: rgba(200,200,200, .25);
+}
+div.payrollcontainer thead th {
+    background-color: rgba(200,200,200, .25);
+    color: #000
+}
+section.payroll .ui-accordion .ui-accordion-content {
+    padding: 0;
+}
+
+
 /* Sub-section in the Snapshot section */
 div.snap {
     margin-bottom: 1em;
