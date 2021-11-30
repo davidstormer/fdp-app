@@ -180,7 +180,7 @@ class CoreButNoEulaAccessMixin(
                 # redirection URL was not defined or was not safe
                 else:
                     logger.error(msg='Redirection URL was not defined or was not safe')
-                    return federated_login_url
+                    return '/'
             # no user was found, or they are not authenticated
             else:
                 logger.error(msg='No user was found or they are not authenticated')
