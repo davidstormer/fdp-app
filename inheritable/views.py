@@ -176,6 +176,13 @@ class CoreButNoEulaAccessMixin(
                     return next_url
                 # redirection URL was not defined or was not safe
                 else:
+                    # User is intended for authentication through an external authentication backend such as Azure
+                    # Active Directory, but not corresponding record exists in the Django database backend, indicating
+                    # that authentication could not be fully completed
+                    if user.only_external_auth and not user.has_azure_active_directory_social_auth:
+                        raise Exception(_('Externally authenticated user does not have a corresponding social '
+                                          'authentication record in the database. This might indicate that '
+                                          'external authentication is not configured correctly.'))
                     return federated_login_url
             # no user was found, or they are not authenticated
             else:
