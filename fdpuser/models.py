@@ -473,6 +473,19 @@ class FdpUser(AbstractUser):
         accessible_queryset = user.get_accessible_users()
         return queryset.filter(pk__in=accessible_queryset)
 
+    @property
+    def has_azure_active_directory_social_auth(self):
+        """ Checks whether the Django database backend has a record corresponding to a user's authentication through
+        Microsoft Azure Active Directory.
+
+        :return: True if the record exists, false otherwise.
+        """
+        social_auth_qs = getattr(self, 'social_auth', None)
+        if social_auth_qs is not None:
+            return social_auth_qs.filter(provider=AbstractConfiguration.azure_active_directory_provider).exists()
+        else:
+            return False
+
     @classmethod
     def is_user_azure_authenticated(cls, user):
         """ Checks if a user has been properly authenticated through the Azure Active Directory authentication backend.
@@ -495,7 +508,7 @@ class FdpUser(AbstractUser):
                 and user.is_active \
                 and (not user.is_superuser) \
                 and user.only_external_auth \
-                and user.social_auth.filter(provider=AbstractConfiguration.azure_active_directory_provider).exists():
+                and user.has_azure_active_directory_social_auth:
             return True
         # user is not externally authenticated
         else:

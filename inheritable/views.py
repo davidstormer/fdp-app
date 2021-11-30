@@ -164,8 +164,6 @@ class CoreButNoEulaAccessMixin(
 
         :return: URL for login page.
         """
-        import logging
-        logger = logging.getLogger(__name__)
         # Configured to support federated login page
         if AbstractConfiguration.can_do_federated_login():
             federated_login_url = reverse('federated_login')
@@ -175,19 +173,22 @@ class CoreButNoEulaAccessMixin(
                 next_url = self._get_next_url()
                 # redirection URL is defined and is safe
                 if next_url:
-                    logger.error(msg='Redirection URL is defined and is safe')
                     return next_url
                 # redirection URL was not defined or was not safe
                 else:
-                    logger.error(msg='Redirection URL was not defined or was not safe')
+                    # User is intended for authentication through an external authentication backend such as Azure
+                    # Active Directory, but not corresponding record exists in the Django database backend, indicating
+                    # that authentication could not be fully completed
+                    if user.only_external_auth and not user.has_azure_active_directory_social_auth:
+                        raise Exception(_('Externally authenticated user does not have a corresponding social '
+                                          'authentication record in the database. This might indicate that '
+                                          'external authentication is not configured correctly.'))
                     return federated_login_url
             # no user was found, or they are not authenticated
             else:
-                logger.error(msg='No user was found or they are not authenticated')
                 return federated_login_url
         # Not configured to support federated login page, so revert to default behaviour.
         else:
-            logger.error(msg='Not configured to support federated login page')
             return super().get_login_url()
 
 
