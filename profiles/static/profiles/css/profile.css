@@ -16,6 +16,12 @@ body.profile.officer div.main h2 {
     font-weight: normal;
 }
 
+/* Payroll */
+span.empty-table-field {
+    text-align: center;
+    display: block;
+}
+
 /* edit links for each incident (within accordion <button> element...) */
 body.profile.officer div.main button.collapsible span.admin-actions {
     font-size: 14px;

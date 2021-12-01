@@ -158,35 +158,37 @@
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
             <div class="gridcol gridcell_2_of_3">
                     <section class="payroll">
-                <div id="accordion">
+                        <div id="accordion">
                     <h3>Payroll</h3>
                     <div>
                         {% if object.officer_payments %}
                         <div class="payrollcontainer">
                         <table>
                             <thead>
-                                <th>{% translate 'Period' %}</th>
-                                <th>{% translate 'Salary' %}</th>
-                                <th>{% translate 'Hours' %}</th>
-                                <th>{% translate 'Gross Pay' %}</th>
-                                <th>{% translate 'Overtime Hours' %}</th>
-                                <th>{% translate 'Overtime Pay' %}</th>
-                                <th>{% translate 'Other Pay' %}</th>
-                                <th>{% translate 'County' %}</th>
-                                <th>{% translate 'Leave Status' %}</th>
+                                <tr>
+                                    <th>{% translate 'Period' %}</th>
+                                    <th>{% translate 'Salary' %}</th>
+                                    <th>{% translate 'Hours' %}</th>
+                                    <th>{% translate 'Gross Pay' %}</th>
+                                    <th>{% translate 'Overtime Hours' %}</th>
+                                    <th>{% translate 'Overtime Pay' %}</th>
+                                    <th>{% translate 'Other Pay' %}</th>
+                                    <th>{% translate 'County' %}</th>
+                                    <th>{% translate 'Leave Status' %}</th>
+                                </tr>
                             </thead>
                             <tbody>
                             {% for officer_payment in object.officer_payments %}
                                 <tr>
                                     <td>{{ officer_payment.as_of_bounding_dates|capfirst }}</td>
-                                    <td>{% translate '$' %}{{ officer_payment.base_salary }}</td>
-                                    <td>{{ officer_payment.regular_hours }}</td>
-                                    <td>{% translate '$' %}{{ officer_payment.regular_gross_pay }}</td>
-                                    <td>{{ officer_payment.overtime_hours }}</td>
-                                    <td>{% translate '$' %}{{ officer_payment.overtime_pay }}</td>
-                                    <td>{% translate '$' %}{{ officer_payment.total_other_pay }}</td>
-                                    <td>{{ officer_payment.county }}</td>
-                                    <td>{{ officer_payment.leave_status }}</td>
+                                    <td>${{ officer_payment.base_salary }}</td>
+                                    <td>{{ officer_payment.regular_hours|table_cell }}</td>
+                                    <td>{{ officer_payment.regular_gross_pay|table_cell_currency }}</td>
+                                    <td>{{ officer_payment.overtime_hours|table_cell }}</td>
+                                    <td>{{ officer_payment.overtime_pay|table_cell_currency }}</td>
+                                    <td>{{ officer_payment.total_other_pay|table_cell_currency }}</td>
+                                    <td>{{ officer_payment.county|table_cell }}</td>
+                                    <td>{{ officer_payment.leave_status|table_cell }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -198,58 +200,7 @@
 
                     </div>
                 </div>
-
-                                <div class="mispad">
-                                <h3>
-                                    <button type="button" class="collapsible">
-                                    {% translate 'Payroll' %}
-                                    {% if is_admin %}
-                                    <span class="admin-actions">
-                                        <a href="{{ object.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
-                                    </span>
-                                    {% endif %}
-
-                                    </button>
-                                </h3>
-                                <div class="collapsible">
-                                    {% if object.officer_payments %}
-                                        <div class="payrollcontainer">
-                                        <table>
-                                            <thead>
-                                                <th>{% translate 'Period' %}</th>
-                                                <th>{% translate 'Salary' %}</th>
-                                                <th>{% translate 'Hours' %}</th>
-                                                <th>{% translate 'Gross Pay' %}</th>
-                                                <th>{% translate 'Overtime Hours' %}</th>
-                                                <th>{% translate 'Overtime Pay' %}</th>
-                                                <th>{% translate 'Other Pay' %}</th>
-                                                <th>{% translate 'County' %}</th>
-                                                <th>{% translate 'Leave Status' %}</th>
-                                            </thead>
-                                            <tbody>
-                                            {% for officer_payment in object.officer_payments %}
-                                                <tr>
-                                                    <td>{{ officer_payment.as_of_bounding_dates|capfirst }}</td>
-                                                    <td>{% translate '$' %}{{ officer_payment.base_salary }}</td>
-                                                    <td>{{ officer_payment.regular_hours }}</td>
-                                                    <td>{% translate '$' %}{{ officer_payment.regular_gross_pay }}</td>
-                                                    <td>{{ officer_payment.overtime_hours }}</td>
-                                                    <td>{% translate '$' %}{{ officer_payment.overtime_pay }}</td>
-                                                    <td>{% translate '$' %}{{ officer_payment.total_other_pay }}</td>
-                                                    <td>{{ officer_payment.county }}</td>
-                                                    <td>{{ officer_payment.leave_status }}</td>
-                                                </tr>
-                                            {% endfor %}
-                                            </tbody>
-                                        </table>
-                                        </div>
-                                    {% else %}
-                                        <p class="nodata">{% translate 'No payroll is recorded for this officer.' %}</p>
-                                    {% endif %}
-                                </div> <!-- div.collapsible -->
-                                </div> <!-- div.mispad -->
-
-    </section> <!-- section.payroll -->
+                    </section> <!-- section.payroll -->
 
             </div>
         </div> <!-- div.gridrow.gridgroup -->
