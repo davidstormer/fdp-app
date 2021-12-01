@@ -1,6 +1,6 @@
 from django.contrib import admin
 from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, ConfidentiableAdmin
-from .models import Person, PersonContact, PersonAlias, PersonPhoto, PersonIdentifier, PersonTitle, \
+from .models import Person, PersonContact, PersonAlias, PersonSocialMedia, PersonPhoto, PersonIdentifier, PersonTitle, \
     PersonRelationship, PersonPayment, Grouping, GroupingAlias, GroupingRelationship, \
     PersonGrouping, Incident, PersonIncident, GroupingIncident
 
@@ -8,7 +8,6 @@ from .models import Person, PersonContact, PersonAlias, PersonPhoto, PersonIdent
 @admin.register(Person)
 class PersonAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
     """ Admin interface for persons.
-
     """
     _list_display = [
                         'name', 'birth_date_range_start', 'birth_date_range_end', 'is_law_enforcement'
@@ -23,7 +22,6 @@ class PersonAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
 @admin.register(PersonContact)
 class PersonContactAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for contact information for persons.
-
     """
     _list_display = ['is_current', 'person', 'phone_number', 'email', 'address'] + ArchivableAdmin.list_display
     list_display = _list_display
@@ -44,6 +42,17 @@ class PersonAliasAdmin(FdpInheritableAdmin, ArchivableAdmin):
     list_filter = [] + ArchivableAdmin.list_filter
     search_fields = ['name', 'person__name']
     ordering = ['person__name', 'name']
+
+
+@admin.register(PersonSocialMedia)
+class PersonSocialMediaAdmin(FdpInheritableAdmin, ArchivableAdmin):
+    """ Admin interface for person's social media.
+    """
+    _list_display = ['person', 'social_name', 'social_link']+ArchivableAdmin.list_display
+    list_display = _list_display
+    list_display_links = _list_display
+    autocomplete_fields = ["person"]
+    search_fields = ['social_name']
 
 
 @admin.register(PersonPhoto)

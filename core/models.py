@@ -897,6 +897,61 @@ class PersonAlias(Archivable, AbstractAlias):
         ordering = ['person', 'name']
 
 
+class PersonSocialMedia(Archivable):
+    """ Social media related to a person, e.g. links and names used in the social media
+    """
+    social_link = models.URLField(
+        null=False,
+        blank=True,
+        default='',
+        help_text='Link of social media owned by this person',
+        max_length=200,
+        verbose_name="social media link"
+    )
+    social_name = models.CharField(
+        null=False,
+        blank=True,
+        default='',
+        help_text='Named used in this social media connecting to this person',
+        max_length=300,
+        verbose_name='social media name/handel'
+    )
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.CASCADE,
+        related_name='person_social_medias',
+        related_query_name='person_social_media',
+        blank=False,
+        null=False,
+        help_text='Person who is known to own this social media',
+        verbose_name='person'
+    )
+
+    #: Fields to display in the model form.
+    form_fields = ['social_name', 'social_link', 'person']
+
+    def __str__(self):
+        """Defines string representation for a person social media.
+
+        :return: String representation of a social media.
+        """
+        person_name = AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='person')
+        #convert to fstring
+        return f"{self.social_name}, {self.social_link} person fk:{person_name}"
+
+    @classmethod
+    def filter_for_admin(cls, queryset, user):
+        return queryset
+
+    """ meta class is to add additional settings about the object model
+    """
+    class Meta:
+        db_table = '{d}person_social_media'.format(d=settings.DB_PREFIX)
+        verbose_name = 'Person social media'
+        verbose_name_plural = 'Person social medias'
+        ordering = ['person', 'social_name', 'social_link']
+
+
 class PersonPhoto(Archivable, Descriptable):
     """ Photos for a person.
 

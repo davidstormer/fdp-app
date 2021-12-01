@@ -12,7 +12,7 @@ from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPers
     ContentPersonAllegation, ContentPersonPenalty
 from core.models import Grouping, GroupingAlias, GroupingRelationship, Person, PersonAlias, PersonIdentifier, \
     PersonGrouping, PersonTitle, PersonRelationship, PersonContact, PersonPayment, Incident, PersonIncident, \
-    GroupingIncident, PersonPhoto
+    GroupingIncident, PersonPhoto, PersonSocialMedia
 from supporting.models import County, GroupingRelationshipType, PersonRelationshipType, Location
 
 
@@ -696,6 +696,27 @@ class PersonPaymentModelForm(AbstractWizardModelForm):
         model = PersonPayment
         fields = person_payment_form_fields.copy()
         fields_order = person_payment_form_fields.copy()
+
+
+class PersonSocialMediaModelForm(AbstractWizardModelForm):
+    """ Form used to create new and edit existing instances of person's social media model.
+    Fields:
+    """
+    #: Fields to show in the form
+    fields_to_show = PersonSocialMedia.form_fields
+
+    #: Prefix to use for form
+    prefix = 'socialmedia'
+
+    formset_extra = 0
+
+    #: Can delete (forms) parameter when creating a person social media
+    formset_can_delete = True
+
+    class Meta:
+        model = PersonSocialMedia
+        fields = PersonSocialMedia.form_fields
+        fields_order = PersonSocialMedia.form_fields
 
 
 class PersonAliasModelForm(AbstractWizardModelForm):
