@@ -5,6 +5,7 @@ from bulk.models import BulkImport
 from core.models import Grouping
 from supporting.models import County
 import csv
+from bulk_data_manipulation.common import get_record_from_external_id, ImportErrors
 from uuid import uuid4
 import pdb
 
@@ -15,50 +16,12 @@ help_text = f"""This tool updates group data. Takes a CSV file with the followin
 the given records.
 """
 
-class ImportErrors(Exception):
-    pass
-
-
-class ExternalIdMissing(Exception):
-    pass
-
-
-class RecordMissing(Exception):
-    pass
-
-
-class ExternalIdDuplicates(Exception):
-    pass
-
 
 def parse_comma_delimited_values(input_value: str) -> list:
     output_values = input_value.split(',')
     for i, value in enumerate(output_values):
         output_values[i] = value.strip()
     return output_values
-
-
-def get_record_from_external_id(model, external_id):
-    try:
-        bulk_import_record = BulkImport.objects.get(
-          pk_imported_from=external_id,
-          table_imported_to=model.get_db_table()
-          )
-    except BulkImport.DoesNotExist as e:
-        raise ExternalIdMissing(f"Can't find external id {external_id} for model {model.get_verbose_name()}")
-    except BulkImport.MultipleObjectsReturned as e:
-        raise ExternalIdDuplicates(f"Multiple external ids found! for {external_id} for model "
-                                   f"{model.get_verbose_name()}")
-
-    pk = bulk_import_record.pk_imported_to
-
-    try:
-        record = model.objects.get(pk=pk)
-    except model.DoesNotExist as e:
-        raise RecordMissing(f"Can't find record, does not exist! model: {model.get_verbose_name()} pk: {pk} ext_id:"
-                            f" {external_id}")
-
-    return record
 
 
 def get_records_from_extid_cdv(model: object, input_value: str) -> list:
@@ -73,22 +36,6 @@ def get_records_from_extid_cdv(model: object, input_value: str) -> list:
         return records
     else:
         return []
-
-
-def import_record_with_extid(model: object, data: dict, external_id: str = '') -> tuple:
-    """Add a record to the system, the way that the bulk importer does by adding a BulkImport record with an external
-    id value
-    """
-    if not external_id:
-        external_id = str(uuid4())
-    record = model.objects.create(**data)
-    BulkImport.objects.create(
-        table_imported_to=model.get_db_table(),
-        pk_imported_to=record.pk,
-        pk_imported_from=external_id,
-        data_imported='{}'  # make constraints happy...
-    )
-    return record, external_id
 
 
 class Command(BaseCommand):

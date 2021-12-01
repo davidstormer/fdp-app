@@ -18,8 +18,11 @@ from uuid import uuid4
 import copy
 from unittest.mock import patch
 
-from .management.commands.bulk_update_groups import get_record_from_external_id, ExternalIdMissing, RecordMissing, \
-    ExternalIdDuplicates, FIELDNAMES, parse_comma_delimited_values, get_records_from_extid_cdv, import_record_with_extid
+from bulk_data_manipulation.management.commands.bulk_update_groups import get_record_from_external_id,\
+    FIELDNAMES, parse_comma_delimited_values, \
+    get_records_from_extid_cdv
+from bulk_data_manipulation.common import ExternalIdMissing, RecordMissing, ExternalIdDuplicates, ImportErrors
+from bulk_data_manipulation.tests.common import import_record_with_extid
 
 
 def csv_to_list_dict(csv_reader):
