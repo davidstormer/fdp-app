@@ -1,5 +1,5 @@
 from django import template
-
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -36,3 +36,17 @@ def get_item(list_obj, index):
     :return: Item retrieved from the list with the index.
     """
     return list_obj[index]
+
+@register.filter
+def table_cell(input_value):
+    if input_value:
+        return input_value
+    else:
+        return mark_safe("<span class='empty-table-field'>&mdash;</span>")
+
+@register.filter
+def table_cell_currency(input_value):
+    if input_value:
+        return f"${input_value}"
+    else:
+        return mark_safe("<span class='empty-table-field'>&mdash;</span>")
