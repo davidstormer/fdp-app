@@ -48,11 +48,11 @@ class PersonAliasAdmin(FdpInheritableAdmin, ArchivableAdmin):
 class PersonSocialMediaAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for person's social media.
     """
-    _list_display = ['person', 'social_name', 'social_link']+ArchivableAdmin.list_display
+    _list_display = ['person', 'link_name', 'link']+ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     autocomplete_fields = ["person"]
-    search_fields = ['social_name']
+    search_fields = ['link_name']
 
 
 @admin.register(PersonPhoto)

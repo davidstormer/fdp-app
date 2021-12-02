@@ -900,19 +900,19 @@ class PersonAlias(Archivable, AbstractAlias):
 class PersonSocialMedia(Archivable):
     """ Social media related to a person, e.g. links and names used in the social media
     """
-    social_link = models.URLField(
+    link = models.URLField(
         null=False,
         blank=True,
         default='',
-        help_text='Link of social media owned by this person',
+        help_text='Link to social media owned by this person',
         max_length=200,
         verbose_name="social media link"
     )
-    social_name = models.CharField(
+    link_name = models.CharField(
         null=False,
         blank=True,
         default='',
-        help_text='Named used in this social media connecting to this person',
+        help_text='Named used in this social media related to this person',
         max_length=300,
         verbose_name='social media name/handel'
     )
@@ -928,7 +928,7 @@ class PersonSocialMedia(Archivable):
     )
 
     #: Fields to display in the model form.
-    form_fields = ['social_name', 'social_link', 'person']
+    form_fields = ['link_name', 'link', 'person']
 
     def __str__(self):
         """Defines string representation for a person social media.
@@ -937,7 +937,7 @@ class PersonSocialMedia(Archivable):
         """
         person_name = AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='person')
         #convert to fstring
-        return f"{self.social_name}, {self.social_link} person fk:{person_name}"
+        return f"{self.link_name}, {self.link} person fk:{person_name}"
 
     @classmethod
     def filter_for_admin(cls, queryset, user):
@@ -949,7 +949,7 @@ class PersonSocialMedia(Archivable):
         db_table = '{d}person_social_media'.format(d=settings.DB_PREFIX)
         verbose_name = 'Person social media'
         verbose_name_plural = 'Person social medias'
-        ordering = ['person', 'social_name', 'social_link']
+        ordering = ['person', 'link_name', 'link']
 
 
 class PersonPhoto(Archivable, Descriptable):
