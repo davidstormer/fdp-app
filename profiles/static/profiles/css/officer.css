@@ -7,6 +7,9 @@ body.officer.profile h3 {
     color: #417690;
     text-transform: uppercase;
 }
+body.officer.profile h4 {
+    text-transform: uppercase;
+}
 
 body.officer.profile span.label {
     font-weight: bold;
@@ -76,6 +79,7 @@ div.payrollcontainer thead th {
 section.payroll .ui-accordion .ui-accordion-content {
     padding: 0;
 }
+
 
 
 /* Sub-section in the Snapshot section */
