@@ -389,12 +389,14 @@
                             <li class="misall">
                                 {{ content.type.name|default:"Other" }}
                                 {{ content.officer_content_identifiers|format_identifiers }}
-                                {{ content.link }}
                                 {% if is_admin %}
                                     <a href="{{ content.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
                                 {% endif %}
                                 {% if content.officer_attachments %}
                                     <ul class="misall">
+                                        {% if content.link %}
+                                        <li><a href="{{ content.link }}"><i class="fas fa-link"></i> {{ content.link }}</a></li>
+                                        {% endif %}
                                     {% for attachment in content.officer_attachments %}
                                         <li class="misall">
                                             {% if attachment.file %}
