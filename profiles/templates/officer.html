@@ -137,7 +137,7 @@
                 <h3>{% if object.officer_commands %}{% translate 'Commands' %}{% else %}{% translate 'Command' %}{% endif %}</h3>
                 <ul>
                     <li>
-                        <span>{{ object.officer_command.grouping.name }}</span>
+                        <span><a href="#">{{ object.officer_command.grouping.name }}</a></span>
                         <div class="identification-meta">
                             <span>{{ object.officer_command.type.name }}</span>
                             <span class="dates">{% if object.officer_command.as_of_bounding_dates %}{{ object.officer_command.as_of_bounding_dates }}{% endif %}</span>
@@ -145,7 +145,7 @@
                     </li>
                 {% for command in object.officer_commands %}
                     <li>
-                        <span>{{ command.grouping.name }}</span>
+                        <span><a href="#">{{ command.grouping.name }}</a></span>
                         <div class="identification-meta">
                             <span>{{ command.type.name }}</span>
                             <span class="dates">{% if command.as_of_bounding_dates %}{{ command.as_of_bounding_dates }}{% endif %}</span>
