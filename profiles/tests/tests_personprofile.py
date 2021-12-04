@@ -370,12 +370,11 @@ class PersonProfileTestCase(AbstractTestCase):
 
         # and there should be hyperlinks to the respective group profile pages
         for value in values_to_find:
+            group = Grouping.objects.get(name=value)
             self.assertContains(
                 response_staff_client,
-                f"<a href='#'>{value}</a>",
+                f"<a href='{group.get_profile_url}'>{value}</a>",
                 html=True)
-
-        self.fail("finish me!")
 
     @local_test_settings_required
     def test_no_basic_info(self):
