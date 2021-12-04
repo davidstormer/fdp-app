@@ -1774,6 +1774,10 @@ class Grouping(Archivable, Descriptable):
         """
         return queryset
 
+    @property
+    def get_profile_url(self):
+        return reverse('profiles:command', kwargs={"pk": self.pk})
+
     class Meta:
         db_table = '{d}grouping'.format(d=settings.DB_PREFIX)
         verbose_name = _('grouping')
