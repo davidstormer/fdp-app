@@ -1,3 +1,4 @@
+import pdb
 import uuid
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
@@ -366,6 +367,15 @@ class PersonProfileTestCase(AbstractTestCase):
         # Then I should see the groups listed
         for value in values_to_find:
             self.assertContains(response_staff_client, value)
+
+        # and there should be hyperlinks to the respective group profile pages
+        for value in values_to_find:
+            self.assertContains(
+                response_staff_client,
+                f"<a href='#'>{value}</a>",
+                html=True)
+
+        self.fail("finish me!")
 
     @local_test_settings_required
     def test_no_basic_info(self):
