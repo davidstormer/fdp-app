@@ -145,7 +145,7 @@
                     </li>
                 {% for command in object.officer_commands %}
                     <li>
-                        <span><a href="{{ object.officer_command.grouping.get_profile_url }}">{{ command.grouping.name }}</a></span>
+                        <span><a href="{{ command.grouping.get_profile_url }}">{{ command.grouping.name }}</a></span>
                         <div class="identification-meta">
                             <span>{{ command.type.name }}</span>
                             <span class="dates">{% if command.as_of_bounding_dates %}{{ command.as_of_bounding_dates }}{% endif %}</span>
