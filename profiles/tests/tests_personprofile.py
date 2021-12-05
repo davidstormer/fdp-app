@@ -72,8 +72,8 @@ class PersonProfileTestCase(AbstractTestCase):
             'profiles:officer',
             kwargs={'pk': person_record.pk}), follow=True)
 
-        # Then I should see three person edit record links (for each section: Identification, Payroll, Associates)
-        self.assertContains(response_admin_client, person_record.get_edit_url, count=3)
+        # Then I should see three person edit record links (for each section: Identification, Associates)
+        self.assertContains(response_admin_client, person_record.get_edit_url, count=2)
         # and I should see incident edit record links
         for incident in incidents:
             self.assertContains(response_admin_client, incident.get_edit_url)
