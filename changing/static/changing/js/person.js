@@ -286,6 +286,29 @@ var Fdp = (function (fdpDef, $, w, d) {
     };
 
     /**
+     * Called to initialize the person social media form, including adding new and deleting existing forms.
+    */
+    function _initPersonSocialMediaForms() {
+        var elem = $("#newpersonsocialmedia");
+        elem.on("click", function () {
+            Fdp.Common.addInlineForm(
+                "socialmedia",
+                "#emptypersonsocialmedia",
+                _initPersonSocialMediaForm,
+                "<div />"
+            );
+        });
+
+        $(".personsocialmediaform").not(".emptyform").each(function (i, elem){
+            var formContainer = $(elem);
+            _initPersonSocialMediaForm(
+                formContainer
+            );
+            Fdp.Common.hideFormIfDeleted(formContainer);
+        });
+    };
+
+    /**
      * Called to initialize the person alias forms, including adding new and deleting existing forms.
     */
     function _initPersonAliasForms() {
@@ -448,6 +471,15 @@ var Fdp = (function (fdpDef, $, w, d) {
         );
     };
 
+    function _delPersonSocialMediaForm(id) {
+        Fdp.Common.delInlineForm(
+            "socialmedia",
+            id,
+            ".personsocialmediaform"
+        );
+
+    };
+
     /**
      * Marks a person relationship form for deletion, and hides its corresponding HTML elements.
      * @param {number} id - Id of person relationship form to delete.
@@ -588,6 +620,15 @@ var Fdp = (function (fdpDef, $, w, d) {
             );
         });
     };
+
+    function _initPersonSocialMediaForm(formContainer) {
+        var delBtn = formContainer.find(".delsocialmedia");
+        var id = delBtn.data("id");
+        delBtn.one("click", function () {
+            _delPersonSocialMediaForm(id);
+        });
+    };
+
 
     /**
      * Toggle the input fields for a person relationship between a subject and object perspective.
@@ -819,6 +860,9 @@ var Fdp = (function (fdpDef, $, w, d) {
 
         // initialize adding new and removing existing person alias
         _initPersonAliasForms();
+
+        // initialize adding new and removing existing person social media
+        _initPersonSocialMediaForms();
 
         // initialize adding new and removing existing person relationship
         _initPersonRelationshipForms();

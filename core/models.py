@@ -432,6 +432,8 @@ class Person(Confidentiable, Descriptable):
         qs = qs.prefetch_related(
             Prefetch('person_photos', queryset=PersonPhoto.active_objects.all(), to_attr='officer_photos'),
             Prefetch('person_aliases', queryset=PersonAlias.active_objects.all(), to_attr='officer_aliases'),
+            Prefetch('person_social_medias', queryset=PersonSocialMedia.active_objects.all(),
+                     to_attr='officer_social_medias'),
             Prefetch(
                 'person_identifiers',
                 queryset=PersonIdentifier.active_objects.filter(
@@ -900,6 +902,7 @@ class PersonAlias(Archivable, AbstractAlias):
 class PersonSocialMedia(Archivable):
     """ Social media related to a person, e.g. links and names used in the social media
     """
+    #change the help text to be specific,
     link = models.URLField(
         null=False,
         blank=True,
@@ -908,6 +911,7 @@ class PersonSocialMedia(Archivable):
         max_length=200,
         verbose_name="social media link"
     )
+    #change name to "web page title"
     link_name = models.CharField(
         null=False,
         blank=True,
