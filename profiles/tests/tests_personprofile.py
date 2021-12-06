@@ -1,5 +1,6 @@
 import pdb
 import uuid
+from uuid import uuid4
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from inheritable.tests import AbstractTestCase, local_test_settings_required
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class PersonProfileTestCase(AbstractTestCase):
-    """Functional tests specific to the Officer profile page    
+    """Functional tests specific to the Officer profile page
     """
 
     def log_in(self, is_host=True, is_administrator=False, is_superuser=False) -> object:
@@ -421,3 +422,63 @@ class PersonProfileTestCase(AbstractTestCase):
         # Then I should see the groups listed
         for value in values_to_find:
             self.assertContains(response_staff_client, value)
+
+    def associate_people(self, subject_person: object, object_person: object) -> object:
+        """Associate two given people. Creates a new arbitrary PersonRelationshipType name on each call.
+        Returns the resulting PersonRelationshipType.
+        """
+        relationship_type = PersonRelationshipType.objects.create(name=f"relationship-type-{uuid4()}")
+        relationship = PersonRelationship()
+        relationship.subject_person = subject_person
+        relationship.object_person = object_person
+        relationship.type = relationship_type
+        relationship.save()
+        return relationship_type
+
+    @local_test_settings_required
+    def test_person_associates_displayed(self):
+        """Functional test
+        """
+        # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # AND there are multiple other officer records linked to it
+        associate1 = Person.objects.create(name=f"associate-1-{uuid4()}", is_law_enforcement=True)
+        associate2 = Person.objects.create(name=f"associate-2-{uuid4()}", is_law_enforcement=True)
+        associate3 = Person.objects.create(name=f"associate-3-{uuid4()}", is_law_enforcement=True)
+        relationship_type1 = self.associate_people(person_record, associate1)
+        relationship_type2 = self.associate_people(person_record, associate2)
+        relationship_type3 = self.associate_people(person_record, associate3)
+        # AND I'm logged in as a staff user (non-admin)
+        staff_client = self.log_in(is_administrator=False)
+
+        # WHEN I got to the officer's profile page
+        response_staff_client = staff_client.get(reverse(
+            'profiles:officer',
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # THEN I should see the officers names linked under the Associates section
+        self.assertContains(
+            response_staff_client,
+            associate1.name
+        )
+        self.assertContains(
+            response_staff_client,
+            associate2.name
+        )
+        self.assertContains(
+            response_staff_client,
+            associate3.name
+        )
+        # AND I should see their relationship types
+        self.assertContains(
+            response_staff_client,
+            relationship_type1.name
+        )
+        self.assertContains(
+            response_staff_client,
+            relationship_type2.name
+        )
+        self.assertContains(
+            response_staff_client,
+            relationship_type3.name
+        )
