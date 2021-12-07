@@ -1,6 +1,6 @@
 /* container for inline forms */
 div.identifierform, div.persongroupingform, div.persontitleform, div.personpaymentform, div.personaliasform,
-div.personrelationshipform, div.personcontactform, div.personphotoform, div.personsocialmedia  {
+div.personrelationshipform, div.personcontactform, div.personphotoform, div.personsocialmediaform  {
     border-left: 4px solid #79aec8;
 }
 /* icon to delete inline forms */

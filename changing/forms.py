@@ -1071,10 +1071,10 @@ PersonAliasModelFormSet = forms.inlineformset_factory(
 PersonSocialMediaModelFormSet = forms.inlineformset_factory(
     Person,
     PersonSocialMedia,
+    form=PersonSocialMediaModelForm,
     formset=AbstractWizardInlineFormSet,
     extra=PersonSocialMediaModelForm.formset_extra,
     can_delete=PersonSocialMediaModelForm.formset_can_delete,
-    fields=['link_name', 'link', 'person'],
 )
 
 #: Form connecting the person relationship to person

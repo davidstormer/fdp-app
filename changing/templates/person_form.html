@@ -227,19 +227,19 @@
         <button type="button" class="collapsible expanded">{% translate 'Social Medias' %}</button>
         <div class="collapsible">
             <div>
-                {{person_socialmedias_model_formset}}
-                {{ person_socialmedias_model_formset.management_form }}
+                {{person_social_medias_model_formset}}
+                {{ person_social_medias_model_formset.management_form }}
             </div>
-            {{person_socialmedias_model_formset}}
+            {{person_social_medias_model_formset}}
 
-            {% for nested_form in person_socialmedias_model_formset %}
+            {% for nested_form in person_socialmedia_model_formset %}
             <div class="personsocialmediaform">
                 {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delsocialmedia" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
             </div> <!-- div.personsocialmedia -->
             {% endfor %}
             <!--look at person.js to add this id of emptypersonsocialmedia-->
             <div id="emptypersonsocialmedia" class="personsocialmediaform emptyform">
-                {% include "inline_wizard_form.html" with form=person_socialmedia_model_formset.empty_form del_icon_class="delsocialmedia" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
+                {% include "inline_wizard_form.html" with form=person_social_medias_model_formset.empty_form del_icon_class="delsocialmedia" has_delete=True parent_counter=forloop.counter0 is_empty_form=True %}
             </div> <!-- div#emptypersonsocialmedia -->
 
             <div>
