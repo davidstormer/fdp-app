@@ -7,7 +7,7 @@
     {% compress js %}
     <script src="{% static 'profiles/js/officerprofile.js' %}"></script>
     {% endcompress %}
-    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <script src="{% static 'dist/jquery-ui-custom/jquery-ui.min.js' %}"></script>
 {% endblock %}
 
 {% block extrastyle %}
@@ -19,7 +19,7 @@
     <link rel="stylesheet" type="text/css" href="{% static 'css/collapsible.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/profile.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/officer.css' %}">
-    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="{% static 'dist/jquery-ui-custom/jquery-ui.min.css' %}">
     {% endcompress %}
 {% endblock %}
 
@@ -157,7 +157,7 @@
 
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
             <div class="gridcol gridcell_2_of_3">
-                    <section class="payroll">
+                    <section class="payroll jqueryui">
                         <div id="accordion">
                     <h4>Payroll</h4>
                     <div>
