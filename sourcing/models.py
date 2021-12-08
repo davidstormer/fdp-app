@@ -385,6 +385,11 @@ class Content(Confidentiable, Descriptable):
     def get_edit_url(self):
         return reverse('changing:edit_content', kwargs={"pk": self.pk})
 
+    @property
+    def get_allegations_penalties_edit_url(self):
+        return reverse('changing:link_allegations_penalties', kwargs={"pk": self.pk})
+
+
     class Meta:
         db_table = '{d}content'.format(d=settings.DB_PREFIX)
         verbose_name = _('content')

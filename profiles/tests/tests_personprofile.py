@@ -60,11 +60,13 @@ class PersonProfileTestCase(AbstractTestCase):
                 new_content = Content.objects.create(name=f"{i_contents}")
                 contents.append(new_content)
                 new_content.incidents.add(new_incident)
+                # TODO: link allegations and penalties
         # and there are three content records linked directly to the person
         for i_contents_for_person in range(3):
             new_content = Content.objects.create(name=f"{i_contents_for_person}")
             ContentPerson.objects.create(person=person_record, content=new_content)
             contents.append(new_content)
+            # TODO: link allegations and penalties
         # and I'm logged into the system as an Admin
         admin_client = self.log_in(is_administrator=True)
 
@@ -73,7 +75,7 @@ class PersonProfileTestCase(AbstractTestCase):
             'profiles:officer',
             kwargs={'pk': person_record.pk}), follow=True)
 
-        # Then I should see three person edit record links (for each section: Identification, Associates)
+        # Then I should see two person edit record links (for each section: Identification, Associates)
         self.assertContains(response_admin_client, person_record.get_edit_url, count=2)
         # and I should see incident edit record links
         for incident in incidents:
@@ -81,6 +83,11 @@ class PersonProfileTestCase(AbstractTestCase):
         # and I should see content edit record links
         for content in contents:
             self.assertContains(response_admin_client, content.get_edit_url)
+        # and I should see allegation edit links
+        # TODO: test that the allegations linked both to the person and the incidents have links
+        # and I should see penalties edit links
+        # TODO: test that the penalties linked both to the person and the incidents have links
+
 
     @local_test_settings_required
     def test_edit_links_visible_to_admins_only(self):
