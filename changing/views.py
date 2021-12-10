@@ -1322,7 +1322,7 @@ class AbstractPersonView:
             ) if not post_data else PersonAliasModelFormSet(post_data, **aliases_dict),
             self.socialmedias_key: PersonSocialMediaModelFormSet(
                 **socialmedias_dict
-            ) if not post_data else PersonSocialMediaModelFormSet(post_data, **aliases_dict),
+            ) if not post_data else PersonSocialMediaModelFormSet(post_data, **socialmedias_dict),
             self._relationships_key: self.__get_person_relationship_model_formset(
                 post_data=post_data,
                 relationships_dict=relationships_dict,

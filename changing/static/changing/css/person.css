@@ -4,7 +4,7 @@ div.personrelationshipform, div.personcontactform, div.personphotoform, div.pers
     border-left: 4px solid #79aec8;
 }
 /* icon to delete inline forms */
-.delidentifier, .delgrouping, .deltitle, .delpayment, .delalias, .delrelationship, .delcontact, .delphoto, delsocialmedia {
+.delidentifier, .delgrouping, .deltitle, .delpayment, .delalias, .delrelationship, .delcontact, .delphoto, .delsocialmedia {
     font-size: 150%;
     color: #ba2121;
     margin-bottom: 1em;

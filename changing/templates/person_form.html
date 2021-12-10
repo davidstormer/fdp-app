@@ -229,7 +229,7 @@
             <div>
                 {{ person_social_medias_model_formset.management_form }}
             </div>
-            {% for nested_form in person_socialmedia_model_formset %}
+            {% for nested_form in person_social_medias_model_formset %}
             <div class="personsocialmediaform">
                 {% include "inline_wizard_form.html" with form=nested_form del_icon_class="delsocialmedia" has_delete=True parent_counter=forloop.counter0 is_empty_form=False %}
             </div> <!-- div.personsocialmedia -->
