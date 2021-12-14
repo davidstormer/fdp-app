@@ -3,8 +3,8 @@ from django.contrib.auth import views as auth_views
 from django.urls import path, re_path, include
 from django.conf import settings
 from django.views.defaults import page_not_found
-from two_factor.admin import AdminSiteOTPRequired
-from fdpuser.views import FdpPasswordResetView, DownloadEulaFileView
+from fdpuser.admin import FdpAdminSiteOTPRequired
+from fdpuser.views import FdpPasswordResetView, DownloadEulaFileView, FederatedLoginTemplateView
 from inheritable.models import AbstractUrlValidator, AbstractConfiguration
 
 
@@ -12,7 +12,8 @@ from inheritable.models import AbstractUrlValidator, AbstractConfiguration
 # Enforce OTP for admin page access
 # See: https://django-two-factor-auth.readthedocs.io/en/stable/implementing.html
 # See: https://docs.djangoproject.com/en/2.0/ref/contrib/admin/#hooking-adminsite-instances-into-your-urlconf
-admin.site.__class__ = AdminSiteOTPRequired
+# Also, optionally integrates the federated login page if supported by the current configuration.
+admin.site.__class__ = FdpAdminSiteOTPRequired
 
 
 #: URL patterns for Admin site.
@@ -72,3 +73,14 @@ can_do_password_reset_urlpatterns = [
     # URLs for resetting passwords through a tokenized link
     path('password/reset/', FdpPasswordResetView.as_view(), name='password_reset'),
 ]
+
+
+#: Only include the federated login link if the configuration supports it.
+if AbstractConfiguration.can_do_federated_login():
+    rest_urlpatterns += [
+        path(
+            AbstractUrlValidator.FDP_USER_FEDERATED_LOGIN_URL,
+            FederatedLoginTemplateView.as_view(),
+            name='federated_login'
+        )
+    ]

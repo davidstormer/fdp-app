@@ -9,7 +9,7 @@ from django.utils.decorators import method_decorator
 from django.conf import settings
 from inheritable.models import AbstractIpAddressValidator, AbstractConfiguration, JsonData, AbstractUrlValidator
 from inheritable.views import SecuredSyncTemplateView, SecuredSyncRedirectView, SecuredAsyncJsonView, \
-    SecuredSyncNoEulaFormView, SecuredSyncButNoEulaView
+    SecuredSyncNoEulaFormView, SecuredSyncButNoEulaView, UnsecuredSyncTemplateView
 from .models import PasswordReset, FdpUser, Eula
 from .forms import FdpUserPasswordResetForm, FdpUserPasswordResetWithReCaptchaForm, AgreeToEulaForm
 from two_factor.views import LoginView
@@ -531,3 +531,25 @@ class DownloadEulaFileView(SecuredSyncButNoEulaView):
                     relative_base_url=AbstractUrlValidator.EULA_BASE_URL,
                     document_root=settings.MEDIA_ROOT
                 )
+
+
+class FederatedLoginTemplateView(UnsecuredSyncTemplateView):
+    """ View that displays the various authentication methods available for a user with which to log in.
+
+    """
+    template_name = 'federated_login.html'
+
+    def get_context_data(self, **kwargs):
+        """ Adds the title, description and user details to the view context.
+
+        :param kwargs:
+        :return: Context for view, including title, description and user details.
+        """
+        context = super(FederatedLoginTemplateView, self).get_context_data(**kwargs)
+        context.update({
+            'title': _('Full Disclosure Project'),
+            'description': _('Select authentication method to log in to the Full Disclosure Project.'),
+            'auth_options': AbstractConfiguration.federated_login_options(),
+            'next_url_querystring': self._get_querystring_for_next_url()
+        })
+        return context

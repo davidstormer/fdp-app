@@ -2,12 +2,13 @@ from django.apps import apps
 from django.shortcuts import redirect
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.core.files.storage import get_storage_class
-from django.http import JsonResponse
+from django.http import JsonResponse, QueryDict
 from django.views.generic import TemplateView, FormView, RedirectView, ListView, DetailView, View, CreateView, \
     UpdateView
 from django.urls import reverse
-from django.utils.http import quote_plus
+from django.utils.http import quote_plus, is_safe_url
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, AccessMixin
+from django.contrib.auth.views import SuccessURLAllowedHostsMixin
 from two_factor.views.mixins import OTPRequiredMixin
 from django.utils.translation import gettext as _
 from django.views.static import serve
@@ -21,6 +22,68 @@ from .forms import PopupForm
 from .models import Archivable, Confidentiable, AbstractUrlValidator, AbstractJson, JsonError, AbstractFileValidator, \
     AbstractConfiguration
 from json import loads as json_loads
+
+
+class QuerystringParamsMixin(SuccessURLAllowedHostsMixin):
+    """ Mixin for handling parameters passed through the querystring during HTTP requests sent via the GET method.
+
+    """
+    #: Name of the GET parameter, i.e. appearing in the querystring, that stores the URL to which the user should be
+    # redirected after a successful login.
+    next_url_param = 'next'
+
+    def __get_request(self):
+        """ Retrieves the HTTP request object.
+
+        :return: Http request object, or None if no request was found.
+        """
+        return getattr(self, 'request', None)
+
+    def _get_user(self):
+        """ Retrieves the user making the HTTP request or None if no such user was found.
+
+        :return: Instance of user, or None if no user was found.
+        """
+        request = self.__get_request()
+        return getattr(request, 'user', None) if request else None
+
+    def _get_next_url(self):
+        """ Retrieves the URL to which a user should be redirected after a successful login.
+
+        URL will be specified as a GET parameter in the querystring, in the format of: ?...next=...
+
+        :return: URL to which a user should be redirected, or None if no such URL was found.
+        """
+        request = self.__get_request()
+        # GET parameters are defined
+        if request.GET:
+            next_url = request.GET.get(self.next_url_param, None)
+            url_is_safe = is_safe_url(
+                url=next_url,
+                allowed_hosts=self.get_success_url_allowed_hosts(),
+                require_https=request.is_secure(),
+            )
+            # URL is safe
+            if url_is_safe:
+                return next_url
+        # URL was not found, or was not safe
+        return None
+
+    def _get_querystring_for_next_url(self):
+        """ Retrieves the querystring that will store the URL to which a user should be redirected after a successful
+        login.
+
+        :return: String representing querystring in the form of: ?next=... , or an empty string if no redirection URL
+        could be found.
+        """
+        next_url = self._get_next_url()
+        # redirection URL exists and is safe
+        if next_url:
+            querystring = QueryDict('', mutable=True)
+            querystring.update({self.next_url_param: next_url})
+            return f'?{querystring.urlencode()}'
+        # redirection URL does not exist, or was not safe
+        return ''
 
 
 class EulaRequiredMixin(object):
@@ -75,7 +138,9 @@ class PostOrGetOnlyMixin(AccessMixin):
         return super().dispatch(request, *args, **kwargs)
 
 
-class CoreButNoEulaAccessMixin(OTPRequiredMixin, LoginRequiredMixin, UserPassesTestMixin, PostOrGetOnlyMixin):
+class CoreButNoEulaAccessMixin(
+    OTPRequiredMixin, LoginRequiredMixin, UserPassesTestMixin, PostOrGetOnlyMixin, QuerystringParamsMixin
+):
     """ Mixin limiting access for core elements to users who are authorized.
 
     Log in is required, and users must be able to view core data.
@@ -90,9 +155,41 @@ class CoreButNoEulaAccessMixin(OTPRequiredMixin, LoginRequiredMixin, UserPassesT
 
         :return: True if user passes the test, false otherwise.
         """
-        request = getattr(self, 'request', None)
-        user = getattr(request, 'user', None)
+        user = self._get_user()
         return FdpUser.can_view_core(user=user)
+
+    def get_login_url(self):
+        """ Overrides AccessMixin.get_login_url(...) method to check if the configuration supports a federated login
+        page. If not, reverts to the default behaviour.
+
+        :return: URL for login page.
+        """
+        # Configured to support federated login page
+        if AbstractConfiguration.can_do_federated_login():
+            federated_login_url = reverse('federated_login')
+            user = self._get_user()
+            # as user was found and they are authenticated
+            if user and user.is_authenticated:
+                next_url = self._get_next_url()
+                # redirection URL is defined and is safe
+                if next_url:
+                    return next_url
+                # redirection URL was not defined or was not safe
+                else:
+                    # User is intended for authentication through an external authentication backend such as Azure
+                    # Active Directory, but not corresponding record exists in the Django database backend, indicating
+                    # that authentication could not be fully completed
+                    if user.only_external_auth and not user.has_azure_active_directory_social_auth:
+                        raise Exception(_('Externally authenticated user does not have a corresponding social '
+                                          'authentication record in the database. This might indicate that '
+                                          'external authentication is not configured correctly.'))
+                    return federated_login_url
+            # no user was found, or they are not authenticated
+            else:
+                return federated_login_url
+        # Not configured to support federated login page, so revert to default behaviour.
+        else:
+            return super().get_login_url()
 
 
 class CoreAccessMixin(CoreButNoEulaAccessMixin, EulaRequiredMixin):
@@ -141,7 +238,7 @@ class ContextDataMixin:
         request = getattr(self, 'request', None)
         user = getattr(request, 'user', None)
         context['is_admin'] = FdpUser.can_view_admin(user=user)
-        context['only_external_auth'] = user.only_external_auth
+        context['only_external_auth'] = getattr(user, 'only_external_auth', False)
         context['site_header'] = _(SITE_HEADER)
         context['site_title'] = _('FDP System')
         context['has_permission'] = True
@@ -232,6 +329,22 @@ class SyncView(View):
         sas_expiring_url = media_azure_storage.get_sas_expiring_url(name)
         # redirect
         return redirect(sas_expiring_url)
+
+
+class UnsecuredSyncTemplateView(PostOrGetOnlyMixin, ContextDataMixin, TemplateView, QuerystringParamsMixin):
+    """ Unsecured synchronously rendered view rendering a template.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as permissions and theme customization.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_context(context)
 
 
 class SecuredSyncButNoEulaView(CoreButNoEulaAccessMixin, SyncView):

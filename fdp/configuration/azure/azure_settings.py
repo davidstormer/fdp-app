@@ -566,3 +566,34 @@ if secret_email_host_password:
 AXES_META_PRECEDENCE_ORDER = (
     'HTTP_X_CLIENT_IP',
 )
+
+
+#: Describes options that are listed on the federated login page. See fdpuser.views.FederatedLoginTemplateView.
+# In the format of: [
+#     {
+#         'label': '...text to display for option...',
+#         'url_pattern_name': '...name of url pattern including namespace if relevant...',
+#         'url_pattern_args': '...positional arguments for url pattern',
+#         'css': {'css_property_1': 'css_value_1', 'css_property_2': 'css_value_2', ...},
+#         'css_hover': {'css_property_1': 'css_value_1', 'css_property_2': 'css_value_2', ...},
+#     },
+#     {...}, ...
+# ]
+# If no options are listed, the federated login page will be skipped, and the user will be automatically redirected to
+# the primary login page.
+FEDERATED_LOGIN_OPTIONS = [
+    {
+        'label': 'Sign in with FDP',
+        'url_pattern_name': 'two_factor:login',
+        'url_pattern_args': [],
+        'css': {'background-color': '#417690', 'color': '#FFF'},
+        'css_hover': {'color': '#f5dd5d'}
+    },
+    {
+        'label': 'Sign in Azure Active Directory',
+        'url_pattern_name': 'social:begin',
+        'url_pattern_args': ['inheritable.models.AbstractConfiguration.azure_active_directory_provider'],
+        'css': {'background-color': '#417690', 'color': '#FFF'},
+        'css_hover': {'color': '#f5dd5d'}
+    }
+]

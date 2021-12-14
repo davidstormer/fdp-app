@@ -21,22 +21,6 @@
     <div id="content-main">
       <form action="" method="post">{% csrf_token %}
 
-        {% if wizard.steps.current == 'auth' %}
-          {% is_azure_active_directory_configured as has_aad_auth %}
-          {% if has_aad_auth %}
-            {% if form.non_field_errors %}
-              <ul class="errorlist nonfield">
-                <li>
-                  {% translate 'Azure Active Directory users should use the' %}
-                  {% azure_ad_provider as azure_provider %}
-                  <a href="{% url 'social:begin' azure_provider %}">{% translate 'login link' %}</a>
-                  {% translate 'below' %}
-                </li>
-              </ul>
-            {% endif %}
-          {% endif %}
-        {% endif %}
-
         {% include "two_factor/_wizard_forms.html" %}
 
         {# hidden submit button to enable [enter] key #}
@@ -49,11 +33,6 @@
             {% is_password_reset_configured as has_password_reset %}
             {% if has_password_reset %}
             <a class="forgotpwd" href="{% url 'password_reset' %}">{% translate 'Forgot password?' %}</a>
-            {% endif %}
-            {% is_azure_active_directory_configured as has_azure_ad_auth %}
-            {% if has_azure_ad_auth %}
-            {% azure_ad_provider as aad_provider %}
-            <a class="aadlogin" href="{% url 'social:begin' aad_provider %}">Login with Azure Active Directory</a>
             {% endif %}
             <div class="clear"></div>
           </div>
