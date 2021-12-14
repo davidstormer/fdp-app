@@ -2,7 +2,7 @@
 
 All releases will be logged in this file.
 
-## [4.0.0] - 2021-12-14
+## [4.0.0-rc1] - 2021-12-14
 
 ### Added
 - Add federated login page
