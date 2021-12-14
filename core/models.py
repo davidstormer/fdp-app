@@ -80,9 +80,8 @@ class Person(Confidentiable, Descriptable):
     )
 
     #: Fields to display in the model form.
-    form_fields = [
-                      'name', 'is_law_enforcement', 'birth_date_range_start', 'birth_date_range_end', 'traits'
-                  ] + Confidentiable.confidentiable_form_fields
+    form_fields = \
+        ['name', 'birth_date_range_start', 'birth_date_range_end', 'traits'] + Confidentiable.confidentiable_form_fields
 
     def __get_birth_date(self):
         """ Retrieve the human-friendly version of the person's birth date.
@@ -284,17 +283,21 @@ class Person(Confidentiable, Descriptable):
         )
 
     @classmethod
-    def __get_content_query(cls, user, filter_by_dict, person_filter_dict):
+    def __get_content_query(cls, user, filter_by_dict, filter_by_exists, person_filter_dict):
         """ Retrieves a content queryset that is optionally filtered.
 
         :param user: User retrieving the queryset.
         :param filter_by_dict: Dictionary defining the filtering for the query set.
+        :param filter_by_exists: Instance of django.db.models.Exists(...) defining the filtering for the query set.
         :param person_filter_dict: Dictionary defining the keyword argument filtering for the person queryset in the
         prefetched ContentPerson queryset.
         :return: Content queryset.
         """
         m = apps.get_model('sourcing', 'Content')
         qs = m.active_objects.all() if not filter_by_dict else m.active_objects.filter(**filter_by_dict)
+        # filter queryset by an instance of Django's Exists() class
+        if filter_by_exists is not None:
+            qs = qs.filter(filter_by_exists)
         qs = qs.filter_for_confidential_by_user(user=user)
         return qs.filter(
             Q(Q(type__isnull=True) | Q(**m.get_active_filter(prefix='type')))
@@ -529,9 +532,27 @@ class Person(Confidentiable, Descriptable):
                         queryset=cls.__get_content_query(
                             user=user,
                             filter_by_dict={},
+                            filter_by_exists=None,
                             person_filter_dict={'pk': pk}
                         ),
-                        to_attr='officer_contents'
+                        to_attr='officer_incident_contents'
+                    ),
+                    Prefetch(
+                        'incident__contents',
+                        queryset=cls.__get_content_query(
+                            user=user,
+                            filter_by_dict={},
+                            filter_by_exists=Exists(
+                                # don't need to filter for confidentiality, since both content and person is filtered
+                                # in the outer queries
+                                (apps.get_model('sourcing', 'ContentPerson')).objects.filter(
+                                    person_id=pk,
+                                    content_id=OuterRef('pk')
+                                )
+                            ),
+                            person_filter_dict={'pk': pk}
+                        ),
+                        to_attr='officer_snapshot_contents'
                     )
                 ),
                 to_attr='officer_misconducts'
@@ -567,6 +588,7 @@ class Person(Confidentiable, Descriptable):
                             cls.__get_content_query(
                                 user=user,
                                 filter_by_dict={'pk': OuterRef('content_id')},
+                                filter_by_exists=None,
                                 person_filter_dict=None
                             ).exclude(incidents__person_incident__person_id=pk).values('pk')
                         )
@@ -621,7 +643,7 @@ class Person(Confidentiable, Descriptable):
         officer = qs.get(pk=pk)
         # Attachments within the Misconduct section
         for misconduct in officer.officer_misconducts:
-            for content in misconduct.incident.officer_contents:
+            for content in misconduct.incident.officer_incident_contents:
                 for attachment in content.officer_attachments:
                     if attachment.file:
                         files_to_zip.append(attachment.file)
@@ -1387,6 +1409,7 @@ class Grouping(Archivable, Descriptable):
         :cease_date (date): Date grouping ceased to exist.
         :counties (m2m): Counties in which grouping operates.
         :is_inactive (bool): True if link between person and grouping is no longer active.
+        :is_law_enforcement (bool): True if grouping is part of law enforcement, false otherwise.
         :belongs_to_grouping (fk): The top-level grouping to which this grouping belongs.
     """
     name = models.CharField(
@@ -1429,6 +1452,14 @@ class Grouping(Archivable, Descriptable):
         default=False,
         verbose_name=_('Is inactive'),
         help_text=_('Select if the grouping is no longer active')
+    )
+
+    is_law_enforcement = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name=_('Is law enforcement'),
+        help_text=_('Select if grouping is part of law enforcement'),
     )
 
     inception_date = models.DateField(
@@ -1641,12 +1672,8 @@ class Grouping(Archivable, Descriptable):
 
         :return: Filtered queryset from which command will be retrieved.
         """
-        # ensure that only groupings with an officer are retrieved
-        qs = cls.active_objects.filter(
-            Exists(
-                PersonGrouping.active_objects.filter(Q(grouping_id=OuterRef('pk')) & Q(person__is_law_enforcement=True))
-            )
-        )
+        # ensure that only commands are retrieved
+        qs = cls.active_objects.filter(is_law_enforcement=True)
         # accessible officers for user
         accessible_officers = Person.active_objects.filter(is_law_enforcement=True).filter_for_confidential_by_user(
             user=user

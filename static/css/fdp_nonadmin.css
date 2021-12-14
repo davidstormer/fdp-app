@@ -90,8 +90,8 @@ span.clickable { color: #447e9b; }
 span.clickable:hover { color: #036; }
 
 /* Default styling used for DateWithComponentsWidget (i.e. where a date is split into potentially unknown components */
-input.dateyear { width: 4em; }
-input.datemonth, input.dateday { width: 2.5em; }
+input.dateyear { width: 72px; min-width: 72px; }
+input.datemonth, input.dateday { width: 56px; min-width: 56px; }
 span.textyear, span.textmonth, span.textday { margin-right: 1em; }
 span.textyear, span.textmonth, span.textday { margin-left: 1em; }
 /* calendar icon */
