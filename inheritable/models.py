@@ -2,6 +2,7 @@ from django.db import models, connection
 from django.db.models import Q
 from django.http import QueryDict
 from django.core.exceptions import ValidationError, ImproperlyConfigured
+from django.urls.exceptions import NoReverseMatch
 from django.core.validators import RegexValidator
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
@@ -25,7 +26,9 @@ from posixpath import normpath
 from pathlib import Path
 from os.path import commonprefix, realpath
 from pydoc import locate
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Metable(models.Model):
     """ Base class from which all model classes inherit.
@@ -884,7 +887,7 @@ class AbstractDateValidator(models.Model):
         :param is_as_of: True if start date is as of, false if start date is exact.
         :return: A single fuzzy date in human-friendly display form.
         """
-        from_str = cls.AS_OF_DATE if is_as_of else cls.FROM_DATE        
+        from_str = cls.AS_OF_DATE if is_as_of else cls.FROM_DATE
         # parameters passed to strftime
         y = '%Y'
         m = '%m'
@@ -898,7 +901,7 @@ class AbstractDateValidator(models.Model):
                     year=start_year, month=start_month, day=start_day, prefix=cls.DURING_DATE
                 )
             # On 2018-03-23
-            else:            
+            else:
                 return cls.get_display_text_from_date(
                     year=start_year, month=start_month, day=start_day, prefix=cls.ON_DATE
                 )
@@ -3143,20 +3146,23 @@ class AbstractConfiguration(models.Model):
         :return: List of dictionaries defining the login options to display on th federated login page.
         """
         login_options = getattr(settings, 'FEDERATED_LOGIN_OPTIONS', None)
-        if login_options:
-            return [
-                {
-                    'label': o['label'],
-                    'link': reverse(
-                        o['url_pattern_name'],
-                        args=[locate(a) for a in o['url_pattern_args']]
-                    ) if o['url_pattern_args'] else reverse(o['url_pattern_name']),
-                    'css': o.get('css', {}),
-                    'css_hover': o.get('css_hover', {})
-                } for o in login_options
-            ]
-        else:
-            return []
+        try:
+            if login_options:
+                return [
+                    {
+                        'label': o['label'],
+                        'link': reverse(
+                            o['url_pattern_name'],
+                            args=[locate(a) for a in o['url_pattern_args']]
+                        ) if o['url_pattern_args'] else reverse(o['url_pattern_name']),
+                        'css': o.get('css', {}),
+                        'css_hover': o.get('css_hover', {})
+                    } for o in login_options
+                ]
+            else:
+                return []
+        except NoReverseMatch as e:
+            logger.error(f"FEDERATED_LOGIN_OPTIONS misconfigured. Couldn't reverse url: {e}")
 
     class Meta:
         abstract = True
