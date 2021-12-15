@@ -581,4 +581,19 @@ AXES_META_PRECEDENCE_ORDER = (
 # ]
 # If no options are listed, the federated login page will be skipped, and the user will be automatically redirected to
 # the primary login page.
-FEDERATED_LOGIN_OPTIONS = []
+FEDERATED_LOGIN_OPTIONS = [
+    {
+        'label': 'Sign in with FDP',
+        'url_pattern_name': 'two_factor:login',
+        'url_pattern_args': [],
+        'css': {'background-color': '#417690', 'color': '#FFF'},
+        'css_hover': {'color': '#f5dd5d'}
+    },
+    {
+        'label': 'Sign in Azure Active Directory',
+        'url_pattern_name': 'social:begin',
+        'url_pattern_args': ['inheritable.models.AbstractConfiguration.azure_active_directory_provider'],
+        'css': {'background-color': '#417690', 'color': '#FFF'},
+        'css_hover': {'color': '#f5dd5d'}
+    }
+]
