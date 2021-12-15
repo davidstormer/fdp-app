@@ -28,7 +28,8 @@ from os.path import commonprefix, realpath
 from pydoc import locate
 import logging
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
+
 
 class Metable(models.Model):
     """ Base class from which all model classes inherit.
@@ -3162,7 +3163,7 @@ class AbstractConfiguration(models.Model):
             else:
                 return []
         except NoReverseMatch as e:
-            logger.error(f"FEDERATED_LOGIN_OPTIONS misconfigured. Couldn't reverse url: {e}")
+            logging.error(f"FEDERATED_LOGIN_OPTIONS misconfigured. Couldn't reverse url: {e}")
 
     class Meta:
         abstract = True
