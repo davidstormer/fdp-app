@@ -61,3 +61,13 @@ LOGGING = FDP_ERR_LOGGING
 # Resolves 400 error when submitting bulk change and clicking "Select all XYZ [objects]"
 # https://stackoverflow.com/questions/55921865/django-admin-deleting-all-records-bad-request-400
 # DATA_UPLOAD_MAX_NUMBER_FIELDS = None
+
+FEDERATED_LOGIN_OPTIONS = [
+    {
+        'label': 'Log into the sandbox',
+        'url_pattern_name': 'two_factor:login',
+        'url_pattern_args': [],
+        'css': {'background-color': '#417690', 'color': '#FFF'},
+        'css_hover': {'color': '#f5dd5d'}
+    }
+]
