@@ -1,4 +1,4 @@
-from django.test import Client, RequestFactory
+from django.test import Client, RequestFactory, override_settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.urls import reverse, NoReverseMatch
@@ -7,6 +7,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.apps import apps
 from django.views.generic.base import RedirectView
+from .admin import FdpAdminSiteOTPRequired
 from .models import FdpUser, PasswordReset, FdpOrganization, FdpCSPReport
 from .forms import FdpUserCreationForm, FdpUserChangeForm
 from .views import FdpLoginView
@@ -31,7 +32,6 @@ from data_wizard.sources.models import FileSource
 from axes.models import AccessLog, AccessAttempt
 from two_factor.models import PhoneDevice
 from two_factor.views import LoginView
-from two_factor.admin import AdminSiteOTPRequired
 from axes.models import AccessAttempt
 import secrets
 import logging
@@ -68,6 +68,21 @@ class FdpUserTestCase(AbstractTestCase):
             (b) EULA agreement is first required before accessing profiles and changing index pages; and
             (c) EULA agreement is only required once when accessing profiles and changing index pages.
 
+    (11) Test federated login is integrated during local settings, including:
+            (a) Federated login page appears first for all permutations of user roles when user is not authenticated;
+            and
+            (b) Federated login page does not appear for all permutations of user roles when user is authenticated.
+
+    (12) Test federated login is integrated during Azure settings, including:
+            (a) Federated login page appears first for all permutations of user roles when user is not authenticated;
+            and
+            (b) Federated login page does not appear for all permutations of user roles when user is authenticated.
+
+    (13) Test federated login is integrated during Azure-only settings, including:
+            (a) Federated login page appears first for all permutations of user roles when user is not authenticated;
+            and
+            (b) Federated login page does not appear for all permutations of user roles when user is authenticated.
+
     """
     def setUp(self):
         """ Configure RECPATCHA to be in test mode.
@@ -98,6 +113,20 @@ class FdpUserTestCase(AbstractTestCase):
 
     #: Suffix for user email for user with incorrect organization.
     __wrong_org_suffix = '_wrong_org'
+
+    #: Dictionary that can be expanded into keyword arguments that are passed into the override_settings decorator for
+    # test methods that require a local configuration that supports federated login.
+    __federated_login_local_settings_override = {
+        'ROOT_URLCONF': 'fdp.urlconf.test.federated_login_local_urls',
+        'FEDERATED_LOGIN_OPTIONS': [{'label': '...', 'url_pattern_name': 'two_factor:login', 'url_pattern_args': []}]
+    }
+
+    #: Dictionary that can be expanded into keyword arguments that are passed into the override_settings decorator for
+    # test methods that require an Azure configuration that supports federated login.
+    __federated_login_azure_settings_override = {
+        'ROOT_URLCONF': 'fdp.urlconf.test.federated_login_azure_urls',
+        'FEDERATED_LOGIN_OPTIONS': [{'label': '...', 'url_pattern_name': 'two_factor:login', 'url_pattern_args': []}]
+    }
 
     def __verify_user_cannot_log_in(self, c, user):
         """ Verifies that user cannot log in through Django authentication.
@@ -365,6 +394,20 @@ class FdpUserTestCase(AbstractTestCase):
         """
         return True
 
+    @staticmethod
+    def __add_user_social_auth(azure_user):
+        """ Creates a user social auth record for a user authenticated through the Azure Active Directory backend.
+
+        :param azure_user: User authenticated through the Azure Active Directory backend.
+        :return: Nothing.
+        """
+        user_social_auth_model = apps.get_model(CONST_AZURE_AUTH_APP, 'UserSocialAuth')
+        user_social_auth_model.objects.create(
+            user=azure_user,
+            uid=str(user_social_auth_model.objects.all().count()),
+            provider=AbstractConfiguration.azure_active_directory_provider
+        )
+
     def __check_azure_user_skips_2fa(self, has_django_auth_backend):
         """ Checks authentication steps for a user who is expected to be authenticated through Azure Active Directory.
 
@@ -389,12 +432,7 @@ class FdpUserTestCase(AbstractTestCase):
         # change user so that they are externally authenticable, and have a social auth link
         azure_user.only_external_auth = True
         azure_user.save()
-        user_social_auth_model = apps.get_model(CONST_AZURE_AUTH_APP, 'UserSocialAuth')
-        user_social_auth_model.objects.create(
-            user=azure_user,
-            uid=str(user_social_auth_model.objects.all().count()),
-            provider=AbstractConfiguration.azure_active_directory_provider
-        )
+        self.__add_user_social_auth(azure_user=azure_user)
         # confirm user does not require 2FA
         response = self._do_get(c=c, url='/', expected_status_code=200, login_startswith=None)
         self.assertNotIn(enable_2fa_txt, str(response.content))
@@ -488,6 +526,78 @@ class FdpUserTestCase(AbstractTestCase):
         self.assertNotIn(eula_txt, str(response.content))
         self._assert_class_based_view(response=response, expected_view=expected_view)
         logger.debug(f'With EULA enabled, once agreeing to EULA, user can access: {url}')
+
+    def __test_federated_login_for_all(self):
+        """ Tests that the federated login page works as expected using both local and Azure configuration settings.
+
+        :return: Nothing.
+        """
+        urls_to_test = [
+            # (is_url_admin, url),
+            (False, reverse('profiles:command_search')),
+            (False, reverse('fdpuser:settings')),
+            (True, reverse('admin:index')),
+            (True, reverse('admin:core_person_changelist')),
+            (True, reverse('changing:index')),
+            (True, reverse('changing:persons'))
+        ]
+        num_of_users = FdpUser.objects.all().count()
+        federated_login_url = reverse('federated_login')
+        admin_login_url = reverse('admin:login')
+        # test for all user types
+        for i, user_role in enumerate(self._user_roles):
+            fdp_user = self._create_fdp_user(
+                is_host=user_role.get(self._is_host_key, False),
+                is_administrator=user_role.get(self._is_administrator_key, False),
+                is_superuser=user_role.get(self._is_superuser_key, False),
+                email_counter=i + num_of_users
+            )
+            if AbstractConfiguration.use_only_azure_active_directory():
+                fdp_user.only_external_auth = True
+                fdp_user.full_clean()
+                fdp_user.save()
+            user_label = user_role[self._label]
+            # test for all URLs
+            for url_tuple in urls_to_test:
+                is_url_admin = url_tuple[0]
+                url = url_tuple[1]
+                # redirection for Django admin has two steps instead of one
+                is_url_in_admin = url.startswith('/admin')
+                login_startswith = federated_login_url if not is_url_in_admin else admin_login_url
+                client = Client(**self._local_client_kwargs)
+                client.logout()
+                logger.debug(f'Checking that federated login appears for unauthenticated {user_label} for {url}')
+                response = self._do_get(c=client, url=url, expected_status_code=302, login_startswith=login_startswith)
+                if is_url_in_admin:
+                    response = self._do_get(c=response.client, url=response.url, expected_status_code=302,
+                                            login_startswith=federated_login_url)
+                # skip for anonymous user
+                if not user_role[self._is_anonymous_key]:
+                    # only check URLs if they are non-admin or the user is an administrator/superuser
+                    if user_role[self._is_administrator_key] or user_role[self._is_superuser_key] or not is_url_admin:
+                        logger.debug(f'Checking that federated login does not appear for '
+                                     f'authenticated {user_label} for {url}')
+                        # cannot use default Django login
+                        if AbstractConfiguration.use_only_azure_active_directory():
+                            # super users cannot also be authenticated through Azure Active Directory
+                            if fdp_user.is_superuser:
+                                continue
+                            response.client.force_login(user=fdp_user)
+                            self.__add_user_social_auth(azure_user=fdp_user)
+                        # can use default Django login
+                        else:
+                            two_factor = self._create_2fa_record(user=fdp_user)
+                            response = self._do_login(
+                                c=response.client,
+                                username=fdp_user.email,
+                                password=self._password,
+                                two_factor=two_factor,
+                                login_status_code=200,
+                                two_factor_status_code=200,
+                                will_login_succeed=True
+                            )
+                        # check that URL loads without federated login
+                        self._do_get(c=response.client, url=url, expected_status_code=200, login_startswith=None)
 
     @local_test_settings_required
     def test_access_to_views(self):
@@ -1122,7 +1232,7 @@ class FdpUserTestCase(AbstractTestCase):
         # default 2FA Login view is expected for username/password step
         self._assert_username_and_password_step_in_login_view(response=response, expected_view=LoginView)
         logger.debug('Checking that 2FA is enforced for the Admin site')
-        self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
+        self.assertEqual(admin.site.__class__, FdpAdminSiteOTPRequired)
         logger.debug(_('\nSuccessfully finished test for '
                 'login view, 2FA, URL patterns and file serving for local development configuration\n\n'))
 
@@ -1186,7 +1296,7 @@ class FdpUserTestCase(AbstractTestCase):
         # default 2FA Login view is expected for username/password step
         self._assert_username_and_password_step_in_login_view(response=response, expected_view=FdpLoginView)
         logger.debug('Checking that 2FA is enforced for the Admin site')
-        self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
+        self.assertEqual(admin.site.__class__, FdpAdminSiteOTPRequired)
         logger.debug('Checking that Azure users skip 2FA step')
         self.__check_azure_user_skips_2fa(has_django_auth_backend=True)
         logger.debug(_('\nSuccessfully finished test for '
@@ -1256,7 +1366,7 @@ class FdpUserTestCase(AbstractTestCase):
             login_startswith=None
         )
         logger.debug('Checking that 2FA is enforced for the Admin site')
-        self.assertEqual(admin.site.__class__, AdminSiteOTPRequired)
+        self.assertEqual(admin.site.__class__, FdpAdminSiteOTPRequired)
         logger.debug('Checking that Azure users skip 2FA step')
         self.__check_azure_user_skips_2fa(has_django_auth_backend=False)
         logger.debug(_('\nSuccessfully finished test for '
@@ -1360,3 +1470,45 @@ class FdpUserTestCase(AbstractTestCase):
             if fdp_user.is_administrator or fdp_user.is_superuser:
                 self.__check_for_eula(**admin_kwargs)
         logger.debug(_('\nSuccessfully finished test for enforcement of EULA requirements\n\n'))
+
+    @local_test_settings_required
+    @override_settings(**__federated_login_local_settings_override)
+    def test_federated_login_for_local(self):
+        """ Test federated login is integrated during local settings, including:
+            (a) Federated login page appears first for all permutations of user roles when user is not authenticated;
+            and
+            (b) Federated login page does not appear for all permutations of user roles when user is authenticated.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for federated login for local settings'))
+        self.__test_federated_login_for_all()
+        logger.debug(_('\nSuccessfully finished test for federated login for local settings\n\n'))
+
+    @azure_test_settings_required
+    @override_settings(**__federated_login_azure_settings_override)
+    def test_federated_login_for_azure(self):
+        """ Test federated login is integrated during Azure settings, including:
+            (a) Federated login page appears first for all permutations of user roles when user is not authenticated;
+            and
+            (b) Federated login page does not appear for all permutations of user roles when user is authenticated.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for federated login for Azure settings'))
+        self.__test_federated_login_for_all()
+        logger.debug(_('\nSuccessfully finished test for federated login for Azure settings\n\n'))
+
+    @azure_only_test_settings_required
+    @override_settings(**__federated_login_azure_settings_override)
+    def test_federated_login_for_azure_only(self):
+        """ Test federated login is integrated during Azure-only settings, including:
+            (a) Federated login page appears first for all permutations of user roles when user is not authenticated;
+            and
+            (b) Federated login page does not appear for all permutations of user roles when user is authenticated.
+
+        :return: Nothing.
+        """
+        logger.debug(_('\nStarting test for federated login for Azure-only settings'))
+        self.__test_federated_login_for_all()
+        logger.debug(_('\nSuccessfully finished test for federated login for Azure-only settings\n\n'))

@@ -2,11 +2,13 @@ from django.db import models, connection
 from django.db.models import Q
 from django.http import QueryDict
 from django.core.exceptions import ValidationError, ImproperlyConfigured
+from django.urls.exceptions import NoReverseMatch
 from django.core.validators import RegexValidator
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
 from django.utils._os import safe_join
+from django.urls import reverse
 from fdp.configuration.abstract.constants import CONST_AZURE_AD_PROVIDER, CONST_MAX_ATTACHMENT_FILE_BYTES, \
     CONST_MAX_PERSON_PHOTO_FILE_BYTES, CONST_SUPPORTED_ATTACHMENT_FILE_TYPES, CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES, \
     CONST_SUPPORTED_EULA_FILE_TYPES, CONST_MAX_EULA_FILE_BYTES
@@ -23,7 +25,10 @@ from dateparser.search import search_dates
 from posixpath import normpath
 from pathlib import Path
 from os.path import commonprefix, realpath
+from pydoc import locate
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Metable(models.Model):
     """ Base class from which all model classes inherit.
@@ -882,7 +887,7 @@ class AbstractDateValidator(models.Model):
         :param is_as_of: True if start date is as of, false if start date is exact.
         :return: A single fuzzy date in human-friendly display form.
         """
-        from_str = cls.AS_OF_DATE if is_as_of else cls.FROM_DATE        
+        from_str = cls.AS_OF_DATE if is_as_of else cls.FROM_DATE
         # parameters passed to strftime
         y = '%Y'
         m = '%m'
@@ -896,7 +901,7 @@ class AbstractDateValidator(models.Model):
                     year=start_year, month=start_month, day=start_day, prefix=cls.DURING_DATE
                 )
             # On 2018-03-23
-            else:            
+            else:
                 return cls.get_display_text_from_date(
                     year=start_year, month=start_month, day=start_day, prefix=cls.ON_DATE
                 )
@@ -1242,6 +1247,9 @@ class AbstractUrlValidator(models.Model):
         There are no attributes.
 
     """
+    # relative URL for the federated login page
+    FDP_USER_FEDERATED_LOGIN_URL = 'federated/login'
+
     # leftmost section of URLs used in the context of end-user license agreements
     EULA_BASE_URL = 'eula/'
 
@@ -3121,6 +3129,40 @@ class AbstractConfiguration(models.Model):
         :return: True if EULA splash page is enabled, false otherwise.
         """
         return getattr(settings, 'FDP_EULA_SPLASH_ENABLE', False)
+
+    @staticmethod
+    def can_do_federated_login():
+        """ Checks whether the necessary settings have been configured to enable support for displaying the federated
+        login page with customized login options.
+
+        :return: True if the federated login page is supported, false otherwise.
+        """
+        return True if getattr(settings, 'FEDERATED_LOGIN_OPTIONS', None) else False
+
+    @staticmethod
+    def federated_login_options():
+        """ Parses the setting to customize the login options displayed on the federated login page.
+
+        :return: List of dictionaries defining the login options to display on th federated login page.
+        """
+        login_options = getattr(settings, 'FEDERATED_LOGIN_OPTIONS', None)
+        try:
+            if login_options:
+                return [
+                    {
+                        'label': o['label'],
+                        'link': reverse(
+                            o['url_pattern_name'],
+                            args=[locate(a) for a in o['url_pattern_args']]
+                        ) if o['url_pattern_args'] else reverse(o['url_pattern_name']),
+                        'css': o.get('css', {}),
+                        'css_hover': o.get('css_hover', {})
+                    } for o in login_options
+                ]
+            else:
+                return []
+        except NoReverseMatch as e:
+            logger.error(f"FEDERATED_LOGIN_OPTIONS misconfigured. Couldn't reverse url: {e}")
 
     class Meta:
         abstract = True

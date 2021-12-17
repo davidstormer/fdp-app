@@ -1,0 +1,84 @@
+---
+  - name: "Provision local development environment"
+    hosts: localhost
+    connection: local
+    tasks:
+
+      - name: "Install os package dependencies"
+        apt:
+          pkg: python3-pip, gcc, python3-dev, libpq-dev, python3-wheel, python3-venv, postgresql-12
+
+      - name: "Initialize database"
+        become: yes
+        become_user: postgres
+        shell: psql < /vagrant/deploy/local/init_db.sql
+
+      - name: "Start app config file"
+        copy:
+          src: "/vagrant/fdp/settings_example.py"
+          dest: "/vagrant/fdp/settings.py"
+
+      - name: "Add settings to app config file"
+        blockinfile:
+          path: "/vagrant/fdp/settings.py"
+          block: |
+            DATABASES['default']['PASSWORD'] = 'opensesame'
+            SECRET_KEY = 'opensesame'
+            QUERYSTRING_PASSWORD = 'ymllgljp//NRW9W7INVajTBS46oBpt0NLPfr7yQ6PEw='
+
+      - name: "Set up python runtime environment"
+        shell: |
+          sudo -u vagrant bash
+          cd /home/vagrant
+          python3 -m venv /home/vagrant/venv-vagrant
+        args:
+          creates: /home/vagrant/venv-vagrant
+
+      - name: "Install python dependencies"
+        pip:
+          requirements: "/vagrant/requirements.txt"
+          virtualenv: "/home/vagrant/venv-vagrant"
+
+      - name: "Set permissions on manage.py"
+        file:
+          path: /vagrant/manage.py
+          mode: a+x
+
+      - name: "Run Django database model migrations"
+        shell: |
+          /home/vagrant/venv-vagrant/bin/python /vagrant/manage.py migrate
+
+      - name: "Load demo data records"
+        shell: |
+          /home/vagrant/venv-vagrant/bin/python /vagrant/manage.py loaddata --ignorenonexistent /vagrant/deploy/local/demo_data/fixture.json
+
+      - name: "Load demo data files"
+        copy:
+          src: /vagrant/deploy/local/demo_data/media/
+          dest: /media/
+
+      - name: "Set up shell to automatically load venv and cd into project root"
+        blockinfile:
+          path: "/home/vagrant/.profile"
+          block: |
+            source /home/vagrant/venv-vagrant/bin/activate
+            cd /vagrant
+
+      - name: "Add helpful instructions on next steps using local instance"
+        blockinfile:
+          path: /etc/motd
+          create: yes
+          marker: ""
+          block: |
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+            FULL DISCLOSURE PROJECT App local development environment
+            WARNING: Do not use this environment for production!
+
+            Add the first user with this command:
+            'python manage.py createsuperuser  --email admin@localhost'
+
+            Then run the testing web server:
+            'python manage.py runserver 0.0.0.0:8000'
+
+            Then point your browser to 'localhost:8000' to see the FDP Application

@@ -1,0 +1,17 @@
+.signin { margin-bottom: 20px; /* Matches padding for ".login #content" in login.css. */ }
+.auth-option { margin-bottom: 1.25em; }
+.auth-option.last { margin-bottom: 0; }
+.auth-option a {
+    position: relative;
+    display: block;
+    line-height: 250%;
+    color: inherit;
+    background: inherit;
+    text-decoration: inherit;
+    font-weight: inherit;
+    font-style: inherit;
+    font-size: inherit;
+    font-family: inherit;
+    padding: 8px;
+}
+.auth-option a i { position: absolute; right: 8px; top: 50%; margin-top: -8px; }

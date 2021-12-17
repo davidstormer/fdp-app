@@ -21,8 +21,10 @@ from os import urandom
 USE_AZURE_SETTINGS = True
 
 
-# Name of environment variable for Azure Storage account access key.
-ENV_VAR_FOR_FDP_AZURE_STORAGE_ACCOUNT_KEY = 'FDP_AZURE_STORAGE_ACCOUNT_KEY'
+# Name of environment variable for the Azure Storage account access key to the static container.
+ENV_VAR_FOR_FDP_AZURE_STATIC_STORAGE_ACCOUNT_KEY = 'FDP_AZURE_STATIC_STORAGE_ACCOUNT_KEY'
+# Name of environment variable for the Azure Storage account access key to the media container.
+ENV_VAR_FOR_FDP_AZURE_MEDIA_STORAGE_ACCOUNT_KEY = 'FDP_AZURE_MEDIA_STORAGE_ACCOUNT_KEY'
 # Name of environment variable for Azure Active Directory client ID
 ENV_VAR_FOR_FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY = 'FDP_SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY'
 # Name of environment variable for Azure Active Directory tenant ID
@@ -378,25 +380,34 @@ DATA_WIZARD['LOADER'] = 'fdp.backends.base_storage.FdpDataWizardFileLoader'
 
 #: Azure Storage for Django: https://django-storages.readthedocs.io/en/latest/backends/azure.html
 # Package-wide settings
-# This setting is the Windows Azure Storage Account name, which in many cases is also the first part of the url for
-# instance: http://azure_account_name.blob.core.windows.net/ would mean: AZURE_ACCOUNT_NAME = "azure_account_name"
-AZURE_ACCOUNT_NAME = get_from_environment_var(environment_var='FDP_AZURE_STORAGE_ACCOUNT_NAME', raise_exception=True)
+# This setting is the Windows Azure Storage Account name, which in many cases is also the first part of the url.
+# For instance: http://azure_account_name.blob.core.windows.net/ for the static container would mean:
+#      AZURE_STATIC_ACCOUNT_NAME = "azure_account_name"
+# For instance: http://azure_account_name.blob.core.windows.net/ for the media container would mean:
+#      AZURE_MEDIA_ACCOUNT_NAME = "azure_account_name"
+AZURE_STATIC_ACCOUNT_NAME = \
+    get_from_environment_var(environment_var='FDP_AZURE_STATIC_STORAGE_ACCOUNT_NAME', raise_exception=True)
+AZURE_MEDIA_ACCOUNT_NAME = \
+    get_from_environment_var(environment_var='FDP_AZURE_MEDIA_STORAGE_ACCOUNT_NAME', raise_exception=True)
 # This is the private key that gives Django access to the Windows Azure Account.
 # if key is in Azure Key Vault, then retrieve it
-AZURE_ACCOUNT_KEY = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_AZURE_STORAGE_ACCOUNT_KEY)
+AZURE_STATIC_ACCOUNT_KEY = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_AZURE_STATIC_STORAGE_ACCOUNT_KEY)
+AZURE_MEDIA_ACCOUNT_KEY = get_from_azure_key_vault(secret_name=ENV_VAR_FOR_FDP_AZURE_MEDIA_STORAGE_ACCOUNT_KEY)
 # if key is not in Azure Key Vault, then retrieve it from environment variable
-if not AZURE_ACCOUNT_KEY:
-    AZURE_ACCOUNT_KEY = get_from_environment_var(
-        environment_var=ENV_VAR_FOR_FDP_AZURE_STORAGE_ACCOUNT_KEY,
-        raise_exception=True
-    )
+if not AZURE_STATIC_ACCOUNT_KEY:
+    AZURE_STATIC_ACCOUNT_KEY = \
+        get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_AZURE_STATIC_STORAGE_ACCOUNT_KEY, raise_exception=True)
+if not AZURE_MEDIA_ACCOUNT_KEY:
+    AZURE_MEDIA_ACCOUNT_KEY = \
+        get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_AZURE_MEDIA_STORAGE_ACCOUNT_KEY, raise_exception=True)
 # The custom domain to use. This can be set in the Azure Portal.
 # For example, www.mydomain.com or mycdn.azureedge.net.
 # It may contain a host:port when using the emulator (AZURE_EMULATED_MODE = True).
-AZURE_STORAGE_ACCOUNT_SUFFX = get_from_environment_var(
+AZURE_STORAGE_ACCOUNT_SUFFIX = get_from_environment_var(
     environment_var='FDP_AZURE_STORAGE_ACCOUNT_SUFFIX', raise_exception=False, default_val='blob.core.windows.net'
 )
-AZURE_CUSTOM_DOMAIN = '{a}.{s}'.format(a=AZURE_ACCOUNT_NAME, s=AZURE_STORAGE_ACCOUNT_SUFFX)
+AZURE_STATIC_CUSTOM_DOMAIN = '{a}.{s}'.format(a=AZURE_STATIC_ACCOUNT_NAME, s=AZURE_STORAGE_ACCOUNT_SUFFIX)
+AZURE_MEDIA_CUSTOM_DOMAIN = '{a}.{s}'.format(a=AZURE_MEDIA_ACCOUNT_NAME, s=AZURE_STORAGE_ACCOUNT_SUFFIX)
 # Seconds before a URL expires, set to None to never expire it. Be aware the container must have public read
 # permissions in order to access a URL without expiration date. Default is None
 AZURE_URL_EXPIRATION_SECS = 20
@@ -420,7 +431,7 @@ AZURE_STATIC_URL_EXPIRATION_SECS = get_from_environment_var(
 # If not None, this will be used as the base path for asset definitions (the Media class) and the staticfiles
 # app. It must end in a slash if set to a non-empty value.
 # Default: None
-STATIC_URL = 'https://{d}/{c}/'.format(d=AZURE_CUSTOM_DOMAIN, c=AZURE_STATIC_CONTAINER)
+STATIC_URL = 'https://{d}/{c}/'.format(d=AZURE_STATIC_CUSTOM_DOMAIN, c=AZURE_STATIC_CONTAINER)
 # The absolute path to the directory where collectstatic will collect static files for deployment.
 # Example: "/var/www/example.com/static/"
 # If the staticfiles contrib app is enabled (as in the default project template), the collectstatic management
@@ -445,7 +456,7 @@ AZURE_MEDIA_CONTAINER = get_from_environment_var(
 # If you want to use {{ MEDIA_URL }} in your templates, add 'django.template.context_processors.media' in the
 # 'context_processors' option of TEMPLATES.
 # Default: '' (Empty string)
-MEDIA_URL = 'https://{d}/{c}/'.format(d=AZURE_CUSTOM_DOMAIN, c=AZURE_MEDIA_CONTAINER)
+MEDIA_URL = 'https://{d}/{c}/'.format(d=AZURE_MEDIA_CUSTOM_DOMAIN, c=AZURE_MEDIA_CONTAINER)
 # Seconds before a URL expires, set to None to never expire it. Be aware the container must have public read
 # permissions in order to access a URL without expiration date. Default is None
 AZURE_MEDIA_URL_EXPIRATION_SECS = get_from_environment_var(
@@ -555,3 +566,7 @@ if secret_email_host_password:
 AXES_META_PRECEDENCE_ORDER = (
     'HTTP_X_CLIENT_IP',
 )
+
+
+#: By default, disable the federated login page.
+FEDERATED_LOGIN_OPTIONS = []

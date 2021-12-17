@@ -215,6 +215,7 @@
         - email - EmailField
         - address - CharField
         - is_inactive - BooleanField
+        - is_law_enforcement - BooleanField
         - inception_date - DateField
         - cease_date - DateField
         - belongs_to_grouping - ForeignKey

@@ -543,10 +543,11 @@ class OfficerDetailView(SecuredSyncDetailView):
             misconduct.parsed_officer_content_person_penalties = []
             misconduct.parsed_officer_contents = {}
             misconduct.parsed_officer_content_types = []
-            # contents in misconduct
-            for content in misconduct.incident.officer_contents:
-                # parse for snapshots section
+            # contents in misconduct intended for snapshot section
+            for content in misconduct.incident.officer_snapshot_contents:
                 self.__parse_content_for_snapshot(content=content, snapshot_dict=snapshot_dict)
+            # contents in misconduct intended for misconduct section
+            for content in misconduct.incident.officer_incident_contents:
                 # parse for misconducts and contents sections
                 self.__parse_content_for_profile(
                     content_dict=misconduct.parsed_officer_contents,
