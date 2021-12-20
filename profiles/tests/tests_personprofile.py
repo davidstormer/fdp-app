@@ -520,3 +520,53 @@ class PersonProfileTestCase(AbstractTestCase):
             response_staff_client,
             relationship_type3.name
         )
+
+    @local_test_settings_required
+    def test_incident_allegations_and_penalties_displayed(self):
+        """Functional test
+        """
+        # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # And there's an incident record linked to it
+        incident_record = Incident.objects.create(description=f"incident-description-{uuid4()}")
+        # And there's a content records linked to the incident
+        content_record = Content.objects.create(name=f"content-name-{uuid4()}")
+        content_record.incidents.add(incident_record)
+        # And the content record is linked to person too
+        content_person = ContentPerson.objects.create(person=person_record, content=content_record)
+        # And an allegation is linked to the content
+        allegation_type = Allegation.objects.create(name=f'allegation-{uuid4()}')
+        allegation_outcome_type = \
+            AllegationOutcome.objects.create(name=f"allegation-outcome-{uuid4()}")
+        allegation = ContentPersonAllegation.objects.create(
+            content_person=content_person,
+            allegation=allegation_type,
+            allegation_outcome=allegation_outcome_type
+        )
+        # And a penalty is linked to the person content link
+        # TODO
+
+        # And I'm logged into the system as an Admin
+        admin_client = self.log_in(is_administrator=True)
+
+        # WHEN I go to the person profile page
+        response_admin_client = admin_client.get(reverse(
+            'profiles:officer',
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # THEN I should see the allegation type
+        self.assertContains(
+            response_admin_client,
+            allegation_type.name
+        )
+
+        # AND the allegation outcomes
+        # AND *NOT* the penalty requested
+        # AND the penalty received
+        # AND the discipline date
+
+    # @local_test_settings_required
+    # def test_content_allegations_and_penalties_displayed(self):
+    #     """Functional test
+    #     """
+    #     self.fail("Finish me!")
