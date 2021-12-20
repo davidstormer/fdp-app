@@ -361,17 +361,8 @@
                         {% endif %}
                     </div> <!-- div.gridcol.gridcell_1_of_2 -->
                     <div class="gridcol gridcell_1_of_2">
-                        {% if officer_misconduct.parsed_officer_content_person_allegations %}
-                        <span class="mish1">{% translate 'Allegations' %}</span>
-                        <ul class="misall">
-                        {% for allegation, outcomes in officer_misconduct.parsed_officer_content_person_allegations.items %}
-                            <li class="misall">
-                                <span class="mish2">{{ allegation }}</span>
-                                {% for outcome in outcomes %}{{ outcome }}{% if not forloop.last %},{% endif %}{% endfor %}
-                            </li>
-                        {% endfor %}
-                        </ul>
-                        {% endif %}
+
+                        <h1>PUT BACK THE ALLEGATIONS!!!</h1>
 
                         {% if officer_misconduct.parsed_officer_content_person_penalties %}
                         <span class="mish1">{% translate 'Penalties' %}</span>
