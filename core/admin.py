@@ -1,8 +1,8 @@
 from django.contrib import admin
 from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, ConfidentiableAdmin
-from .models import Person, PersonContact, PersonAlias, PersonSocialMedia, PersonPhoto, PersonIdentifier, PersonTitle, \
+from .models import Person, PersonContact, PersonAlias, PersonPhoto, PersonIdentifier, PersonTitle, \
     PersonRelationship, PersonPayment, Grouping, GroupingAlias, GroupingRelationship, \
-    PersonGrouping, Incident, PersonIncident, GroupingIncident
+    PersonGrouping, Incident, PersonIncident, GroupingIncident, PersonSocialMedia
 
 
 @admin.register(Person)

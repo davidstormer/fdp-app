@@ -432,8 +432,8 @@ class Person(Confidentiable, Descriptable):
         qs = qs.prefetch_related(
             Prefetch('person_photos', queryset=PersonPhoto.active_objects.all(), to_attr='officer_photos'),
             Prefetch('person_aliases', queryset=PersonAlias.active_objects.all(), to_attr='officer_aliases'),
-            Prefetch('person_social_medias', queryset=PersonSocialMedia.active_objects.all(),
-                     to_attr='officer_social_medias'),
+            Prefetch('person_social_medias_profile', queryset=PersonSocialMedia.active_objects.all(),
+                     to_attr='officer_social_medias_profile'),
             Prefetch(
                 'person_identifiers',
                 queryset=PersonIdentifier.active_objects.filter(
@@ -902,32 +902,31 @@ class PersonAlias(Archivable, AbstractAlias):
 class PersonSocialMedia(Archivable):
     """ Social media related to a person, e.g. links and names used in the social media
     """
-    #change the help text to be specific,
+
     link = models.URLField(
         null=False,
-        blank=True,
+        blank=False,
         default='',
-        help_text='Link to social media owned by this person',
-        max_length=200,
-        verbose_name="social media link"
+        help_text='URL to social media profile/feed owned by this person',
+        max_length=2048,
+        verbose_name="social media profile/feed URL"
     )
-    #change name to "web page title"
     link_name = models.CharField(
         null=False,
-        blank=True,
+        blank=False,
         default='',
-        help_text='Named used in this social media related to this person',
+        help_text='Named used in this social media profile related to this person',
         max_length=300,
-        verbose_name='social media name/handel'
+        verbose_name='social media profile name/handel'
     )
     person = models.ForeignKey(
         Person,
         on_delete=models.CASCADE,
-        related_name='person_social_medias',
-        related_query_name='person_social_media',
+        related_name='person_social_medias_profile',
+        related_query_name='person_social_media_profile',
         blank=False,
         null=False,
-        help_text='Person who is known to own this social media',
+        help_text='Person who is known to own this social media profile',
         verbose_name='person'
     )
 
@@ -951,8 +950,8 @@ class PersonSocialMedia(Archivable):
     """
     class Meta:
         db_table = '{d}person_social_media'.format(d=settings.DB_PREFIX)
-        verbose_name = 'Person social media'
-        verbose_name_plural = 'Person social medias'
+        verbose_name = 'Person social media profile'
+        verbose_name_plural = 'Person social medias profile'
         ordering = ['person', 'link_name', 'link']
 
 

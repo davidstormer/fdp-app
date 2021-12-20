@@ -18,13 +18,13 @@ from sourcing.models import Attachment, Content, ContentIdentifier, ContentPerso
 from supporting.models import ContentType, County, Location
 from .forms import WizardSearchForm, GroupingModelForm, GroupingAliasModelFormSet, GroupingRelationshipModelForm, \
     GroupingRelationshipModelFormSet, PersonModelForm, PersonAliasModelFormSet, PersonIdentifierModelFormSet, \
-    PersonContactModelFormSet, PersonPaymentModelFormSet, PersonGroupingModelFormSet, PersonSocialMediaModelFormSet, \
-    PersonTitleModelFormSet, PersonRelationshipModelForm, PersonRelationshipModelFormSet, IncidentModelForm, \
-    PersonIncidentModelFormSet, GroupingIncidentModelFormSet, LocationModelForm, ContentIdentifierModelFormSet, \
-    ContentCaseModelFormSet, ContentPersonModelFormSet, ContentModelForm, ContentAttachmentModelFormSet, \
-    AttachmentModelForm, ContentIncidentModelFormSet, ContentPersonAllegationModelFormSet, \
-    ContentPersonPenaltyModelFormSet, ContentPersonAllegationModelForm, ContentPersonPenaltyModelForm, \
-    ReadOnlyContentModelForm, PersonPhotoModelFormSet
+    PersonContactModelFormSet, PersonPaymentModelFormSet, PersonGroupingModelFormSet,PersonTitleModelFormSet, \
+    PersonRelationshipModelForm, PersonRelationshipModelFormSet, IncidentModelForm, PersonIncidentModelFormSet, \
+    GroupingIncidentModelFormSet, LocationModelForm, ContentIdentifierModelFormSet, ContentCaseModelFormSet, \
+    ContentPersonModelFormSet, ContentModelForm, ContentAttachmentModelFormSet, AttachmentModelForm, \
+    ContentIncidentModelFormSet, ContentPersonAllegationModelFormSet, ContentPersonPenaltyModelFormSet, \
+    ContentPersonAllegationModelForm, ContentPersonPenaltyModelForm, ReadOnlyContentModelForm, \
+    PersonPhotoModelFormSet, PersonSocialMediaModelFormSet
 from core.models import Person, PersonIdentifier, Grouping, GroupingAlias, GroupingRelationship, Incident, \
     PersonGrouping, PersonRelationship, PersonIncident, GroupingIncident
 from abc import abstractmethod
@@ -1159,7 +1159,7 @@ class AbstractPersonView:
     _titles_key = 'person_title_model_formset'
     _payments_key = 'person_payment_model_formset'
     _aliases_key = 'person_alias_model_formset'
-    socialmedias_key = 'person_social_medias_model_formset'
+    _socialmedias_key = 'person_social_medias_model_formset'
     _relationships_key = 'person_relationship_model_formset'
     _contacts_key = 'person_contact_model_formset'
     _photos_key = 'person_photo_model_formset'
@@ -1168,7 +1168,7 @@ class AbstractPersonView:
     _titles_dict = {'prefix': 'titles'}
     _payments_dict = {'prefix': 'payments'}
     _aliases_dict = {'prefix': 'aliases'}
-    socialmedias_dict = {'prefix': 'socialmedia'}
+    _socialmedias_dict = {'prefix': 'socialmedia'}
     _relationships_dict = {'prefix': 'relationships'}
     _contacts_dict = {'prefix': 'contacts'}
     _photos_dict = {'prefix': 'photos'}
@@ -1295,6 +1295,7 @@ class AbstractPersonView:
         :param titles_dict: Dictionary of keyword arguments to pass into titles formset initialization.
         :param payments_dict: Dictionary of keyword arguments to pass into payments formset initialization.
         :param aliases_dict: Dictionary of keyword arguments to pass into aliases formset initialization.
+        :param socialmedias_dict: Dictionary of keyword arguments to pass into socialmedias formset initialization
         :param relationships_dict: Dictionary of keyword arguments to pass into relationships formset initialization.
         :param contacts_dict: Dictionary of keyword arguments to pass into contacts formset initialization.
         :param photos_dict: Dictionary of keyword arguments to pass into photos formset initialization.
@@ -1320,7 +1321,7 @@ class AbstractPersonView:
             self._aliases_key: PersonAliasModelFormSet(
                 **aliases_dict
             ) if not post_data else PersonAliasModelFormSet(post_data, **aliases_dict),
-            self.socialmedias_key: PersonSocialMediaModelFormSet(
+            self._socialmedias_key: PersonSocialMediaModelFormSet(
                 **socialmedias_dict
             ) if not post_data else PersonSocialMediaModelFormSet(post_data, **socialmedias_dict),
             self._relationships_key: self.__get_person_relationship_model_formset(
@@ -1348,7 +1349,7 @@ class AbstractPersonView:
         :param title_forms: Inline person title forms to save.
         :param payment_forms: Inline person payment forms to save.
         :param alias_forms: Inline person alias forms to save.
-        :param socialmedia_forms: Inline persom social medias forms to save
+        :param socialmedia_forms: Inline person social medias forms to save
         :param relationship_forms: Inline person relationship forms to save.
         :param contact_forms: Inline person contact forms to save.
         :param photo_forms: Inline person photo forms to save.
@@ -1416,7 +1417,7 @@ class PersonCreateView(AdminSyncCreateView, AbstractPersonView):
             titles_dict=self._titles_dict,
             payments_dict=self._payments_dict,
             aliases_dict=self._aliases_dict,
-            socialmedias_dict=self.socialmedias_dict,
+            socialmedias_dict=self._socialmedias_dict,
             relationships_dict=self._relationships_dict,
             contacts_dict=self._contacts_dict,
             photos_dict=self._photos_dict,
@@ -1436,7 +1437,7 @@ class PersonCreateView(AdminSyncCreateView, AbstractPersonView):
         title_forms = context[self._titles_key]
         payment_forms = context[self._payments_key]
         alias_forms = context[self._aliases_key]
-        socialmedia_forms = context[self.socialmedias_key]
+        socialmedia_forms = context[self._socialmedias_key]
         relationship_forms = context[self._relationships_key]
         contact_forms = context[self._contacts_key]
         photo_forms = context[self._photos_key]
@@ -1490,7 +1491,7 @@ class PersonUpdateView(AdminSyncUpdateView, AbstractPersonView):
             titles_dict={'instance': self.object, **self._titles_dict},
             payments_dict={'instance': self.object, **self._payments_dict},
             aliases_dict={'instance': self.object, **self._aliases_dict},
-            socialmedias_dict={'instance': self.object, **self.socialmedias_dict},
+            socialmedias_dict={'instance': self.object, **self._socialmedias_dict},
             relationships_dict={**self._relationships_dict},
             contacts_dict={'instance': self.object, **self._contacts_dict},
             photos_dict={'instance': self.object, **self._photos_dict},
@@ -1510,7 +1511,7 @@ class PersonUpdateView(AdminSyncUpdateView, AbstractPersonView):
         title_forms = context[self._titles_key]
         payment_forms = context[self._payments_key]
         alias_forms = context[self._aliases_key]
-        socialmedia_forms = context[self.socialmedias_key]
+        socialmedia_forms = context[self._socialmedias_key]
         relationship_forms = context[self._relationships_key]
         contact_forms = context[self._contacts_key]
         photo_forms = context[self._photos_key]

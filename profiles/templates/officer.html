@@ -110,16 +110,18 @@
                 </div>
                 {% endfor %}
                 {% endif %}
-                {%if object.officer_social_medias%}
+                {%if object.officer_social_medias_profile%}
                 <div>
                     <label class="ident">{% translate 'Social Medias' %}</label>
-                    {% for socialmedia in object.officer_social_medias%}
-                    <div>
-                        <span class="identval labelsim">{{ socialmedia.link_name}}:</span>
-                        <a href="{{socialmedia.link}}">{{socialmedia.link}}</a>
-                    </div>
-                    {% if not forloop.last %}
-                    {% endif %} {% endfor %}
+                    <ul>
+                        {% for socialmedia in object.officer_social_medias_profile%}
+                            <li>
+                                <span class="identval labelsim">{{ socialmedia.link_name}}:</span>
+                                <a href="{{socialmedia.link}}">{{socialmedia.link}}</a>
+                            </li>
+                        {% if not forloop.last %}
+                        {% endif %} {% endfor %}
+                    </ul>
                 </div>
                 {%endif%}
 
