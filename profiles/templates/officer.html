@@ -368,6 +368,9 @@
                             <li class="misall allegation">
                                 <span class="mish2 allegation-type">{{ allegation }}</span>
                                 {% for outcome in outcomes %}<span class="allegation-outcome">{{ outcome }}</span>{% if not forloop.last %},{% endif %}{% endfor %}
+                                {% if is_admin %}
+                                    <a href="{{ content.get_allegations_penalties_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                                {% endif %}
                             </li>
                         {% endfor %}
                         </ul>

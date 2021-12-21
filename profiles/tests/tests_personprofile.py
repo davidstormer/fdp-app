@@ -619,11 +619,6 @@ class PersonProfileTestCase(AbstractTestCase):
             'heliotypography'
         )
 
-    # @local_test_settings_required
-    # def test_content_allegations_and_penalties_displayed(self):
-    #     """Functional test
-    #     """
-    #     self.fail("Finish me!")
     @local_test_settings_required
     def test_content_allegations_and_penalties_displayed(self):
         """Functional test
@@ -635,6 +630,7 @@ class PersonProfileTestCase(AbstractTestCase):
         # And there is a content record linked to the person
         content_record = Content.objects.create(name=f"content-name-{uuid4()}")
         content_person = ContentPerson.objects.create(person=person_record, content=content_record)
+
         # And there is *NO* incident record linked to it
         # incident_record = Incident.objects.create(description=f"incident-description-{uuid4()}")
         # PersonIncident.objects.create(
@@ -642,6 +638,7 @@ class PersonProfileTestCase(AbstractTestCase):
         #     incident=incident_record
         # )
         # content_record.incidents.add(incident_record)
+
         # And an allegation is linked to the content
         allegation_type = Allegation.objects.create(name=f'allegation-{uuid4()}')
         allegation_outcome_type = \
@@ -709,4 +706,47 @@ class PersonProfileTestCase(AbstractTestCase):
         self.assertNotContains(
             response_admin_client,
             'hyphomycetic'
+        )
+
+    @local_test_settings_required
+    def test_get_allegations_penalties_edit_url(self):
+        # GIVEN there's an officer record
+        #
+        #
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # And there is a content record linked to the person
+        content_record = Content.objects.create(name=f"content-name-{uuid4()}")
+        content_person = ContentPerson.objects.create(person=person_record, content=content_record)
+        # And an allegation is linked to the content
+        allegation_type = Allegation.objects.create(name=f'allegation-{uuid4()}')
+        allegation_outcome_type = \
+            AllegationOutcome.objects.create(name=f"allegation-outcome-{uuid4()}")
+        allegation = ContentPersonAllegation.objects.create(
+            content_person=content_person,
+            allegation=allegation_type,
+            allegation_outcome=allegation_outcome_type
+        )
+        # And a penalty is linked to the person content link
+        penalty = ContentPersonPenalty.objects.create(
+            content_person=content_person,
+            penalty_requested=f"hyphomycetic",
+            penalty_received=f"penalty-received-{uuid4()}",
+            discipline_date=datetime(1922, 1, 1)
+        )
+        # And I'm logged into the system as an Admin
+        admin_client = self.log_in(is_administrator=True)
+
+        # WHEN I get the get_allegations_penalties_edit_url property from the content record
+        #
+        #
+        url = content_record.get_allegations_penalties_edit_url
+        # and I go to the link
+        response = admin_client.get(url)
+
+        # THEN I should see the allegations and penalties edit page
+        #
+        #
+        self.assertContains(
+            response,
+            '<h1>Link Allegations and Penalties</h1>'
         )
