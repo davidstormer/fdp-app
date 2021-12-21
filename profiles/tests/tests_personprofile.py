@@ -19,7 +19,15 @@ from core.models import (
     PersonIdentifierType,
     PersonGroupingType,
 )
-from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase, ContentPersonAllegation
+from sourcing.models import (
+    Attachment,
+    Content,
+    ContentPerson,
+    ContentIdentifier,
+    ContentCase,
+    ContentPersonAllegation,
+    ContentPersonPenalty
+)
 from supporting.models import (
     PersonRelationshipType,
     ContentIdentifierType,
@@ -528,10 +536,12 @@ class PersonProfileTestCase(AbstractTestCase):
         """Functional test
         """
         # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
+        #
+        #
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
         # And there's an incident record linked to it
         incident_record = Incident.objects.create(description=f"incident-description-{uuid4()}")
-        person_incident = PersonIncident.objects.create(
+        PersonIncident.objects.create(
             person=person_record,
             incident=incident_record
         )
@@ -550,18 +560,26 @@ class PersonProfileTestCase(AbstractTestCase):
             allegation_outcome=allegation_outcome_type
         )
         # And a penalty is linked to the person content link
-        # TODO
-
+        penalty = ContentPersonPenalty.objects.create(
+            content_person=content_person,
+            penalty_requested=f"heliotypography",
+            penalty_received=f"penalty-received-{uuid4()}",
+            discipline_date=datetime(1922, 1, 1)
+        )
         # And I'm logged into the system as an Admin
         admin_client = self.log_in(is_administrator=True)
 
         # WHEN I go to the person profile page
+        #
+        #
         response_admin_client = admin_client.get(reverse(
             'profiles:officer',
             kwargs={'pk': person_record.pk}), follow=True)
         document = fromstring(response_admin_client.content)
 
         # THEN I should see the allegation type under the incident
+        #
+        #
         allegation_types_under_incidents = \
             document.cssselect(f"div.incident.incident-{incident_record.pk} li.allegation .allegation-type")
         if allegation_types_under_incidents:
@@ -583,9 +601,23 @@ class PersonProfileTestCase(AbstractTestCase):
         else:
             self.fail(f"Couldn't find any allegation outcomes under incident {incident_record}")
 
+        # AND the penalty received AND discipline date
+        penalties_under_incidents = \
+            document.cssselect(f"div.incident.incident-{incident_record.pk} li.penalty")
+        if penalties_under_incidents:
+            self.assertEqual(
+                ''.join(penalties_under_incidents[0].itertext()),
+                # ... check for date and penalty together, because currently being templated on the backend
+                f"On {penalty.discipline_date.strftime('%d-%m-%Y')}, {penalty.penalty_received}"
+            )
+        else:
+            self.fail(f"Couldn't find any penalties under incident {incident_record}")
+
         # AND *NOT* the penalty requested
-        # AND the penalty received
-        # AND the discipline date
+        self.assertNotContains(
+            response_admin_client,
+            'heliotypography'
+        )
 
     # @local_test_settings_required
     # def test_content_allegations_and_penalties_displayed(self):
