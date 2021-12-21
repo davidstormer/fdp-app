@@ -30,6 +30,8 @@ from supporting.models import (
 )
 from django.test import Client
 from datetime import datetime, timedelta
+from lxml.html.soupparser import fromstring
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -529,6 +531,10 @@ class PersonProfileTestCase(AbstractTestCase):
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
         # And there's an incident record linked to it
         incident_record = Incident.objects.create(description=f"incident-description-{uuid4()}")
+        person_incident = PersonIncident.objects.create(
+            person=person_record,
+            incident=incident_record
+        )
         # And there's a content records linked to the incident
         content_record = Content.objects.create(name=f"content-name-{uuid4()}")
         content_record.incidents.add(incident_record)
@@ -553,14 +559,30 @@ class PersonProfileTestCase(AbstractTestCase):
         response_admin_client = admin_client.get(reverse(
             'profiles:officer',
             kwargs={'pk': person_record.pk}), follow=True)
+        document = fromstring(response_admin_client.content)
 
-        # THEN I should see the allegation type
-        self.assertContains(
-            response_admin_client,
-            allegation_type.name
-        )
+        # THEN I should see the allegation type under the incident
+        allegation_types_under_incidents = \
+            document.cssselect(f"div.incident.incident-{incident_record.pk} li.allegation .allegation-type")
+        if allegation_types_under_incidents:
+            self.assertEqual(
+                allegation_types_under_incidents[0].text,
+                allegation_type.name
+            )
+        else:
+            self.fail(f"Couldn't find any allegation types under incident {incident_record}")
 
         # AND the allegation outcomes
+        allegation_outcomes_under_incidents = \
+            document.cssselect(f"div.incident.incident-{incident_record.pk} li.allegation .allegation-outcome")
+        if allegation_outcomes_under_incidents:
+            self.assertEqual(
+                allegation_outcomes_under_incidents[0].text,
+                allegation_outcome_type.name
+            )
+        else:
+            self.fail(f"Couldn't find any allegation outcomes under incident {incident_record}")
+
         # AND *NOT* the penalty requested
         # AND the penalty received
         # AND the discipline date
