@@ -471,12 +471,10 @@ class OfficerDetailView(SecuredSyncDetailView):
                     snapshot_dict[case_type][cls.__settlement_amount_total_key] += settlement_amount
 
     @staticmethod
-    def __aggregate_allegations_for_profile(allegations: list) -> dict:
+    def __collate_allegations_for_profile(allegations: list) -> dict:
         """Parses content person allegations for the Misconduct and Content sections of the officer profile.
-        Used to be __parse_content_person_allegations_for_profile(). Refactored to be more functional and less
-        side-effecty -- so that Tristan could read the code more easily while updating the logic.
-        Takes a list of allegations for a given incident
-        Returns a dictionary where the keys are the allegations, and the values are the outcomes
+        Used to be __parse_content_person_allegations_for_profile()
+        Refactored to be more functional / less action-at-a-distancey
         """
         content_person_allegations_dict = {}
         for content_person_allegation in allegations:
@@ -543,7 +541,6 @@ class OfficerDetailView(SecuredSyncDetailView):
         # content directly connected to misconducts
 
         for misconduct in obj.officer_misconducts:
-            import pdb; pdb.set_trace()
             misconduct.parsed_officer_content_person_allegations = {}
             misconduct.parsed_officer_content_person_penalties = []
             misconduct.parsed_officer_contents = {}
@@ -563,7 +560,7 @@ class OfficerDetailView(SecuredSyncDetailView):
                 for content_person in content.officer_content_persons:
                     # allegations in content person
                     misconduct.parsed_officer_content_person_allegations = \
-                        self.__aggregate_allegations_for_profile(content_person.officer_allegations)
+                        self.__collate_allegations_for_profile(content_person.officer_allegations)
                     # penalties in content person
                     for content_person_penalty in content_person.officer_penalties:
                         self.__parse_content_person_penalties_for_profile(
@@ -578,7 +575,7 @@ class OfficerDetailView(SecuredSyncDetailView):
             self.__parse_content_for_snapshot(content=content_person.content, snapshot_dict=snapshot_dict)
             # allegations in content
             content_person.parsed_officer_content_person_allegations = \
-                self.__aggregate_allegations_for_profile(content_person.officer_allegations)
+                self.__collate_allegations_for_profile(content_person.officer_allegations)
             # penalties in content
             for content_person_penalty in content_person.officer_penalties:
                 self.__parse_content_person_penalties_for_profile(
