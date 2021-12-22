@@ -476,7 +476,7 @@ class OfficerDetailView(SecuredSyncDetailView):
         Used to be __parse_content_person_allegations_for_profile(). Refactored to be more functional and less
         side-effecty -- so that Tristan could read the code more easily while updating the logic.
         Takes a list of allegations for a given incident
-        Returns a dictionary where the keys are the allegations, and the values are the outcomes
+        Returns a dictionary where the keys are the allegations, and the values are a list of the outcomes resp.
         """
         content_person_allegations_dict = {}
         for content_person_allegation in allegations:
@@ -543,7 +543,7 @@ class OfficerDetailView(SecuredSyncDetailView):
         # content directly connected to misconducts
 
         for misconduct in obj.officer_misconducts:
-            import pdb; pdb.set_trace()
+            setattr(misconduct, 'allegations', [])
             misconduct.parsed_officer_content_person_allegations = {}
             misconduct.parsed_officer_content_person_penalties = []
             misconduct.parsed_officer_contents = {}
@@ -559,6 +559,10 @@ class OfficerDetailView(SecuredSyncDetailView):
                     content_dict_keys=misconduct.parsed_officer_content_types,
                     content=content
                 )
+                # Experiment TC
+                misconduct.allegations = misconduct.allegations + \
+                    content.officer_content_persons[0].officer_allegations
+
                 # content person in content
                 for content_person in content.officer_content_persons:
                     # allegations in content person
@@ -570,6 +574,7 @@ class OfficerDetailView(SecuredSyncDetailView):
                             content_person_penalties_list=misconduct.parsed_officer_content_person_penalties,
                             content_person_penalty=content_person_penalty
                         )
+
         # content without incidents
         for content_person in obj.officer_contents:
             content_person.parsed_officer_content_person_allegations = {}
