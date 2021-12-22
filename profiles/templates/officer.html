@@ -361,18 +361,17 @@
                         {% endif %}
                     </div> <!-- div.gridcol.gridcell_1_of_2 -->
                     <div class="gridcol gridcell_1_of_2">
-                        {% if officer_misconduct.parsed_officer_content_person_allegations %}
-                        <span class="mish1">{% translate 'Allegations' %}</span>
-                        <ul class="misall">
-                        {% for allegation, outcomes in officer_misconduct.parsed_officer_content_person_allegations.items %}
-                            <li class="misall allegation">
-                                <span class="mish2 allegation-type">{{ allegation }}</span>
-                                {% for outcome in outcomes %}<span class="allegation-outcome">{{ outcome }}</span>{% if not forloop.last %},{% endif %}{% endfor %}
+                        {% if officer_misconduct.allegations %}
+                        <h3>Allegations</h3>
+                        <ul>
+                            {% for allegation in officer_misconduct.allegations %}
+                            <li class="allegation">
+                                <span class="allegation-type">{{ allegation.allegation.name }}</span> &ndash; <span class="allegation-outcome">{{ allegation.allegation_outcome.name }}</span>
                                 {% if is_admin %}
-                                    <a href="{{ content.get_allegations_penalties_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                                    <a href="{{ allegation.content_person.content.get_allegations_penalties_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
                                 {% endif %}
                             </li>
-                        {% endfor %}
+                            {% endfor %}
                         </ul>
                         {% endif %}
 
