@@ -471,30 +471,6 @@ class OfficerDetailView(SecuredSyncDetailView):
                     snapshot_dict[case_type][cls.__settlement_amount_total_key] += settlement_amount
 
     @staticmethod
-    def __parse_content_person_allegations_for_profile(content_person_allegations_dict, content_person_allegation):
-        """ Parses content person allegations for the Misconduct and Content sections of the officer profile.
-
-        :param content_person_allegations_dict: Existing dictionary storing already parsed content person allegations.
-        :param content_person_allegation: Content person allegation to parse.
-        :return: Nothing.
-        """
-        allegation = content_person_allegation.allegation
-        allegation_outcome = content_person_allegation.allegation_outcome
-        # allegation already parsed once
-        if allegation in content_person_allegations_dict:
-            # outcome is defined and not yet parsed
-            if allegation_outcome and allegation_outcome not in content_person_allegations_dict[allegation]:
-                (content_person_allegations_dict[allegation]).append(allegation_outcome)
-        # allegation not yet parsed
-        else:
-            # outcome is defined
-            if allegation_outcome:
-                content_person_allegations_dict[allegation] = [allegation_outcome]
-            # outcome not defined
-            else:
-                content_person_allegations_dict[allegation] = []
-
-    @staticmethod
     def __parse_content_person_penalties_for_profile(content_person_penalties_list, content_person_penalty):
         """ Parses content person penalties for the Misconduct and Content sections of the officer profile.
 
@@ -577,12 +553,6 @@ class OfficerDetailView(SecuredSyncDetailView):
             content_person.parsed_officer_content_person_penalties = []
             # parse for snapshots section
             self.__parse_content_for_snapshot(content=content_person.content, snapshot_dict=snapshot_dict)
-            # allegations in content
-            for content_person_allegation in content_person.officer_allegations:
-                self.__parse_content_person_allegations_for_profile(
-                    content_person_allegations_dict=content_person.parsed_officer_content_person_allegations,
-                    content_person_allegation=content_person_allegation
-                )
             # penalties in content
             for content_person_penalty in content_person.officer_penalties:
                 self.__parse_content_person_penalties_for_profile(
