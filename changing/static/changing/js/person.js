@@ -286,22 +286,23 @@ var Fdp = (function (fdpDef, $, w, d) {
     };
 
     /**
-     * Called to initialize the person social media form, including adding new and deleting existing forms.
+     * Called to initialize the person social media profile form, including adding new and deleting existing forms.
     */
-    function _initPersonSocialMediaForms() {
-        var elem = $("#newpersonsocialmedia");
+    function _initPersonSocialMediaProfileForms() {
+        // icon to add new social media profile forms
+        var elem = $("#new-person-social-media-profile");
         elem.on("click", function () {
             Fdp.Common.addInlineForm(
-                "socialmedia",
-                "#emptypersonsocialmedia",
-                _initPersonSocialMediaForm,
+                "social-media-profile",
+                "#empty-person-social-media-profile",
+                _initPersonSocialMediaProfileForm,
                 "<div />"
             );
         });
-
-        $(".personsocialmediaform").not(".emptyform").each(function (i, elem){
+        // icon to remove existing person social media profile forms
+        $(".person-social-media-profile-form").not(".emptyform").each(function (i, elem){
             var formContainer = $(elem);
-            _initPersonSocialMediaForm(
+            _initPersonSocialMediaProfileForm(
                 formContainer
             );
             Fdp.Common.hideFormIfDeleted(formContainer);
@@ -471,11 +472,15 @@ var Fdp = (function (fdpDef, $, w, d) {
         );
     };
 
-    function _delPersonSocialMediaForm(id) {
+    /**
+     * Marks a person social media profile form for deletion, and hides its corresponding HTML elements.
+     * @param {number} id - Id of person social media profile form to delete.
+    */
+    function _delPersonSocialMediaProfileForm(id) {
         Fdp.Common.delInlineForm(
-            "socialmedia",
+            "social-media-profile",
             id,
-            ".personsocialmediaform"
+            ".person-social-media-profile-form"
         );
 
     };
@@ -621,11 +626,15 @@ var Fdp = (function (fdpDef, $, w, d) {
         });
     };
 
-    function _initPersonSocialMediaForm(formContainer) {
-        var delBtn = formContainer.find(".delsocialmedia");
+    /**
+     * Initializes a person social media profile form, including adding an event handler to the corresponding delete icon.
+     * @param {Object} formContainer - Element containing person social media profile form. Must be wrapped in JQuery object.
+    */
+    function _initPersonSocialMediaProfileForm(formContainer) {
+        var delBtn = formContainer.find(".del-social-media-profile");
         var id = delBtn.data("id");
         delBtn.one("click", function () {
-            _delPersonSocialMediaForm(id);
+            _delPersonSocialMediaProfileForm(id);
         });
     };
 
@@ -862,7 +871,7 @@ var Fdp = (function (fdpDef, $, w, d) {
         _initPersonAliasForms();
 
         // initialize adding new and removing existing person social media
-        _initPersonSocialMediaForms();
+        _initPersonSocialMediaProfileForms();
 
         // initialize adding new and removing existing person relationship
         _initPersonRelationshipForms();

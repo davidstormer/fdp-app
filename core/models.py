@@ -432,8 +432,8 @@ class Person(Confidentiable, Descriptable):
         qs = qs.prefetch_related(
             Prefetch('person_photos', queryset=PersonPhoto.active_objects.all(), to_attr='officer_photos'),
             Prefetch('person_aliases', queryset=PersonAlias.active_objects.all(), to_attr='officer_aliases'),
-            Prefetch('person_social_medias_profile', queryset=PersonSocialMedia.active_objects.all(),
-                     to_attr='officer_social_medias_profile'),
+            Prefetch('person_social_media_profiles', queryset=PersonSocialMediaProfile.active_objects.all(),
+                     to_attr='officer_social_media_profiles'),
             Prefetch(
                 'person_identifiers',
                 queryset=PersonIdentifier.active_objects.filter(
@@ -899,7 +899,7 @@ class PersonAlias(Archivable, AbstractAlias):
         ordering = ['person', 'name']
 
 
-class PersonSocialMedia(Archivable):
+class PersonSocialMediaProfile(Archivable):
     """ Social media related to a person, e.g. links and names used in the social media
     """
 
@@ -922,7 +922,7 @@ class PersonSocialMedia(Archivable):
     person = models.ForeignKey(
         Person,
         on_delete=models.CASCADE,
-        related_name='person_social_medias_profile',
+        related_name='person_social_media_profiles',
         related_query_name='person_social_media_profile',
         blank=False,
         null=False,
@@ -949,9 +949,9 @@ class PersonSocialMedia(Archivable):
     """ meta class is to add additional settings about the object model
     """
     class Meta:
-        db_table = '{d}person_social_media'.format(d=settings.DB_PREFIX)
+        db_table = '{d}person_social_media_profile'.format(d=settings.DB_PREFIX)
         verbose_name = 'Person social media profile'
-        verbose_name_plural = 'Person social medias profile'
+        verbose_name_plural = 'Person social media profiles'
         ordering = ['person', 'link_name', 'link']
 
 

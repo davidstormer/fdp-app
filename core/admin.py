@@ -2,7 +2,7 @@ from django.contrib import admin
 from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, ConfidentiableAdmin
 from .models import Person, PersonContact, PersonAlias, PersonPhoto, PersonIdentifier, PersonTitle, \
     PersonRelationship, PersonPayment, Grouping, GroupingAlias, GroupingRelationship, \
-    PersonGrouping, Incident, PersonIncident, GroupingIncident, PersonSocialMedia
+    PersonGrouping, Incident, PersonIncident, GroupingIncident, PersonSocialMediaProfile
 
 
 @admin.register(Person)
@@ -44,8 +44,8 @@ class PersonAliasAdmin(FdpInheritableAdmin, ArchivableAdmin):
     ordering = ['person__name', 'name']
 
 
-@admin.register(PersonSocialMedia)
-class PersonSocialMediaAdmin(FdpInheritableAdmin, ArchivableAdmin):
+@admin.register(PersonSocialMediaProfile)
+class PersonSocialMediaProfileAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for person's social media.
     """
     _list_display = ['person', 'link_name', 'link']+ArchivableAdmin.list_display

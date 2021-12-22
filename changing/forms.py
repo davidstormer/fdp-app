@@ -12,7 +12,7 @@ from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPers
     ContentPersonAllegation, ContentPersonPenalty
 from core.models import Grouping, GroupingAlias, GroupingRelationship, Person, PersonAlias, PersonIdentifier, \
     PersonGrouping, PersonTitle, PersonRelationship, PersonContact, PersonPayment, Incident, PersonIncident, \
-    GroupingIncident, PersonPhoto, PersonSocialMedia
+    GroupingIncident, PersonPhoto, PersonSocialMediaProfile
 from supporting.models import County, GroupingRelationshipType, PersonRelationshipType, Location
 
 
@@ -698,15 +698,15 @@ class PersonPaymentModelForm(AbstractWizardModelForm):
         fields_order = person_payment_form_fields.copy()
 
 
-class PersonSocialMediaModelForm(AbstractWizardModelForm):
+class PersonSocialMediaProfileModelForm(AbstractWizardModelForm):
     """ Form used to create new and edit existing instances of person's social media model.
     Fields:
     """
     #: Fields to show in the form
-    fields_to_show = PersonSocialMedia.form_fields
+    fields_to_show = PersonSocialMediaProfile.form_fields
 
     #: Prefix to use for form
-    prefix = 'socialmedia'
+    prefix = 'social-media-profile'
 
     formset_extra = 0
 
@@ -714,9 +714,9 @@ class PersonSocialMediaModelForm(AbstractWizardModelForm):
     formset_can_delete = True
 
     class Meta:
-        model = PersonSocialMedia
-        fields = PersonSocialMedia.form_fields
-        fields_order = PersonSocialMedia.form_fields
+        model = PersonSocialMediaProfile
+        fields = PersonSocialMediaProfile.form_fields
+        fields_order = PersonSocialMediaProfile.form_fields
 
 
 class PersonAliasModelForm(AbstractWizardModelForm):
@@ -1068,13 +1068,13 @@ PersonAliasModelFormSet = forms.inlineformset_factory(
 )
 
 #: Form connecting the person socialmedia to person
-PersonSocialMediaModelFormSet = forms.inlineformset_factory(
+PersonSocialMediaProfileModelFormSet = forms.inlineformset_factory(
     Person,
-    PersonSocialMedia,
-    form=PersonSocialMediaModelForm,
+    PersonSocialMediaProfile,
+    form=PersonSocialMediaProfileModelForm,
     formset=AbstractWizardInlineFormSet,
-    extra=PersonSocialMediaModelForm.formset_extra,
-    can_delete=PersonSocialMediaModelForm.formset_can_delete,
+    extra=PersonSocialMediaProfileModelForm.formset_extra,
+    can_delete=PersonSocialMediaProfileModelForm.formset_can_delete,
 )
 
 #: Form connecting the person relationship to person
