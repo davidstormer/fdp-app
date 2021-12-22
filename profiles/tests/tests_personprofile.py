@@ -105,9 +105,20 @@ class PersonProfileTestCase(AbstractTestCase):
         # and there are three content records linked directly to the person
         for i_contents_for_person in range(3):
             new_content = Content.objects.create(name=f"{i_contents_for_person}")
-            ContentPerson.objects.create(person=person_record, content=new_content)
+            content_person = ContentPerson.objects.create(person=person_record, content=new_content)
             contents.append(new_content)
-            # TODO: link allegations and penalties
+            # and three allegations linked under each content record
+            for i_allegation in range(3):
+                allegation_type = Allegation.objects.create(name=f'allegation-{uuid4()}')
+                allegation_outcome_type = \
+                    AllegationOutcome.objects.create(name=f"allegation-outcome-{uuid4()}")
+                new_allegation = ContentPersonAllegation.objects.create(
+                    content_person=content_person,
+                    allegation=allegation_type,
+                    allegation_outcome=allegation_outcome_type
+                )
+                allegations.append(new_allegation)
+
         # and I'm logged into the system as an Admin
         admin_client = self.log_in(is_administrator=True)
 
@@ -125,10 +136,58 @@ class PersonProfileTestCase(AbstractTestCase):
         for content in contents:
             self.assertContains(response_admin_client, content.get_edit_url)
         # and I should see allegation edit links
-        for content in contents:
-            self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
+        # See below -\/
         # and I should see penalties edit links
         # TODO: test that the penalties linked both to the person and the incidents have links
+
+    @local_test_settings_required
+    def test_edit_links_incident_allegations(self):
+        """Edit links show up on the allegations listed under incidents
+        """
+        # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
+        #
+        #
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # AND there are three incident records linked to the person record
+        incidents = []
+        contents = []
+        allegations = []
+        for i_incidents in range(3):
+            new_incident = Incident.objects.create(description=f"{i_incidents}")
+            incidents.append(new_incident)
+            PersonIncident.objects.create(person=person_record, incident=new_incident)
+            # AND three content records linked under each incident record AND to the content records (for allegations)
+            for i_contents in range(3):
+                new_content = Content.objects.create(name=f"{i_contents}")
+                contents.append(new_content)
+                new_content.incidents.add(new_incident)
+                content_person = ContentPerson.objects.create(person=person_record, content=new_content)
+                # AND three allegations linked under each content record
+                for i_allegation in range(3):
+                    allegation_type = Allegation.objects.create(name=f'allegation-{uuid4()}')
+                    allegation_outcome_type = \
+                        AllegationOutcome.objects.create(name=f"allegation-outcome-{uuid4()}")
+                    new_allegation = ContentPersonAllegation.objects.create(
+                        content_person=content_person,
+                        allegation=allegation_type,
+                        allegation_outcome=allegation_outcome_type
+                    )
+                    allegations.append(new_allegation)
+        # AND I'm logged into the system as an Admin
+        admin_client = self.log_in(is_administrator=True)
+
+        # WHEN I go to the person profile page
+        #
+        #
+        response_admin_client = admin_client.get(reverse(
+            'profiles:officer',
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # THEN I should see the allegation edit links
+        #
+        #
+        for content in contents:
+            self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
 
     @local_test_settings_required
     def test_edit_links_visible_to_admins_only(self):

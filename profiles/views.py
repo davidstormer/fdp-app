@@ -540,6 +540,7 @@ class OfficerDetailView(SecuredSyncDetailView):
         # content directly connected to misconducts
 
         for misconduct in obj.officer_misconducts:
+            setattr(misconduct, 'allegations', [])
             misconduct.parsed_officer_content_person_allegations = {}
             misconduct.parsed_officer_content_person_penalties = []
             misconduct.parsed_officer_contents = {}
@@ -555,14 +556,15 @@ class OfficerDetailView(SecuredSyncDetailView):
                     content_dict_keys=misconduct.parsed_officer_content_types,
                     content=content
                 )
+
+                # Aggregate allegations from the multiple content records associated with current misconduct.
+                # 'officer_content_persons[0]' because there's never more than one returned from the prefetch(?).
+                if content.officer_content_persons:
+                    misconduct.allegations = misconduct.allegations + \
+                                             content.officer_content_persons[0].officer_allegations
+
                 # content person in content
                 for content_person in content.officer_content_persons:
-                    # allegations in content person
-                    for content_person_allegation in content_person.officer_allegations:
-                        self.__parse_content_person_allegations_for_profile(
-                            content_person_allegations_dict=misconduct.parsed_officer_content_person_allegations,
-                            content_person_allegation=content_person_allegation
-                        )
                     # penalties in content person
                     for content_person_penalty in content_person.officer_penalties:
                         self.__parse_content_person_penalties_for_profile(
