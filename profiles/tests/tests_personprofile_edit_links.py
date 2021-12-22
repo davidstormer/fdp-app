@@ -150,6 +150,9 @@ class EditLinksTestCase(AbstractTestCase):
 
     @local_test_settings_required
     def test_edit_links_on_incident_allegations(self):
+        """Check that there are edit links on allegations on contents that are linked to incidents.
+        And NOT allegations on contents that aren't linked to incidents.
+        """
         # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
         #
         #
@@ -179,6 +182,50 @@ class EditLinksTestCase(AbstractTestCase):
                         allegation_outcome=allegation_outcome_type
                     )
                     allegations.append(new_allegation)
+        # AND I'm logged into the system as an Admin
+        admin_client = self.log_in(is_administrator=True)
+
+        # WHEN I go to the person profile page
+        #
+        #
+        response_admin_client = admin_client.get(reverse(
+            'profiles:officer',
+            kwargs={'pk': person_record.pk}), follow=True)
+
+        # THEN I should see the allegation edit links
+        #
+        #
+        for content in contents:
+            self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
+
+    @local_test_settings_required
+    def test_edit_links_on_incident_allegations(self):
+        """Check that there are edit links on allegations on contents that aren't linked to incidents.
+        And NOT allegations on contents that are linked to incidents.
+        """
+        # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
+        #
+        #
+        person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
+        # AND there are three incident records linked to the person record
+        contents = []
+        allegations = []
+        # AND three content records linked under each incident record AND to the content records (for allegations)
+        for i_contents in range(3):
+            new_content = Content.objects.create(name=f"{i_contents}")
+            contents.append(new_content)
+            content_person = ContentPerson.objects.create(person=person_record, content=new_content)
+            # AND three allegations linked under each content record
+            for i_allegation in range(3):
+                allegation_type = Allegation.objects.create(name=f'allegation-{uuid4()}')
+                allegation_outcome_type = \
+                    AllegationOutcome.objects.create(name=f"allegation-outcome-{uuid4()}")
+                new_allegation = ContentPersonAllegation.objects.create(
+                    content_person=content_person,
+                    allegation=allegation_type,
+                    allegation_outcome=allegation_outcome_type
+                )
+                allegations.append(new_allegation)
         # AND I'm logged into the system as an Admin
         admin_client = self.log_in(is_administrator=True)
 
