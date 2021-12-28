@@ -28,7 +28,7 @@ from datetime import datetime
 class EditFromProfileTests(SeleniumFunctionalTestCase):
 
     def test_AllegationPenaltyLinkUpdateView_next_redirect_no_incident(self):
-        # GIVEN there's an allegation record
+        # GIVEN there's an allegation record *with no linked incident*
         #
         #
         # ... first need a Person record
@@ -78,7 +78,7 @@ class EditFromProfileTests(SeleniumFunctionalTestCase):
         )
 
     def test_AllegationPenaltyLinkUpdateView_next_redirect_with_incident(self):
-        # GIVEN there's an allegation record
+        # GIVEN there's an allegation record *on content linked to an incident*
         #
         #
         # ... first need a Person record
@@ -122,7 +122,7 @@ class EditFromProfileTests(SeleniumFunctionalTestCase):
         self.browser.find_element_by_css_selector("input[type='submit'][value='Save']") \
             .click()
 
-        # THEN I should be taken to the officer profile page
+        # THEN I should be taken to the officer profile page (and not the incident edit page)
         #
         #
         heading = wait(self.browser.find_element_by_css_selector, 'div#content h1')
