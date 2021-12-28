@@ -375,12 +375,18 @@
                         </ul>
                         {% endif %}
 
-                        {% if officer_misconduct.parsed_officer_content_person_penalties %}
-                        <span class="mish1">{% translate 'Penalties' %}</span>
-                        <ul class="misall">
-                        {% for penalty in officer_misconduct.parsed_officer_content_person_penalties %}
-                            <li class="misall penalty"><span class="mish2">{{ penalty }}</span></li>
-                        {% endfor %}
+                        {% if officer_misconduct.penalties %}
+                        <h3>Penalties</h3>
+                        <ul>
+                            {% for penalty in officer_misconduct.penalties|dictsort:"discipline_date" %}
+                            <li class="penalty">
+                                {% if penalty.discipline_date %}On {{ penalty.discipline_date }}{% endif %}{% if penalty.discipline_date and penalty.penalty_received %},{% endif %}
+                                {{ penalty.penalty_received }}
+                                {% if is_admin %}
+                                    <a href="{{ penalty.get_allegations_penalties_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
                         </ul>
                         {% endif %}
 

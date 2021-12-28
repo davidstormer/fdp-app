@@ -517,6 +517,7 @@ class OfficerDetailView(SecuredSyncDetailView):
 
         for misconduct in obj.officer_misconducts:
             setattr(misconduct, 'allegations', [])
+            setattr(misconduct, 'penalties', set())  # use a set to eliminate redundancy
             misconduct.parsed_officer_content_person_allegations = {}
             misconduct.parsed_officer_content_person_penalties = []
             misconduct.parsed_officer_contents = {}
@@ -539,14 +540,11 @@ class OfficerDetailView(SecuredSyncDetailView):
                     misconduct.allegations = misconduct.allegations + \
                                              content.officer_content_persons[0].officer_allegations
 
-                # content person in content
                 for content_person in content.officer_content_persons:
                     # penalties in content person
                     for content_person_penalty in content_person.officer_penalties:
-                        self.__parse_content_person_penalties_for_profile(
-                            content_person_penalties_list=misconduct.parsed_officer_content_person_penalties,
-                            content_person_penalty=content_person_penalty
-                        )
+                        misconduct.penalties = set.union(misconduct.penalties, set(content_person.officer_penalties))
+
         # content without incidents
         for content_person in obj.officer_contents:
             content_person.parsed_officer_content_person_allegations = {}
