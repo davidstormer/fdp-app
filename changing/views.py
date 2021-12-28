@@ -63,14 +63,14 @@ ChangingGroupingSearch = AbstractImport.load_changing_search(
 
 
 def get_next_url(next_path: str, fallback: str) -> str:
-    """Helper function that returns the default success url (data management home page),
-    or if provided, the next= argument passed via the URL."""
+    """Helper function that returns the next= argument from the get request, or a
+    fallback location otherwise."""
 
     next_parsed_path = urlparse(next_path)
 
     # Check for suspicious/malformed submissions
     if next_parsed_path.netloc or next_parsed_path.scheme:
-        logger.warning(f"PersonUpdateView: {next_path} suspicious 'next' path.")
+        logger.warning(f"PersonUpdateView: {next_path} suspicious 'next' path. Returning fallback.")
         return fallback
 
     # If there is a valid path take me there
@@ -2631,7 +2631,7 @@ class AllegationPenaltyLinkUpdateView(ContentUpdateView):
             return reverse('changing:edit_incident', kwargs={'pk': next_incident_id, 'content_id': content_id})
         # there is no incident to update, so go to the main page
         else:
-            return reverse('changing:index')
+            return get_next_url(self.request.GET.get('next'), reverse('changing:index'))
 
     def get_context_data(self, **kwargs):
         """ Adds the title, description and user details to the view context.

@@ -59,11 +59,11 @@ class EditFromProfileTests(SeleniumFunctionalTestCase):
         # with the 'next' parameter set to the officer profile page
         #
         #
-        officer_profile_url = {reverse('profiles:officer', kwargs={'pk': person_record.pk})}
+        officer_profile_url = reverse('profiles:officer', kwargs={'pk': person_record.pk})
         self.browser.get(
             self.live_server_url +
             content_record.get_allegations_penalties_edit_url +
-            f"?next=/{officer_profile_url}")
+            f"?next={officer_profile_url}")
         # and I save the form
         self.browser.find_element_by_css_selector("input[type='submit'][value='Save']") \
             .click()
@@ -76,5 +76,3 @@ class EditFromProfileTests(SeleniumFunctionalTestCase):
             person_record.name,
             heading.text
         )
-        self.take_screenshot_and_dump_html()
-        pdb.set_trace()
