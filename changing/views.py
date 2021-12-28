@@ -2626,10 +2626,11 @@ class AllegationPenaltyLinkUpdateView(ContentUpdateView):
             cur_incident_id=0,
             user=self.request.user
         )
-        # there is an incident to update, to add the persons that are now linked to the content
         if next_incident_id:
-            return reverse('changing:edit_incident', kwargs={'pk': next_incident_id, 'content_id': content_id})
-        # there is no incident to update, so go to the main page
+            incident_url = reverse('changing:edit_incident', kwargs={'pk': next_incident_id, 'content_id': content_id})
+            # If there's a next= parameter go there, otherwise go to the incident edit page
+            return get_next_url(self.request.GET.get('next'), incident_url)
+        # there is no incident to update, so go to the next url or the main page
         else:
             return get_next_url(self.request.GET.get('next'), reverse('changing:index'))
 
