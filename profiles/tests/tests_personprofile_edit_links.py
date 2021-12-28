@@ -199,7 +199,7 @@ class EditLinksTestCase(AbstractTestCase):
             self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
 
     @local_test_settings_required
-    def test_edit_links_on_incident_allegations(self):
+    def test_edit_links_on_allegations_without_incidents(self):
         """Check that there are edit links on allegations on contents that aren't linked to incidents.
         And NOT allegations on contents that are linked to incidents.
         """
@@ -207,10 +207,9 @@ class EditLinksTestCase(AbstractTestCase):
         #
         #
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
-        # AND there are three incident records linked to the person record
+        # AND there are three content records linked to the person record
         contents = []
         allegations = []
-        # AND three content records linked under each incident record AND to the content records (for allegations)
         for i_contents in range(3):
             new_content = Content.objects.create(name=f"{i_contents}")
             contents.append(new_content)
