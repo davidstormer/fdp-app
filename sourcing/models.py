@@ -950,6 +950,10 @@ class ContentPersonPenalty(Archivable, Descriptable):
             content_person__in=ContentPerson.filter_for_admin(queryset=ContentPerson.active_objects.all(), user=user)
         )
 
+    @property
+    def get_allegations_penalties_edit_url(self):
+        return self.content_person.content.get_allegations_penalties_edit_url
+
     class Meta:
         db_table = '{d}content_person_penalty'.format(d=settings.DB_PREFIX)
         verbose_name = _('Penalty for person linked to content')
