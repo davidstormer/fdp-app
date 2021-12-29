@@ -21,6 +21,7 @@ from supporting.models import (
 )
 from django.test import Client
 from datetime import datetime
+from lxml.html.soupparser import fromstring
 
 import logging
 
@@ -253,9 +254,43 @@ class EditLinksTestCase(AbstractTestCase):
         # and there is a content record linked to the incident
         content_record_on_incident = Content.objects.create(name="trustmonger")
         content_record_on_incident.incidents.add(incident_record)
+        # and there are allegations and penalties linked to the content that is linked to the incident
+        content_person = ContentPerson.objects.create(person=person_record, content=content_record_on_incident)
+        allegation_type_on_incident = Allegation.objects.create(name=f'allegation-{uuid4()}')
+        allegation_outcome_type_on_incident = \
+            AllegationOutcome.objects.create(name=f"allegation-outcome-{uuid4()}")
+        allegation_on_incident = ContentPersonAllegation.objects.create(
+            content_person=content_person,
+            allegation=allegation_type_on_incident,
+            allegation_outcome=allegation_outcome_type_on_incident
+        )
+        # And a penalty is linked to the person content link
+        penalty_on_incident = ContentPersonPenalty.objects.create(
+            content_person=content_person,
+            penalty_requested=f"hyphomycetic",
+            penalty_received=f"penalty-received-{uuid4()}",
+            discipline_date=datetime(1922, 1, 1)
+        )
         # and there is a content record linked directly to the person
         content_record_on_person = Content.objects.create(name="baptismally")
-        ContentPerson.objects.create(person=person_record, content=content_record_on_person)
+        content_person = ContentPerson.objects.create(person=person_record, content=content_record_on_person)
+        # And an allegation is linked to the content
+        allegation_type_on_content = Allegation.objects.create(name=f'allegation-{uuid4()}')
+        allegation_outcome_type = \
+            AllegationOutcome.objects.create(name=f"allegation-outcome-{uuid4()}")
+        allegation_on_content = ContentPersonAllegation.objects.create(
+            content_person=content_person,
+            allegation=allegation_type_on_content,
+            allegation_outcome=allegation_outcome_type
+        )
+        # And a penalty is linked to the person content link
+        penalty_on_content = ContentPersonPenalty.objects.create(
+            content_person=content_person,
+            penalty_requested=f"hyphomycetic",
+            penalty_received=f"penalty-received-{uuid4()}",
+            discipline_date=datetime(1922, 1, 1)
+        )
+
         # and I'm logged in as a staff user (non-admin)
         staff_client = self.log_in(is_administrator=False)
 
@@ -272,6 +307,21 @@ class EditLinksTestCase(AbstractTestCase):
         self.assertNotContains(response_staff_client, content_record_on_incident.get_edit_url)
         # and I should NOT see Content edit links linked directly under the person
         self.assertNotContains(response_staff_client, content_record_on_person.get_edit_url)
+        # and I should NOT see Allegation edit links linked under the incident
+        self.assertNotContains(response_staff_client, allegation_on_incident.get_allegations_penalties_edit_url)
+        # and I should NOT see Allegation edit links linked under the content
+        self.assertNotContains(response_staff_client, allegation_on_content.get_allegations_penalties_edit_url)
+        # and I should NOT see Penalty edit links linked under the incident
+        self.assertNotContains(response_staff_client, penalty_on_incident.get_allegations_penalties_edit_url)
+        # and I should NOT see Penalty edit links linked under the content
+        self.assertNotContains(response_staff_client, penalty_on_content.get_allegations_penalties_edit_url)
+
+        # and I should NOT see edit links of any kind whatever!
+        document = fromstring(response_staff_client.content)
+        link_tags = document.cssselect('a')
+        for link_tag in link_tags:
+            tag_text = ' '.join(link_tag.itertext())
+            self.assertNotIn(tag_text.upper(), 'edit'.upper())
 
     @local_test_settings_required
     def test_get_allegations_penalties_edit_url(self):
