@@ -23,6 +23,7 @@ from supporting.models import (
 )
 from django.test import Client
 from datetime import datetime
+from urllib.parse import urlparse
 
 
 class EditFromProfileTests(SeleniumFunctionalTestCase):
@@ -95,16 +96,15 @@ class EditFromProfileTests(SeleniumFunctionalTestCase):
             penalties = ContentPersonPenalty.objects.filter(content_person__in=content_persons)
 
             # Assert that edit url of each penalty is the incident section on the page
+
             edit_link_urls = {
-                link_element.get_attribute('href') for link_element in
+                urlparse(link_element.get_attribute('href')).path for link_element in
                 b.find_elements_by_css_selector(f'div.incident-{incident.pk} li.penalty a')}
             for penalty in penalties:
                 self.assertIn(
                     penalty.get_allegations_penalties_edit_url,
                     edit_link_urls
                 )
-            import pdb; pdb.set_trace()
-            self.fail("Finish me!")
             # TODO: update the allegations test cause it doesn't use selectors !!! :d
             # self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
 
