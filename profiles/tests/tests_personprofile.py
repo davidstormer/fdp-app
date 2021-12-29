@@ -512,11 +512,14 @@ class PersonProfileTestCase(AbstractTestCase):
         # AND the penalty received AND discipline date
         penalties_under_incidents = \
             document.cssselect(f"div.incident.incident-{incident_record.pk} li.penalty")
+
+        def normalize_whitespace(input_string: str) -> str:
+            return " ".join(input_string.split())
+
         if penalties_under_incidents:
             self.assertEqual(
-                ''.join(penalties_under_incidents[0].itertext()),
-                # ... check for date and penalty together, because currently being templated on the backend
-                f"On {penalty.discipline_date.strftime('%d-%m-%Y')}, {penalty.penalty_received}"
+                normalize_whitespace(' '.join(penalties_under_incidents[0].itertext())),
+                normalize_whitespace(f"On {penalty.discipline_date.strftime('%d/%m/%Y')}, {penalty.penalty_received} edit")
             )
         else:
             self.fail(f"Couldn't find any penalties under incident {incident_record}")
@@ -587,7 +590,7 @@ class PersonProfileTestCase(AbstractTestCase):
         else:
             self.fail(f"Couldn't find any allegation types under content {content_record}")
 
-        # AND the allegation outcomes
+        # AND I should see the allegation outcomes
         allegation_outcomes_under_incidents = \
             document.cssselect(f"div.content.content-{content_record.pk} li.allegation .allegation-outcome")
         if allegation_outcomes_under_incidents:
@@ -598,14 +601,16 @@ class PersonProfileTestCase(AbstractTestCase):
         else:
             self.fail(f"Couldn't find any allegation outcomes under content {content_record}")
 
-        # AND the penalty received AND discipline date
+        def normalize_whitespace(input_string: str) -> str:
+            return " ".join(input_string.split())
+
+        # AND I should see the penalty received AND discipline date
         penalties_under_incidents = \
             document.cssselect(f"div.content.content-{content_record.pk} li.penalty")
         if penalties_under_incidents:
             self.assertEqual(
-                ''.join(penalties_under_incidents[0].itertext()),
-                # ... check for date and penalty together, because currently being templated on the backend
-                f"On {penalty.discipline_date.strftime('%d-%m-%Y')}, {penalty.penalty_received}"
+                normalize_whitespace(' '.join(penalties_under_incidents[0].itertext())),
+                normalize_whitespace(f"On {penalty.discipline_date.strftime('%d/%m/%Y')}, {penalty.penalty_received} edit")
             )
         else:
             self.fail(f"Couldn't find any penalties under content {content_record}")
