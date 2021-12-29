@@ -108,6 +108,78 @@ class EditFromProfileTests(SeleniumFunctionalTestCase):
             # TODO: update the allegations test cause it doesn't use selectors !!! :d
             # self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
 
+    def test_edit_links_on_content_penalties(self):
+        """Check that there are edit links on penalties on contents that are NOT linked to incidents.
+        And NOT penalties on contents that are linked to incidents.
+        """
+        b = self.browser
+
+        # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
+        #
+        #
+        person_record = Person.objects.create(name=f"person-name-{uuid4()}", is_law_enforcement=True)
+        contents = []
+        allegations = []
+        penalties = []
+        # AND three content records are linked to the person
+        for i_contents in range(3):
+            new_content = Content.objects.create(name=f"{i_contents}")
+            contents.append(new_content)
+            content_person = ContentPerson.objects.create(person=person_record, content=new_content)
+            # AND three allegations linked under each content record
+            for i_allegation in range(3):
+                allegation_type = Allegation.objects.create(name=f'allegation-{uuid4()}')
+                allegation_outcome_type = \
+                    AllegationOutcome.objects.create(name=f"allegation-outcome-{uuid4()}")
+                new_allegation = ContentPersonAllegation.objects.create(
+                    content_person=content_person,
+                    allegation=allegation_type,
+                    allegation_outcome=allegation_outcome_type
+                )
+                allegations.append(new_allegation)
+            # And three penalties linked to the person content link
+            for i_penalty in range(3):
+                new_penalty = ContentPersonPenalty.objects.create(
+                    content_person=content_person,
+                    penalty_requested=f"hyphomycetic",
+                    penalty_received=f"penalty-received-{uuid4()}",
+                    discipline_date=datetime(1922, 1, 1)
+                )
+                penalties.append(new_penalty)
+
+        # AND I'm logged into the system as an Admin
+        self.log_in(is_administrator=True)
+
+        # WHEN I go to the person profile page
+        #
+        #
+        self.browser.get(self.live_server_url + reverse('profiles:officer', kwargs={'pk': person_record.pk}))
+
+        # THEN I should see the penalty edit links under their respective incidents
+        #
+        #
+
+        for content in contents:
+            # ... for a given content get all of the penalties associated with the person
+
+            # Get content person links linked to both person and the given incident
+            content_persons = ContentPerson.objects.filter(person=person_record)
+            # Get penalties linked to those content_person links
+            penalties = ContentPersonPenalty.objects.filter(content_person__in=content_persons)
+
+            # Assert that edit url of each penalty is the content section on the page
+
+            edit_link_urls = {
+                urlparse(link_element.get_attribute('href')).path for link_element in
+                b.find_elements_by_css_selector(f'div.content-{content.pk} li.penalty a')}
+            for penalty in penalties:
+                self.assertIn(
+                    penalty.get_allegations_penalties_edit_url,
+                    edit_link_urls
+                )
+            # TODO: update the allegations test cause it doesn't use selectors !!! :d
+            # self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
+
     def test_AllegationPenaltyLinkUpdateView_next_redirect_no_incident(self):
         # GIVEN there's an allegation record *with no linked incident*
         #
