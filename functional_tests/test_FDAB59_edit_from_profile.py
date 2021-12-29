@@ -155,28 +155,28 @@ class EditFromProfileTests(SeleniumFunctionalTestCase):
         #
         self.browser.get(self.live_server_url + reverse('profiles:officer', kwargs={'pk': person_record.pk}))
 
-        # THEN I should see the penalty edit links under their respective incidents
+        # THEN I should see the penalty edit links under their respective contents
         #
         #
 
         for content in contents:
             # ... for a given content get all of the penalties associated with the person
 
-            # Get content person links linked to both person and the given incident
+            # Get content person links linked to person
             content_persons = ContentPerson.objects.filter(person=person_record)
             # Get penalties linked to those content_person links
             penalties = ContentPersonPenalty.objects.filter(content_person__in=content_persons)
 
-            # Assert that edit url of each penalty is the content section on the page
-
-            edit_link_urls = {
-                urlparse(link_element.get_attribute('href')).path for link_element in
-                b.find_elements_by_css_selector(f'div.content-{content.pk} li.penalty a')}
+            # Assert that edit url is on each penalty in the content section on the page
             for penalty in penalties:
-                self.assertIn(
+                content_element = b.find_element_by_css_selector(f'div.content-{content.pk}')
+                edit_link_element = \
+                    content_element.find_element_by_xpath(f"//*[contains(text(), '{penalty.penalty_received}')]/a")
+                self.assertEqual(
                     penalty.get_allegations_penalties_edit_url,
-                    edit_link_urls
+                    urlparse(edit_link_element.get_attribute('href')).path
                 )
+
             # TODO: update the allegations test cause it doesn't use selectors !!! :d
             # self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
 
