@@ -482,14 +482,20 @@
                         </ul>
                         {% endif %}
 
-                        {% if content_person.parsed_officer_content_person_penalties %}
-                        <span class="mish1">{% translate 'Penalties' %}</span>
-                        <ul class="misall">
-                        {% for penalty in content_person.parsed_officer_content_person_penalties %}
-                            <li class="misall penalty"><span class="mish2">{{ penalty }}</span></li>
-                        {% endfor %}
+                        {% if content_person.officer_penalties %}
+                        <h3>NEW Penalties</h3>
+                        <ul>
+                            {% for penalty in content_person.officer_penalties %}
+                            <li class="penalty">
+                                {% if penalty.discipline_date %}On {{ penalty.discipline_date }}{% endif %}{% if penalty.discipline_date and penalty.penalty_received %},{% endif %}
+                                {{ penalty.penalty_received }}
+                                {% if is_admin %}
+                                    <a href="{{ penalty.get_allegations_penalties_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                                {% endif %}
+                            {% endfor %}
                         </ul>
                         {% endif %}
+
                     </div> <!-- div.gridcol.gridcell_1_of_2 -->
                     <div class="gridcol gridcell_1_of_2">
                         {% if content.content_case %}
