@@ -1,5 +1,6 @@
 import pdb
 import uuid
+from random import randint
 from uuid import uuid4
 from django.urls import reverse
 from inheritable.tests import AbstractTestCase, local_test_settings_required
@@ -620,3 +621,32 @@ class PersonProfileTestCase(AbstractTestCase):
             response_admin_client,
             'hyphomycetic'
         )
+
+    def test_incident_class_contains_pk(self):
+        """Rules out the possibility that the pk of another model is being used -- which yes for reals totally happened!
+        """
+        # Given there are a random number of incident records in the system
+        for i in range(randint(0, 25)):
+            Incident.objects.create(description="Existing incident")
+        # And I create one more with a unique name
+        incident = Incident.objects.create(description=f"incident-description-{uuid4()}")
+        # And I link it to a Person record
+        person_record = Person.objects.create(name="Hello World", is_law_enforcement=True)
+        PersonIncident.objects.create(incident=incident, person=person_record)
+        # And I'm logged into the system as an Admin
+        admin_client = self.log_in(is_administrator=True)
+
+        # WHEN I go to the person profile page
+        #
+        #
+        response_admin_client = admin_client.get(reverse(
+            'profiles:officer',
+            kwargs={'pk': person_record.pk}), follow=True)
+        document = fromstring(response_admin_client.content)
+        # Then the record located by the id should have the correct name
+        incident_element = document.cssselect(f'section.misconduct div.incident.incident-{incident.pk}')
+        self.assertIn(
+            incident.description,
+            incident_element[0].text_content()
+        )
+        # self.assertContains(response_admin_client, f"incident-{incident.pk}")
