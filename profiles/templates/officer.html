@@ -325,7 +325,7 @@
 
         {% if object.officer_misconducts or object.officer_contents %}
         {% for officer_misconduct in object.officer_misconducts %}
-        <div class="mispad incident incident-{{ officer_misconduct.pk }}">
+        <div class="mispad incident incident-{{ officer_misconduct.incident.pk }}">
                 <h3>
                     <button type="button" class="collapsible expanded">{% if not officer_misconduct.incident.exact_bounding_dates %}{% translate 'On an unknown date' %}{% else %}{{ officer_misconduct.incident.exact_bounding_dates|capfirst }}{% endif %}
                     {% if is_admin %}
