@@ -1,9 +1,11 @@
+from functional_tests.common import FunctionalTestCase
+
 import pdb
 import uuid
 from random import randint
 from uuid import uuid4
 from django.urls import reverse
-from inheritable.tests import AbstractTestCase, local_test_settings_required
+from inheritable.tests import local_test_settings_required
 from fdpuser.models import FdpOrganization, FdpUser
 from core.models import (
     Person,
@@ -46,30 +48,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class PersonProfileTestCase(AbstractTestCase):
+class PersonProfileTestCase(FunctionalTestCase):
     """Functional tests specific to the Officer profile page
     """
-
-    def log_in(self, is_host=True, is_administrator=False, is_superuser=False) -> object:
-        client = Client()
-        fdp_user = self._create_fdp_user(
-            is_host=is_host,
-            is_administrator=is_administrator,
-            is_superuser=is_superuser,
-            email_counter=FdpUser.objects.all().count()
-        )
-        two_factor = self._create_2fa_record(user=fdp_user)
-        # log in user
-        login_response = self._do_login(
-            c=client,
-            username=fdp_user.email,
-            password=self._password,
-            two_factor=two_factor,
-            login_status_code=200,
-            two_factor_status_code=200,
-            will_login_succeed=True
-        )
-        return client
 
     @local_test_settings_required
     def test_incidents_displayed(self):
@@ -98,7 +79,7 @@ class PersonProfileTestCase(AbstractTestCase):
 
     @local_test_settings_required
     def test_content_displayed_under_incident(self):
-        """Test that the profile page displays the incidents linked to the person
+        """Test that the profile page displays the content linked to the person
         """
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -140,7 +121,7 @@ class PersonProfileTestCase(AbstractTestCase):
     @local_test_settings_required
     def test_person_content_displayed(self):
         """Test that the profile page displays the contents linked to the person (rather than the ones that are
-        linked to incidents.
+        linked to incidents.)
         """
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
