@@ -1,6 +1,7 @@
 from django.test import TestCase
 from core.models import Person
 from functional_tests.common import FunctionalTestCase, SeleniumFunctionalTestCase, wait
+from inheritable.tests import local_test_settings_required
 from unittest import expectedFailure, skip
 import pdb
 
@@ -10,6 +11,7 @@ class MyNonSeleniumTestCase(FunctionalTestCase):
     do not need to be accounted for.
     """
 
+    @local_test_settings_required
     def test_demo_person_record(self):
         Person.objects.create(name="Hello World")
         people = Person.objects.all()
@@ -18,6 +20,7 @@ class MyNonSeleniumTestCase(FunctionalTestCase):
             len(people)
         )
 
+    @local_test_settings_required
     def test_demo_login(self):
         # Given I'm logged into the system as an Admin
         admin_client = self.log_in(is_administrator=True)
@@ -45,6 +48,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
     """
 
     # Simple example
+    @local_test_settings_required
     def test_demo_login_page(self):
         self.browser.get(self.live_server_url)
         button = self.browser.find_element_by_css_selector('button')
@@ -56,6 +60,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
 
     # But what if something fails? Comment out @expectedFailure to see!
     @expectedFailure
+    @local_test_settings_required
     def test_demo_broken_test(self):
         self.browser.get(self.live_server_url)
         self.assertIn(
@@ -65,6 +70,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
         # ... dumps a screenshot and the html output into a screendumps directory.
 
     # And how do I log in?
+    @local_test_settings_required
     def test_demo_logging_in(self):
         # Given I'm logged into the system as an Admin
         self.log_in(is_administrator=True)
