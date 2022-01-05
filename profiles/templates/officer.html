@@ -125,9 +125,11 @@
                 <li>
                     <span class="label">{{ identifier.person_identifier_type }}:</span>
                     <span>{{ identifier.identifier }}</span>
+                    {% if identifier.as_of_bounding_dates %}
                     <div class="identification-meta">
-                        <span class="dates">{% if identifier.as_of_bounding_dates %}{{ identifier.as_of_bounding_dates }}{% endif %}</span>
+                        <span class="dates">{{ identifier.as_of_bounding_dates }}</span>
                     </div>
+                    {% endif %}
                 </li>
                 {% endfor %}
                 </ul>
