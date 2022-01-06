@@ -88,6 +88,10 @@ class Person(Confidentiable, Descriptable):
     def get_edit_url(self):
         return reverse('changing:edit_person', args=(self.pk,))
 
+    @property
+    def get_profile_url(self):
+        return reverse('profiles:officer', args=(self.pk,))
+
     def __get_birth_date(self):
         """ Retrieve the human-friendly version of the person's birth date.
 
