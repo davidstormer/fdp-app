@@ -393,32 +393,34 @@ class PersonProfileTestCase(FunctionalTestCase):
         response_staff_client = staff_client.get(reverse(
             'profiles:officer',
             kwargs={'pk': person_record.pk}), follow=True)
+        document = fromstring(response_staff_client.content)
+        associates_section_element = document.cssselect(f'section.associates')[0]
 
         # THEN I should see the officers names linked under the Associates section
-        self.assertContains(
-            response_staff_client,
-            associate1.name
+        self.assertIn(
+            associate1.name,
+            associates_section_element.text_content()
         )
-        self.assertContains(
-            response_staff_client,
-            associate2.name
+        self.assertIn(
+            associate2.name,
+            associates_section_element.text_content()
         )
-        self.assertContains(
-            response_staff_client,
-            associate3.name
+        self.assertIn(
+            associate3.name,
+            associates_section_element.text_content()
         )
         # AND I should see their relationship types
-        self.assertContains(
-            response_staff_client,
-            relationship_type1.name
+        self.assertIn(
+            relationship_type1.name,
+            associates_section_element.text_content()
         )
-        self.assertContains(
-            response_staff_client,
-            relationship_type2.name
+        self.assertIn(
+            relationship_type2.name,
+            associates_section_element.text_content()
         )
-        self.assertContains(
-            response_staff_client,
-            relationship_type3.name
+        self.assertIn(
+            relationship_type3.name,
+            associates_section_element.text_content()
         )
 
     @local_test_settings_required
