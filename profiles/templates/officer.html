@@ -221,7 +221,7 @@
             <ul class="rel">
                 {% for officer_relationship in object.officer_relationships %}
                 <li class="rel">
-                    <span class="othper">{{ officer_relationship.person }}</span>
+                    <span class="othper"><a href="{{ officer_relationship.person.get_profile_url }}">{{ officer_relationship.person.name }}</a></span>
                     -
                     <span class="rel">
                         {{ officer_relationship.relationship }}

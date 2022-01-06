@@ -372,10 +372,10 @@ class OfficerDetailView(SecuredSyncDetailView):
         """
         pk = relationship.type_id
         other_person_pk = relationship.object_person_id if is_accessing_object else relationship.subject_person_id
-        other_person_name = relationship.object_person.name if is_accessing_object else relationship.subject_person.name
+        other_person = relationship.object_person if is_accessing_object else relationship.subject_person
         dict_key = (pk, other_person_pk)
         if dict_key not in rel_dict:
-            rel_dict[dict_key] = {'person': other_person_name, 'relationship': relationship.type.name, 'num': 1}
+            rel_dict[dict_key] = {'person': other_person, 'relationship': relationship.type.name, 'num': 1}
         else:
             rel_dict[dict_key]['num'] += 1
 

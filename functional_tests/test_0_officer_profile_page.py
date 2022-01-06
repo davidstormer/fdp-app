@@ -605,6 +605,7 @@ class PersonProfileTestCase(FunctionalTestCase):
             'hyphomycetic'
         )
 
+    @local_test_settings_required
     def test_incident_class_contains_pk(self):
         """Rules out the possibility that the pk of another model is being used -- which yes for reals totally happened!
         """
