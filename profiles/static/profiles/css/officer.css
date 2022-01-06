@@ -154,8 +154,6 @@ span.othper {
 }
 /* Relationship within Associates section */
 span.rel {
-    font-weight: bold;
-    color: #ba2121;
 }
 /* Icons within the main profile heading (e.g. download all attachments, expand all, collapse all */
 h2 i { font-size: 200%; }
