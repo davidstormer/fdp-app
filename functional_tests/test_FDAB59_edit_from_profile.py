@@ -32,6 +32,7 @@ class EditLinksTestCase(FunctionalTestCase):
     """Functional tests specific to the Officer profile page
     """
 
+    @local_test_settings_required
     def test_edit_links_on_contents_linked_to_incidents(self):
         """Check that edit links are on contents when they are linked to a person with no incident
         """
@@ -62,6 +63,7 @@ class EditLinksTestCase(FunctionalTestCase):
         for content in contents:
             self.assertContains(response_admin_client, content.get_edit_url)
 
+    @local_test_settings_required
     def test_edit_links_on_contents_without_incidents(self):
         """Check that edit links are on contents when they are linked to a person with no incident
         """
@@ -87,6 +89,7 @@ class EditLinksTestCase(FunctionalTestCase):
         for content in contents:
             self.assertContains(response_admin_client, content.get_edit_url)
 
+    @local_test_settings_required
     def test_edit_links_on_incidents(self):
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -109,6 +112,7 @@ class EditLinksTestCase(FunctionalTestCase):
         for incident in incidents:
             self.assertContains(response_admin_client, incident.get_edit_url)
 
+    @local_test_settings_required
     def test_edit_links_on_identification_and_associates_sections(self):
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -124,6 +128,7 @@ class EditLinksTestCase(FunctionalTestCase):
         # Then I should see two person edit record links (for each section: Identification, Associates)
         self.assertContains(response_admin_client, person_record.get_edit_url, count=2)
 
+    @local_test_settings_required
     def test_edit_links_on_incident_allegations(self):
         """Check that there are edit links on allegations on contents that are linked to incidents.
         And NOT allegations on contents that aren't linked to incidents.
@@ -173,6 +178,7 @@ class EditLinksTestCase(FunctionalTestCase):
         for content in contents:
             self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
 
+    @local_test_settings_required
     def test_edit_links_on_allegations_without_incidents(self):
         """Check that there are edit links on allegations on contents that aren't linked to incidents.
         And NOT allegations on contents that are linked to incidents.
@@ -215,6 +221,7 @@ class EditLinksTestCase(FunctionalTestCase):
         for content in contents:
             self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
 
+    @local_test_settings_required
     def test_edit_links_visible_to_admins_only(self):
         """Note: this is purely for usability reasons, not security.
         """
@@ -295,6 +302,7 @@ class EditLinksTestCase(FunctionalTestCase):
             tag_text = ' '.join(link_tag.itertext())
             self.assertNotIn(tag_text.upper(), 'edit'.upper())
 
+    @local_test_settings_required
     def test_get_allegations_penalties_edit_url(self):
         # GIVEN there's an officer record
         #
@@ -340,6 +348,7 @@ class EditLinksTestCase(FunctionalTestCase):
 
 class EditFromProfileTests(SeleniumFunctionalTestCase):
 
+    @local_test_settings_required
     def test_edit_links_on_incident_penalties(self):
         """Check that there are edit links on penalties on contents that are linked to incidents.
         And NOT penalties on contents that aren't linked to incidents.
@@ -420,6 +429,7 @@ class EditFromProfileTests(SeleniumFunctionalTestCase):
             # TODO: update the allegations test cause it doesn't use selectors !!! :d
             # self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
 
+    @local_test_settings_required
     def test_edit_links_on_content_penalties(self):
         """Check that there are edit links on penalties on contents that are NOT linked to incidents.
         And NOT penalties on contents that are linked to incidents.
@@ -492,6 +502,7 @@ class EditFromProfileTests(SeleniumFunctionalTestCase):
             # TODO: update the allegations test cause it doesn't use selectors !!! :d
             # self.assertContains(response_admin_client, content.get_allegations_penalties_edit_url)
 
+    @local_test_settings_required
     def test_AllegationPenaltyLinkUpdateView_next_redirect_no_incident(self):
         # GIVEN there's an allegation record *with no linked incident*
         #
@@ -542,6 +553,7 @@ class EditFromProfileTests(SeleniumFunctionalTestCase):
             heading.text
         )
 
+    @local_test_settings_required
     def test_AllegationPenaltyLinkUpdateView_next_redirect_with_incident(self):
         # GIVEN there's an allegation record *on content linked to an incident*
         #
