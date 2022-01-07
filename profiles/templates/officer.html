@@ -217,30 +217,20 @@
             </span>
             {% endif %}
         </div>
+
+        {% if object.relationships %}
+        <ul id="relationships">
         {% for relationship in object.relationships %}
-            <p>
+            <li>
                 {% link_to_others relationship.subject_person %} {{ relationship.type.name }} {% link_to_others relationship.object_person %}
                 {% if relationship.as_of_bounding_dates %}({{ relationship.as_of_bounding_dates }}){% endif %}
-            </p>
+            </li>
         {% endfor %}
-        {% if object.officer_relationships %}
-            <ul class="rel">
-                {% for officer_relationship in object.officer_relationships %}
-                <li class="rel">
-                    <span class="othper"><a href="{{ officer_relationship.person.get_profile_url }}">{{ officer_relationship.person.name }}</a></span>
-                    -
-                    <span class="rel">
-                        {{ officer_relationship.relationship }}
-                        {% if officer_relationship.num > 1 %}
-                            {{ officer_relationship.num }} {% translate 'times' %}
-                        {% endif %}
-                    </span>
-                </li>
-                {% endfor %}
-            </ul>
+        </ul>
         {% else %}
             <p class="nodata">{% translate 'No associates are recorded for this officer.' %}</p>
         {% endif %}
+        
     </section> <!-- section.associates -->
     <section class="snapshot">
         <div class="section-heading">

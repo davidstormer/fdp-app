@@ -189,3 +189,16 @@ p.warning {
     font-weight: bold;
     color: #ba2121;
 }
+
+/* Associates */
+section.associates ul#relationships {
+    padding-left: 0;
+    margin-left: 0;
+}
+section.associates ul#relationships li {
+    list-style: none;
+    margin-bottom: 1em;
+}
+section.associates a.associate-link {
+    font-weight: bold;
+}
