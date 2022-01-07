@@ -14,7 +14,7 @@ def link_to_others(context, person) -> str:
     if person.pk == context.get('object').pk:
         return person.name
     else:
-        return mark_safe(f"<a href='{person.get_profile_url}'>") + mark_safe(f"{person.name}</a>")
+        return mark_safe(f"<a href='{person.get_profile_url}' class='associate-link'>") + mark_safe(f"{person.name}</a>")
 
 
 @register.filter
