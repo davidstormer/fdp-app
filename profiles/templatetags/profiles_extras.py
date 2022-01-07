@@ -1,7 +1,20 @@
 from django import template
 from django.utils.safestring import mark_safe
+from django import template
+from django.template import RequestContext
 
 register = template.Library()
+
+
+@register.simple_tag(takes_context=True)
+def link_to_others(context, person) -> str:
+    """But if it's me, don't make my name a link.
+    Context should be the request context as populated by OfficerDetailView()
+    """
+    if person.pk == context.get('object').pk:
+        return person.name
+    else:
+        return mark_safe(f"<a href='{person.get_profile_url}'>") + mark_safe(f"{person.name}</a>")
 
 
 @register.filter
@@ -15,6 +28,7 @@ def format_identifiers(identifiers: list) -> str:
         return f"({', '.join(identifiers_values)})"
     else:
         return ''
+
 
 @register.filter
 def get_value(dictionary, key):

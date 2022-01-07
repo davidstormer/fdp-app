@@ -217,6 +217,12 @@
             </span>
             {% endif %}
         </div>
+        {% for relationship in object.relationships %}
+            <p>
+                {% link_to_others relationship.subject_person %} {{ relationship.type.name }} {% link_to_others relationship.object_person %}
+                {% if relationship.as_of_bounding_dates %}({{ relationship.as_of_bounding_dates }}){% endif %}
+            </p>
+        {% endfor %}
         {% if object.officer_relationships %}
             <ul class="rel">
                 {% for officer_relationship in object.officer_relationships %}
