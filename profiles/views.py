@@ -564,7 +564,11 @@ class OfficerDetailView(SecuredSyncDetailView):
             snapshot_dict_keys[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(3)
         )
         obj.officer_snapshot_dict = snapshot_dict
-        # RELATIONSHIPS
+        # NEW RELATIONSHIPS
+        setattr(obj, 'relationships', [])
+        obj.relationships = obj.officer_subject_person_relationships + obj.officer_object_person_relationships
+
+        # OLD RELATIONSHIPS
         rel_dict = {}
         for relationship in obj.officer_subject_person_relationships:
             self.__record_relationship(rel_dict=rel_dict, relationship=relationship, is_accessing_object=True)
