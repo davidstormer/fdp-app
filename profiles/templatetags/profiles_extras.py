@@ -15,7 +15,7 @@ def link_to_others(context, other_person) -> str:
         template = Template("<span class='associate-self'>{{ person.name }}</span>")
         return template.render(context)
     else:
-        template = Template(f"<a href='{{ person.get_profile_url }}' class='associate-link'>{ other_person.name }</a>")
+        template = Template(f"<a href='{ other_person.get_profile_url }' class='associate-link'>{ other_person.name }</a>")
         return template.render(context)
 
 
