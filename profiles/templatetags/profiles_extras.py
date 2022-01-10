@@ -1,20 +1,22 @@
 from django import template
 from django.utils.safestring import mark_safe
 from django import template
-from django.template import RequestContext
+from django.template import RequestContext, Template
 
 register = template.Library()
 
 
 @register.simple_tag(takes_context=True)
-def link_to_others(context, person) -> str:
+def link_to_others(context, other_person) -> str:
     """But if it's me, don't make my name a link.
     Context should be the request context as populated by OfficerDetailView()
     """
-    if person.pk == context.get('object').pk:
-        return person.name
+    if other_person.pk == context.get('object').pk:
+        template = Template("<span class='associate-self'>{{ person.name }}</span>")
+        return template.render(context)
     else:
-        return mark_safe(f"<a href='{person.get_profile_url}' class='associate-link'>") + mark_safe(f"{person.name}</a>")
+        template = Template(f"<a href='{{ person.get_profile_url }}' class='associate-link'>{ other_person.name }</a>")
+        return template.render(context)
 
 
 @register.filter

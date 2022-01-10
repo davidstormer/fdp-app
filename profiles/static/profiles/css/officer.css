@@ -202,3 +202,7 @@ section.associates ul#relationships li {
 section.associates a.associate-link {
     font-weight: bold;
 }
+span.associate-self {
+    color: #656565;
+    font-weight: bold;
+}
