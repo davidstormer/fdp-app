@@ -80,7 +80,9 @@ div.payrollcontainer thead th {
 section.payroll .ui-accordion .ui-accordion-content {
     padding: 0;
 }
-
+div.payroll-column {
+    float: right;
+}
 
 
 /* Sub-section in the Snapshot section */
