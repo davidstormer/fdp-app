@@ -53,6 +53,7 @@ def wait(fn, *args, **kwargs):
             return fn(*args, **kwargs)
         except (AssertionError, WebDriverException, NoSuchElementException) as e:
             if time.time() - start_time > max_wait:
+                print(f"Tried {max_wait} times. Raising exception...")
                 raise e
             time.sleep(0.5)
 

@@ -1990,7 +1990,7 @@ class AbstractExactDateBounded(Descriptable):
 
     #: Fields that can be used in inheriting classes to order by date
     order_by_date_fields = [
-        'start_year', 'start_month', 'start_day', 'end_year', 'end_month', 'end_day'
+        '-start_year', '-start_month', '-start_day', '-end_year', '-end_month', '-end_day'
     ]
 
     #: Ascending order for records
@@ -2013,7 +2013,7 @@ class AbstractExactDateBounded(Descriptable):
     order_by_sql = order_by_sql_year + ', ' + order_by_sql_month + ', ' + order_by_sql_day
 
     #: Fields that can be used in the admin interface to filter by date
-    list_filter_fields = order_by_date_fields
+    list_filter_fields = ['start_year', 'start_month', 'start_day', 'end_year', 'end_month', 'end_day']
 
     #: String representation of the dates in a raw SQL
     sql_dates = """
@@ -2248,7 +2248,7 @@ class AbstractAsOfDateBounded(AbstractExactDateBounded):
     )
 
     #: Fields that can be used in the admin interface to filter by date
-    list_filter_fields = AbstractExactDateBounded.order_by_date_fields + ['as_of']
+    list_filter_fields = ['start_year', 'start_month', 'start_day', 'end_year', 'end_month', 'end_day', 'as_of']
 
     def __get_as_of_bounding_dates(self):
         """ Retrieve the human-friendly version of the "fuzzy" as of starting and ending dates.
