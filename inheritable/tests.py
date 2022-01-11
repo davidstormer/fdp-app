@@ -23,13 +23,6 @@ def local_test_settings_required(func):
     :return: Decorator.
     """
     def decorator(*args, **kwargs):
-        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a local
-        development environment.
-
-        :param args: Positional arguments for decorated test method.
-        :param kwargs: Keyword arguments for decorated test method.
-        :return: Nothing.
-        """
         if AbstractConfiguration.is_using_local_configuration():
             func(*args, **kwargs)
         else:
@@ -47,14 +40,6 @@ def azure_test_settings_required(func):
     :return: Decorator.
     """
     def decorator(*args, **kwargs):
-        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a simulated
-        Microsoft Azure hosting environment, including with authentication possible through BOTH Django and Azure
-        Active Directory.
-
-        :param args: Positional arguments for decorated test method.
-        :param kwargs: Keyword arguments for decorated test method.
-        :return: Nothing.
-        """
         if AbstractConfiguration.is_using_azure_configuration() \
                 and AbstractConfiguration.can_do_azure_active_directory() \
                 and not AbstractConfiguration.use_only_azure_active_directory():
@@ -74,13 +59,6 @@ def azure_only_test_settings_required(func):
     :return: Decorator.
     """
     def decorator(*args, **kwargs):
-        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a simulated
-        Microsoft Azure hosting environment, including with authentication possible through ONLY Azure Active Directory.
-
-        :param args: Positional arguments for decorated test method.
-        :param kwargs: Keyword arguments for decorated test method.
-        :return: Nothing.
-        """
         if AbstractConfiguration.is_using_azure_configuration() \
                 and AbstractConfiguration.can_do_azure_active_directory() \
                 and AbstractConfiguration.use_only_azure_active_directory():
