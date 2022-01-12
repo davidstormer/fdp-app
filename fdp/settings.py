@@ -72,7 +72,7 @@ LOGGING = {
         },
     },
     'root': {
-        'handlers': ["azure", "console", "file"],
+        'handlers': ["console", "file"],
         'level': 'WARNING',
     },
 }
