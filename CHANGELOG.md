@@ -2,6 +2,109 @@
 
 All releases will be logged in this file.
 
+## [4.0.0] - 2021-12-14
+
+### Added
+- Add federated login page
+- Add license file to project root dir
+- Add vagrant for local development / demo sandbox environment
+- Add is law enforcement check-box for Groups - update search to only show marked groups
+
+### Changed
+- Make static and media files be located in separately define storage containers
+- Make is law enforcement checkbox a select box and make it a required field
+
+### Upgrading notes
+
+**Groups**
+
+The new is_law_enforcement field on Groups requires a database migration. Run:
+```shell
+python3 manage.py migrate
+```
+to apply these migrations to the database. *You will get a 500 error until you do this.*
+
+The search *won't return any groups* that aren't set as law enforcement. To bulk set all existing groups as law 
+enforcement run the following code in the shell:
+
+```python
+from core.models import Grouping
+def set_all_groups_to_is_law_enforcement_true():
+    for group in Grouping.objects.all():
+        group.is_law_enforcement = True
+        group.save()
+        print(f"Updated {group} to is_law_enforcement = True")
+
+set_all_groups_to_is_law_enforcement_true()
+```
+
+**Storage containers**
+
+The static and media storage locations are separately defined now. Add these settings in the new environment 
+variables:
+
+| Environment Variable                  | Azure Key Vault name                 |
+| ------------------------------------- | ------------------------------------ |
+| FDP_AZURE_STATIC_STORAGE_ACCOUNT_NAME | FDP-AZURE-STATIC-STORAGE-ACCOUNT-KEY |
+| FDP_AZURE_MEDIA_STORAGE_ACCOUNT_NAME  | FDP-AZURE-MEDIA-STORAGE-ACCOUNT-KEY  |
+
+*The system will not function until these are added.*
+
+You can duplicate the same settings if you'd like to continue using the same container. 
+
+## [3.0.0] - 2021-10-12
+
+### Added
+- Add EULA upload feature and change splash page feature to be separate from 2FA workflow pages
+- Add demo content via fixture file
+- Add database schema report file data_model.md
+
+### Changed
+- Rename content identifier field label from "Number" to "Identifier"
+
+### Removed
+- Officer profile page: Remove 'Active from ...' feature
+
+### Upgrading
+The new EULA feature requires a database migration. Run:
+```shell
+python3 manage.py migrate
+```
+to apply these migrations to the database. You will get a 500 error until you do this.
+
+## [2.0.0] - 2021-09-21
+Major release
+
+### Added
+- Add session timeout reminder popup
+- Add photo upload to Add Person form
+- Add app version to user interface
+- Add indication when fields are required
+- Make attachment validation settings configurable on a per-instance basis (via settings.py)
+
+### Changed
+- Merge Add Person forms (is law enf and not is law enf)
+- Accept .webm format for source attachments
+- Make name field on content not required
+- Make link field on content unique
+
+### Removed
+- Remove code field from Grouping
+
+### Fixed
+- Fix typo of 'Reasons' field in encounters
+
+### Security
+- FDP-2021-006: Bulk importer: Remove file download capability from file serializers
+- FDP-2021-003: Email enumeration via password reset
+- FDP-2021-001: CSP largely ineffective against injection attacks
+- FDP-2021-006: Admin SSRF signifies access to internal network
+- FDP-2021-005: Pre-auth stored XSS in CSP logs in admin panel
+- FDP-2021-004 & FDP-2021-002: Account lockout on failed login attempts
+- Upgrade Django to 3.1.12 (security release) and cryptography to 3.3.2 (security release)
+- Freeze all package dependencies in requirements.txt
+- FDP-2021-007: Fix FDP_SOCIAL_AUTH_OAUTH2_WHITELISTED_DOMAINS setting has no effect
+
 ## [1.2.4] - 2021-07-26
 Field validation changes
 
@@ -15,8 +118,8 @@ NOTE: this release makes a change to database constraints, allowing longer phone
 ## [1.2.3] - 2021-07-26
 Security release
 
-### Fixed
-- Axes: Set AXES_PASSWORD_FORM_FIELD to 'auth-password'
+### Security
+- FDP-2021-008: Set AXES_PASSWORD_FORM_FIELD to 'auth-password'
 
 ## [1.2.2] - 2021-07-21
 Bug fix release

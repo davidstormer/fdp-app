@@ -452,19 +452,6 @@ class AbstractTestCase(TestCase):
             base_url=AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL
         )
 
-    def _get_wholesale_import_file_path_for_view(self, wholesale_import_instance):
-        """ Retrieves the file path of a wholesale import, so that it can be passed as a parameter and processed
-        through a view.
-
-        :param wholesale_import_instance: Instance of wholesale import, for which to retrieve file path.
-        :return: File path that can be passed as a parameter into a view to download the wholesale import file.
-        """
-        return self.__get_file_path_for_view(
-            instance=wholesale_import_instance,
-            field_with_file='file',
-            base_url=AbstractUrlValidator.WHOLESALE_BASE_URL
-        )
-
     def _add_person_photo(self):
         """ Creates a person photo in the database, and adds a reference to it through the '_person_photo' attribute.
 
@@ -757,42 +744,6 @@ class AbstractTestCase(TestCase):
             login_startswith=login_startswith
         )
         return str(response.content)
-
-    def _get_response_from_post_request(
-            self, fdp_user, url, expected_status_code, login_startswith, post_data, cast_response_as_string=True
-    ):
-        """ Retrieves an HTTP response after sending an HTTP request through a POST method to a particular view for
-        an FDP user.
-
-        :param fdp_user: FDP user for which to send HTTP request through a POST method.
-        :param url: Url to which to send HTTP request through a POST method.
-        :param expected_status_code: Expected HTTP status code that is returned in the response.
-        :param login_startswith: Url to which response may be redirected. Only used when HTTP status code is 302.
-        :param cast_response_as_string: True to cast the HTTP response content as a string when returning it, false to
-        return the raw HTTP response content. True by default.
-        :return: String representation of the HTTP response if cast_response_as_string is True, the raw HTTP response
-        otherwise.
-        """
-        client = Client(**self._local_client_kwargs)
-        client.logout()
-        two_factor = self._create_2fa_record(user=fdp_user)
-        response = self._do_login(
-            c=client,
-            username=fdp_user.email,
-            password=self._password,
-            two_factor=two_factor,
-            login_status_code=200,
-            two_factor_status_code=200,
-            will_login_succeed=True
-        )
-        response = self._do_post(
-            c=response.client,
-            url=url,
-            data=post_data,
-            expected_status_code=expected_status_code,
-            login_startswith=login_startswith
-        )
-        return str(response.content) if cast_response_as_string else response.content
 
     @staticmethod
     def _can_user_access_data(for_admin_only, for_host_only, has_fdp_org, fdp_user, fdp_org):

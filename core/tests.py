@@ -1,6 +1,7 @@
 from django.utils.translation import ugettext_lazy as _
 from inheritable.models import AbstractUrlValidator
 from inheritable.tests import AbstractTestCase, local_test_settings_required
+from django.test import TestCase
 from fdpuser.models import FdpOrganization, FdpUser
 from .models import Person, PersonContact, PersonAlias, PersonPhoto, PersonIdentifier, PersonTitle, \
     PersonRelationship, PersonPayment, PersonGrouping, PersonIncident, GroupingIncident, Grouping, Incident
@@ -518,3 +519,13 @@ class CoreTestCase(AbstractTestCase):
         self.__test_download_person_photo_view(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         logger.debug(_('\nSuccessfully finished test for Download Person Photo view for all permutations of user roles and '
                 'confidentiality levels\n\n'))
+
+
+class UnitTests(AbstractTestCase):
+    def test_grouping_get_profile_url(self):
+        # Given there is a group
+        group = Grouping.objects.create(name="Hello World")
+        # When I reference get_profile_url
+        url = group.get_profile_url
+        # Then I should get the url to view it
+        self.assertIn('command', url)

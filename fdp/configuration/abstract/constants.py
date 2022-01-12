@@ -50,11 +50,6 @@ CONST_AZURE_AD_PROVIDER = 'azuread-tenant-oauth2'
 CONST_MAX_EULA_FILE_BYTES = 104857600
 
 
-#: Value for the default maximum number of bytes that a user-uploaded file can have for an instance of the
-# WholesaleImport model.
-CONST_MAX_WHOLESALE_FILE_BYTES = 104857600
-
-
 #: Value for the default maximum number of bytes that a user-uploaded file can have for an instance of the Attachment
 # model.
 CONST_MAX_ATTACHMENT_FILE_BYTES = 104857600
@@ -71,12 +66,6 @@ CONST_SUPPORTED_EULA_FILE_TYPES = [
     ('Adobe PDF', 'pdf'), ('Microsoft Word 97-2003', 'doc'), ('Microsoft Word 2007+', 'docx'), ('Text file', 'txt'),
     ('Rich-text format', 'rtf')
 ]
-
-
-#: A list of tuples that define the types of user-uploaded files that are supported for an instance of the
-# WholesaleImport model. Each tuple has two items: the first is a user-friendly short description of the supported file
-# type; the second is the expected extension of the supported file type.
-CONST_SUPPORTED_WHOLESALE_FILE_TYPES = [('Comma-separated value file', 'csv')]
 
 
 #: A list of tuples that define the types of user-uploaded files that are supported for an instance of the Attachment
@@ -98,41 +87,3 @@ CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES = [
     ('JPG image file', 'jpg'), ('JPEG image file', 'jpeg'), ('PNG image file', 'png'),
     ('GIF image file', 'gif'), ('BMP image file', 'bmp'), ('TIFF image file', 'tiff'), ('TIF image file', 'tif')
 ]
-
-
-#: A list of names of models that are in the allowlist for use through the wholesale import tool.
-CONST_WHOLESALE_MODELS_ALLOWLIST = [
-    # From the 'sourcing' app
-    'Attachment',
-    'Content',
-    'ContentIdentifier',
-    'ContentCase',
-    'ContentPerson',
-    'ContentPersonAllegation',
-    'ContentPersonPenalty',
-    # From the 'core' app
-    'Person',
-    'PersonContact',
-    'PersonAlias',
-    'PersonPhoto',
-    'PersonIdentifier',
-    'PersonTitle',
-    'PersonRelationship',
-    'PersonPayment',
-    'Grouping',
-    'GroupingAlias',
-    'GroupingRelationship',
-    'PersonGrouping',
-    'Incident',
-    'PersonIncident',
-    'GroupingIncident',
-    # From the 'supporting' app
-    'State',
-    'County',
-    'Location',
-    'Court',
-]
-
-
-#: A list of names of fields that are excluded from use through the wholesale import tool.
-CONST_WHOLESALE_FIELDS_DENYLIST = []

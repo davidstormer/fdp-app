@@ -12,6 +12,7 @@ from supporting.models import State, Trait, PersonRelationshipType, Location, Pe
     Title, GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
     PersonIncidentTag, LeaveStatus, SituationRole, TraitType
 from fdpuser.models import FdpOrganization
+from django.urls import reverse
 from datetime import date
 
 
@@ -82,6 +83,14 @@ class Person(Confidentiable, Descriptable):
     #: Fields to display in the model form.
     form_fields = \
         ['name', 'birth_date_range_start', 'birth_date_range_end', 'traits'] + Confidentiable.confidentiable_form_fields
+
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_person', args=(self.pk,))
+
+    @property
+    def get_profile_url(self):
+        return reverse('profiles:officer', args=(self.pk,))
 
     def __get_birth_date(self):
         """ Retrieve the human-friendly version of the person's birth date.
@@ -1769,6 +1778,10 @@ class Grouping(Archivable, Descriptable):
         """
         return queryset
 
+    @property
+    def get_profile_url(self):
+        return reverse('profiles:command', kwargs={"pk": self.pk})
+
     class Meta:
         db_table = '{d}grouping'.format(d=settings.DB_PREFIX)
         verbose_name = _('grouping')
@@ -2108,6 +2121,10 @@ class Incident(Confidentiable, AbstractExactDateBounded):
             t='...' if not self.description else self.description
         )
         return str_rep
+
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_incident', kwargs={"pk": self.pk, "content_id": 0})
 
     @classmethod
     def filter_for_admin(cls, queryset, user):

@@ -1,3 +1,23 @@
+/* Common */
+/* Fix smaller font size on lists from base.css (django admin styling) */
+body.officer.profile ul li {
+    font-size: 14px;
+}
+body.officer.profile h3 {
+    color: #417690;
+    text-transform: uppercase;
+}
+body.officer.profile h4 {
+    text-transform: uppercase;
+}
+
+body.officer.profile span.label {
+    font-weight: bold;
+    color: #656565;
+}
+
+
+
 /* Container for photos slider plug-in */
 /*.photos.slider, .slick-slide { width: 200px; }*/
 .photos.slider { border: 1px solid #000; }
@@ -14,29 +34,57 @@ button.slick-prev::before, button.slick-next::before {
 p.nodata {
     margin-top: 1em;
 }
-/* Labels in the Identification section */
-label.ident {
-    color: #666;
-    margin-bottom: 1em;
-    font-weight: bold;
-    display: inline-block;
+/* Identification section*/
+div.basic-information {
+    margin-left: 1em;
 }
-/* Values for labels in the Identification section */
-span.identval {
-    font-weight: bold;
+section.identification ul {
+    padding-left: 2em;
 }
-/* Simulate labels in identification section without bolding */
-span.labelsim {
-    display: inline-block;
-    margin-bottom: 1em;
+section.identification ul li {
+    margin-bottom: .5em;
 }
-/* Lists within the Identification section */
-ul.ident, li.ident {
-    color: #666;
-    margin: 0;
+section.identification span.dates:before {
+    content: '(';
+/* Undecided how to handle these */
+}
+section.identification span.dates:after {
+    content: ')';
+/* Undecided how to handle these */
+}
+
+/* Payroll section (now nested under identification) */
+section.payroll {
+    margin-top: 0;
+}
+body.profile.officer div.main section.payroll h2 {
+   font-size: 14px !important;
+   font-weight: bold;
+}
+div.payrollcontainer {
+    height: 220px;
+    overflow: scroll;
+    box-shadow: inset 0 -1em 1em #aaa;
+    border: 1px solid lightgray;
+}
+div.payrollcontainer tr:nth-child(odd) {
+    background-color: rgba(255,255,255, .25);
+}
+div.payrollcontainer tr:nth-child(even) {
+    background-color: rgba(200,200,200, .25);
+}
+div.payrollcontainer thead th {
+    background-color: rgba(200,200,200, .25);
+    color: #000
+}
+section.payroll .ui-accordion .ui-accordion-content {
     padding: 0;
-    list-style: none;
 }
+div.payroll-column {
+    float: right;
+}
+
+
 /* Sub-section in the Snapshot section */
 div.snap {
     margin-bottom: 1em;
@@ -108,8 +156,6 @@ span.othper {
 }
 /* Relationship within Associates section */
 span.rel {
-    font-weight: bold;
-    color: #ba2121;
 }
 /* Icons within the main profile heading (e.g. download all attachments, expand all, collapse all */
 h2 i { font-size: 200%; }
@@ -144,4 +190,21 @@ h2 span.h2upper {
 p.warning {
     font-weight: bold;
     color: #ba2121;
+}
+
+/* Associates */
+section.associates ul#relationships {
+    padding-left: 0;
+    margin-left: 0;
+}
+section.associates ul#relationships li {
+    list-style: none;
+    margin-bottom: 1em;
+}
+section.associates a.associate-link {
+    font-weight: bold;
+}
+span.associate-self {
+    color: #656565;
+    font-weight: bold;
 }

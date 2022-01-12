@@ -1,7 +1,0 @@
-/* icon asking whether user wishes to start */
-i.start { color: #C4547F; margin-right: 4px; }
-/* action taken during import such as "add" or "update" */
-strong.action { text-transform: lowercase; }
-/* list of models and their corresponding fields */
-ul.review li { margin-bottom: 1em; }
-ul.review { margin-top: 2em; margin-bottom: 2em;}
