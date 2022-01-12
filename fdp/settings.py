@@ -60,11 +60,6 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     "handlers": {
-        "azure": {
-            "level": "WARNING",
-            "class": "opencensus.ext.azure.log_exporter.AzureLogHandler",
-            "instrumentation_key": "618ff4ad-f5b2-4e93-a0d3-ab41e502dfd7",
-         },
         "console": {
             "level": "WARNING",
             "class": "logging.StreamHandler",
