@@ -532,7 +532,7 @@ class Person(Confidentiable, Descriptable):
                             user=user,
                             filter_dict=None,
                             person_pk=pk,
-                            person_filter_by_dict={'pk': OuterRef('person_id'), 'is_law_enforcement': True}
+                            person_filter_by_dict={'pk': OuterRef('person_id')}
                         ),
                         to_attr='officer_other_persons'
                     ),

@@ -350,7 +350,7 @@
                         </p>
                         {% endif %}
                         {% if officer_misconduct.incident.officer_other_persons %}
-                        <span class="mish1">{% translate 'Other Officers Involved' %}</span>
+                        <span class="mish1">{% translate 'Others Involved' %}</span>
                         <p class="mispeoples">
                             {% for other_person in officer_misconduct.incident.officer_other_persons %}
                                 <a href="{% url 'profiles:officer' pk=other_person.person.pk %}">{{ other_person.person.name }}</a>{% if not forloop.last %},{% endif %}
@@ -458,7 +458,7 @@
                         <p class="missummary">
                             {% if content.description %}{{ content.description }}{% else %}{% translate 'There is no summary available for this content.' %}{% endif %}</p>
                         {% if content_person.content.officer_other_persons %}
-                        <span class="mish1">{% translate 'Other Officers Involved' %}</span>
+                        <span class="mish1">{% translate 'Others Involved' %}</span>
                         <p class="mispeoples">
                             {% for other_person in content.officer_other_persons %}
                                 <a href="{% url 'profiles:officer' pk=other_person.person.pk %}">{{ other_person.person.name }}</a>{% if not forloop.last %},{% endif %}
