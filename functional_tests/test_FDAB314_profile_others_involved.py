@@ -43,28 +43,32 @@ class OthersInvolvedTestCase(FunctionalTestCase):
         situation_role_b = SituationRole.objects.create(name=f"situation-role-{uuid4()}")
         situation_role_c = SituationRole.objects.create(name=f"situation-role-{uuid4()}")
 
-        incident_a = Incident.objects.create(description="incident-a")
-
-        person_a = Person.objects.create(name=f'person-{uuid4()}', is_law_enforcement=True)
+        incident = Incident.objects.create(description="incident-a")
 
         PersonIncident.objects.create(
             situation_role=situation_role_a,
-            person=person_a,
-            incident=incident_a)
+            person=Person.objects.create(name=f'person-{uuid4()}', is_law_enforcement=True),
+            incident=incident)
         PersonIncident.objects.create(
             situation_role=situation_role_b,
             person=Person.objects.create(name=f'person-{uuid4()}', is_law_enforcement=True),
-            incident=incident_a)
+            incident=incident)
         PersonIncident.objects.create(
             situation_role=situation_role_c,
             person=Person.objects.create(name=f'person-{uuid4()}', is_law_enforcement=True),
-            incident=incident_a)
+            incident=incident)
+
+        # and the incident is linked to an officer
+        officer_for_profile = Person.objects.create(name=f'person-{uuid4()}', is_law_enforcement=True)
+        PersonIncident.objects.create(
+            person=officer_for_profile,
+            incident=incident)
 
         # and I'm logged into the system
         client = self.log_in()
 
         # When I go to one of their profile pages
-        response = client.get(f'/officer/{person_a.pk}')
+        response = client.get(f'/officer/{officer_for_profile.pk}')
 
         document = fromstring(response.content)
         incident_element = document.cssselect('section.misconduct div.incident')[0]
