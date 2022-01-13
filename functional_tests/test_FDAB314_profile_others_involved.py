@@ -10,7 +10,7 @@ from supporting.models import SituationRole
 class OthersInvolvedTestCase(FunctionalTestCase):
 
     @local_test_settings_required
-    def test_incident_non_officers_involved(self):
+    def test_incident_show_non_officers_involved(self):
 
         # Given there is an incident with non-officers linked to it
         incident_a = Incident.objects.create(description="incident-a")
@@ -37,7 +37,7 @@ class OthersInvolvedTestCase(FunctionalTestCase):
             incident_element.text_content()
         )
 
-    def test_incident_others_involved_print_situational_role(self):
+    def test_incident_others_involved_print_situation_role(self):
         # Given there is an incident with people involved and their situation roles are set
         situation_role_a = SituationRole.objects.create(name=f"situation-role-{uuid4()}")
         situation_role_b = SituationRole.objects.create(name=f"situation-role-{uuid4()}")
