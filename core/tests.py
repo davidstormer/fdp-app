@@ -487,7 +487,6 @@ class CoreTestCase(AbstractTestCase):
         # remove incidents with different confidentiality levels
         self.__delete_incidents_related_data()
 
-    @local_test_settings_required
     def test_admin_views(self):
         """ Test for Admin Changelist, Create Instance, Change Instance, Delete Instance and History Views all
         permutations of user roles, confidentiality levels and relevant models.
@@ -506,7 +505,6 @@ class CoreTestCase(AbstractTestCase):
                 'delete instance and history views for all permutations of user roles, confidentiality levels and '
                 'relevant models\n\n'))
 
-    @local_test_settings_required
     def test_download_person_photo_view(self):
         """ Test for Download Person Photo View for all permutations of user roles and confidentiality levels.
 

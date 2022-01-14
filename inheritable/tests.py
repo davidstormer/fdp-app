@@ -1,3 +1,5 @@
+import warnings
+
 from django.test import TestCase, Client
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.util import random_hex
@@ -23,13 +25,8 @@ def local_test_settings_required(func):
     :return: Decorator.
     """
     def decorator(*args, **kwargs):
-        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a local
-        development environment.
-
-        :param args: Positional arguments for decorated test method.
-        :param kwargs: Keyword arguments for decorated test method.
-        :return: Nothing.
-        """
+        msg = "@local_test_settings_required is deprecated. It's now unnecessary."
+        warnings.warn(msg, FutureWarning)
         if AbstractConfiguration.is_using_local_configuration():
             func(*args, **kwargs)
         else:
@@ -43,51 +40,33 @@ def azure_test_settings_required(func):
     for a simulated Microsoft Azure hosting environment, including with authentication possible through BOTH Django
     and Azure Active Directory.
 
-    :param func: Function that should be skipped unless the necessary settings are configured.
+    :param func: Function that should be called if the necessary settings are configured.
     :return: Decorator.
     """
     def decorator(*args, **kwargs):
-        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a simulated
-        Microsoft Azure hosting environment, including with authentication possible through BOTH Django and Azure
-        Active Directory.
-
-        :param args: Positional arguments for decorated test method.
-        :param kwargs: Keyword arguments for decorated test method.
-        :return: Nothing.
-        """
-        if AbstractConfiguration.is_using_azure_configuration() \
-                and AbstractConfiguration.can_do_azure_active_directory() \
-                and not AbstractConfiguration.use_only_azure_active_directory():
-            func(*args, **kwargs)
-        else:
-            logger.warning(f'\nSkipped {func.__name__}. It requires Azure test settings and can be run with the '
-                           f'command: python manage.py test --settings=fdp.configuration.test.test_azure_settings')
+        msg = f"""Can't run {func.__name__} It requires Azure test settings. Try running with 'test_azure_settings' 
+        configuration: python manage.py test --pattern=azure_test* --settings=fdp.configuration.test.test_azure_settings"""
+        assert AbstractConfiguration.is_using_azure_configuration(), msg
+        assert(AbstractConfiguration.can_do_azure_active_directory()), msg
+        assert(not AbstractConfiguration.use_only_azure_active_directory()), msg
     return decorator
 
 
 def azure_only_test_settings_required(func):
-    """ Retrieves a decorator method that allows tests to be skipped unless the necessary settings have been configured
+    """ Retrieves a decorator method that refuses to run tests unless the necessary settings have been configured
     for a simulated Microsoft Azure hosting environment, including with authentication possible ONLY through Azure
     Active Directory.
 
-    :param func: Function that should be skipped unless the necessary settings are configured.
+    :param func: Function that should be called if the necessary settings are configured.
     :return: Decorator.
     """
     def decorator(*args, **kwargs):
-        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a simulated
-        Microsoft Azure hosting environment, including with authentication possible through ONLY Azure Active Directory.
-
-        :param args: Positional arguments for decorated test method.
-        :param kwargs: Keyword arguments for decorated test method.
-        :return: Nothing.
-        """
-        if AbstractConfiguration.is_using_azure_configuration() \
-                and AbstractConfiguration.can_do_azure_active_directory() \
-                and AbstractConfiguration.use_only_azure_active_directory():
-            func(*args, **kwargs)
-        else:
-            logger.warning(f'\nSkipped {func.__name__}. It requires Azure only test settings and can be run with the '
-                           f'command: python manage.py test --settings=fdp.configuration.test.test_azure_only_settings')
+        msg = f"""Can't run {func.__name__} It requires Azure ONLY test settings. Try running with 
+        'test_azure_only_settings' configuration:
+        python manage.py test --pattern=azure_only_test* --settings=fdp.configuration.test.test_azure_only_settings"""
+        assert(AbstractConfiguration.is_using_azure_configuration()), msg
+        assert(AbstractConfiguration.can_do_azure_active_directory()), msg
+        assert(AbstractConfiguration.use_only_azure_active_directory()), msg
     return decorator
 
 

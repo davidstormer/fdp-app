@@ -34,6 +34,7 @@ button.slick-prev::before, button.slick-next::before {
 p.nodata {
     margin-top: 1em;
 }
+
 /* Identification section*/
 div.basic-information {
     margin-left: 1em;
@@ -44,13 +45,27 @@ section.identification ul {
 section.identification ul li {
     margin-bottom: .5em;
 }
+section.identification .identification-meta {
+    font-size: 90%;
+}
 section.identification span.dates:before {
     content: '(';
-/* Undecided how to handle these */
+/* TODO: Undecided how to handle these */
 }
 section.identification span.dates:after {
     content: ')';
-/* Undecided how to handle these */
+/* TODO: Undecided how to handle these */
+}
+/* Contact Info */
+section.identification div.contact-info {
+    margin-left: 0.5em;
+    margin-bottom: 1em;
+    margin-top: 1em;
+    padding-left: 0.5em;
+}
+section.identification p.contact-is-current {
+    font-size: 85%;
+    color: #656565;
 }
 
 /* Payroll section (now nested under identification) */

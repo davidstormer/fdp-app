@@ -461,6 +461,8 @@ class Person(Confidentiable, Descriptable):
                 ),
                 to_attr='officer_identifiers'
             ),
+            Prefetch('person_contacts', queryset=PersonContact.active_objects.all().order_by('-is_current', '-pk'),
+                     to_attr='officer_contact_infos'),
             Prefetch(
                 'person_groupings',
                 # don't need to filter persons, since filtered above
@@ -532,7 +534,7 @@ class Person(Confidentiable, Descriptable):
                             user=user,
                             filter_dict=None,
                             person_pk=pk,
-                            person_filter_by_dict={'pk': OuterRef('person_id'), 'is_law_enforcement': True}
+                            person_filter_by_dict={'pk': OuterRef('person_id')}
                         ),
                         to_attr='officer_other_persons'
                     ),

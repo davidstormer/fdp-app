@@ -1280,7 +1280,6 @@ class ProfileTestCase(AbstractTestCase):
         # remove content identifiers with different confidentiality levels
         self.__delete_content_identifiers_for_command_related_data()
 
-    @local_test_settings_required
     def test_officer_profile_views(self):
         """ Test for Officer profile search results and profile views for all permutations of user roles,
         confidentiality levels and relevant models.
@@ -1302,7 +1301,6 @@ class ProfileTestCase(AbstractTestCase):
             _('\nSuccessfully finished test for for Officer Profile Search Results view and Officer Profile view for '
               'all permutations of user roles, confidentiality levels and relevant models\n\n'))
 
-    @local_test_settings_required
     def test_command_profile_views(self):
         """ Test for Command profile search results and profile views for all permutations of user roles,
         confidentiality levels and relevant models.
