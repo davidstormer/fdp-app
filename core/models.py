@@ -461,6 +461,8 @@ class Person(Confidentiable, Descriptable):
                 ),
                 to_attr='officer_identifiers'
             ),
+            Prefetch('person_contacts', queryset=PersonContact.active_objects.all().order_by('-is_current', '-pk'),
+                     to_attr='officer_contact_infos'),
             Prefetch(
                 'person_groupings',
                 # don't need to filter persons, since filtered above

@@ -2,8 +2,45 @@ from django import template
 from django.utils.safestring import mark_safe
 from django import template
 from django.template import Template, Context
+from core.models import PersonContact
+from supporting.models import State
 
 register = template.Library()
+
+
+@register.filter
+def contact_address_in_one_line(contact: PersonContact) -> str:
+    """Takes a PersonContact, returns an address formatted to fit on a single line.
+    """
+
+    # Concatenate state and zip together with no comma
+    # c.f.: https://courses.lumenlearning.com/englishforbusiness/chapter/2-1-commas/
+    if contact.state and contact.zip_code:
+        state_zip = f"{contact.state.name} {contact.zip_code}"
+    elif contact.state:
+        state_zip = f"{contact.state.name}"
+    elif contact.zip_code:
+        state_zip = f"{contact.zip_code}"
+    else:
+        state_zip = ''
+    address_component_values = [
+        contact.address,
+        contact.city,
+        state_zip
+    ]
+    address_output = ''
+    # Concatenate and comma delimit the address components
+    for i, field_value in enumerate(address_component_values):
+        # Prepend comma
+        # If it's the first element, don't prepend a comma or space
+        if len(address_output) > 0:
+            # If there's no value, don't prepend a comma or space
+            if field_value:
+                address_output += ', '
+        # Concatenate field value
+        if field_value:
+            address_output += field_value
+    return address_output
 
 
 @register.filter
