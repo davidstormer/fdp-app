@@ -116,6 +116,33 @@
                 </ul>
                 {% endif %}
 
+                {% if object.officer_contact_infos %}
+                <h3>Contact</h3>
+                {% for contact_info in object.officer_contact_infos %}
+                    <div class="contact-info">
+                    {% if contact_info.is_current %}
+                    <p class="contact-is-current">Current</p>
+                    {% endif %}
+
+                    {% if contact_info.phone_number %}
+                    <p>
+                        <span class="label">Phone:</span> {{ contact_info.phone_number }}
+                    </p>
+                    {% endif %}
+                    {% if contact_info.email %}
+                    <p>
+                        <span class="label">Email:</span> {{ contact_info.email }}
+                    </p>
+                    {% endif %}
+                    {% if contact_info.address or contact_info.city or contact_info.state or contact_info.zip_code %}
+                    <p>
+                        <span class="label">Address:</span> {{ contact_info|contact_address_in_one_line }}
+                    </p>
+                    {% endif %}
+                    </div>
+                {% endfor %}
+                {% endif %}
+
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
             <div class="gridcol gridcell_1_of_3">
                 {% if object.officer_identifiers %}

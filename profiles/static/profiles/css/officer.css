@@ -46,11 +46,22 @@ section.identification ul li {
 }
 section.identification span.dates:before {
     content: '(';
-/* Undecided how to handle these */
+/* TODO: Undecided how to handle these */
 }
 section.identification span.dates:after {
     content: ')';
-/* Undecided how to handle these */
+/* TODO: Undecided how to handle these */
+}
+/* Contact Info */
+section.identification div.contact-info {
+    margin-left: 0.5em;
+    margin-bottom: 2em;
+    border-left: 1px solid #ccc;
+    padding-left: 0.5em;
+}
+section.identification p.contact-is-current {
+    font-size: 85%;
+    color: #656565;
 }
 
 /* Payroll section (now nested under identification) */
