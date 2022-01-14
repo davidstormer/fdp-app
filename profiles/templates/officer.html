@@ -119,6 +119,7 @@
                 {% if object.officer_contact_infos %}
                 <h3>Contact</h3>
                 {% for contact_info in object.officer_contact_infos %}
+
                     <div class="contact-info">
                     {% if contact_info.is_current %}
                     <p class="contact-is-current">Current</p>
@@ -140,6 +141,7 @@
                     </p>
                     {% endif %}
                     </div>
+                    {% if not forloop.last %}<hr>{% endif %}
                 {% endfor %}
                 {% endif %}
 
