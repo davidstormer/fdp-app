@@ -2028,6 +2028,24 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
             )
         )
 
+    @property
+    def as_of_bounding_dates(self):
+        """ Human-friendly version of "fuzzy" as of starting and ending dates.
+
+        :return: Human-friendly version of "fuzzy" as of starting and ending dates.
+        """
+        def end_date_is_all_zeros(self) -> bool:
+            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
+                return True
+            else:
+                return False
+
+        if self.is_inactive and end_date_is_all_zeros(self):
+            return super(PersonGrouping, self).as_of_bounding_dates + ' until unknown-end-date'
+        else:
+            return super(PersonGrouping, self).as_of_bounding_dates
+
+
     class Meta:
         db_table = '{d}person_grouping'.format(d=settings.DB_PREFIX)
         verbose_name = _('Link between person and grouping')
