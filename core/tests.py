@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 from inheritable.models import AbstractUrlValidator
 from inheritable.tests import AbstractTestCase, local_test_settings_required
@@ -527,3 +528,92 @@ class UnitTests(AbstractTestCase):
         url = group.get_profile_url
         # Then I should get the url to view it
         self.assertIn('command', url)
+
+    def test_person_grouping_as_of_bounding_dates(self):
+        # Given the following truth table
+        truth_table = [
+            {
+                'output': 'from 04/28/2010 until unknown-end-date',
+                'inputs':
+                    {
+                        'is_inactive': True,
+                        'end_year': 0,
+                        'end_month': 0,
+                        'end_day': 0,
+                        'start_year': 2010,
+                        'start_month': 4,
+                        'start_day': 28,
+                    }
+            },
+            {
+                'output': 'from 04/28/2010',
+                'inputs':
+                    {
+                        'is_inactive': False,
+                        'end_year': 0,
+                        'end_month': 0,
+                        'end_day': 0,
+                        'start_year': 2010,
+                        'start_month': 4,
+                        'start_day': 28,
+                    }
+            },
+            {
+                'output': 'from 04/28/2010 until 04/28/2020',
+                'inputs':
+                    {
+                        'is_inactive': True,
+                        'end_year': 2020,
+                        'end_month': 4,
+                        'end_day': 28,
+                        'start_year': 2010,
+                        'start_month': 4,
+                        'start_day': 28,
+                    }
+            },
+            {
+                'output': 'from 04/28/2010 until 04/28/2020',
+                'inputs':
+                    {
+                        'is_inactive': False,
+                        'end_year': 2020,
+                        'end_month': 4,
+                        'end_day': 28,
+                        'start_year': 2010,
+                        'start_month': 4,
+                        'start_day': 28,
+                    }
+            }
+        ]
+
+        for i, scenario in enumerate(truth_table):
+            with self.subTest(scenario=(i, scenario)):
+                with transaction.atomic():  # ... maintain test isolation
+                    person = Person.objects.create(name='Test Person')
+                    grouping = Grouping.objects.create(name='Test Group')
+                    self.assertEqual(1, len(Person.objects.all()))
+                    person_grouping = PersonGrouping.objects.create(
+                        person=person,
+                        grouping=grouping,
+                        is_inactive=scenario['inputs']['is_inactive'],
+                        end_year=scenario['inputs']['end_year'],
+                        end_month=scenario['inputs']['end_month'],
+                        end_day=scenario['inputs']['end_day'],
+                        start_year=scenario['inputs']['start_year'],
+                        start_month=scenario['inputs']['start_month'],
+                        start_day=scenario['inputs']['start_day'],
+                    )
+
+                    # WHEN I call as_of_bounding_dates on the given inputs
+                    #
+                    #
+                    result = person_grouping.as_of_bounding_dates
+
+                    # THEN I should get the respective output from the truth table
+                    #
+                    #
+                    self.assertEqual(
+                        scenario['output'],
+                        result
+                    )
+                    transaction.set_rollback(True)  # ... maintain test isolation
