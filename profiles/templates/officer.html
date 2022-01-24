@@ -179,7 +179,7 @@
                         <span><a href="{{ command.grouping.get_profile_url }}">{{ command.grouping.name }}</a></span>
                         <div class="identification-meta">
                             <span>{{ command.type.name }}</span>
-                            <span class="dates">{% if command.as_of_bounding_dates %}{{ command.as_of_bounding_dates }}{% endif %}</span>
+                            {% if command.as_of_bounding_dates %}<span class="dates">{{ command.as_of_bounding_dates }}</span>{% endif %}
                         </div>
                     </li>
                 {% endfor %}
@@ -326,17 +326,16 @@
     <section class="misconduct">
 
         <div class="section-heading">
-            <h2>Misconduct</h2>
-            &nbsp;
-            <span class="admin-actions">
-                {% if has_attachments %}
-                <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
-                    <span class="h2lower"><i class="fas fa-file-archive"></i></span>
-                    <span class="h2upper">{% translate 'Download all attachments' %}</span>
-                </span></a>
-                {% endif %}
-            </span>
+            <h2>Known Incidents</h2>
         </div>
+        {% if has_attachments %}
+        <p>
+            <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
+                <span class="h2lower"><i class="fas fa-file-archive"></i></span>
+                <span class="h2upper">{% translate 'Download all attachments' %}</span>
+            </span></a>
+        </p>
+        {% endif %}
 
         <span id="i_expandall">
             <span>{% translate 'Expand' %}</span>
