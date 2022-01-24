@@ -327,16 +327,15 @@
 
         <div class="section-heading">
             <h2>Known Incidents</h2>
-            &nbsp;
-            <span class="admin-actions">
-                {% if has_attachments %}
-                <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
-                    <span class="h2lower"><i class="fas fa-file-archive"></i></span>
-                    <span class="h2upper">{% translate 'Download all attachments' %}</span>
-                </span></a>
-                {% endif %}
-            </span>
         </div>
+        {% if has_attachments %}
+        <p>
+            <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
+                <span class="h2lower"><i class="fas fa-file-archive"></i></span>
+                <span class="h2upper">{% translate 'Download all attachments' %}</span>
+            </span></a>
+        </p>
+        {% endif %}
 
         <span id="i_expandall">
             <span>{% translate 'Expand' %}</span>
