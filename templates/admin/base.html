@@ -120,10 +120,18 @@
       </div>
     </div>
     <div id="footer-global">{% if user.is_authenticated %}<span id="release-number">FDP App 4.0.0</span>{% endif %}</div>
+    {% if user.has_admin_access %}
+    <a href="https://fulldisclosure.zendesk.com/hc/en-us/categories/1500001087701-Administrator-Documentation" class="help-center-button" target="_blank">
+    <i class="far fa-question-circle"></i> Help</a>
+    {% endif %}
 </div>
 <!-- END Container -->
 {% block endscript %}
     <script type="text/javascript" nonce="{{ request.csp_nonce }}">
+        {% if user.has_admin_access %}
+        /* Delay fade in the help center button on page load */
+        $('a.help-center-button').hide().delay(1000).fadeIn(500)
+        {% endif %}
         {% if user.is_authenticated %} $( document ).ready(function() { {% endif %}
             {% block onready %}
                 {% if user.is_authenticated %}

@@ -34,3 +34,20 @@ body.login div#footer-global {
   bottom: 0;
   right: 0;
 }
+
+/* Help center button */
+a.help-center-button {
+    position: fixed;
+    bottom: 1.5em;
+    right: 1.5em;
+    border: 1px solid white;
+    background-color: #417690;
+    color: white;
+    padding: 0.75em;
+    border-radius: 19px;
+    font-weight: bold;
+}
+
+a.help-center-button .fa-question-circle {
+    font-size: 120%;
+}
