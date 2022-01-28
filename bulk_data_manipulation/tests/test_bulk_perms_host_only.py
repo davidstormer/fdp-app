@@ -5,9 +5,6 @@ from django.core.management import call_command
 from .common import import_record_with_extid
 from uuid import uuid4
 from core.models import Person
-from bulk_data_manipulation.management.commands.bulk_delete import get_model_from_import_string, delete_imported_record
-from bulk_data_manipulation.common import get_record_from_external_id, ExternalIdMissing, RecordMissing
-from core.models import Person
 from bulk.models import BulkImport
 import csv
 
@@ -19,7 +16,7 @@ class BulkUpdateHostOnly(TestCase):
     """Functional test
     """
 
-    def test_bulk_perms_host_only_single_record(self):
+    def test_single_record(self):
         command_output = StringIO()
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
@@ -47,7 +44,7 @@ class BulkUpdateHostOnly(TestCase):
                 msg=f"for_host_only not updated on test record"
             )
 
-    def test_bulk_perms_host_only_missing_record(self):
+    def test_missing_record(self):
         command_output = StringIO()
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
@@ -75,7 +72,7 @@ class BulkUpdateHostOnly(TestCase):
                 command_output.getvalue()
             )
 
-    def test_bulk_perms_host_only_missing_ext_id(self):
+    def test_missing_ext_id(self):
         command_output = StringIO()
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
@@ -103,7 +100,7 @@ class BulkUpdateHostOnly(TestCase):
                 command_output.getvalue()
             )
 
-    def test_bulk_perms_host_only_multiple_records(self):
+    def test_multiple_records(self):
         command_output = StringIO()
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
@@ -138,7 +135,7 @@ class BulkUpdateHostOnly(TestCase):
                     msg=f"for_host_only not updated on test record"
                 )
 
-    def test_bulk_perms_host_only_empty_file_error(self):
+    def test_empty_file_error(self):
         """Functional test: refuse to use an empty input file, warn me about it
         """
         command_output = StringIO()
@@ -153,9 +150,40 @@ class BulkUpdateHostOnly(TestCase):
             self.assertIn("WARNING", command_output.getvalue())
             self.assertIn("empty", command_output.getvalue())
 
+    def test_print_csv_row_number_of_errors(self):
+        command_output = StringIO()
+
+        # Given there's a CSV with an error on row 7
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            csv_writer = csv.DictWriter(csv_fd, ['id__external', 'for_host_only'])
+            csv_writer.writeheader()
+
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                person_record, external_id = \
+                    import_record_with_extid(Person, {"name": new_person_name, "for_host_only": False})
+                Person.objects.get(name=new_person_name)
+                row = {}
+                row['id__external'] = external_id
+                row['for_host_only'] = 'checked'
+
+                # ... insert error on 7th record
+                if i == 6:  # zeroith index makes it 6
+                    row['id__external'] = 'BREAK'
+                    row['for_host_only'] = 'BREAK'
+
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # When I execute the command on it
+            call_command('bulk_perms_host_only', 'core.models.Person', csv_fd.name, stdout=command_output)
+
+            # Then it should return an error message that reads "Row 8" (record number plus 1 for the header)
+            self.assertIn("Row 8", command_output.getvalue())
+
 
 class AtomicRollbacks(TransactionTestCase):
-    def test_bulk_perms_host_on_error_rollback_db(self):
+    def test_on_error_rollback_db(self):
         command_output = StringIO()
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:

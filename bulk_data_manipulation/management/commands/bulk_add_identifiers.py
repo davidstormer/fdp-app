@@ -1,3 +1,7 @@
+"""UNDER CONSTRUCTION!!! Don't use this
+For a working version check out: https://github.com/Full-Disclosure-Project/fdp-app/blob/FDAB-13-import_person_ids/ipi/import_person_identifiers.py
+"""
+
 from django.db import transaction
 from django.core.management.base import BaseCommand, CommandError
 from core.models import Person
