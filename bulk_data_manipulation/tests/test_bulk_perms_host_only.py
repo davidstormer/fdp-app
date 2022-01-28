@@ -11,197 +11,185 @@ from core.models import Person
 from bulk.models import BulkImport
 import csv
 
+# NOTICE: these tests are serving double duty in testing CsvBulkCommand in bulk_data_manipulation/common.py
+# I didn't take the time to write better tests that isolate concerns. -TC
 
-class BulkDelete(TestCase):
+
+class BulkUpdateHostOnly(TestCase):
+    """Functional test
+    """
 
     def test_bulk_perms_host_only_single_record(self):
-        """Functional test: update
-        """
         command_output = StringIO()
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             # GIVEN there is a record in the system
             new_person_name = f"person-name-{uuid4()}"
-            import_record_with_extid(Person, {"name": new_person_name}, external_id='1638388421')
+            person_record, _ = \
+                import_record_with_extid(Person, {"name": new_person_name}, external_id='1638388421')
             Person.objects.get(name=new_person_name)
-            # AND given there is a file listing its external id
-            csv_fd.write('1638388421\n')
-            csv_fd.flush()
-            # WHEN I run the command with the file as a positional argument
+            # AND given there is a CSV file listing its external id, and the desired value of for_host_only
+            row = {}
+            row['id__external'] = '1638388421'
+            row['for_host_only'] = 'checked'
+            csv_writer = csv.DictWriter(csv_fd, row.keys())
+            csv_writer.writeheader()
+            csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
             call_command('bulk_perms_host_only', 'core.models.Person', csv_fd.name, stdout=command_output)
-            # THEN the record should be marked host_only=True
-            with self.assertRaises(Person.DoesNotExist) as _:
+
+            # THEN the record should be marked for_host_only=True
+            self.assertEqual(
+                True,
+                Person.objects.get(pk=person_record.pk).for_host_only,
+                msg=f"for_host_only not updated on test record"
+            )
+
+    def test_bulk_perms_host_only_missing_record(self):
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there was a record in the system that's been deleted
+            new_person_name = f"person-name-{uuid4()}"
+            person_record, _ = \
+                import_record_with_extid(Person, {"name": new_person_name}, external_id='1638388421')
+            Person.objects.get(name=new_person_name)
+            # AND given there is a CSV file listing its external id, and the desired value of for_host_only
+            row = {}
+            row['id__external'] = '1638388421'
+            row['for_host_only'] = 'checked'
+            csv_writer = csv.DictWriter(csv_fd, row.keys())
+            csv_writer.writeheader()
+            csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+            # ... delete the record from the db
+            person_record.delete()
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            # THEN an error should be printed on the screen
+            call_command('bulk_perms_host_only', 'core.models.Person', csv_fd.name, stdout=command_output)
+            self.assertIn(
+                'does not exist',
+                command_output.getvalue()
+            )
+
+    def test_bulk_perms_host_only_missing_ext_id(self):
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there was a record in the system who's external ID has been deleted
+            new_person_name = f"person-name-{uuid4()}"
+            person_record, external_id = \
+                import_record_with_extid(Person, {"name": new_person_name}, external_id='1638388421')
+            Person.objects.get(name=new_person_name)
+            # AND given there is a CSV file listing its external id, and the desired value of for_host_only
+            row = {}
+            row['id__external'] = '1638388421'
+            row['for_host_only'] = 'checked'
+            csv_writer = csv.DictWriter(csv_fd, row.keys())
+            csv_writer.writeheader()
+            csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+            # ... delete the record from the db
+            BulkImport.objects.get(pk_imported_from=external_id).delete()
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            # THEN an error should be printed on the screen
+            call_command('bulk_perms_host_only', 'core.models.Person', csv_fd.name, stdout=command_output)
+            self.assertIn(
+                "Can't find external id",
+                command_output.getvalue()
+            )
+
+    def test_bulk_perms_host_only_multiple_records(self):
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there are a number of records in the system
+            # AND given there is a CSV file listing their external ids, and the desired value of for_host_only
+            csv_writer = csv.DictWriter(csv_fd, ['id__external', 'for_host_only'])
+            csv_writer.writeheader()
+
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                person_record, external_id = \
+                    import_record_with_extid(Person, {"name": new_person_name, "for_host_only": False})
                 Person.objects.get(name=new_person_name)
-#
-#     def test_bulk_delete_multiple_records(self):
-#         """Functional test: delete records from an input file
-#         """
-#         command_output = StringIO()
-#
-#         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
-#             # GIVEN there are records in the system
-#             new_person_names = []
-#             new_external_ids = []
-#             for i in range(3):
-#                 new_person_name = f"person-name-{uuid4()}"
-#                 new_external_id = f"external-id-{uuid4()}"
-#                 import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
-#                 new_person_names.append(new_person_name)
-#                 new_external_ids.append(new_external_id)
-#             for new_person_name in new_person_names:
-#                 Person.objects.get(name=new_person_name)
-#             # AND given there is a file listing their external ids
-#             for external_id in new_external_ids:
-#                 csv_fd.write(f"{external_id}\n")
-#             csv_fd.flush()  # Make sure the file is actually written to disk!
-#             # WHEN I run the command with the file as a positional argument
-#             call_command('bulk_perms_host_only', 'core.models.Person', csv_fd.name, stdout=command_output)
-#             # THEN the records should be removed from the system
-#             with self.assertRaises(Person.DoesNotExist) as _:
-#                 for new_person_name in new_person_names:
-#                     Person.objects.get(name=new_person_name)
-#
-#     def test_get_model_from_import_string(self):
-#         self.assertEqual(
-#             get_model_from_import_string('core.models.Person'),
-#             Person
-#         )
-#
-#     def test_delete_imported_record_success(self):
-#         # GIVEN there was a record imported into the system
-#         person_name = f"person-name-{uuid4()}"
-#         person_ext_id = f"ext-id-{uuid4()}"
-#         new_person_record = import_record_with_extid(Person, {"name": person_name}, external_id=person_ext_id)
-#         self.assertEqual(
-#             new_person_record[0],
-#             get_record_from_external_id(Person, new_person_record[1])
-#         )
-#
-#         # WHEN I call test_delete_imported_record() on it
-#         delete_imported_record(Person, new_person_record[1])
-#
-#         # THEN the record should be deleted from the system
-#         with self.assertRaises(Person.DoesNotExist) as _:
-#             Person.objects.get(name=person_name)
-#         # AND the external_id should still be left
-#         bulk_import_record = BulkImport.objects.get(
-#           pk_imported_from=new_person_record[1],
-#           )
-#
-#     def test_delete_imported_record_success_ext_id_too(self):
-#         # GIVEN there was a record imported into the system
-#         person_name = f"person-name-{uuid4()}"
-#         person_ext_id = f"ext-id-{uuid4()}"
-#         new_person_record = import_record_with_extid(Person, {"name": person_name}, external_id=person_ext_id)
-#         self.assertEqual(
-#             new_person_record[0],
-#             get_record_from_external_id(Person, new_person_record[1])
-#         )
-#
-#         # WHEN I call test_delete_imported_record() on it
-#         delete_imported_record(Person, new_person_record[1], delete_external_id=True)
-#
-#         # THEN the record should be deleted from the system
-#         with self.assertRaises(Person.DoesNotExist) as _:
-#             Person.objects.get(name=person_name)
-#         # AND the external_id should still be gone
-#         with self.assertRaises(BulkImport.DoesNotExist) as _:
-#             bulk_import_record = BulkImport.objects.get(
-#               pk_imported_from=new_person_record[1],
-#               )
-#
-#     def test_delete_imported_record_missing_record(self):
-#         # GIVEN there was a record imported into the system
-#         person_name = f"person-name-{uuid4()}"
-#         person_ext_id = f"ext-id-{uuid4()}"
-#         new_person_record = import_record_with_extid(Person, {"name": person_name}, external_id=person_ext_id)
-#         self.assertEqual(
-#             new_person_record[0],
-#             get_record_from_external_id(Person, new_person_record[1])
-#         )
-#         # AND THE RECORD IS DELETED -- but not the external id, btw
-#         new_person_record[0].delete()
-#
-#         # WHEN I call test_delete_imported_record() on it
-#         # THEN an error should be raised
-#         with self.assertRaises(RecordMissing) as _:
-#             delete_imported_record(Person, new_person_record[1])
-#
-#     def test_delete_imported_record_missing_ext_id(self):
-#         # GIVEN there was a record imported into the system
-#         person_name = f"person-name-{uuid4()}"
-#         person_ext_id = f"ext-id-{uuid4()}"
-#         new_person_record = import_record_with_extid(Person, {"name": person_name}, external_id=person_ext_id)
-#         self.assertEqual(
-#             new_person_record[0],
-#             get_record_from_external_id(Person, new_person_record[1])
-#         )
-#         # AND THE EXTERNAL ID IS DELETED -- but not the record itself, btw
-#         bulk_import_record = BulkImport.objects.get(
-#           pk_imported_from=new_person_record[1],
-#           )
-#         bulk_import_record.delete()
-#
-#         # WHEN I call test_delete_imported_record() on it
-#         # THEN an error should be raised
-#         with self.assertRaises(ExternalIdMissing) as _:
-#             delete_imported_record(Person, new_person_record[1])
-#
-#     def test_bulk_delete_empty_file_error(self):
-#         """Functional test: refuse to use an empty input file, warn me about it
-#         """
-#         command_output = StringIO()
-#
-#         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
-#             # GIVEN there is an empty file with nothing on it
-#             pass
-#             # WHEN I execute the command on it
-#             call_command('bulk_perms_host_only', 'core.models.Person', csv_fd.name, stdout=command_output)
-#
-#             # THEN it should return an error message to warn me
-#             self.assertIn("WARNING", command_output.getvalue())
-#             self.assertIn("empty", command_output.getvalue())
-#
-#
-# class AtomicRollbacks(TransactionTestCase):
-#     def test_bulk_delete_on_error_rollback_db(self):
-#         """Functional test: Rollback on error
-#         """
-#         command_output = StringIO()
-#
-#         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
-#             # GIVEN there are a set of existing records in the system (with external ids)
-#             #
-#             #
-#             imported_records_log = []
-#             for i in range(10):
-#                 person_name = f"person-name-{uuid4()}"
-#                 person_ext_id = f"ext-id-{uuid4()}"
-#                 new_person_record = import_record_with_extid(Person, {"name": person_name}, external_id=person_ext_id)
-#                 imported_records_log.append({
-#                     "Person.pk": new_person_record[0].pk,
-#                     "Person.name": person_name,
-#                     "Person.external_id": person_ext_id
-#                 })
-#             # AND given there is a file listing their external ids
-#             for record in imported_records_log:
-#                 csv_fd.write(f"{record['Person.external_id']}\n"); csv_fd.flush()  # <- ACTUALLY WRITE TO DISK
-#
-#             # AND ONE OF THE RECORDS TO BE DELETED HAS ALREADY BEEN DELETED ###############################
-#             Person.objects.get(pk=imported_records_log[3]['Person.pk']).delete()
-#
-#             # WHEN I call the bulk_delete command pointed at the CSV
-#             #
-#             #
-#             call_command('bulk_perms_host_only', 'core.models.Person', csv_fd.name, stdout=command_output)
-#
-#         # THEN the output should say that it's rolling back
-#         #
-#         #
-#         self.assertIn("Undoing", command_output.getvalue())
-#
-#         # AND the database should be in the state it was before calling the 'data_update' command
-#         self.assertEqual(
-#             len(Person.objects.all()),
-#             len(imported_records_log) - 1  # Minus the one deleted record
-#         )
+                row = {}
+                row['id__external'] = external_id
+                row['for_host_only'] = 'checked'
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            call_command('bulk_perms_host_only', 'core.models.Person', csv_fd.name, stdout=command_output)
+
+            # THEN the records should be marked for_host_only=True
+            self.assertEqual(
+                10,
+                Person.objects.all().count()
+            )
+            for record in Person.objects.all():
+                self.assertEqual(
+                    True,
+                    record.for_host_only,
+                    msg=f"for_host_only not updated on test record"
+                )
+
+    def test_bulk_perms_host_only_empty_file_error(self):
+        """Functional test: refuse to use an empty input file, warn me about it
+        """
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there is an empty file with nothing on it
+            pass
+            # WHEN I execute the command on it
+            call_command('bulk_perms_host_only', 'core.models.Person', csv_fd.name, stdout=command_output)
+
+            # THEN it should return an error message to warn me
+            self.assertIn("WARNING", command_output.getvalue())
+            self.assertIn("empty", command_output.getvalue())
+
+
+class AtomicRollbacks(TransactionTestCase):
+    def test_bulk_perms_host_on_error_rollback_db(self):
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there are a number of records in the system
+            # AND there is a CSV file listing their external ids, and the desired value of for_host_only
+            # BUT ONE OF THE RECORDS HAS BEEN DELETED
+            csv_writer = csv.DictWriter(csv_fd, ['id__external', 'for_host_only'])
+            csv_writer.writeheader()
+
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                person_record, external_id = \
+                    import_record_with_extid(Person, {"name": new_person_name, "for_host_only": False})
+                Person.objects.get(name=new_person_name)
+                row = {}
+                row['id__external'] = external_id
+                row['for_host_only'] = 'checked'
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            Person.objects.first().delete()
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            call_command('bulk_perms_host_only', 'core.models.Person', csv_fd.name, stdout=command_output)
+
+            # THEN the output should say that it's rolling back
+            #
+            #
+            self.assertIn("Undoing", command_output.getvalue())
+
+            # AND the database should be in the state it was before calling the 'data_update' command
+            for record in Person.objects.all():
+                self.assertEqual(
+                    False,
+                    record.for_host_only,
+                    msg=f"for_host_only updated on test record"
+                )

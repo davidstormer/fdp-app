@@ -1,6 +1,6 @@
 import os
 from importlib import import_module
-
+from csv import DictReader
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -62,6 +62,7 @@ def get_record_from_external_id(model, external_id):
 
     return record
 
+
 def get_model_from_import_string(import_string: str) -> object:
     """Assumes that import string follows the pattern '[app_name].models.[model_name]'"""
     model_import_elements = import_string.split('.')
@@ -89,16 +90,16 @@ class CsvBulkCommand(BaseCommand):
                                                f"Quitting..."))
         model = get_model_from_import_string(options['model'])
         self.stdout.write(self.style.WARNING(
-            f"Delete {model} records..."
+            f"Updating {model} records..."
         ))
         with open(options['input_file'], 'r') as csv_fd:
+            csv_reader = DictReader(csv_fd)
             try:
                 with transaction.atomic():
                     errors = []
-                    for external_id in csv_fd:
-                        external_id = external_id.strip()
+                    for row in csv_reader:
                         try:
-                            callback_func(model, external_id, **kwargs)
+                            callback_func(model, row, **kwargs)
                         except Exception as e:
                             errors.append(e)
 
@@ -111,3 +112,36 @@ class CsvBulkCommand(BaseCommand):
                         raise ImportErrors
             except ImportErrors:
                 self.stdout.write(self.style.ERROR("Quitting..."))
+
+
+class NoNaturalBooleanValueFound(Exception):
+    pass
+
+
+def parse_natural_boolean_string(value: str or bool or None) -> bool or None:
+    """Interpret various spreadsheet indications of 'True' and 'False'.
+    Balks if a clear interpretation can't be made.
+    Quietly interprets a blank value '' as empty and returns None.
+    """
+    if value is None:
+        return None
+    if value is False:
+        return False
+    if value is True:
+        return True
+
+    value = value.lower()
+    if value == 'true' or \
+            value == 'checked' or \
+            value == '1':
+        return True
+    elif value == 'false' or \
+            value == 'unchecked' or \
+            value == '0':
+        return False
+    elif value == '' or \
+            value == 'null' or \
+            value == 'none':
+        return None
+    else:
+        raise NoNaturalBooleanValueFound
