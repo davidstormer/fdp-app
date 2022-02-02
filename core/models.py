@@ -2029,7 +2029,7 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         )
 
     @property
-    def as_of_bounding_dates(self):
+    def at_least_since_bounding_dates(self):
         """ Human-friendly version of "fuzzy" as of starting and ending dates.
 
         :return: Human-friendly version of "fuzzy" as of starting and ending dates.
@@ -2041,9 +2041,9 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
                 return False
 
         if self.is_inactive and end_date_is_all_zeros(self):
-            return super(PersonGrouping, self).as_of_bounding_dates + ' until unknown-end-date'
+            return super(PersonGrouping, self).at_least_since_bounding_dates + ' until unknown-end-date'
         else:
-            return super(PersonGrouping, self).as_of_bounding_dates
+            return super(PersonGrouping, self).at_least_since_bounding_dates
 
 
     class Meta:
