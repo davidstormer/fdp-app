@@ -768,7 +768,7 @@ class AbstractDateValidator(models.Model):
     FROM_DATE = _('from')
 
     # Localized text indicating that something had started at least by a specific date, e.g. As of January 1, 2000
-    AS_OF_DATE = _('as of')
+    AT_LEAST_SINCE_DATE = _('at least since')
 
     # Localized text indicating that something ended on a specific date, e.g. Until January 1, 2000
     UNTIL_DATE = _('until')
@@ -875,7 +875,7 @@ class AbstractDateValidator(models.Model):
         return '{o}{d}'.format(o='{p} '.format(p=prefix) if prefix else '', d=date_str)
 
     @classmethod
-    def get_display_text_from_dates(cls, start_year, start_month, start_day, end_year, end_month, end_day, is_as_of):
+    def get_display_text_from_dates(cls, start_year, start_month, start_day, end_year, end_month, end_day, is_at_least_since):
         """ Retrieve the human-friendly display version of two fuzzy dates (i.e. From MM/DD/YYYY until MM/DD/YYYY).
 
         :param start_year: Year component for the starting fuzzy date, 0 if unknown.
@@ -884,10 +884,10 @@ class AbstractDateValidator(models.Model):
         :param end_year: Year component for the ending fuzzy date, 0 if unknown.
         :param end_month: Month component for the ending fuzzy date, 0 if unknown.
         :param end_day: Day component for the ending fuzzy date, 0 if unknown.
-        :param is_as_of: True if start date is as of, false if start date is exact.
+        :param is_at_least_since: True if start date is as of, false if start date is exact.
         :return: A single fuzzy date in human-friendly display form.
         """
-        from_str = cls.AS_OF_DATE if is_as_of else cls.FROM_DATE
+        from_str = cls.AT_LEAST_SINCE_DATE if is_at_least_since else cls.FROM_DATE
         # parameters passed to strftime
         y = '%Y'
         m = '%m'
@@ -2125,7 +2125,7 @@ class AbstractExactDateBounded(Descriptable):
         """
         return AbstractDateValidator.get_display_text_from_dates(
             start_year=self.start_year, start_month=self.start_month, start_day=self.start_day,
-            end_year=self.end_year, end_month=self.end_month, end_day=self.end_day, is_as_of=False
+            end_year=self.end_year, end_month=self.end_month, end_day=self.end_day, is_at_least_since=False
         )
 
     @property
@@ -2229,44 +2229,43 @@ class AbstractExactDateBounded(Descriptable):
         abstract = True
 
 
-class AbstractAsOfDateBounded(AbstractExactDateBounded):
+class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
     """ Base class from which all classes with as of bounding dates inherit.
 
     Attributes:
-        :as_of (bool): True if start date is as of, i.e. start date is not true start date, false otherwise.
+        :at_least_since (bool): True if start date is the earliest known start date, but not necessarily the true start date.
 
     Properties:
-        :as_of_bounding_dates (str): User-friendly rendering of the as of bounding dates.
+        :at_least_since_bounding_dates (str): User-friendly rendering of the as of bounding dates.
 
     """
-    as_of = models.BooleanField(
+    at_least_since = models.BooleanField(
         null=False,
         blank=False,
         default=False,
         help_text=_('Select if start date is the earliest known start date, but not necessarily the true start date'),
-        verbose_name=_('as of')
     )
 
     #: Fields that can be used in the admin interface to filter by date
-    list_filter_fields = ['start_year', 'start_month', 'start_day', 'end_year', 'end_month', 'end_day', 'as_of']
+    list_filter_fields = ['start_year', 'start_month', 'start_day', 'end_year', 'end_month', 'end_day', 'at_least_since']
 
-    def __get_as_of_bounding_dates(self):
+    def __get_at_least_since_bounding_dates(self):
         """ Retrieve the human-friendly version of the "fuzzy" as of starting and ending dates.
 
         :return: Human-friendly version of "fuzzy" as of starting and ending dates.
         """
         return AbstractDateValidator.get_display_text_from_dates(
             start_year=self.start_year, start_month=self.start_month, start_day=self.start_day,
-            end_year=self.end_year, end_month=self.end_month, end_day=self.end_day, is_as_of=self.as_of
+            end_year=self.end_year, end_month=self.end_month, end_day=self.end_day, is_at_least_since=self.at_least_since
         )
 
     @property
-    def as_of_bounding_dates(self):
+    def at_least_since_bounding_dates(self):
         """ Human-friendly version of "fuzzy" as of starting and ending dates.
 
         :return: Human-friendly version of "fuzzy" as of starting and ending dates.
         """
-        return self.__get_as_of_bounding_dates()
+        return self.__get_at_least_since_bounding_dates()
 
     class Meta:
         abstract = True

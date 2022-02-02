@@ -3,6 +3,7 @@ from core.models import Person
 from functional_tests.common import FunctionalTestCase, SeleniumFunctionalTestCase, wait
 from inheritable.tests import local_test_settings_required
 from unittest import expectedFailure, skip
+from selenium.webdriver.support.ui import Select
 import pdb
 
 
@@ -57,7 +58,6 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
 
     # But what if something fails? Comment out @expectedFailure to see!
     @expectedFailure
-    @local_test_settings_required
     def test_demo_broken_test(self):
         self.browser.get(self.live_server_url)
         self.assertIn(

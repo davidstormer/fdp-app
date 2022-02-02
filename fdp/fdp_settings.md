@@ -2,8 +2,6 @@
 
 ## Overview
 
-*As of 2021-06-03*
-
 The Full Disclosure Project (FDP) information system can be customized through the use of configuration settings. For most projects, all relevant settings can be specified in environment variables that are accessible by the web application or in configuration files stored in the *../conf/* folder. In some cases, projects can choose to specify additional settings in the *fdp/settings.py* file.
 
 ## Django Settings

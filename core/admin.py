@@ -77,7 +77,7 @@ class PersonTitleAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for person titles.
 
     """
-    _list_display = ['person', 'title', 'as_of_bounding_dates'] + ArchivableAdmin.list_display
+    _list_display = ['person', 'title', 'at_least_since_bounding_dates'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     list_filter = ['title'] + PersonTitle.list_filter_fields + ArchivableAdmin.list_filter
@@ -90,7 +90,7 @@ class PersonRelationshipAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for relationships between people.
 
     """
-    _list_display = ['as_of_bounding_dates', 'subject_person', 'type', 'object_person'] + ArchivableAdmin.list_display
+    _list_display = ['at_least_since_bounding_dates', 'subject_person', 'type', 'object_person'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     list_filter = ['type'] + PersonRelationship.list_filter_fields + ArchivableAdmin.list_filter
@@ -103,7 +103,7 @@ class PersonPaymentAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for person payments.
 
     """
-    _list_display = ['person', 'as_of_bounding_dates', 'county'] + ArchivableAdmin.list_display
+    _list_display = ['person', 'at_least_since_bounding_dates', 'county'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     list_filter = PersonPayment.list_filter_fields + ['county'] + ArchivableAdmin.list_filter
@@ -143,7 +143,7 @@ class GroupingRelationshipAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
     """
     _list_display = [
-                       'as_of_bounding_dates', 'subject_grouping', 'type', 'object_grouping'
+                       'at_least_since_bounding_dates', 'subject_grouping', 'type', 'object_grouping'
                    ] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
@@ -159,7 +159,7 @@ class PersonGroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for links between persons and groupings.
 
     """
-    _list_display = ['person', 'as_of_bounding_dates', 'grouping', 'type', 'is_inactive'] + ArchivableAdmin.list_display
+    _list_display = ['person', 'at_least_since_bounding_dates', 'grouping', 'type', 'is_inactive'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     list_filter = PersonGrouping.list_filter_fields + ['type', 'is_inactive'] + ArchivableAdmin.list_filter
