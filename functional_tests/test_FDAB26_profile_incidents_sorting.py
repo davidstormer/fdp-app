@@ -10,7 +10,6 @@ from selenium.webdriver.common.by import By
 
 class SeleniumTestCase(SeleniumFunctionalTestCase):
 
-    @local_test_settings_required
     def test_incident_sort_order(self):
         b = self.browser
         # Given there is an incident A (collagen) that started in 2019
