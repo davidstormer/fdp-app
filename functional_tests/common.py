@@ -1,6 +1,9 @@
 import pdb
 
 from django.test import Client
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+
 from fdpuser.models import FdpUser
 from inheritable.tests import AbstractTestCase
 from lxml.html.soupparser import fromstring
@@ -180,3 +183,21 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         wait(b.find_element_by_css_selector, 'div#user-tools a.onlogout')
         # all done
         return user
+
+    def enter_autocomplete_data(self, input_css_selector: str, results_css_selector: str, search_string: str,
+                                nth_result: int = 1) -> None:
+        """Interacts with the autocomplete widget to select a database entity.
+
+        :param input_css_selector: E.g. '.persongroupingform input#id_persongroupings-0-grouping_name'
+        :param results_css_selector: E.g. 'ul.ui-autocomplete.groupingac li.ui-menu-item'
+        :param search_string: E.g. 'Test Grouping'
+        :param nth_result: How many down the list to select, defaults to 1
+        """
+        group_input = self.browser.find_element(By.CSS_SELECTOR, input_css_selector)
+        group_input.send_keys(search_string)
+        # wait for search results to be returned
+        wait(self.browser.find_element, By.CSS_SELECTOR, results_css_selector)
+        # then select it
+        for i in range(nth_result):
+            group_input.send_keys(Keys.DOWN)
+        group_input.send_keys(Keys.ENTER)

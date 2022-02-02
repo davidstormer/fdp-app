@@ -277,7 +277,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - subject_grouping - ForeignKey
         - type - ForeignKey
         - object_grouping - ForeignKey
@@ -422,7 +422,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - person - ForeignKey
         - grouping - ForeignKey
         - type - ForeignKey
@@ -452,7 +452,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - identifier - CharField
         - person_identifier_type - ForeignKey
         - person - ForeignKey
@@ -501,7 +501,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - base_salary - DecimalField
         - regular_hours - DecimalField
         - regular_gross_pay - DecimalField
@@ -552,7 +552,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - subject_person - ForeignKey
         - type - ForeignKey
         - object_person - ForeignKey
@@ -580,7 +580,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - title - ForeignKey
         - person - ForeignKey
     - Methods (non-private/internal):

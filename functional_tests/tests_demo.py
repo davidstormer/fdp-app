@@ -3,6 +3,7 @@ from core.models import Person
 from functional_tests.common import FunctionalTestCase, SeleniumFunctionalTestCase, wait
 from inheritable.tests import local_test_settings_required
 from unittest import expectedFailure, skip
+from selenium.webdriver.support.ui import Select
 import pdb
 
 
