@@ -2058,7 +2058,6 @@ class WholesaleTestCase(AbstractTestCase):
         wholesale_import = WholesaleImport.objects.get(pk=self.wholesale_next_val)
         self.assertEqual(wholesale_import.import_errors, expected_error)
         self.assertEqual(wholesale_import.imported_rows, 0)
-        self.assertEqual(WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import).count(), 0)
         self.assertEqual(Person.objects.filter(name=f'{first_person}{suffix}').count(), 0)
         self.assertEqual(Person.objects.filter(name=f'{second_person}{suffix}').count(), 0)
         self.assertEqual(Person.objects.filter(name=f'{third_person}{suffix}').count(), 0)
