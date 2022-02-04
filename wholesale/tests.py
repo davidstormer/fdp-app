@@ -1,3 +1,5 @@
+from unittest import skip
+
 from django.test import Client
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
@@ -2217,7 +2219,7 @@ class WholesaleTestCase(AbstractTestCase):
                     self.assertNotIn(f'.id,', str_response)
         logger.debug(_('\nSuccessfully finished test for the wholesale templates excluding PK columns\n\n'))
 
-    @local_test_settings_required
+    @skip('Runs too slow, move to slow_test_*.py and document how to run separately')
     def test_wholesale_import_add_integrity(self):
         """ Test that data integrity is preserved during "add" imports, including for combinations when:
             (A) Models may or may not have external IDs defined;
@@ -2918,7 +2920,7 @@ class WholesaleTestCase(AbstractTestCase):
         self.assertEqual((Attachment.objects.get(pk=attachment_pk)).fdp_organizations.all().count(), 0)
         logger.debug(_('\nSuccessfully finished test for imports setting many-to-many fields to None\n\n'))
 
-    @local_test_settings_required
+    @skip('Runs too slow, move to slow_test_*.py and document how to run separately')
     def test_wholesale_import_update_integrity(self):
         """ Test that data integrity is preserved during "update" imports, including for combinations when:
             (A) Models may have external IDs defined or PKs defined;
