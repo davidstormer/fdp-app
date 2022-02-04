@@ -1875,7 +1875,7 @@ class WholesaleTestCase(AbstractTestCase):
         self.assertEqual(WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import).count(), 1)
         wholesale_import_record = WholesaleImportRecord.objects.get(wholesale_import=wholesale_import)
         self.assertEqual(wholesale_import_record.errors, '')
-        self.assertEqual(wholesale_import_record.row_num, 1)
+        self.assertEqual(wholesale_import_record.row_num, 2)
         self.assertEqual(wholesale_import_record.model_name, model_name)
         return wholesale_import_record
 
@@ -2027,11 +2027,11 @@ class WholesaleTestCase(AbstractTestCase):
         self.assertEqual(WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import).count(), 2)
         first_wholesale_import_record = WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import)[0]
         self.assertEqual(first_wholesale_import_record.errors, '')
-        self.assertEqual(first_wholesale_import_record.row_num, 1)
+        self.assertEqual(first_wholesale_import_record.row_num, 2)
         self.assertEqual(first_wholesale_import_record.model_name, 'Person')
         second_wholesale_import_record = WholesaleImportRecord.objects.filter(wholesale_import=wholesale_import)[1]
         self.assertEqual(second_wholesale_import_record.errors, '')
-        self.assertEqual(second_wholesale_import_record.row_num, 1)
+        self.assertEqual(second_wholesale_import_record.row_num, 2)
         self.assertEqual(second_wholesale_import_record.model_name, 'PersonPayment')
         self.assertEqual(Person.objects.filter(**filter_kwargs).count(), 1)
         person = Person.objects.get(**filter_kwargs)
