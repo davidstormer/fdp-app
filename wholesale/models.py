@@ -1681,6 +1681,8 @@ class WholesaleImport(Metable):
                     if i + 1 >= num_of_cols or self._metadata_by_col_index[i+1][self.__model_name_index] != model_name:
                         # skipping this record because of an error
                         if skip_record:
+                            # Record error in .import_errors
+                            self.import_errors += f'Row {data_row_num + 2}: record skipped -- {"; ".join(err_msgs)}\n'
                             # add list of error messages in the spot where the model instance would be
                             self.__add_to_data_by_model_name(
                                 model_name=model_name,
