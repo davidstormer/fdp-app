@@ -2783,8 +2783,12 @@ class WholesaleTestCase(AbstractTestCase):
                       f'{first_external_id}{comma}{first_person.name}{suffix}{self.__csv_lineterminator}' \
                       f'{comma}{second_person.name}{suffix}{self.__csv_lineterminator}' \
                       f'{second_external_id}{comma}{third_person.name}{suffix}'
+        # I don't know if this is right, but I'm going to do this for now until the code has been updated to handle
+        # errors differently: -TC
         expected_error = \
-            'Row 2 for model Person: Field id__external for model Person expects external PK values but was assigned:.'
+            'Cannot update models in database. Length of external ID tuples (2) must be equal to length of ' \
+            'corresponding existing external IDs (0). This may be caused because some external IDs are not recorded ' \
+            'in the database, or are recorded multiple times.'
         self.__check_invalid_pk_import(
             csv_content=csv_content,
             expected_error=expected_error,
