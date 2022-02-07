@@ -1272,72 +1272,82 @@ class IntegrityWholesaleTestCase(AbstractTestCase):
                 # external ID
                 traits_tuples, identifier_type_tuples
         ):
-            person_has_ext_id = product_tuple[0]
-            person_alias_to_person_ref_tuple = product_tuple[3]
-            # can only have explicit reference to person, if person has external ID defined
-            is_person_alias_to_person_explicit = person_alias_to_person_ref_tuple[0] and person_has_ext_id
-            person_identifier_to_person_ref_tuple = product_tuple[4]
-            # can only have explicit reference to person, if person has external ID defined
-            is_person_identifier_to_person_explicit = person_identifier_to_person_ref_tuple[0] and person_has_ext_id
-            trait_tuple = product_tuple[5]
-            trait_callable = trait_tuple[0]
-            identifier_type_tuple = product_tuple[6]
-            identifier_type_callable = identifier_type_tuple[0]
-            are_traits_added = (trait_callable == traits_by_new_name_callable)
-            are_identifier_types_added = (identifier_type_callable == identifier_types_by_new_name_callable)
-            cur_combo = {
-                'person_class_name': person_class_name,
-                'person_alias_class_name': person_alias_class_name,
-                'person_identifier_class_name': person_identifier_class_name,
-                'person_name_col': f'{person_class_name}.name',
-                'person_alias_name_col': f'{person_alias_class_name}.name',
-                'person_identifier_identifier_col': f'{person_identifier_class_name}.identifier',
-                'person_name_callable': lambda row_num: f'wholesaletestpersonname{row_num}',
-                'person_alias_name_callable': lambda row_num: f'wholesaletestpersonaliasname{row_num}',
-                'person_identifier_identifier_callable':
-                    lambda row_num: f'wholesaletestpersonidentifieridentifier{row_num}',
-                'person_alias_ext_id_callable': lambda row_num: f'wholesaletestpersonalias{row_num}',
-                'person_identifier_ext_id_callable': lambda row_num: f'wholesaletestpersonidentifier{row_num}',
-                'person_ext_id_col': f'{person_class_name}.id{external_suffix}',
-                'person_alias_ext_id_col': f'{person_alias_class_name}.id{external_suffix}',
-                'person_identifier_ext_id_col': f'{person_identifier_class_name}.id{external_suffix}',
-                'person_ext_id_callable': __person_ext_id_callable,
-                'person_has_ext_id': person_has_ext_id,
+            given = {
+                'person_has_ext_id': product_tuple[0],
                 'person_alias_has_ext_id': product_tuple[1],
                 'person_identifier_has_ext_id': product_tuple[2],
-                'is_person_alias_to_person_explicit': is_person_alias_to_person_explicit,
-                'person_alias_to_person_col': None if not is_person_alias_to_person_explicit
-                else person_alias_to_person_ref_tuple[1],
-                'person_alias_to_person_callable': None if not is_person_alias_to_person_explicit
-                else person_alias_to_person_ref_tuple[2],
-                'is_person_identifier_to_person_explicit': is_person_identifier_to_person_explicit,
-                'person_identifier_to_person_col': None if not is_person_identifier_to_person_explicit
-                else person_identifier_to_person_ref_tuple[1],
-                'person_identifier_to_person_callable': None if not is_person_identifier_to_person_explicit
-                else person_identifier_to_person_ref_tuple[2],
-                'trait_callable': trait_callable,
-                'trait_col': trait_tuple[1],
-                'traits_by_pk_callable': traits_by_pk_callable,
-                'traits_by_ext_callable': traits_by_ext_callable,
-                'traits_by_existing_name_callable': traits_by_existing_name_callable,
-                'traits_by_new_name_callable': traits_by_new_name_callable,
-                'identifier_type_callable': identifier_type_callable,
-                'identifier_type_col': identifier_type_tuple[1],
-                'identifier_types_by_pk_callable': identifier_types_by_pk_callable,
-                'identifier_types_by_ext_callable': identifier_types_by_ext_callable,
-                'identifier_types_by_existing_name_callable': identifier_types_by_existing_name_callable,
-                'identifier_types_by_new_name_callable': identifier_types_by_new_name_callable,
-                'are_traits_added': are_traits_added,
-                'are_identifier_types_added': are_identifier_types_added
+                'person_alias_to_person': product_tuple[3],
+                'person_identifier_to_person': product_tuple[4],
+                'traits': product_tuple[5],
+                'identifier_type': product_tuple[6],
             }
-            self.__print_add_integrity_subtest_message(cur_combo=cur_combo)
-            self.__do_add_integrity_subtest_import(num_of_rows=num_of_rows, cur_combo=cur_combo)
-            self.__verify_add_integrity_subtest_import(num_of_rows=num_of_rows, cur_combo=cur_combo)
-            self.__delete_add_integrity_subtest_data(
-                traits_callable=traits_by_new_name_callable if are_traits_added else None,
-                identifier_types_callable=identifier_types_by_new_name_callable if are_identifier_types_added else None,
-                **row_kwargs
-            )
+            with self.subTest(msg=str(given)):
+                person_has_ext_id = product_tuple[0]
+                person_alias_to_person_ref_tuple = product_tuple[3]
+                # can only have explicit reference to person, if person has external ID defined
+                is_person_alias_to_person_explicit = person_alias_to_person_ref_tuple[0] and person_has_ext_id
+                person_identifier_to_person_ref_tuple = product_tuple[4]
+                # can only have explicit reference to person, if person has external ID defined
+                is_person_identifier_to_person_explicit = person_identifier_to_person_ref_tuple[0] and person_has_ext_id
+                trait_tuple = product_tuple[5]
+                trait_callable = trait_tuple[0]
+                identifier_type_tuple = product_tuple[6]
+                identifier_type_callable = identifier_type_tuple[0]
+                are_traits_added = (trait_callable == traits_by_new_name_callable)
+                are_identifier_types_added = (identifier_type_callable == identifier_types_by_new_name_callable)
+                cur_combo = {
+                    'person_class_name': person_class_name,
+                    'person_alias_class_name': person_alias_class_name,
+                    'person_identifier_class_name': person_identifier_class_name,
+                    'person_name_col': f'{person_class_name}.name',
+                    'person_alias_name_col': f'{person_alias_class_name}.name',
+                    'person_identifier_identifier_col': f'{person_identifier_class_name}.identifier',
+                    'person_name_callable': lambda row_num: f'wholesaletestpersonname{row_num}',
+                    'person_alias_name_callable': lambda row_num: f'wholesaletestpersonaliasname{row_num}',
+                    'person_identifier_identifier_callable':
+                        lambda row_num: f'wholesaletestpersonidentifieridentifier{row_num}',
+                    'person_alias_ext_id_callable': lambda row_num: f'wholesaletestpersonalias{row_num}',
+                    'person_identifier_ext_id_callable': lambda row_num: f'wholesaletestpersonidentifier{row_num}',
+                    'person_ext_id_col': f'{person_class_name}.id{external_suffix}',
+                    'person_alias_ext_id_col': f'{person_alias_class_name}.id{external_suffix}',
+                    'person_identifier_ext_id_col': f'{person_identifier_class_name}.id{external_suffix}',
+                    'person_ext_id_callable': __person_ext_id_callable,
+                    'person_has_ext_id': person_has_ext_id,
+                    'person_alias_has_ext_id': product_tuple[1],
+                    'person_identifier_has_ext_id': product_tuple[2],
+                    'is_person_alias_to_person_explicit': is_person_alias_to_person_explicit,
+                    'person_alias_to_person_col': None if not is_person_alias_to_person_explicit
+                    else person_alias_to_person_ref_tuple[1],
+                    'person_alias_to_person_callable': None if not is_person_alias_to_person_explicit
+                    else person_alias_to_person_ref_tuple[2],
+                    'is_person_identifier_to_person_explicit': is_person_identifier_to_person_explicit,
+                    'person_identifier_to_person_col': None if not is_person_identifier_to_person_explicit
+                    else person_identifier_to_person_ref_tuple[1],
+                    'person_identifier_to_person_callable': None if not is_person_identifier_to_person_explicit
+                    else person_identifier_to_person_ref_tuple[2],
+                    'trait_callable': trait_callable,
+                    'trait_col': trait_tuple[1],
+                    'traits_by_pk_callable': traits_by_pk_callable,
+                    'traits_by_ext_callable': traits_by_ext_callable,
+                    'traits_by_existing_name_callable': traits_by_existing_name_callable,
+                    'traits_by_new_name_callable': traits_by_new_name_callable,
+                    'identifier_type_callable': identifier_type_callable,
+                    'identifier_type_col': identifier_type_tuple[1],
+                    'identifier_types_by_pk_callable': identifier_types_by_pk_callable,
+                    'identifier_types_by_ext_callable': identifier_types_by_ext_callable,
+                    'identifier_types_by_existing_name_callable': identifier_types_by_existing_name_callable,
+                    'identifier_types_by_new_name_callable': identifier_types_by_new_name_callable,
+                    'are_traits_added': are_traits_added,
+                    'are_identifier_types_added': are_identifier_types_added
+                }
+                self.__print_add_integrity_subtest_message(cur_combo=cur_combo)
+                self.__do_add_integrity_subtest_import(num_of_rows=num_of_rows, cur_combo=cur_combo)
+                self.__verify_add_integrity_subtest_import(num_of_rows=num_of_rows, cur_combo=cur_combo)
+                self.__delete_add_integrity_subtest_data(
+                    traits_callable=traits_by_new_name_callable if are_traits_added else None,
+                    identifier_types_callable=identifier_types_by_new_name_callable if are_identifier_types_added else None,
+                    **row_kwargs
+                )
         logger.debug(_('\nSuccessfully finished test for the wholesale import "add" integrity\n\n'))
 
     def test_wholesale_import_update_integrity(self):
