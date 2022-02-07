@@ -146,7 +146,7 @@ class IntegrityWholesaleTestCase(AbstractTestCase):
         :return: Nothing.
         """
         content_identifier_type = ContentIdentifierType.objects.create(name='wholesale_test_content_identifier_type_0')
-        for i in range(0, num_of_rows):
+        for _ in range(0, num_of_rows):
             # content is initially created with blank "type", since __content_type_callable(...) will assign it on the
             # first row, i.e. to have "difference" between initial state and the first update
             # content is initially created with blank "fdp_organizations", since __fdp_orgs_callable(...) will assign
@@ -342,7 +342,7 @@ class IntegrityWholesaleTestCase(AbstractTestCase):
         :return: List of lists representing CSV to import.
         """
         csv_headings_row = [[f.column_heading for f in fields_to_import]]
-        csv_data_rows = [[f.callable_for_values(row_num=i) for f in fields_to_import] for i in range(0, num_of_rows)]
+        csv_data_rows = [[f.callable_for_values(row_num=i+1) for f in fields_to_import] for i in range(0, num_of_rows)]
         return csv_headings_row + csv_data_rows
 
     def __get_create_import_post_data(self, action, str_content):
@@ -1380,7 +1380,7 @@ class IntegrityWholesaleTestCase(AbstractTestCase):
             :param row_num: Row number on which content appear.
             :return: Primary key for content appearing on row.
             """
-            return (contents[row_num]).pk
+            return (contents[row_num - 1]).pk
 
         def __content_mixed_pk_callable(row_num):
             """ Callable used to reference content by primary key that appear on a row that is different than the one
@@ -1400,7 +1400,7 @@ class IntegrityWholesaleTestCase(AbstractTestCase):
             :param row_num: Row number on which content appear.
             :return: External ID for content appearing on row.
             """
-            return getattr(contents[row_num], self.__test_external_id_attr)
+            return getattr(contents[row_num - 1], self.__test_external_id_attr)
 
         def __content_mixed_ext_id_callable(row_num):
             """ Callable used to reference content by external ID that appear on a row that is different than the one
@@ -1509,11 +1509,11 @@ class IntegrityWholesaleTestCase(AbstractTestCase):
                 'content_identifier_identifier_callable': lambda row_num: f'ABCDEF{row_num}',
                 'content_case_settlement_amount_callable': lambda row_num: f'{row_num}00.00',
                 'content_identifier_id_callable': lambda row_num: getattr(
-                    content_identifiers[row_num],
+                    content_identifiers[row_num - 1],
                     'pk' if content_identifier_is_pk_id else self.__test_external_id_attr
                 ),
                 'content_case_id_callable': lambda row_num: getattr(
-                    content_cases[row_num],
+                    content_cases[row_num - 1],
                     'pk' if content_case_is_pk_id else self.__test_external_id_attr
                 ),
                 'content_identifier_to_content_is_ext': content_identifier_to_content_ref_tuple[0],
