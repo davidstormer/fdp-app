@@ -134,6 +134,44 @@ class BulkDelete(TestCase):
             )
             Person.objects.get(pk=record_to_revise.pk)
 
+    def test_bulk_delete_force_mode(self):
+        """Functional test
+        """
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there are records in the system, but one of them has been deleted
+            new_person_names = []
+            new_external_ids = []
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                new_external_id = f"external-id-{uuid4()}"
+                import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
+                new_person_names.append(new_person_name)
+                new_external_ids.append(new_external_id)
+            for new_person_name in new_person_names:
+                Person.objects.get(name=new_person_name)
+            # and given there is a file listing their external ids
+            for external_id in new_external_ids:
+                csv_fd.write(f"{external_id}\n")
+            csv_fd.flush()  # Make sure the file is actually written to disk!
+            # AND one of the records has been deleted
+            Person.objects.all()[2].delete()
+
+            # WHEN I run the command with the "--force" flag
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--force', stdout=command_output)
+
+            # THEN all the records should be removed from the system.
+            self.assertEqual(
+                0,
+                Person.objects.all().count()
+            )
+
+            # But I should still get warnings about the missing records
+            self.assertIn("Record does not exist", command_output.getvalue())
+            # And I should not get a message about rolling back
+            self.assertNotIn("Undoing", command_output.getvalue())
+
     def test_get_model_from_import_string(self):
         self.assertEqual(
             get_model_from_import_string('core.models.Person'),

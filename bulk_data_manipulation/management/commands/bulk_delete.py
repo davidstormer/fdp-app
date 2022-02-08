@@ -29,12 +29,12 @@ def delete_imported_record(model, external_id, delete_external_id=False):
           table_imported_to=model.get_db_table()
           )
     except BulkImport.DoesNotExist as e:
-        raise ExternalIdMissing(f"Can't find external id {external_id} for model {model.get_verbose_name()}")
+        raise ExternalIdMissing(f"Can't find external id {external_id} for model {model}")
     pk = bulk_import_record.pk_imported_to
     try:
         record = model.objects.get(pk=pk)
     except model.DoesNotExist as e:
-        raise RecordMissing(f"Can't delete! Record does not exist model: {model.get_verbose_name()} pk: {pk} ext_id:"
+        raise RecordMissing(f"Can't delete! Record does not exist model: {model} pk: {pk} ext_id:"
                             f" {external_id}")
     record.delete()
     if delete_external_id is True:
@@ -50,6 +50,8 @@ class Command(BaseCommand):
         parser.add_argument('--skip-revisions', default=None, help="Skips records if they have revisions equal to or "
                                                                    "greater than given number e.g. "
                                                                    "'--skip-revisions=1'")
+        parser.add_argument('--force', action='store_true', help="Don't undo if records can't be found, ' \
+                                                                                         'skip them instead")
 
     def handle(self, *args, **options):
         delete_external_ids = False
@@ -88,11 +90,13 @@ class Command(BaseCommand):
                             self.stdout.write(self.style.WARNING(f"Skipping {external_id}"))
 
                     if len(errors) > 0:
-                        self.stdout.write(self.style.ERROR("Errors encountered! Undoing..."))
+                        self.stdout.write(self.style.ERROR("Errors encountered!"))
                         for error in errors:
                             self.stdout.write(self.style.ERROR(' '.join(error.args)))
-                        self.stdout.write(self.style.ERROR("Undoing..."))
 
-                        raise ImportErrors
+                        if not options['force']:
+                            self.stdout.write(self.style.ERROR("Undoing..."))
+                            raise ImportErrors
+
             except ImportErrors:
                 self.stdout.write(self.style.ERROR("Quitting..."))
