@@ -1,3 +1,4 @@
+import reversion
 from django.test import TestCase, TransactionTestCase
 from io import StringIO
 import tempfile
@@ -9,6 +10,7 @@ from bulk_data_manipulation.management.commands.bulk_delete import get_model_fro
 from bulk_data_manipulation.common import get_record_from_external_id, ExternalIdMissing, RecordMissing
 from core.models import Person
 from bulk.models import BulkImport
+from reversion.models import Version
 import csv
 
 
@@ -60,6 +62,77 @@ class BulkDelete(TestCase):
             with self.assertRaises(Person.DoesNotExist) as _:
                 for new_person_name in new_person_names:
                     Person.objects.get(name=new_person_name)
+
+    def test_bulk_delete_skip_records_with_revisions_no_revisions(self):
+        """Functional test
+        """
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there are records in the system
+            new_person_names = []
+            new_external_ids = []
+            for i in range(3):
+                new_person_name = f"person-name-{uuid4()}"
+                new_external_id = f"external-id-{uuid4()}"
+                import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
+                new_person_names.append(new_person_name)
+                new_external_ids.append(new_external_id)
+            for new_person_name in new_person_names:
+                Person.objects.get(name=new_person_name)
+            # and given there is a file listing their external ids
+            for external_id in new_external_ids:
+                csv_fd.write(f"{external_id}\n")
+            csv_fd.flush()  # Make sure the file is actually written to disk!
+            # AND NO REVISIONS HAVE BEEN MADE TO THE RECORDS
+            pass
+            # WHEN I run the command with arguments to skip records with revisions
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--skip-revisions=1', stdout=command_output)
+            # THEN all the records should be removed from the system.
+            self.assertEqual(
+                0,
+                Person.objects.all().count()
+            )
+
+    def test_bulk_delete_skip_records_with_revisions(self):
+        """Functional test
+        """
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there are records in the system
+            new_person_names = []
+            new_external_ids = []
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                new_external_id = f"external-id-{uuid4()}"
+                import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
+                new_person_names.append(new_person_name)
+                new_external_ids.append(new_external_id)
+            for new_person_name in new_person_names:
+                Person.objects.get(name=new_person_name)
+            # and given there is a file listing their external ids
+            for external_id in new_external_ids:
+                csv_fd.write(f"{external_id}\n")
+            csv_fd.flush()  # Make sure the file is actually written to disk!
+            # AND one of the records has been revised
+            with reversion.create_revision():
+                record_to_revise = Person.objects.all()[2]
+                record_to_revise.name = "REVISED NAME"
+                record_to_revise.save()
+
+            # WHEN I run the command with arguments to skip records with revisions
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--skip-revisions=1', stdout=command_output)
+
+            # THEN I should see a message about a skipped record
+            self.assertIn("Skipping", command_output.getvalue())
+
+            # THEN all the records except for the revised one should be removed from the system.
+            self.assertEqual(
+                1,
+                Person.objects.all().count()
+            )
+            Person.objects.get(pk=record_to_revise.pk)
 
     def test_get_model_from_import_string(self):
         self.assertEqual(

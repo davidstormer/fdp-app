@@ -3,6 +3,7 @@ from bulk_data_manipulation.common import get_record_from_external_id, ImportErr
 from importlib import import_module
 from bulk.models import BulkImport
 from django.db import transaction
+from reversion.models import Version
 import os
 
 help_text = """Delete imported records based on external ID. Delete either small set given as positional arguments on 
@@ -46,6 +47,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('model', type=str, help="Model class, e.g. 'core.models.Person'")
         parser.add_argument('input_file', type=str)
+        parser.add_argument('--skip-revisions', default=None)
 
     def handle(self, *args, **options):
         delete_external_ids = False
@@ -56,16 +58,32 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING(
             f"Delete {model} records..."
         ))
+
+        skip_list = []
+        if options['skip_revisions'] is not None:
+            for record in model.objects.all():
+                revisions = Version.objects.get_for_object(record)
+                if len(revisions) >= int(options['skip_revisions']):
+                    try:
+                        external_id = BulkImport.objects.get(table_imported_to=model.get_db_table(),
+                                                             pk_imported_to=record.pk).pk_imported_from
+                        skip_list.append(external_id)
+                    except:
+                        pass
+
         with open(options['input_file'], 'r') as csv_fd:
             try:
                 with transaction.atomic():
                     errors = []
                     for external_id in csv_fd:
                         external_id = external_id.strip()
-                        try:
-                            delete_imported_record(model, external_id, delete_external_id=delete_external_ids)
-                        except Exception as e:
-                            errors.append(e)
+                        if external_id not in skip_list:
+                            try:
+                                delete_imported_record(model, external_id, delete_external_id=delete_external_ids)
+                            except Exception as e:
+                                errors.append(e)
+                        else:
+                            self.stdout.write(self.style.WARNING(f"Skipping {external_id}"))
 
                     if len(errors) > 0:
                         self.stdout.write(self.style.ERROR("Errors encountered! Undoing..."))
