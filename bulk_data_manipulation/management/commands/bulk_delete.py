@@ -47,7 +47,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('model', type=str, help="Model class, e.g. 'core.models.Person'")
         parser.add_argument('input_file', type=str)
-        parser.add_argument('--skip-revisions', default=None)
+        parser.add_argument('--skip-revisions', default=None, help="Skips records if they have revisions equal to or "
+                                                                   "greater than given number e.g. "
+                                                                   "'--skip-revisions=1'")
 
     def handle(self, *args, **options):
         delete_external_ids = False
