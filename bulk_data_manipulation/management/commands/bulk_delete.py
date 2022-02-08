@@ -52,9 +52,9 @@ class Command(BaseCommand):
                                                                    "'--skip-revisions=1'")
         parser.add_argument('--force', action='store_true', help="Don't undo if records can't be found, ' \
                                                                                          'skip them instead")
+        parser.add_argument('--keep-ext-ids', action='store_true', help="Don't delete external ids (BulkImport records)")
 
     def handle(self, *args, **options):
-        delete_external_ids = False
         if os.stat(options['input_file']).st_size < 1:
             self.stdout.write(self.style.ERROR(f"WARNING! {options['input_file']} is an empty file. Doing nothing. "
                                                f"Quitting..."))
@@ -83,7 +83,8 @@ class Command(BaseCommand):
                         external_id = external_id.strip()
                         if external_id not in skip_list:
                             try:
-                                delete_imported_record(model, external_id, delete_external_id=delete_external_ids)
+                                delete_imported_record(model, external_id,
+                                                       delete_external_id=False if options['keep_ext_ids'] else True)
                             except Exception as e:
                                 errors.append(e)
                         else:

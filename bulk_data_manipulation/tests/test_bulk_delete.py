@@ -16,6 +16,43 @@ import csv
 
 class BulkDelete(TestCase):
 
+    def test_bulk_delete_success(self):
+        """Functional test
+        """
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there are records in the system, but one of them has been deleted
+            new_person_names = []
+            new_external_ids = []
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                new_external_id = f"external-id-{uuid4()}"
+                import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
+                new_person_names.append(new_person_name)
+                new_external_ids.append(new_external_id)
+            for new_person_name in new_person_names:
+                Person.objects.get(name=new_person_name)
+            # and given there is a file listing their external ids
+            for external_id in new_external_ids:
+                csv_fd.write(f"{external_id}\n")
+            csv_fd.flush()  # Make sure the file is actually written to disk!
+
+            # WHEN I run the command
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--force', stdout=command_output)
+
+            # THEN all the records should be removed from the system.
+            self.assertEqual(
+                0,
+                Person.objects.all().count()
+            )
+
+            # and all of the BulkImport records (external ids) should also be removed from the system.
+            self.assertEqual(
+                0,
+                BulkImport.objects.all().count()
+            )
+
     def test_bulk_delete_single_record(self):
         """Functional test: delete single record from an input file
         """
@@ -171,6 +208,37 @@ class BulkDelete(TestCase):
             self.assertIn("Record does not exist", command_output.getvalue())
             # And I should not get a message about rolling back
             self.assertNotIn("Undoing", command_output.getvalue())
+
+    def test_bulk_delete_keep_external_ids(self):
+        """Functional test
+        """
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there are records in the system
+            new_person_names = []
+            new_external_ids = []
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                new_external_id = f"external-id-{uuid4()}"
+                import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
+                new_person_names.append(new_person_name)
+                new_external_ids.append(new_external_id)
+            for new_person_name in new_person_names:
+                Person.objects.get(name=new_person_name)
+            # and given there is a file listing their external ids
+            for external_id in new_external_ids:
+                csv_fd.write(f"{external_id}\n")
+            csv_fd.flush()  # Make sure the file is actually written to disk!
+
+            # WHEN I run the command with the "--keep-ext-ids" flag
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--keep-ext-ids', stdout=command_output)
+
+            # THEN all the external ids (bulk imports) should still be there
+            self.assertEqual(
+                10,
+                BulkImport.objects.all().count()
+            )
 
     def test_get_model_from_import_string(self):
         self.assertEqual(
