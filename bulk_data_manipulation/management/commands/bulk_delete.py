@@ -6,7 +6,7 @@ from django.db import transaction
 import os
 
 help_text = """Delete imported records based on external ID. Delete either small set given as positional arguments on 
-the commandline or take a file full of ids delimited by lines."""
+the commandline or take a file full of external ids delimited by lines."""
 
 
 def get_model_from_import_string(import_string: str) -> object:
