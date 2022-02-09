@@ -130,6 +130,50 @@ class BulkDelete(TestCase):
                 for new_person_name in new_person_names:
                     Person.objects.get(name=new_person_name)
 
+    def test_bulk_delete_duplicate_external_ids(self):
+        """Functional test: delete records from an input file
+        """
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there are records in the system
+            new_person_names = []
+            new_person_pks = []
+            new_external_ids = []
+            new_bulk_import_pks = []
+            for i in range(3):
+                new_person_name = f"person-name-{uuid4()}"
+                new_external_id = f"external-id-DUPLICATE"
+                record = Person.objects.create(name=new_person_name)
+                bulk_import = BulkImport.objects.create(
+                    table_imported_to=Person.get_db_table(),
+                    pk_imported_to=record.pk,
+                    pk_imported_from=new_external_id,
+                    data_imported='{}'  # make constraints happy...
+                )
+                new_person_names.append(new_person_name)
+                new_external_ids.append(new_external_id)
+                new_bulk_import_pks.append(bulk_import.pk)
+                new_person_pks.append(record.pk)
+            new_bulk_import_pks.sort()
+            new_person_pks.sort()
+            for new_person_name in new_person_names:
+                Person.objects.get(name=new_person_name)
+            # AND given there is a file listing their external ids
+            csv_fd.write(f"{new_external_id}\n")
+            csv_fd.flush()  # Make sure the file is actually written to disk!
+
+            # WHEN I run the command with the file as a positional argument
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, stdout=command_output)
+
+            # THEN there should be a message listing the external id
+            #
+            self.assertIn(f"{new_external_id}", command_output.getvalue())
+            # and the respective bulk import pks
+            self.assertIn(f"BulkImports: {new_bulk_import_pks}", command_output.getvalue())
+            # and respective records pks and model
+            self.assertIn(f"{Person}: {new_person_pks}", command_output.getvalue())
+
     def test_bulk_delete_skip_records_with_revisions_no_revisions(self):
         """Functional test
         """
@@ -201,7 +245,7 @@ class BulkDelete(TestCase):
             )
             Person.objects.get(pk=record_to_revise.pk)
 
-    def test_bulk_delete_force_mode(self):
+    def test_bulk_delete_force_mode_missing_records(self):
         """Functional test
         """
         command_output = StringIO()

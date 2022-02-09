@@ -83,10 +83,25 @@ class Command(BaseCommand):
                         external_id = external_id.strip()
                         if external_id not in skip_list:
                             try:
-                                delete_imported_record(model, external_id,
-                                                       delete_external_id=False if options['keep_ext_ids'] else True)
-                                if int(options['verbosity']) > 1:
-                                    self.stdout.write(f"Deleted: {model}|{external_id}")
+                                try:
+                                    delete_imported_record(model, external_id,
+                                                           delete_external_id=False if options['keep_ext_ids'] else True)
+                                    if int(options['verbosity']) > 1:
+                                        self.stdout.write(f"Deleted: {model}|{external_id}")
+                                except BulkImport.MultipleObjectsReturned as e:
+                                    bulk_imports = BulkImport.objects.filter(
+                                        pk_imported_from=external_id,
+                                        table_imported_to=model.get_db_table()
+                                    )
+                                    bulk_import_pks = [bulk_import.pk for bulk_import in bulk_imports]
+                                    bulk_import_pks.sort()
+                                    records_pks = []
+                                    for bulk_import in bulk_imports:
+                                        records_pks.append(bulk_import.pk_imported_to)
+                                    records_pks.sort()
+                                    raise BulkImport.MultipleObjectsReturned(
+                                        f"Multiple records found for external id {external_id}; BulkImports:"
+                                        f" {bulk_import_pks}; {model}: {records_pks}")
                             except Exception as e:
                                 errors.append(e)
                         else:
