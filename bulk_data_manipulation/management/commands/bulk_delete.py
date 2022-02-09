@@ -22,23 +22,47 @@ def get_model_from_import_string(import_string: str) -> object:
     return model
 
 
-def delete_imported_record(model, external_id, delete_external_id=False):
+def delete_imported_record(model, external_id, delete_external_id=False, delete_multiple=False):
+    things_to_delete = []
     try:
         bulk_import_record = BulkImport.objects.get(
-          pk_imported_from=external_id,
-          table_imported_to=model.get_db_table()
-          )
+            pk_imported_from=external_id,
+            table_imported_to=model.get_db_table()
+        )
+        things_to_delete.append(
+            {
+                'pk': bulk_import_record.pk_imported_to,
+                'bulk_import_instance': bulk_import_record,
+            }
+        )
     except BulkImport.DoesNotExist as e:
         raise ExternalIdMissing(f"Can't find external id {external_id} for model {model}")
-    pk = bulk_import_record.pk_imported_to
-    try:
-        record = model.objects.get(pk=pk)
-    except model.DoesNotExist as e:
-        raise RecordMissing(f"Can't delete! Record does not exist model: {model} pk: {pk} ext_id:"
-                            f" {external_id}")
-    record.delete()
-    if delete_external_id is True:
-        bulk_import_record.delete()
+    except BulkImport.MultipleObjectsReturned as e:
+        if delete_multiple:
+            bulk_import_records = BulkImport.objects.filter(
+                pk_imported_from=external_id,
+                table_imported_to=model.get_db_table()
+            )
+            # TODO: what if nothing is found?
+            for bulk_import_record in bulk_import_records:
+                things_to_delete.append(
+                    {
+                        'pk': bulk_import_record.pk_imported_to,
+                        'bulk_import_instance': bulk_import_record,
+                    }
+                )
+        else:
+            raise
+    for thing_to_delete in things_to_delete:
+        pk = thing_to_delete['pk']
+        try:
+            record = model.objects.get(pk=pk)
+        except model.DoesNotExist as e:
+            raise RecordMissing(f"Can't delete! Record does not exist model: {model} pk: {pk} ext_id:"
+                                f" {external_id}")
+        record.delete()
+        if delete_external_id is True:
+            thing_to_delete['bulk_import_instance'].delete()
 
 
 class Command(BaseCommand):
@@ -47,12 +71,14 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('model', type=str, help="Model class, e.g. 'core.models.Person'")
         parser.add_argument('input_file', type=str)
-        parser.add_argument('--skip-revisions', default=None, help="Skips records if they have revisions equal to or "
-                                                                   "greater than given number e.g. "
-                                                                   "'--skip-revisions=1'")
-        parser.add_argument('--force', action='store_true', help="Don't undo if records can't be found, ' \
-                                                                                         'skip them instead")
-        parser.add_argument('--keep-ext-ids', action='store_true', help="Don't delete external ids (BulkImport records)")
+        parser.add_argument('--skip-revisions', default=None,
+                            help="Skips records if they have revisions equal to or greater than given number e.g. "
+                                 "'--skip-revisions=1'")
+        parser.add_argument('--force', action='store_true',
+                            help="Don't undo if records can't be found, skip them instead. When duplicate external "
+                                 "ids are found, keep going and delete the associated records.")
+        parser.add_argument('--keep-ext-ids', action='store_true',
+                            help="Don't delete external ids (BulkImport records)")
 
     def handle(self, *args, **options):
         if os.stat(options['input_file']).st_size < 1:
@@ -84,8 +110,15 @@ class Command(BaseCommand):
                         if external_id not in skip_list:
                             try:
                                 try:
-                                    delete_imported_record(model, external_id,
-                                                           delete_external_id=False if options['keep_ext_ids'] else True)
+                                    if options['force']:
+                                        delete_imported_record(model, external_id,
+                                                               delete_external_id=False if options[
+                                                                   'keep_ext_ids'] else True,
+                                                               delete_multiple=True)
+                                    else:
+                                        delete_imported_record(model, external_id,
+                                                               delete_external_id=False if options[
+                                                                   'keep_ext_ids'] else True)
                                     if int(options['verbosity']) > 1:
                                         self.stdout.write(f"Deleted: {model}|{external_id}")
                                 except BulkImport.MultipleObjectsReturned as e:
