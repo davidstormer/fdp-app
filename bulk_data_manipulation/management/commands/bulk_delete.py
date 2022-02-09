@@ -85,6 +85,8 @@ class Command(BaseCommand):
                             try:
                                 delete_imported_record(model, external_id,
                                                        delete_external_id=False if options['keep_ext_ids'] else True)
+                                if int(options['verbosity']) > 1:
+                                    self.stdout.write(f"Deleted: {model}|{external_id}")
                             except Exception as e:
                                 errors.append(e)
                         else:

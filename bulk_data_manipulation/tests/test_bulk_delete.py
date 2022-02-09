@@ -53,6 +53,36 @@ class BulkDelete(TestCase):
                 BulkImport.objects.all().count()
             )
 
+    def test_bulk_delete_verbose(self):
+        """Functional test
+        """
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there are records in the system
+            new_person_names = []
+            new_external_ids = []
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                new_external_id = f"external-id-{uuid4()}"
+                import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
+                new_person_names.append(new_person_name)
+                new_external_ids.append(new_external_id)
+            for new_person_name in new_person_names:
+                Person.objects.get(name=new_person_name)
+            # and given there is a file listing their external ids
+            for external_id in new_external_ids:
+                csv_fd.write(f"{external_id}\n")
+            csv_fd.flush()  # Make sure the file is actually written to disk!
+
+            # WHEN I run the command with a verbosity greater than 1
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--verbosity=2', stdout=command_output)
+
+            # THEN the output should say that the records were deleted
+            for ext_id in new_external_ids:
+                self.assertIn(f"Deleted: <class 'core.models.Person'>|{ext_id}",
+                              command_output.getvalue())
+
     def test_bulk_delete_single_record(self):
         """Functional test: delete single record from an input file
         """
