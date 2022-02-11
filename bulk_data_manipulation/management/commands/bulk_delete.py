@@ -23,17 +23,10 @@ def get_model_from_import_string(import_string: str) -> object:
 
 
 def delete_imported_record(model, external_id, delete_external_id=False, delete_multiple=False):
-    things_to_delete = []
     try:
         bulk_import_record = BulkImport.objects.get(
             pk_imported_from=external_id,
             table_imported_to=model.get_db_table()
-        )
-        things_to_delete.append(
-            {
-                'pk': bulk_import_record.pk_imported_to,
-                'bulk_import_instance': bulk_import_record,
-            }
         )
     except BulkImport.DoesNotExist as e:
         raise ExternalIdMissing(f"Can't find external id {external_id} for model {model}")
@@ -44,6 +37,7 @@ def delete_imported_record(model, external_id, delete_external_id=False, delete_
                 table_imported_to=model.get_db_table()
             )
             # TODO: what if nothing is found?
+            things_to_delete = []
             for bulk_import_record in bulk_import_records:
                 things_to_delete.append(
                     {
@@ -53,16 +47,30 @@ def delete_imported_record(model, external_id, delete_external_id=False, delete_
                 )
         else:
             raise
-    for thing_to_delete in things_to_delete:
-        pk = thing_to_delete['pk']
+        pks_not_found = []
+        pks_successfully_deleted = []
+        for thing_to_delete in things_to_delete:
+            pk = thing_to_delete['pk']
+            try:
+                record = model.objects.get(pk=pk)
+                record.delete()
+                pks_successfully_deleted.append(pk)
+                if delete_external_id is True:
+                    thing_to_delete['bulk_import_instance'].delete()
+            except model.DoesNotExist as e:
+                pks_not_found.append(thing_to_delete['pk'])
+        if pks_not_found:
+            raise RecordMissing(
+                f"Deleted {model}: {pks_successfully_deleted}. But additional records do not exist model: {model} pk:"
+                f" {pks_not_found} ext_id: {external_id}")
+    else:
         try:
-            record = model.objects.get(pk=pk)
+            model.objects.get(pk=bulk_import_record.pk_imported_to).delete()
+            if delete_external_id is True:
+                bulk_import_record.delete()
         except model.DoesNotExist as e:
-            raise RecordMissing(f"Can't delete! Record does not exist model: {model} pk: {pk} ext_id:"
-                                f" {external_id}")
-        record.delete()
-        if delete_external_id is True:
-            thing_to_delete['bulk_import_instance'].delete()
+            raise RecordMissing(f"Can't delete! Record does not exist model: {model} pks:"
+                                f" {bulk_import_record.pk_imported_to} ext_id: {external_id}")
 
 
 class Command(BaseCommand):
