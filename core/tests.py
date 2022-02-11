@@ -529,7 +529,7 @@ class UnitTests(AbstractTestCase):
         # Then I should get the url to view it
         self.assertIn('command', url)
 
-    def test_person_grouping_as_of_bounding_dates(self):
+    def test_person_grouping_at_least_since_bounding_dates(self):
         # Given the following truth table
         truth_table = [
             {
@@ -604,10 +604,10 @@ class UnitTests(AbstractTestCase):
                         start_day=scenario['inputs']['start_day'],
                     )
 
-                    # WHEN I call as_of_bounding_dates on the given inputs
+                    # WHEN I call at_least_since_bounding_dates on the given inputs
                     #
                     #
-                    result = person_grouping.as_of_bounding_dates
+                    result = person_grouping.at_least_since_bounding_dates
 
                     # THEN I should get the respective output from the truth table
                     #

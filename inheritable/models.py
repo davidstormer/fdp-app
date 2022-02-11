@@ -884,7 +884,7 @@ class AbstractDateValidator(models.Model):
         :param end_year: Year component for the ending fuzzy date, 0 if unknown.
         :param end_month: Month component for the ending fuzzy date, 0 if unknown.
         :param end_day: Day component for the ending fuzzy date, 0 if unknown.
-        :param is_at_least_since: True if start date is as of, false if start date is exact.
+        :param is_at_least_since: True if start date is at least since, false if start date is exact.
         :return: A single fuzzy date in human-friendly display form.
         """
         from_str = cls.AT_LEAST_SINCE_DATE if is_at_least_since else cls.FROM_DATE
@@ -2230,7 +2230,7 @@ class AbstractExactDateBounded(Descriptable):
 
 
 class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
-    """ Base class from which all classes with as of bounding dates inherit.
+    """ Base class from which all classes with at least since bounding dates inherit.
 
     Attributes:
         :at_least_since (bool): True if start date is the earliest known start date, but not necessarily the true start date.
@@ -2250,9 +2250,9 @@ class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
     list_filter_fields = ['start_year', 'start_month', 'start_day', 'end_year', 'end_month', 'end_day', 'at_least_since']
 
     def __get_at_least_since_bounding_dates(self):
-        """ Retrieve the human-friendly version of the "fuzzy" as of starting and ending dates.
+        """ Retrieve the human-friendly version of the "fuzzy" at least since starting and ending dates.
 
-        :return: Human-friendly version of "fuzzy" as of starting and ending dates.
+        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
         """
         return AbstractDateValidator.get_display_text_from_dates(
             start_year=self.start_year, start_month=self.start_month, start_day=self.start_day,
@@ -2261,9 +2261,9 @@ class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
 
     @property
     def at_least_since_bounding_dates(self):
-        """ Human-friendly version of "fuzzy" as of starting and ending dates.
+        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
 
-        :return: Human-friendly version of "fuzzy" as of starting and ending dates.
+        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
         """
         return self.__get_at_least_since_bounding_dates()
 
