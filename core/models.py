@@ -12,6 +12,7 @@ from supporting.models import State, Trait, PersonRelationshipType, Location, Pe
     Title, GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
     PersonIncidentTag, LeaveStatus, SituationRole, TraitType
 from fdpuser.models import FdpOrganization
+from django.urls import reverse
 from datetime import date
 
 
@@ -82,6 +83,14 @@ class Person(Confidentiable, Descriptable):
     #: Fields to display in the model form.
     form_fields = \
         ['name', 'birth_date_range_start', 'birth_date_range_end', 'traits'] + Confidentiable.confidentiable_form_fields
+
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_person', args=(self.pk,))
+
+    @property
+    def get_profile_url(self):
+        return reverse('profiles:officer', args=(self.pk,))
 
     def __get_birth_date(self):
         """ Retrieve the human-friendly version of the person's birth date.
@@ -452,6 +461,8 @@ class Person(Confidentiable, Descriptable):
                 ),
                 to_attr='officer_identifiers'
             ),
+            Prefetch('person_contacts', queryset=PersonContact.active_objects.all().order_by('-is_current', '-pk'),
+                     to_attr='officer_contact_infos'),
             Prefetch(
                 'person_groupings',
                 # don't need to filter persons, since filtered above
@@ -523,7 +534,7 @@ class Person(Confidentiable, Descriptable):
                             user=user,
                             filter_dict=None,
                             person_pk=pk,
-                            person_filter_by_dict={'pk': OuterRef('person_id'), 'is_law_enforcement': True}
+                            person_filter_by_dict={'pk': OuterRef('person_id')}
                         ),
                         to_attr='officer_other_persons'
                     ),
@@ -1769,6 +1780,10 @@ class Grouping(Archivable, Descriptable):
         """
         return queryset
 
+    @property
+    def get_profile_url(self):
+        return reverse('profiles:command', kwargs={"pk": self.pk})
+
     class Meta:
         db_table = '{d}grouping'.format(d=settings.DB_PREFIX)
         verbose_name = _('grouping')
@@ -2013,6 +2028,24 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
             )
         )
 
+    @property
+    def at_least_since_bounding_dates(self):
+        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
+
+        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
+        """
+        def end_date_is_all_zeros(self) -> bool:
+            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
+                return True
+            else:
+                return False
+
+        if self.is_inactive and end_date_is_all_zeros(self):
+            return super(PersonGrouping, self).at_least_since_bounding_dates + ' until unknown-end-date'
+        else:
+            return super(PersonGrouping, self).at_least_since_bounding_dates
+
+
     class Meta:
         db_table = '{d}person_grouping'.format(d=settings.DB_PREFIX)
         verbose_name = _('Link between person and grouping')
@@ -2108,6 +2141,10 @@ class Incident(Confidentiable, AbstractExactDateBounded):
             t='...' if not self.description else self.description
         )
         return str_rep
+
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_incident', kwargs={"pk": self.pk, "content_id": 0})
 
     @classmethod
     def filter_for_admin(cls, queryset, user):
