@@ -225,7 +225,9 @@ INSTALLED_APPS = [
     # data model organizing user verification of data
     'verifying',
     # Utility for updating data
-    'bulk_data_manipulation'
+    'bulk_data_manipulation',
+    # allows users to add and update large volumes of data through a simplified and automated process
+    'wholesale',
 ]
 
 
