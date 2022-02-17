@@ -2030,9 +2030,9 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
 
     @property
     def at_least_since_bounding_dates(self):
-        """ Human-friendly version of "fuzzy" as of starting and ending dates.
+        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
 
-        :return: Human-friendly version of "fuzzy" as of starting and ending dates.
+        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
         """
         def end_date_is_all_zeros(self) -> bool:
             if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:

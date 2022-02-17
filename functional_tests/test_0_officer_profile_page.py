@@ -52,6 +52,7 @@ class PersonProfileTestCase(FunctionalTestCase):
     """Functional tests specific to the Officer profile page
     """
 
+    @local_test_settings_required
     def test_incidents_displayed(self):
         """Test that the profile page displays the incidents linked to the person
         """
@@ -76,6 +77,7 @@ class PersonProfileTestCase(FunctionalTestCase):
         for description in descriptions:
             self.assertContains(response_staff_client, description)
 
+    @local_test_settings_required
     def test_content_displayed_under_incident(self):
         """Test that the profile page displays the content linked to the person
         """
@@ -116,6 +118,7 @@ class PersonProfileTestCase(FunctionalTestCase):
                 content_name,
                 msg_prefix="Couldn't find content under incident by id")
 
+    @local_test_settings_required
     def test_person_content_displayed(self):
         """Test that the profile page displays the contents linked to the person (rather than the ones that are
         linked to incidents.)
@@ -142,6 +145,7 @@ class PersonProfileTestCase(FunctionalTestCase):
         for description in descriptions:
             self.assertContains(response_staff_client, description)
 
+    @local_test_settings_required
     def test_person_aliases_displayed(self):
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -165,6 +169,7 @@ class PersonProfileTestCase(FunctionalTestCase):
         for alias_value in alias_values:
             self.assertContains(response_staff_client, alias_value)
 
+    @local_test_settings_required
     def test_person_age_displayed(self):
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         # And the officer has a birthday set
@@ -191,6 +196,7 @@ class PersonProfileTestCase(FunctionalTestCase):
             f"<span class='label'>Age:</span> <span>{age_to_find}</span>",
             html=True)
 
+    @local_test_settings_required
     def test_person_titles_displayed(self):
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -216,6 +222,7 @@ class PersonProfileTestCase(FunctionalTestCase):
         for value in values_to_find:
             self.assertContains(response_staff_client, value)
 
+    @local_test_settings_required
     def test_person_traits_displayed(self):
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -242,6 +249,7 @@ class PersonProfileTestCase(FunctionalTestCase):
         for value in values_to_find:
             self.assertContains(response_staff_client, value)
 
+    @local_test_settings_required
     def test_person_identifiers_displayed(self):
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -273,6 +281,7 @@ class PersonProfileTestCase(FunctionalTestCase):
         # and their identifier types
         self.assertContains(response_staff_client, id_type_value, count=3)
 
+    @local_test_settings_required
     def test_person_groups_displayed(self):
         # Given there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -306,6 +315,7 @@ class PersonProfileTestCase(FunctionalTestCase):
                 f"<a href='{group.get_profile_url}'>{value}</a>",
                 html=True)
 
+    @local_test_settings_required
     def test_no_basic_info(self):
         # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -322,6 +332,7 @@ class PersonProfileTestCase(FunctionalTestCase):
         # THEN I should NOT see the "Basic info" heading
         self.assertNotContains(response_staff_client, "Basic information")
 
+    @local_test_settings_required
     def test_person_group_types_displayed(self):
         # GIVEN there is an 'officer record' (Person record in the system set as law enforcement)
         person_record = Person.objects.create(name="Test person", is_law_enforcement=True)
@@ -362,6 +373,7 @@ class PersonProfileTestCase(FunctionalTestCase):
         relationship.save()
         return relationship_type
 
+    @local_test_settings_required
     def test_person_associates_displayed(self):
         """Functional test
         """
@@ -411,6 +423,7 @@ class PersonProfileTestCase(FunctionalTestCase):
             associates_section_element.text_content()
         )
 
+    @local_test_settings_required
     def test_incident_allegations_and_penalties_displayed(self):
         """Functional test
         """
@@ -501,6 +514,7 @@ class PersonProfileTestCase(FunctionalTestCase):
             'heliotypography'
         )
 
+    @local_test_settings_required
     def test_content_allegations_and_penalties_displayed(self):
         """Functional test
         """
@@ -591,6 +605,7 @@ class PersonProfileTestCase(FunctionalTestCase):
             'hyphomycetic'
         )
 
+    @local_test_settings_required
     def test_incident_class_contains_pk(self):
         """Rules out the possibility that the pk of another model is being used -- which yes for reals totally happened!
         """

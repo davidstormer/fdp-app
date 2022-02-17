@@ -355,7 +355,7 @@ GroupingRelationshipModelFormSet = forms.modelformset_factory(
 )
 
 
-#: Starting, ending and as of date fields are added to person identifiers
+#: Starting, ending and at least since date fields are added to person identifiers
 person_identifier_form_fields = PersonIdentifier.form_fields.copy()
 person_identifier_form_fields.append('at_least_since')
 person_identifier_form_fields.append('identifier_started')

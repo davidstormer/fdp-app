@@ -9,6 +9,7 @@ from supporting.models import SituationRole
 
 class OthersInvolvedTestCase(FunctionalTestCase):
 
+    @local_test_settings_required
     def test_incident_show_non_officers_involved(self):
 
         # Given there is an incident with non-officers linked to it

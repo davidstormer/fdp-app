@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 class ProfilePersonGroupLinksTestCase(SeleniumFunctionalTestCase):
     """Functional tests for links from officer profile page to people and groups
     """
+    @local_test_settings_required
     def test_person_associates_displayed(self):
         """Functional test
         """

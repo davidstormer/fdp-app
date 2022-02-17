@@ -225,6 +225,26 @@ class AdminAccessMixin(CoreAccessMixin):
         return super(AdminAccessMixin, self).test_func() and FdpUser.can_view_admin(user=user)
 
 
+class HostAdminAccessMixin(AdminAccessMixin):
+    """ Mixin limiting access for host admin only elements to users who are authorized.
+
+    Log in is required, and users must have host permissions, admin permissions and core permissions.
+
+    Only POST and GET request methods accepted.
+
+    """
+    def test_func(self):
+        """ Used to test the user for UserPassesTestMixin.
+
+        Ensures that user can view admin data for the FDP (implicitly users can also view core data).
+
+        :return: True if user passes the test, false otherwise.
+        """
+        request = getattr(self, 'request', None)
+        user = getattr(request, 'user', None)
+        return super(AdminAccessMixin, self).test_func() and FdpUser.can_view_host_admin(user=user)
+
+
 class ContextDataMixin:
     """ Mixin that allows for adding additional context data such as permissions and theme customization for the site.
 
@@ -371,6 +391,18 @@ class SecuredSyncView(CoreAccessMixin, SyncView):
     pass
 
 
+class HostAdminSyncView(HostAdminAccessMixin, SyncView):
+    """ Host admin only synchronous base view.
+
+    Log is in required, and users must be able to view host only and admin only data, and access corresponding
+    functionality.
+
+    Only POST or GET request methods accepted.
+
+    """
+    pass
+
+
 class SecuredSyncRedirectView(CoreAccessMixin, RedirectView):
     """ Secure synchronously redirected view.
 
@@ -405,6 +437,25 @@ class AdminSyncTemplateView(AdminAccessMixin, ContextDataMixin, TemplateView):
     """ Admin only synchronously rendered view rendering a template.
 
     Log is in required, and users must be able to view admin only data.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as permissions and theme customization.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_context(context)
+
+
+class HostAdminSyncTemplateView(HostAdminAccessMixin, ContextDataMixin, TemplateView):
+    """ Host admin only synchronously rendered view rendering a template.
+
+    Log is in required, and users must be able to view host only and admin only data, and access corresponding
+    functionality.
 
     Only POST or GET request methods accepted.
 
@@ -473,10 +524,48 @@ class AdminSyncFormView(AdminAccessMixin, ContextDataMixin, FormView):
         return self._add_context(context)
 
 
+class HostAdminSyncFormView(HostAdminAccessMixin, ContextDataMixin, FormView):
+    """ Host admin only synchronously rendered view rendering a form.
+
+    Log is in required, and users must be able to view host only and admin only data, and access corresponding
+    functionality.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as permissions and theme customization.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_context(context)
+
+
 class SecuredSyncListView(CoreAccessMixin, ContextDataMixin, ListView):
     """ Secure synchronously rendered view rendering a filtered and paginated list of objects.
 
     Log is in required, and users must be able to view core data.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as permissions and theme customization.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_context(context)
+
+
+class HostAdminSyncListView(HostAdminAccessMixin, ContextDataMixin, ListView):
+    """ Host admin only synchronously rendered view to list objects.
+
+    Log is in required, and users must be able to view host only and admin only data, and access corresponding
+    functionality.
 
     Only POST or GET request methods accepted.
 
@@ -535,6 +624,25 @@ class AdminSyncCreateView(AdminAccessMixin, ContextDataMixin, RevisionMixin, Cre
         """
         reversion_set_comment(_('Created through data management wizard'))
         return super(AdminSyncCreateView, self).form_valid(form=form)
+
+
+class HostAdminSyncCreateView(HostAdminAccessMixin, ContextDataMixin, CreateView):
+    """ Host admin only synchronously rendered view to create an object.
+
+    Log is in required, and users must be able to view host only and admin only data, and access corresponding
+    functionality.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as permissions and theme customization.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_context(context)
 
 
 class AdminSyncUpdateView(AdminAccessMixin, ContextDataMixin, RevisionMixin, UpdateView):

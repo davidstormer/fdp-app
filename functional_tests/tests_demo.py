@@ -58,6 +58,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
 
     # But what if something fails? Comment out @expectedFailure to see!
     @expectedFailure
+    @local_test_settings_required
     def test_demo_broken_test(self):
         self.browser.get(self.live_server_url)
         self.assertIn(
