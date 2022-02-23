@@ -27,6 +27,11 @@ from .forms import WizardSearchForm, GroupingModelForm, GroupingAliasModelFormSe
 from core.models import Person, PersonIdentifier, Grouping, GroupingAlias, GroupingRelationship, Incident, \
     PersonGrouping, PersonRelationship, PersonIncident, GroupingIncident
 from abc import abstractmethod
+from urllib.parse import urlparse
+import logging
+
+logger = logging.getLogger(__name__)
+
 # Load a customized algorithm for person searches
 ChangingPersonSearch = AbstractImport.load_changing_search(
     file_setting='FDP_PERSON_CHANGING_SEARCH_FILE',
@@ -56,6 +61,24 @@ ChangingGroupingSearch = AbstractImport.load_changing_search(
     class_default='GroupingChangingSearch'
 )
 
+
+def get_next_url(next_path: str, fallback: str) -> str:
+    """Helper function that returns the next= argument from the get request, or a
+    fallback location otherwise."""
+
+    next_parsed_path = urlparse(next_path)
+
+    # Check for suspicious/malformed submissions
+    if next_parsed_path.netloc or next_parsed_path.scheme:
+        logger.warning(f"PersonUpdateView: {next_path} suspicious 'next' path. Returning fallback.")
+        return fallback
+
+    # If there is a valid path take me there
+    if next_parsed_path.path:
+        return next_parsed_path.path
+
+    # If all else fails take me to the default success url
+    return fallback
 
 class AbstractPopupView(PopupContextMixin):
     """ Abstract view from which pages adding and editing models in a popup context inherit.
@@ -1450,11 +1473,13 @@ class PersonUpdateView(AdminSyncUpdateView, AbstractPersonView):
     template_name = AbstractPersonView._template_name
 
     def get_success_url(self):
-        """ Retrieves the link to the data management home page.
+        """ Send the user to the default success url (data management home page),
+        or if provided, bounce them to the next= argument passed via the URL.
 
         :return: Link to data management home page.
         """
-        return self._get_success_url()
+
+        return get_next_url(self.request.GET.get('next'), self._get_success_url())
 
     def get_context_data(self, **kwargs):
         """ Adds the title, description and user details to the view context.
@@ -1793,6 +1818,7 @@ class IncidentCreateView(AdminSyncCreateView, AbstractIncidentView):
             for_host_only = content_data.get(AbstractUrlValidator.GET_FOR_HOST_ONLY_PARAM, None)
             for_admin_only = content_data.get(AbstractUrlValidator.GET_FOR_ADMIN_ONLY_PARAM, None)
             fdp_orgs = content_data.get(AbstractUrlValidator.GET_ORGS_PARAM, None)
+
             initial.update(
                 {
                     'incident_started': DateWithComponentsField.compress_vals(
@@ -1856,7 +1882,7 @@ class IncidentCreateView(AdminSyncCreateView, AbstractIncidentView):
 
 class IncidentUpdateView(AdminSyncUpdateView, AbstractIncidentView):
     """ Page through which existing incident can be updated.
-
+    At the end, either bounce to the next= path or go to the default success url (e.g. homepage)
     """
     model = AbstractIncidentView._model
     form_class = AbstractIncidentView._form_class
@@ -1941,7 +1967,7 @@ class IncidentUpdateView(AdminSyncUpdateView, AbstractIncidentView):
             return reverse('changing:edit_incident', kwargs={'pk': next_incident_id, 'content_id': self.content_id})
         # there are no more incidents to update
         else:
-            return self._get_success_url()
+            return get_next_url(self.request.GET.get('next'), self._get_success_url())
 
     def __get_persons_from_content_links(self):
         """ Retrieves a queryset of persons that are linked to the content to which this incident is linked, but are
@@ -2320,7 +2346,7 @@ class ContentUpdateView(AdminSyncUpdateView, AbstractContentView):
 
         :return: Link to data management home page.
         """
-        return self._get_success_url()
+        return get_next_url(self.request.GET.get('next'), self._get_success_url())
 
     def get_context_data(self, **kwargs):
         """ Adds the title, description and user details to the view context.
@@ -2600,12 +2626,13 @@ class AllegationPenaltyLinkUpdateView(ContentUpdateView):
             cur_incident_id=0,
             user=self.request.user
         )
-        # there is an incident to update, to add the persons that are now linked to the content
         if next_incident_id:
-            return reverse('changing:edit_incident', kwargs={'pk': next_incident_id, 'content_id': content_id})
-        # there is no incident to update, so go to the main page
+            incident_url = reverse('changing:edit_incident', kwargs={'pk': next_incident_id, 'content_id': content_id})
+            # If there's a next= parameter go there, otherwise go to the incident edit page
+            return get_next_url(self.request.GET.get('next'), incident_url)
+        # there is no incident to update, so go to the next url or the main page
         else:
-            return reverse('changing:index')
+            return get_next_url(self.request.GET.get('next'), reverse('changing:index'))
 
     def get_context_data(self, **kwargs):
         """ Adds the title, description and user details to the view context.

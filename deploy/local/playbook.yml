@@ -6,7 +6,7 @@
 
       - name: "Install os package dependencies"
         apt:
-          pkg: python3-pip, gcc, python3-dev, libpq-dev, python3-wheel, python3-venv, postgresql-12
+          pkg: python3-pip, gcc, python3-dev, libpq-dev, python3-wheel, python3-venv, postgresql-12, firefox, xvfb
 
       - name: "Initialize database"
         become: yes
@@ -57,10 +57,12 @@
           src: /vagrant/deploy/local/demo_data/media/
           dest: /media/
 
-      - name: "Set up shell to automatically load venv and cd into project root"
+      - name: "Set up shell to automatically load venv and cd into project root, and settings for tests"
         blockinfile:
           path: "/home/vagrant/.profile"
           block: |
+            export FDP_SECRET_KEY='opensesame'
+            export FDP_QUERYSTRING_PASSWORD='ymllgljp//NRW9W7INVajTBS46oBpt0NLPfr7yQ6PEw='
             source /home/vagrant/venv-vagrant/bin/activate
             cd /vagrant
 
@@ -82,3 +84,14 @@
             'python manage.py runserver 0.0.0.0:8000'
 
             Then point your browser to 'localhost:8000' to see the FDP Application
+
+      - name: "Install python tests dependencies"
+        pip:
+          requirements: "/vagrant/functional_tests/requirements.txt"
+          virtualenv: "/home/vagrant/venv-vagrant"
+
+      - name: "Install selenium driver"
+        shell: |
+          cd /home/vagrant/venv-vagrant/bin/
+          wget https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux64.tar.gz
+          tar xvzf geckodriver-*-linux64.tar.gz

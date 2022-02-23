@@ -2,8 +2,6 @@
 
 ## Overview
 
-*As of 2021-06-03*
-
 The Full Disclosure Project (FDP) information system can be customized through the use of configuration settings. For most projects, all relevant settings can be specified in environment variables that are accessible by the web application or in configuration files stored in the *../conf/* folder. In some cases, projects can choose to specify additional settings in the *fdp/settings.py* file.
 
 ## Django Settings
@@ -118,6 +116,16 @@ If no options are listed, the federated login page will be skipped, and the user
 ## EULA
 
 To enable the requirement that each user agree to an end-user license agreement (EULA) before they can access any secured views, set `FDP_EULA_SPLASH_ENABLE=True`. By default, this feature is disabled.
+
+## Wholesale import tool
+
+The default list of models that are in the allowlist, and so allowed for use through the wholesale import tool, can be modified by specifying a new list of model names: 
+
+    FDP_WHOLESALE_MODELS_ALLOWLIST = ['Attachment', 'Content', 'ContentIdentifier', ...]
+
+The default list of fields that are in the denylist, and so denied from use through the wholesale import tool, can be modified by specifying a new list of field names: 
+
+    FDP_WHOLESALE_FIELDS_DENYLIST = ['is_archived', ...]
 
 ## FDP Settings for Azure
 

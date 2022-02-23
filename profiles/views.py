@@ -356,7 +356,7 @@ class OfficerDetailView(SecuredSyncDetailView):
             'settlement_amount_total_key': self.__settlement_amount_total_key,
             'attachments_key': self.__attachments_key,
             'strings_key': self.__strings_key,
-            'links_key': self.__links_key
+            'links_key': self.__links_key,
         })
         return context
 
@@ -372,10 +372,10 @@ class OfficerDetailView(SecuredSyncDetailView):
         """
         pk = relationship.type_id
         other_person_pk = relationship.object_person_id if is_accessing_object else relationship.subject_person_id
-        other_person_name = relationship.object_person.name if is_accessing_object else relationship.subject_person.name
+        other_person = relationship.object_person if is_accessing_object else relationship.subject_person
         dict_key = (pk, other_person_pk)
         if dict_key not in rel_dict:
-            rel_dict[dict_key] = {'person': other_person_name, 'relationship': relationship.type.name, 'num': 1}
+            rel_dict[dict_key] = {'person': other_person, 'relationship': relationship.type.name, 'num': 1}
         else:
             rel_dict[dict_key]['num'] += 1
 
@@ -471,30 +471,6 @@ class OfficerDetailView(SecuredSyncDetailView):
                     snapshot_dict[case_type][cls.__settlement_amount_total_key] += settlement_amount
 
     @staticmethod
-    def __parse_content_person_allegations_for_profile(content_person_allegations_dict, content_person_allegation):
-        """ Parses content person allegations for the Misconduct and Content sections of the officer profile.
-
-        :param content_person_allegations_dict: Existing dictionary storing already parsed content person allegations.
-        :param content_person_allegation: Content person allegation to parse.
-        :return: Nothing.
-        """
-        allegation = content_person_allegation.allegation
-        allegation_outcome = content_person_allegation.allegation_outcome
-        # allegation already parsed once
-        if allegation in content_person_allegations_dict:
-            # outcome is defined and not yet parsed
-            if allegation_outcome and allegation_outcome not in content_person_allegations_dict[allegation]:
-                (content_person_allegations_dict[allegation]).append(allegation_outcome)
-        # allegation not yet parsed
-        else:
-            # outcome is defined
-            if allegation_outcome:
-                content_person_allegations_dict[allegation] = [allegation_outcome]
-            # outcome not defined
-            else:
-                content_person_allegations_dict[allegation] = []
-
-    @staticmethod
     def __parse_content_person_penalties_for_profile(content_person_penalties_list, content_person_penalty):
         """ Parses content person penalties for the Misconduct and Content sections of the officer profile.
 
@@ -538,7 +514,10 @@ class OfficerDetailView(SecuredSyncDetailView):
         # CONTENT
         snapshot_dict = {}
         # content directly connected to misconducts
+
         for misconduct in obj.officer_misconducts:
+            setattr(misconduct, 'allegations', [])
+            setattr(misconduct, 'penalties', set())  # use a set to eliminate redundancy
             misconduct.parsed_officer_content_person_allegations = {}
             misconduct.parsed_officer_content_person_penalties = []
             misconduct.parsed_officer_contents = {}
@@ -554,32 +533,24 @@ class OfficerDetailView(SecuredSyncDetailView):
                     content_dict_keys=misconduct.parsed_officer_content_types,
                     content=content
                 )
-                # content person in content
+
+                # Aggregate allegations from the multiple content records associated with current misconduct.
+                # 'officer_content_persons[0]' because there's never more than one returned from the prefetch(?).
+                if content.officer_content_persons:
+                    misconduct.allegations = misconduct.allegations + \
+                                             content.officer_content_persons[0].officer_allegations
+
                 for content_person in content.officer_content_persons:
-                    # allegations in content person
-                    for content_person_allegation in content_person.officer_allegations:
-                        self.__parse_content_person_allegations_for_profile(
-                            content_person_allegations_dict=misconduct.parsed_officer_content_person_allegations,
-                            content_person_allegation=content_person_allegation
-                        )
                     # penalties in content person
                     for content_person_penalty in content_person.officer_penalties:
-                        self.__parse_content_person_penalties_for_profile(
-                            content_person_penalties_list=misconduct.parsed_officer_content_person_penalties,
-                            content_person_penalty=content_person_penalty
-                        )
+                        misconduct.penalties = set.union(misconduct.penalties, set(content_person.officer_penalties))
+
         # content without incidents
         for content_person in obj.officer_contents:
             content_person.parsed_officer_content_person_allegations = {}
             content_person.parsed_officer_content_person_penalties = []
             # parse for snapshots section
             self.__parse_content_for_snapshot(content=content_person.content, snapshot_dict=snapshot_dict)
-            # allegations in content
-            for content_person_allegation in content_person.officer_allegations:
-                self.__parse_content_person_allegations_for_profile(
-                    content_person_allegations_dict=content_person.parsed_officer_content_person_allegations,
-                    content_person_allegation=content_person_allegation
-                )
             # penalties in content
             for content_person_penalty in content_person.officer_penalties:
                 self.__parse_content_person_penalties_for_profile(
@@ -593,7 +564,11 @@ class OfficerDetailView(SecuredSyncDetailView):
             snapshot_dict_keys[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(3)
         )
         obj.officer_snapshot_dict = snapshot_dict
-        # RELATIONSHIPS
+        # NEW RELATIONSHIPS
+        setattr(obj, 'relationships', [])
+        obj.relationships = obj.officer_subject_person_relationships + obj.officer_object_person_relationships
+
+        # OLD RELATIONSHIPS
         rel_dict = {}
         for relationship in obj.officer_subject_person_relationships:
             self.__record_relationship(rel_dict=rel_dict, relationship=relationship, is_accessing_object=True)

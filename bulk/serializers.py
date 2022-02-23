@@ -66,9 +66,10 @@ class FdpModelSerializer(ModelSerializer):
         'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
     ]
 
-    #: Fields for AbstractAsOfDateBounded models that should be excluded from the list of mappable target serializer
+    #: Fields for AbstractAtLeastSinceDateBounded models that should be excluded from the list of mappable target serializer
     # fields.
-    abstract_as_of_date_bounded_excluded_fields = abstract_exact_date_bounded_excluded_fields + ['as_of']
+    abstract_at_least_since_date_bounded_excluded_fields = abstract_exact_date_bounded_excluded_fields + [
+        'at_least_since']
 
     def __create(self, validated_data, external_id):
         """ Creates a new record, and stores its details in the bulk import table.
@@ -621,11 +622,11 @@ class AbstractModelWithAliasesSerializer(FdpModelSerializer):
 
 class AbstractAsOfDateBoundedModelSerializer(FdpModelSerializer):
     """ Abstract serializer from which all model serializers inherit that also include individual date components in
-    the import, as well as a boolean as of option.
+    the import, as well as a boolean At least since option.
 
     Examples include the Person Grouping Air Table serializer and the Person Title Air Table serializer.
 
-    See the inheritable.models.AbstractAsOfDateBounded class.
+    See the inheritable.models.AbstractAtLeastSinceDateBounded class.
 
     Attributes:
         :start_year (str): Date component meant to store starting year.
@@ -634,7 +635,7 @@ class AbstractAsOfDateBoundedModelSerializer(FdpModelSerializer):
         :end_year (str): Date component meant to store ending year.
         :end_month (str): Date component meant to store ending month.
         :end_day (str): Date component meant to store ending day.
-        :as_of_checkbox (str): As of checkbox.
+        :at_least_since_checkbox (str): At least since checkbox.
     """
     start_year = CharField(
         required=False,
@@ -672,21 +673,21 @@ class AbstractAsOfDateBoundedModelSerializer(FdpModelSerializer):
         label=_('Ending day with {u} as unknown'.format(u=AbstractDateValidator.UNKNOWN_DATE))
     )
 
-    as_of_checkbox = CharField(
+    at_least_since_checkbox = CharField(
         required=False,
         allow_null=True,
-        label=_('As of checkbox')
+        label=_('At least since checkbox')
     )
 
     #: Fields that should be excluded from the list of mappable target serializer fields.
-    excluded_fields = FdpModelSerializer.excluded_fields + ['as_of']
+    excluded_fields = FdpModelSerializer.excluded_fields + ['at_least_since']
 
-    def __validate_as_of_checkbox(self):
-        """ Validates the As of checkbox field.
+    def __validate_at_least_since_checkbox(self):
+        """ Validates the At least since checkbox field.
 
         :return: Nothing.
         """
-        self._validate_checkbox_field(unvalidated_checkbox_field='as_of_checkbox', validated_checkbox_field='as_of')
+        self._validate_checkbox_field(unvalidated_checkbox_field='at_least_since_checkbox', validated_checkbox_field='at_least_since')
 
     def is_valid(self, raise_exception=False):
         """ Validate the individual date components.
@@ -722,7 +723,7 @@ class AbstractAsOfDateBoundedModelSerializer(FdpModelSerializer):
         is_valid = super(AbstractAsOfDateBoundedModelSerializer, self).is_valid(raise_exception=raise_exception)
         # record is valid
         if is_valid:
-            self.__validate_as_of_checkbox()
+            self.__validate_at_least_since_checkbox()
         return is_valid
 
 

@@ -44,3 +44,9 @@ RECAPTCHA_PRIVATE_KEY = ''
 
 
 AUTHENTICATION_BACKENDS.append(CONST_AZURE_AUTH_BACKEND)
+
+# Change password hashing algorithm to MD5 for faster running tests
+# https://docs.djangoproject.com/en/3.2/topics/testing/overview/#speeding-up-the-tests
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+]

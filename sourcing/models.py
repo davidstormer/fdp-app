@@ -11,6 +11,7 @@ from supporting.models import ContentType, Court, ContentIdentifierType, Content
     AttachmentType, SituationRole, Allegation, AllegationOutcome
 from fdpuser.models import FdpOrganization
 from core.models import Person, Incident
+from django.urls import reverse
 
 
 class Attachment(Confidentiable, Descriptable):
@@ -186,6 +187,17 @@ class Attachment(Confidentiable, Descriptable):
         :return: Filtered queryset.
         """
         return queryset
+
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_attachment', args=(self.pk,))
+
+    @property
+    def get_file_url(self):
+        try:
+            self.file.url
+        except ValueError as e:
+            return None
 
     class Meta:
         db_table = '{d}attachment'.format(d=settings.DB_PREFIX)
@@ -368,6 +380,15 @@ class Content(Confidentiable, Descriptable):
                 Q(attachments__isnull=True)
             )
         )
+
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_content', kwargs={"pk": self.pk})
+
+    @property
+    def get_allegations_penalties_edit_url(self):
+        return reverse('changing:link_allegations_penalties', kwargs={"pk": self.pk})
+
 
     class Meta:
         db_table = '{d}content'.format(d=settings.DB_PREFIX)
@@ -837,6 +858,10 @@ class ContentPersonAllegation(Archivable, Descriptable):
             content_person__in=ContentPerson.filter_for_admin(queryset=ContentPerson.active_objects.all(), user=user)
         )
 
+    @property
+    def get_allegations_penalties_edit_url(self):
+        return self.content_person.content.get_allegations_penalties_edit_url
+
     class Meta:
         db_table = '{d}content_person_allegation'.format(d=settings.DB_PREFIX)
         verbose_name = _('Allegation against person linked to content')
@@ -928,6 +953,10 @@ class ContentPersonPenalty(Archivable, Descriptable):
         return queryset.filter(
             content_person__in=ContentPerson.filter_for_admin(queryset=ContentPerson.active_objects.all(), user=user)
         )
+
+    @property
+    def get_allegations_penalties_edit_url(self):
+        return self.content_person.content.get_allegations_penalties_edit_url
 
     class Meta:
         db_table = '{d}content_person_penalty'.format(d=settings.DB_PREFIX)

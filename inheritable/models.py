@@ -11,7 +11,8 @@ from django.utils._os import safe_join
 from django.urls import reverse
 from fdp.configuration.abstract.constants import CONST_AZURE_AD_PROVIDER, CONST_MAX_ATTACHMENT_FILE_BYTES, \
     CONST_MAX_PERSON_PHOTO_FILE_BYTES, CONST_SUPPORTED_ATTACHMENT_FILE_TYPES, CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES, \
-    CONST_SUPPORTED_EULA_FILE_TYPES, CONST_MAX_EULA_FILE_BYTES
+    CONST_WHOLESALE_MODELS_ALLOWLIST, CONST_WHOLESALE_FIELDS_DENYLIST, CONST_MAX_WHOLESALE_FILE_BYTES, \
+    CONST_SUPPORTED_WHOLESALE_FILE_TYPES, CONST_SUPPORTED_EULA_FILE_TYPES, CONST_MAX_EULA_FILE_BYTES
 from datetime import date
 from os import path
 from cryptography.fernet import Fernet
@@ -768,7 +769,7 @@ class AbstractDateValidator(models.Model):
     FROM_DATE = _('from')
 
     # Localized text indicating that something had started at least by a specific date, e.g. As of January 1, 2000
-    AS_OF_DATE = _('as of')
+    AT_LEAST_SINCE_DATE = _('at least since')
 
     # Localized text indicating that something ended on a specific date, e.g. Until January 1, 2000
     UNTIL_DATE = _('until')
@@ -875,7 +876,7 @@ class AbstractDateValidator(models.Model):
         return '{o}{d}'.format(o='{p} '.format(p=prefix) if prefix else '', d=date_str)
 
     @classmethod
-    def get_display_text_from_dates(cls, start_year, start_month, start_day, end_year, end_month, end_day, is_as_of):
+    def get_display_text_from_dates(cls, start_year, start_month, start_day, end_year, end_month, end_day, is_at_least_since):
         """ Retrieve the human-friendly display version of two fuzzy dates (i.e. From MM/DD/YYYY until MM/DD/YYYY).
 
         :param start_year: Year component for the starting fuzzy date, 0 if unknown.
@@ -884,10 +885,10 @@ class AbstractDateValidator(models.Model):
         :param end_year: Year component for the ending fuzzy date, 0 if unknown.
         :param end_month: Month component for the ending fuzzy date, 0 if unknown.
         :param end_day: Day component for the ending fuzzy date, 0 if unknown.
-        :param is_as_of: True if start date is as of, false if start date is exact.
+        :param is_at_least_since: True if start date is at least since, false if start date is exact.
         :return: A single fuzzy date in human-friendly display form.
         """
-        from_str = cls.AS_OF_DATE if is_as_of else cls.FROM_DATE
+        from_str = cls.AT_LEAST_SINCE_DATE if is_at_least_since else cls.FROM_DATE
         # parameters passed to strftime
         y = '%Y'
         m = '%m'
@@ -997,6 +998,15 @@ class AbstractStringValidator(models.Model):
     # Length of truncated description, excluding characters placed at the end as a suffix
     __truncated_length = MAX_TRUNCATED_LENGTH - __suffix_length
 
+    #: Default maximum length for a joined list of string.
+    __max_joined_strings_length = 100
+
+    #: Default string used to join together a list of string.
+    __join_strings_with = ', '
+
+    #: Default suffix that is appended if a joined list of strings exceeds the maximum length allowed.
+    __long_joined_strings_suffix = _(', ... and more')
+
     @classmethod
     def truncate_description(cls, description):
         """ Truncate a verbose description.
@@ -1008,6 +1018,25 @@ class AbstractStringValidator(models.Model):
             '{a}{b}'.format(a=description[:cls.__truncated_length], b=cls.SUFFIX)
             if len(str(description)) > cls.MAX_TRUNCATED_LENGTH else description
         )
+
+    @classmethod
+    def join_list_of_strings(cls, list_of_strings, join_with=None, max_len=None):
+        """ Joins a list of strings into a single string.
+
+        :param list_of_strings: List of string to join together.
+        :param join_with: A string that is used to join the list of strings together. Default is __join_strings_with.
+        :param max_len: Maximum length ofr a joined list of strings. Default is __max_joined_strings_length.
+        :return: A single string representing the joined list of strings.
+        """
+        if join_with is None:
+            join_with = cls.__join_strings_with
+        if max_len is None:
+            max_len = cls.__max_joined_strings_length
+        joined_strings = join_with.join(list_of_strings)
+        if len(joined_strings) > max_len:
+            and_more = cls.__long_joined_strings_suffix
+            joined_strings = f'{joined_strings[:max_len - len(and_more)]}{and_more}'
+        return joined_strings
 
     class Meta:
         abstract = True
@@ -1065,6 +1094,9 @@ class AbstractFileValidator(models.Model):
     # Maximum length for the VARCHAR(...) file field storing the attachment path and filename
     MAX_ATTACHMENT_FILE_LEN = settings.MAX_NAME_LEN
 
+    # Maximum length for the VARCHAR(...) file field storing the wholesale import path and filename
+    MAX_WHOLESALE_FILE_LEN = settings.MAX_NAME_LEN
+
     # Maximum length for the VARCHAR(...) file field storing the EULA path and filename
     MAX_EULA_FILE_LEN = settings.MAX_NAME_LEN
 
@@ -1121,6 +1153,32 @@ class AbstractFileValidator(models.Model):
         :return: Nothing.
         """
         max_size = AbstractConfiguration.max_eula_file_bytes()
+        if value.size > max_size:
+            raise ValidationError(
+                _('%(file)s is %(size)s bytes exceeding the maximum allowable size of %(max)s bytes'),
+                params={'file': value.name, 'size': value.size, 'max': max_size}
+            )
+
+    @staticmethod
+    def validate_wholesale_file_extension(value):
+        """ Checks that a user uploaded wholesale import file extension is one that is supported by the system.
+
+        :param value: User uploaded wholesale import file whose extension should be checked.
+        :return: Nothing.
+        """
+        file_name, extension = path.splitext(value.name)
+        extension = extension.lower()
+        if extension not in ['.{x}'.format(x=x[1]) for x in AbstractConfiguration.supported_wholesale_file_types()]:
+            raise ValidationError(_('%(file)s is not a supported file type'), params={'file': value.name})
+
+    @staticmethod
+    def validate_wholesale_file_size(value):
+        """ Checks that a user uploaded wholesale import file size does not exceed allowable maximum.
+
+        :param value: User uploaded wholesale import file whose size should be checked.
+        :return: Nothing.
+        """
+        max_size = AbstractConfiguration.max_wholesale_file_bytes()
         if value.size > max_size:
             raise ValidationError(
                 _('%(file)s is %(size)s bytes exceeding the maximum allowable size of %(max)s bytes'),
@@ -1252,6 +1310,30 @@ class AbstractUrlValidator(models.Model):
 
     # leftmost section of URLs used in the context of end-user license agreements
     EULA_BASE_URL = 'eula/'
+
+    # leftmost section of URLs used in the context of wholesale import tool
+    WHOLESALE_BASE_URL = 'importer/'
+
+    # relative URL for the wholesale import tool home page from which user selects their usage of the tool
+    WHOLESALE_HOME_URL = '{b}home/'.format(b=WHOLESALE_BASE_URL)
+
+    # relative URL for the wholesale import tool page from which to generate templates
+    WHOLESALE_TEMPLATE_URL = '{b}template/'.format(b=WHOLESALE_BASE_URL)
+
+    # leftmost section of URLs used in the context of importing data through the wholesale import tool
+    WHOLESALE_IMPORT_BASE_URL = '{b}import/'.format(b=WHOLESALE_BASE_URL)
+
+    # relative URL for the wholesale import tool page from which to create an import batch
+    WHOLESALE_CREATE_IMPORT_URL = '{b}create/'.format(b=WHOLESALE_IMPORT_BASE_URL)
+
+    # relative URL for the wholesale import tool page from which to start importing data in an import batch
+    WHOLESALE_START_IMPORT_URL = '{b}start/'.format(b=WHOLESALE_IMPORT_BASE_URL)
+
+    # relative URL for the wholesale import tool page from which to review records for a specific import
+    WHOLESALE_LOG_URL = '{b}batch/'.format(b=WHOLESALE_BASE_URL)
+
+    # relative URL for the wholesale import tool page from which to review previous imports
+    WHOLESALE_LOGS_URL = '{b}batches/'.format(b=WHOLESALE_BASE_URL)
 
     # leftmost section of URLs used in the context of data management wizard
     CHANGING_BASE_URL = 'changing/'
@@ -1990,7 +2072,7 @@ class AbstractExactDateBounded(Descriptable):
 
     #: Fields that can be used in inheriting classes to order by date
     order_by_date_fields = [
-        'start_year', 'start_month', 'start_day', 'end_year', 'end_month', 'end_day'
+        '-start_year', '-start_month', '-start_day', '-end_year', '-end_month', '-end_day'
     ]
 
     #: Ascending order for records
@@ -2013,7 +2095,7 @@ class AbstractExactDateBounded(Descriptable):
     order_by_sql = order_by_sql_year + ', ' + order_by_sql_month + ', ' + order_by_sql_day
 
     #: Fields that can be used in the admin interface to filter by date
-    list_filter_fields = order_by_date_fields
+    list_filter_fields = ['start_year', 'start_month', 'start_day', 'end_year', 'end_month', 'end_day']
 
     #: String representation of the dates in a raw SQL
     sql_dates = """
@@ -2125,7 +2207,7 @@ class AbstractExactDateBounded(Descriptable):
         """
         return AbstractDateValidator.get_display_text_from_dates(
             start_year=self.start_year, start_month=self.start_month, start_day=self.start_day,
-            end_year=self.end_year, end_month=self.end_month, end_day=self.end_day, is_as_of=False
+            end_year=self.end_year, end_month=self.end_month, end_day=self.end_day, is_at_least_since=False
         )
 
     @property
@@ -2229,44 +2311,43 @@ class AbstractExactDateBounded(Descriptable):
         abstract = True
 
 
-class AbstractAsOfDateBounded(AbstractExactDateBounded):
-    """ Base class from which all classes with as of bounding dates inherit.
+class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
+    """ Base class from which all classes with at least since bounding dates inherit.
 
     Attributes:
-        :as_of (bool): True if start date is as of, i.e. start date is not true start date, false otherwise.
+        :at_least_since (bool): True if start date is the earliest known start date, but not necessarily the true start date.
 
     Properties:
-        :as_of_bounding_dates (str): User-friendly rendering of the as of bounding dates.
+        :at_least_since_bounding_dates (str): User-friendly rendering of the as of bounding dates.
 
     """
-    as_of = models.BooleanField(
+    at_least_since = models.BooleanField(
         null=False,
         blank=False,
         default=False,
         help_text=_('Select if start date is the earliest known start date, but not necessarily the true start date'),
-        verbose_name=_('as of')
     )
 
     #: Fields that can be used in the admin interface to filter by date
-    list_filter_fields = AbstractExactDateBounded.order_by_date_fields + ['as_of']
+    list_filter_fields = ['start_year', 'start_month', 'start_day', 'end_year', 'end_month', 'end_day', 'at_least_since']
 
-    def __get_as_of_bounding_dates(self):
-        """ Retrieve the human-friendly version of the "fuzzy" as of starting and ending dates.
+    def __get_at_least_since_bounding_dates(self):
+        """ Retrieve the human-friendly version of the "fuzzy" at least since starting and ending dates.
 
-        :return: Human-friendly version of "fuzzy" as of starting and ending dates.
+        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
         """
         return AbstractDateValidator.get_display_text_from_dates(
             start_year=self.start_year, start_month=self.start_month, start_day=self.start_day,
-            end_year=self.end_year, end_month=self.end_month, end_day=self.end_day, is_as_of=self.as_of
+            end_year=self.end_year, end_month=self.end_month, end_day=self.end_day, is_at_least_since=self.at_least_since
         )
 
     @property
-    def as_of_bounding_dates(self):
-        """ Human-friendly version of "fuzzy" as of starting and ending dates.
+    def at_least_since_bounding_dates(self):
+        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
 
-        :return: Human-friendly version of "fuzzy" as of starting and ending dates.
+        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
         """
-        return self.__get_as_of_bounding_dates()
+        return self.__get_at_least_since_bounding_dates()
 
     class Meta:
         abstract = True
@@ -3084,6 +3165,26 @@ class AbstractConfiguration(models.Model):
         return getattr(settings, 'FDP_SUPPORTED_EULA_FILE_TYPES',  CONST_SUPPORTED_EULA_FILE_TYPES)
 
     @staticmethod
+    def max_wholesale_file_bytes():
+        """ Checks the necessary setting to retrieve the maximum number of bytes that a user-uploaded file can have
+        for an instance of the WholesaleImport model.
+
+        :return: Number of bytes.
+        """
+        return getattr(settings, 'FDP_MAX_WHOLESALE_FILE_BYTES',  CONST_MAX_WHOLESALE_FILE_BYTES)
+
+    @staticmethod
+    def supported_wholesale_file_types():
+        """ Checks the necessary setting to retrieve a list of tuples that define the types of user-uploaded files that
+        are supported for an instance of the WholesaleImport model. Each tuple has two items: the first is a
+        user-friendly short description of the supported file type; the second is the expected extension of the
+        supported file type.
+
+        :return: List of tuples, each with two items.
+        """
+        return getattr(settings, 'FDP_SUPPORTED_WHOLESALE_FILE_TYPES',  CONST_SUPPORTED_WHOLESALE_FILE_TYPES)
+
+    @staticmethod
     def max_attachment_file_bytes():
         """ Checks the necessary setting to retrieve the maximum number of bytes that a user-uploaded file can have
         for an instance of the Attachment model.
@@ -3120,6 +3221,24 @@ class AbstractConfiguration(models.Model):
         :return: List of tuples, each with two items.
         """
         return getattr(settings, 'FDP_SUPPORTED_PERSON_PHOTO_FILE_TYPES',  CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES)
+
+    @staticmethod
+    def models_in_wholesale_allowlist():
+        """ Checks the necessary setting to retrieve a list of names of models that are in the allowlist for use through
+        the wholesale import tool.
+
+        :return: List of model names.
+        """
+        return getattr(settings, 'FDP_WHOLESALE_MODELS_ALLOWLIST', CONST_WHOLESALE_MODELS_ALLOWLIST)
+
+    @staticmethod
+    def fields_in_wholesale_denylist():
+        """ Checks the necessary setting to retrieve a list of names of fields that are in the denylist, and so
+         excluded from use through the wholesale import tool.
+
+        :return: List of field names.
+        """
+        return getattr(settings, 'FDP_WHOLESALE_FIELDS_DENYLIST', CONST_WHOLESALE_FIELDS_DENYLIST)
 
     @staticmethod
     def eula_splash_enabled():

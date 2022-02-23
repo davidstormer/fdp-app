@@ -1,11 +1,13 @@
 {% extends "common/fdp_base_site.html" %}
 {% load i18n admin_urls static compress profiles_extras %}
+{% block bodyclass %}profile officer fdpbody{% endblock %}
 
 {% block extrahead %}
     {{ block.super }}
     {% compress js %}
     <script src="{% static 'profiles/js/officerprofile.js' %}"></script>
     {% endcompress %}
+    <script src="{% static 'dist/jquery-ui-custom/jquery-ui.min.js' %}"></script>
 {% endblock %}
 
 {% block extrastyle %}
@@ -15,7 +17,9 @@
     {% compress css %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/responsive_grid.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/collapsible.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/profile.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/officer.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/jquery-ui-custom/jquery-ui.min.css' %}">
     {% endcompress %}
 {% endblock %}
 
@@ -33,31 +37,24 @@
 {% endblock %}
 {% endif %}
 
+{% block content_title %} {% endblock %}
+
 {% block content %}
 
-    <h2>
-        <span class="h2main">{{ object.name }}</span>
-        {% if has_attachments %}
-        <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
-            <span class="h2lower"><i class="fas fa-file-archive"></i></span>
-            <span class="h2upper">{% translate 'Download' %}</span>
-            <span class="h2upper">{% translate 'All' %}</span>
-        </span></a>
-        {% endif %}
-        <span class="h2wrap" id="i_expandall">
-            <span class="h2lower"><i class="fas fa-plus-square"></i></span>
-            <span class="h2upper">{% translate 'Expand' %}</span>
-            <span class="h2upper">{% translate 'All' %}</span>
-        </span>
-        <span class="h2wrap" id="i_collapseall">
-            <span class="h2lower"><i class="fas fa-minus-square"></i></span>
-            <span class="h2upper">{% translate 'Collapse' %}</span>
-            <span class="h2upper">{% translate 'All' %}</span>
-        </span>
-    </h2>
 
-    <button type="button" class="collapsible expanded">{% translate 'Identification' %}</button>
-    <div class="collapsible">
+
+
+    <h1>{{ object.name }} </h1>
+
+    <section class="identification">
+        <div class="section-heading">
+            <h2>Identification</h2>
+            {% if is_admin %}
+            <span class="admin-actions">
+                <a href="{{ object.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            </span>
+            {% endif %}
+        </div>
         <div class="gridrow gridgroup">
             <div class="gridcol gridcell_1_of_3">
 
@@ -75,134 +72,204 @@
 
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
             <div class="gridcol gridcell_1_of_3">
-                {% if object.officer_aliases %}
-                <div>
-                    <label class="ident">{% translate 'Aliases' %}</label>
-                    <span class="identval">{% for alias in object.officer_aliases %}{{ alias.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
-                </div>
-                {% endif %}
-                {% if object.age %}
-                <div>
-                    <label class="ident">{% translate 'Age' %}</label> <span class="identval">{{ object.age }}</span>
-                </div>
-                {% endif %}
-                {% if object.officer_traits %}
-                <div>
-                    <label class="ident">{% translate 'Traits' %}</label>
-                    <span class="identval">{% for trait in object.officer_traits %}{{ trait.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
+                {% if object.officer_aliases or object.age or object.officer_traits %}
+                <h3>Basic information</h3>
+                <div class="basic-information">
+                    {% if object.officer_aliases %}
+                    <p>
+                        <span class="label">{% translate 'Aliases' %}:</span>
+                        <span>{% for alias in object.officer_aliases %}{{ alias.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
+                    </p>
+                    {% endif %}
+                    {% if object.age %}
+                    <p>
+                        <span class="label">{% translate 'Age' %}:</span> <span>{{ object.age }}</span>
+                    </p>
+                    {% endif %}
+                    {% if object.officer_traits %}
+                    <p>
+                        <span class="label">{% translate 'Traits' %}:</span>
+                        <span>{% for trait in object.officer_traits %}{{ trait.name }}{% if not forloop.last %},{% endif %} {% endfor %}</span>
+                    </p>
+                    {% endif %}
                 </div>
                 {% endif %}
 
                 {% if object.officer_title %}
-                <div>
-                    <label class="ident">{% if object.officer_titles %}{% translate 'Ranks' %}{% else %}{% translate 'Rank' %}{% endif %}</label>
-                </div>
-
-                <div>
-                    <span class="identval labelsim">{{ object.officer_title.title.name }}</span>
-                    {% if object.officer_title.as_of_bounding_dates %}{{ object.officer_title.as_of_bounding_dates }}{% endif %}
-                </div>
+                <h3>{% if object.officer_titles %}{% translate 'Ranks' %}{% else %}{% translate 'Rank' %}{% endif %}</h3>
+                <ul>
+                <li>
+                    <span>{{ object.officer_title.title.name }}</span>
+                    <div class="identification-meta">
+                        <span class="dates">{% if object.officer_title.at_least_since_bounding_dates %}{{ object.officer_title.at_least_since_bounding_dates }}{% endif %}</span>
+                    </div>
+                </li>
 
                 {% for title in object.officer_titles %}
-                <div>
-                    <span class="labelsim">{{ title.title.name }}</span>
-                    {% if title.as_of_bounding_dates %}{{ title.as_of_bounding_dates }}{% endif %}
-                </div>
+                <li>
+                    <span>{{ title.title.name }}</span>
+                    <div class="identification-meta">
+                        <span class="dates">{% if title.at_least_since_bounding_dates %}{{ title.at_least_since_bounding_dates }}{% endif %}</span>
+                    </div>
+                </li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if object.officer_contact_infos %}
+                <h3>Contact</h3>
+                {% for contact_info in object.officer_contact_infos %}
+
+                    <div class="contact-info">
+                    {% if contact_info.is_current %}
+                    <p class="contact-is-current">Current</p>
+                    {% endif %}
+
+                    {% if contact_info.phone_number %}
+                    <p>
+                        <span class="label">Phone:</span> {{ contact_info.phone_number }}
+                    </p>
+                    {% endif %}
+                    {% if contact_info.email %}
+                    <p>
+                        <span class="label">Email:</span> {{ contact_info.email }}
+                    </p>
+                    {% endif %}
+                    {% if contact_info.address or contact_info.city or contact_info.state or contact_info.zip_code %}
+                    <p>
+                        <span class="label">Address:</span> {{ contact_info|contact_address_in_one_line }}
+                    </p>
+                    {% endif %}
+                    </div>
+                    {% if not forloop.last %}<hr>{% endif %}
                 {% endfor %}
                 {% endif %}
 
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
             <div class="gridcol gridcell_1_of_3">
+                {% if object.officer_identifiers %}
+                <h3>Identifiers</h3>
+                <ul class="identifiers">
                 {% for identifier in object.officer_identifiers %}
-                <div>
-                    <label class="ident">{{ identifier.person_identifier_type }}</label>
-                    <span class="identval">{{ identifier.identifier }}</span>
-                    {% if identifier.as_of_bounding_dates %}{{ identifier.as_of_bounding_dates }}{% endif %}
-                </div>
+                <li>
+                    <span class="label">{{ identifier.person_identifier_type }}:</span>
+                    <span>{{ identifier.identifier }}</span>
+                    {% if identifier.at_least_since_bounding_dates %}
+                    <div class="identification-meta">
+                        <span class="dates">{{ identifier.at_least_since_bounding_dates }}</span>
+                    </div>
+                    {% endif %}
+                </li>
                 {% endfor %}
+                </ul>
+                {% endif %}
 
                 {% if object.officer_command %}
-                <div>
-                    <label class="ident">{% if object.officer_commands %}{% translate 'Commands' %}{% else %}{% translate 'Command' %}{% endif %}</label>
-                </div>
-
-                <div>
-                    <span class="identval labelsim">{{ object.officer_command.grouping.name }}</span>
-                    {% if object.officer_command.as_of_bounding_dates %}{{ object.officer_command.as_of_bounding_dates }}{% endif %}
-                </div>
-
+                <h3>{% if object.officer_commands %}{% translate 'Commands' %}{% else %}{% translate 'Command' %}{% endif %}</h3>
+                <ul>
+                    <li>
+                        <span><a href="{{ object.officer_command.grouping.get_profile_url }}">{{ object.officer_command.grouping.name }}</a></span>
+                        <div class="identification-meta">
+                            <span>{{ object.officer_command.type.name }}</span>
+                            {% if object.officer_command.at_least_since_bounding_dates %}<span class="dates">{{ object.officer_command.at_least_since_bounding_dates }}</span>{% endif %}
+                        </div>
+                    </li>
                 {% for command in object.officer_commands %}
-                <div>
-                    <span class="labelsim">{{ command.grouping.name }}</span>
-                    {% if command.as_of_bounding_dates %}{{ command.as_of_bounding_dates }}{% endif %}
-                </div>
+                    <li>
+                        <span><a href="{{ command.grouping.get_profile_url }}">{{ command.grouping.name }}</a></span>
+                        <div class="identification-meta">
+                            <span>{{ command.type.name }}</span>
+                            {% if command.at_least_since_bounding_dates %}<span class="dates">{{ command.at_least_since_bounding_dates }}</span>{% endif %}
+                        </div>
+                    </li>
                 {% endfor %}
+                </ul>
                 {% endif %}
 
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
+            <div class="gridcol gridcell_2_of_3 payroll-column">
+                    <section class="payroll jqueryui">
+                        <div id="accordion">
+                    <h4>Payroll</h4>
+                    <div>
+                        {% if object.officer_payments %}
+                        <div class="payrollcontainer">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>{% translate 'Period' %}</th>
+                                    <th>{% translate 'Salary' %}</th>
+                                    <th>{% translate 'Hours' %}</th>
+                                    <th>{% translate 'Gross Pay' %}</th>
+                                    <th>{% translate 'Overtime Hours' %}</th>
+                                    <th>{% translate 'Overtime Pay' %}</th>
+                                    <th>{% translate 'Other Pay' %}</th>
+                                    <th>{% translate 'County' %}</th>
+                                    <th>{% translate 'Leave Status' %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for officer_payment in object.officer_payments %}
+                                <tr>
+                                    <td>{{ officer_payment.at_least_since_bounding_dates|capfirst }}</td>
+                                    <td>${{ officer_payment.base_salary }}</td>
+                                    <td>{{ officer_payment.regular_hours|table_cell }}</td>
+                                    <td>{{ officer_payment.regular_gross_pay|table_cell_currency }}</td>
+                                    <td>{{ officer_payment.overtime_hours|table_cell }}</td>
+                                    <td>{{ officer_payment.overtime_pay|table_cell_currency }}</td>
+                                    <td>{{ officer_payment.total_other_pay|table_cell_currency }}</td>
+                                    <td>{{ officer_payment.county|table_cell }}</td>
+                                    <td>{{ officer_payment.leave_status|table_cell }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        </div>
+                    {% else %}
+                        <p class="nodata">{% translate 'No payroll is recorded for this officer.' %}</p>
+                    {% endif %}
+
+                    </div>
+                </div>
+                    </section> <!-- section.payroll -->
+
+            </div>
         </div> <!-- div.gridrow.gridgroup -->
+    </section> <!-- section.identification -->
 
-    </div> <!-- div.collapsible -->
+    <section class="associates">
+        <div class="section-heading">
+            <h2>{% translate 'Associates' %}</h2>
+            {% if is_admin %}
+            <span class="admin-actions">
+                <a href="{{ object.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            </span>
+            {% endif %}
+        </div>
 
-    <button type="button" class="collapsible expanded">{% translate 'Payroll' %}</button>
-    <div class="collapsible">
-        {% if object.officer_payments %}
-            <table>
-                <thead>
-                    <th>{% translate 'Period' %}</th>
-                    <th>{% translate 'Salary' %}</th>
-                    <th>{% translate 'Hours' %}</th>
-                    <th>{% translate 'Gross Pay' %}</th>
-                    <th>{% translate 'Overtime Hours' %}</th>
-                    <th>{% translate 'Overtime Pay' %}</th>
-                    <th>{% translate 'Other Pay' %}</th>
-                    <th>{% translate 'County' %}</th>
-                    <th>{% translate 'Leave Status' %}</th>
-                </thead>
-                <tbody>
-                {% for officer_payment in object.officer_payments %}
-                    <tr>
-                        <td>{{ officer_payment.as_of_bounding_dates|capfirst }}</td>
-                        <td>{% translate '$' %}{{ officer_payment.base_salary }}</td>
-                        <td>{{ officer_payment.regular_hours }}</td>
-                        <td>{% translate '$' %}{{ officer_payment.regular_gross_pay }}</td>
-                        <td>{{ officer_payment.overtime_hours }}</td>
-                        <td>{% translate '$' %}{{ officer_payment.overtime_pay }}</td>
-                        <td>{% translate '$' %}{{ officer_payment.total_other_pay }}</td>
-                        <td>{{ officer_payment.county }}</td>
-                        <td>{{ officer_payment.leave_status }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p class="nodata">{% translate 'No payroll is recorded for this officer.' %}</p>
-        {% endif %}
-    </div> <!-- div.collapsible -->
-    <button type="button" class="collapsible expanded">{% translate 'Associates' %}</button>
-    <div class="collapsible">
-        {% if object.officer_relationships %}
-            <ul class="rel">
-                {% for officer_relationship in object.officer_relationships %}
-                <li class="rel">
-                    <span class="othper">{{ officer_relationship.person }}</span>
-                    -
-                    <span class="rel">
-                        {{ officer_relationship.relationship }}
-                        {% if officer_relationship.num > 1 %}
-                            {{ officer_relationship.num }} {% translate 'times' %}
-                        {% endif %}
-                    </span>
-                </li>
-                {% endfor %}
-            </ul>
+        {% if object.relationships %}
+        <ul id="relationships">
+        {% for relationship in object.relationships %}
+            <li>
+                {% link_to_others relationship.subject_person %} {{ relationship.type.name }} {% link_to_others relationship.object_person %}
+                {% if relationship.at_least_since_bounding_dates %}({{ relationship.at_least_since_bounding_dates }}){% endif %}
+            </li>
+        {% endfor %}
+        </ul>
         {% else %}
             <p class="nodata">{% translate 'No associates are recorded for this officer.' %}</p>
         {% endif %}
-    </div> <!-- div.collapsible -->
-    <button type="button" class="collapsible expanded">{% translate 'Snapshot' %}</button>
-    <div class="collapsible">
 
+    </section> <!-- section.associates -->
+    <section class="snapshot">
+        <div class="section-heading">
+            <h2>{% translate 'Snapshot' %}</h2>
+            {% if is_admin %}
+            <span class="admin-actions">
+                <i class="fas fa-lock primary-color" aria-hidden="true" title="System generated. Cannot be edited directly."></i> <span class="sr-only">System generated. Cannot be edited directly.</span>
+            </span>
+            {% endif %}
+        </div>
         <div class="gridrow gridgroup">
             <div class="gridcol gridcell_1_of_3">
 
@@ -254,14 +321,47 @@
 
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
         </div> <!-- div.gridrow.gridgroup -->
-    </div> <!-- div.collapsible -->
+    </section> <!-- section.snapshot -->
 
-    <button type="button" class="collapsible expanded">{% translate 'Misconduct' %}</button>
-    <div class="collapsible">
+    <section class="misconduct">
+
+        <div class="section-heading">
+            <h2>Known Incidents</h2>
+        </div>
+        {% if has_attachments %}
+        <p>
+            <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
+                <span class="h2lower"><i class="fas fa-file-archive"></i></span>
+                <span class="h2upper">{% translate 'Download all attachments' %}</span>
+            </span></a>
+        </p>
+        {% endif %}
+
+        <span id="i_expandall">
+            <span>{% translate 'Expand' %}</span>
+            <span>{% translate 'All' %}</span>
+        </span>
+        |
+        <span id="i_collapseall">
+            <span>{% translate 'Collapse' %}</span>
+            <span>{% translate 'All' %}</span>
+        </span>
+
+
+
         {% if object.officer_misconducts or object.officer_contents %}
         {% for officer_misconduct in object.officer_misconducts %}
-        <div class="mispad">
-            <button type="button" class="collapsible expanded">{% if not officer_misconduct.incident.exact_bounding_dates %}{% translate 'On an unknown date' %}{% else %}{{ officer_misconduct.incident.exact_bounding_dates|capfirst }}{% endif %}</button>
+        <div class="mispad incident incident-{{ officer_misconduct.incident.pk }}">
+                <h3>
+                    <button type="button" class="collapsible expanded">{% if not officer_misconduct.incident.exact_bounding_dates %}{% translate 'On an unknown date' %}{% else %}{{ officer_misconduct.incident.exact_bounding_dates|capfirst }}{% endif %}
+                    {% if is_admin %}
+                    &nbsp;
+                    <span class="admin-actions">
+                        <a href="{{ officer_misconduct.incident.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                    </span>
+                    {% endif %}
+                    </button>
+                </h3>
             <div class="collapsible">
                 <div class="gridrow gridgroup">
                     <div class="gridcol gridcell_1_of_2">
@@ -278,53 +378,60 @@
                         </p>
                         {% endif %}
                         {% if officer_misconduct.incident.officer_other_persons %}
-                        <span class="mish1">{% translate 'Other Officers Involved' %}</span>
+                        <span class="mish1">{% translate 'Others Involved' %}</span>
                         <p class="mispeoples">
                             {% for other_person in officer_misconduct.incident.officer_other_persons %}
-                                <a href="{% url 'profiles:officer' pk=other_person.person.pk %}">{{ other_person.person.name }}</a>{% if not forloop.last %},{% endif %}
+                                {% link_to_others other_person.person %}{{ other_person.situation_role.name|parenthesize }}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         </p>
                         {% endif %}
                     </div> <!-- div.gridcol.gridcell_1_of_2 -->
                     <div class="gridcol gridcell_1_of_2">
-                        {% if officer_misconduct.parsed_officer_content_person_allegations %}
-                        <span class="mish1">{% translate 'Allegations' %}</span>
-                        <ul class="misall">
-                        {% for allegation, outcomes in officer_misconduct.parsed_officer_content_person_allegations.items %}
-                            <li class="misall">
-                                <span class="mish2">{{ allegation }}</span>
-                                {% for outcome in outcomes %}{{ outcome }}{% if not forloop.last %},{% endif %}{% endfor %}
+                        {% if officer_misconduct.allegations %}
+                        <h3>Allegations</h3>
+                        <ul>
+                            {% for allegation in officer_misconduct.allegations %}
+                            <li class="allegation">
+                                <span class="allegation-type">{{ allegation.allegation.name }}</span> &ndash; <span class="allegation-outcome">{{ allegation.allegation_outcome.name }}</span>
+                                {% if is_admin %}
+                                    <a href="{{ allegation.content_person.content.get_allegations_penalties_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                                {% endif %}
                             </li>
-                        {% endfor %}
+                            {% endfor %}
                         </ul>
                         {% endif %}
 
-                        {% if officer_misconduct.parsed_officer_content_person_penalties %}
-                        <span class="mish1">{% translate 'Penalties' %}</span>
-                        <ul class="misall">
-                        {% for penalty in officer_misconduct.parsed_officer_content_person_penalties %}
-                            <li class="misall"><span class="mish2">{{ penalty }}</span></li>
-                        {% endfor %}
+                        {% if officer_misconduct.penalties %}
+                        <h3>Penalties</h3>
+                        <ul>
+                            {% for penalty in officer_misconduct.penalties|dictsort:"discipline_date" %}
+                            <li class="penalty">
+                                {% if penalty.discipline_date %}On {{ penalty.discipline_date }}{% endif %}{% if penalty.discipline_date and penalty.penalty_received %},{% endif %}
+                                {{ penalty.penalty_received }}
+                                {% if is_admin %}
+                                    <a href="{{ penalty.get_allegations_penalties_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
                         </ul>
                         {% endif %}
 
                         {% if officer_misconduct.parsed_officer_content_types and officer_misconduct.parsed_officer_contents %}
                         <span class="mish1">{% translate 'Sources' %}</span>
                         <ul class="misall">
-                        {% for officer_content_type in officer_misconduct.parsed_officer_content_types %}
+                        {% for content in officer_misconduct.incident.officer_incident_contents %}
                             <li class="misall">
-                                {% with content_dict=officer_misconduct.parsed_officer_contents|get_value:officer_content_type %}
-                                    {% with attachments=content_dict|get_value:attachments_key strings=content_dict|get_value:strings_key links=content_dict|get_value:links_key %}
-                                    {% for string in strings %}
-                                        {% if links|get_item:forloop.counter0 %}
-                                            <a href="{{ links|get_item:forloop.counter0 }}"><span class="mish2">{{ string }}</span></a>
-                                        {% else %}
-                                            <span class="mish2">{{ string }}</span>
-                                        {% endif %}
-                                    {% endfor %}
-                                    {% if attachments %}
+                                {{ content.type.name|default:"Other" }}
+                                {{ content.officer_content_identifiers|format_identifiers }}
+                                {% if is_admin %}
+                                    <a href="{{ content.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                                {% endif %}
+                                {% if content.officer_attachments %}
                                     <ul class="misall">
-                                    {% for attachment in attachments %}
+                                        {% if content.link %}
+                                        <li><a href="{{ content.link }}"><i class="fas fa-link"></i> {{ content.link }}</a></li>
+                                        {% endif %}
+                                    {% for attachment in content.officer_attachments %}
                                         <li class="misall">
                                             {% if attachment.file %}
                                             <a class="misatt" href="{{ attachment.file.url }}" rel="noopener noreferrer" target="_blank" download><i class="fas fa-file-download"></i>
@@ -335,11 +442,10 @@
                                         </li>
                                     {% endfor %}
                                     </ul>
-                                    {% endif %}
-                                    {% endwith %}
-                                {% endwith %}
+                                {% endif %}
                             </li>
                         {% endfor %}
+
                         </ul>
                         {% endif %}
                     </div> <!-- div.gridcol.gridcell_1_of_2 -->
@@ -350,15 +456,24 @@
 
         {% for content_person in object.officer_contents %}
         {% with content=content_person.content %}
-        <div class="mispad">
-            <button type="button" class="collapsible expanded">
+        <div class="mispad content content-{{ content.pk }}">
+            <h3>
+                <button type="button" class="collapsible expanded">
                 {% if content.type %}{{ content.type }}{% endif %}
                 {% for content_identifier in content.officer_content_identifiers %}
                     {{ content_identifier.identifier }}{% if not forloop.last %},{% endif %}
                 {% empty %}
                     {% translate 'Unnamed' %}
                 {% endfor %}
-            </button>
+                {% if is_admin %}
+                &nbsp;
+                <span class="admin-actions">
+                    <a href="{{ content.get_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                </span>
+                {% endif %}
+
+                </button>
+            </h3>
             <div class="collapsible">
                 <div class="gridrow gridgroup">
                     <div class="gridcol gridcell_1_of_2">
@@ -371,7 +486,7 @@
                         <p class="missummary">
                             {% if content.description %}{{ content.description }}{% else %}{% translate 'There is no summary available for this content.' %}{% endif %}</p>
                         {% if content_person.content.officer_other_persons %}
-                        <span class="mish1">{% translate 'Other Officers Involved' %}</span>
+                        <span class="mish1">{% translate 'Others Involved' %}</span>
                         <p class="mispeoples">
                             {% for other_person in content.officer_other_persons %}
                                 <a href="{% url 'profiles:officer' pk=other_person.person.pk %}">{{ other_person.person.name }}</a>{% if not forloop.last %},{% endif %}
@@ -379,26 +494,34 @@
                         </p>
                         {% endif %}
 
-                        {% if content_person.parsed_officer_content_person_allegations %}
-                        <span class="mish1">{% translate 'Allegations' %}</span>
-                        <ul class="misall">
-                        {% for allegation, outcomes in content_person.parsed_officer_content_person_allegations.items %}
-                            <li class="misall">
-                                <span class="mish2">{{ allegation }}</span>
-                                {% for outcome in outcomes %}{{ outcome }}{% if not forloop.last %},{% endif %}{% endfor %}
+                        {% if content_person.officer_allegations %}
+                        <h3>Allegations</h3>
+                        <ul>
+                            {% for allegation in content_person.officer_allegations %}
+                            <li class="allegation">
+                                <span class="allegation-type">{{ allegation.allegation.name }}</span> &ndash; <span class="allegation-outcome">{{ allegation.allegation_outcome.name }}</span>
+                                {% if is_admin %}
+                                    <a href="{{ allegation.content_person.content.get_allegations_penalties_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                                {% endif %}
                             </li>
-                        {% endfor %}
+                            {% endfor %}
                         </ul>
                         {% endif %}
 
-                        {% if content_person.parsed_officer_content_person_penalties %}
-                        <span class="mish1">{% translate 'Penalties' %}</span>
-                        <ul class="misall">
-                        {% for penalty in content_person.parsed_officer_content_person_penalties %}
-                            <li class="misall"><span class="mish2">{{ penalty }}</span></li>
-                        {% endfor %}
+                        {% if content_person.officer_penalties %}
+                        <h3>Penalties</h3>
+                        <ul>
+                            {% for penalty in content_person.officer_penalties %}
+                            <li class="penalty">
+                                {% if penalty.discipline_date %}On {{ penalty.discipline_date }}{% endif %}{% if penalty.discipline_date and penalty.penalty_received %},{% endif %}
+                                {{ penalty.penalty_received }}
+                                {% if is_admin %}
+                                    <a href="{{ penalty.get_allegations_penalties_edit_url }}?next={{ request.path }}"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+                                {% endif %}
+                            {% endfor %}
                         </ul>
                         {% endif %}
+
                     </div> <!-- div.gridcol.gridcell_1_of_2 -->
                     <div class="gridcol gridcell_1_of_2">
                         {% if content.content_case %}
@@ -441,7 +564,7 @@
         {% else %}
             <p class="nodata">{% translate 'No misconduct is recorded for this officer.' %}</p>
         {% endif %}
-    </div> <!-- div.collapsible -->
+    </section> <!-- section.misconduct -->
 
 {% endblock %}
 
@@ -454,4 +577,11 @@
 {% block onready %}
     {{ block.super }}
     Fdp.OfficerProfile.init();
+        $( function() {
+    $( "#accordion" ).accordion({
+      collapsible: true,
+      active: false,
+    });
+  } );
+
 {% endblock %}

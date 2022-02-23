@@ -1,11 +1,16 @@
+import uuid
+
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from inheritable.tests import AbstractTestCase, local_test_settings_required
 from fdpuser.models import FdpOrganization, FdpUser
-from core.models import Person, PersonIncident, Incident, PersonRelationship, Grouping, PersonGrouping, GroupingIncident
+from core.models import Person, PersonIncident, Incident, PersonRelationship, Grouping, PersonGrouping, \
+    GroupingIncident, PersonAlias, PersonTitle, Title
 from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase
-from supporting.models import PersonRelationshipType, ContentIdentifierType
+from supporting.models import PersonRelationshipType, ContentIdentifierType, Trait, TraitType
 from os.path import splitext
+from django.test import Client
+from datetime import datetime, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
@@ -1275,7 +1280,6 @@ class ProfileTestCase(AbstractTestCase):
         # remove content identifiers with different confidentiality levels
         self.__delete_content_identifiers_for_command_related_data()
 
-    @local_test_settings_required
     def test_officer_profile_views(self):
         """ Test for Officer profile search results and profile views for all permutations of user roles,
         confidentiality levels and relevant models.
@@ -1293,10 +1297,10 @@ class ProfileTestCase(AbstractTestCase):
         self.__test_attachment_for_officer_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_for_officer_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_identifier_for_officer_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
-        logger.debug(_('\nSuccessfully finished test for for Officer Profile Search Results view and Officer Profile view for '
-                'all permutations of user roles, confidentiality levels and relevant models\n\n'))
+        logger.debug(
+            _('\nSuccessfully finished test for for Officer Profile Search Results view and Officer Profile view for '
+              'all permutations of user roles, confidentiality levels and relevant models\n\n'))
 
-    @local_test_settings_required
     def test_command_profile_views(self):
         """ Test for Command profile search results and profile views for all permutations of user roles,
         confidentiality levels and relevant models.
@@ -1315,4 +1319,4 @@ class ProfileTestCase(AbstractTestCase):
         self.__test_content_for_command_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         self.__test_content_identifier_for_command_profile_views(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         logger.debug(_('\nSuccessfully finished test for for Command Profile view for '
-                'all permutations of user roles, confidentiality levels and relevant models\n\n'))
+                       'all permutations of user roles, confidentiality levels and relevant models\n\n'))

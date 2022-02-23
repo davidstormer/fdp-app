@@ -1,0 +1,44 @@
+{% extends "common/fdp_base_site.html" %}
+{% load i18n admin_urls static compress %}
+
+{% block extrahead %}
+    {{ block.super }}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'wholesale/css/wholesale_start_import.css' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'profiles:index' %}">{% translate 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a>
+    &rsaquo;
+    <a href="{% url 'wholesale:index' %}">{% translate 'Importer' %}</a>
+    &rsaquo;
+    {{ title }}
+</div>
+{% endblock %}
+{% endif %}
+{% block content %}
+<p>{% blocktranslate %}<i class="start fas fa-question-circle"></i>Are you ready to start this <strong class="action">{{ action_txt }}</strong> import with <strong>{{ num_of_data_rows }}</strong> rows of data:{% endblocktranslate %}</p>
+<ul class="review">
+    {% for model_tuple in models_with_fields %}
+    <li>{% blocktranslate with model=model_tuple.0 %}for <strong>{{ model}}</strong> with {% endblocktranslate %}{% for model_field in model_tuple.1 %}<strong>{{ model_field }}</strong>{% if not forloop.last %},{% endif %} {% endfor %}</li>
+    {% endfor %}
+</ul>
+
+<form action="{% url 'wholesale:start_import' pk=pk %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="{% translate 'Start' %}" />
+</form>
+
+{% endblock %}

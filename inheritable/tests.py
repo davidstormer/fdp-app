@@ -1,3 +1,5 @@
+import warnings
+
 from django.test import TestCase, Client
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.util import random_hex
@@ -23,13 +25,8 @@ def local_test_settings_required(func):
     :return: Decorator.
     """
     def decorator(*args, **kwargs):
-        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a local
-        development environment.
-
-        :param args: Positional arguments for decorated test method.
-        :param kwargs: Keyword arguments for decorated test method.
-        :return: Nothing.
-        """
+        msg = "@local_test_settings_required is deprecated. It's now unnecessary."
+        warnings.warn(msg, FutureWarning)
         if AbstractConfiguration.is_using_local_configuration():
             func(*args, **kwargs)
         else:
@@ -43,51 +40,33 @@ def azure_test_settings_required(func):
     for a simulated Microsoft Azure hosting environment, including with authentication possible through BOTH Django
     and Azure Active Directory.
 
-    :param func: Function that should be skipped unless the necessary settings are configured.
+    :param func: Function that should be called if the necessary settings are configured.
     :return: Decorator.
     """
     def decorator(*args, **kwargs):
-        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a simulated
-        Microsoft Azure hosting environment, including with authentication possible through BOTH Django and Azure
-        Active Directory.
-
-        :param args: Positional arguments for decorated test method.
-        :param kwargs: Keyword arguments for decorated test method.
-        :return: Nothing.
-        """
-        if AbstractConfiguration.is_using_azure_configuration() \
-                and AbstractConfiguration.can_do_azure_active_directory() \
-                and not AbstractConfiguration.use_only_azure_active_directory():
-            func(*args, **kwargs)
-        else:
-            logger.warning(f'\nSkipped {func.__name__}. It requires Azure test settings and can be run with the '
-                           f'command: python manage.py test --settings=fdp.configuration.test.test_azure_settings')
+        msg = f"""Can't run {func.__name__} It requires Azure test settings. Try running with 'test_azure_settings' 
+        configuration: python manage.py test --pattern=azure_test* --settings=fdp.configuration.test.test_azure_settings"""
+        assert AbstractConfiguration.is_using_azure_configuration(), msg
+        assert(AbstractConfiguration.can_do_azure_active_directory()), msg
+        assert(not AbstractConfiguration.use_only_azure_active_directory()), msg
     return decorator
 
 
 def azure_only_test_settings_required(func):
-    """ Retrieves a decorator method that allows tests to be skipped unless the necessary settings have been configured
+    """ Retrieves a decorator method that refuses to run tests unless the necessary settings have been configured
     for a simulated Microsoft Azure hosting environment, including with authentication possible ONLY through Azure
     Active Directory.
 
-    :param func: Function that should be skipped unless the necessary settings are configured.
+    :param func: Function that should be called if the necessary settings are configured.
     :return: Decorator.
     """
     def decorator(*args, **kwargs):
-        """ Decorator that allows tests to be skipped unless the necessary settings have been configured for a simulated
-        Microsoft Azure hosting environment, including with authentication possible through ONLY Azure Active Directory.
-
-        :param args: Positional arguments for decorated test method.
-        :param kwargs: Keyword arguments for decorated test method.
-        :return: Nothing.
-        """
-        if AbstractConfiguration.is_using_azure_configuration() \
-                and AbstractConfiguration.can_do_azure_active_directory() \
-                and AbstractConfiguration.use_only_azure_active_directory():
-            func(*args, **kwargs)
-        else:
-            logger.warning(f'\nSkipped {func.__name__}. It requires Azure only test settings and can be run with the '
-                           f'command: python manage.py test --settings=fdp.configuration.test.test_azure_only_settings')
+        msg = f"""Can't run {func.__name__} It requires Azure ONLY test settings. Try running with 
+        'test_azure_only_settings' configuration:
+        python manage.py test --pattern=azure_only_test* --settings=fdp.configuration.test.test_azure_only_settings"""
+        assert(AbstractConfiguration.is_using_azure_configuration()), msg
+        assert(AbstractConfiguration.can_do_azure_active_directory()), msg
+        assert(AbstractConfiguration.use_only_azure_active_directory()), msg
     return decorator
 
 
@@ -452,6 +431,19 @@ class AbstractTestCase(TestCase):
             base_url=AbstractUrlValidator.DATA_WIZARD_IMPORT_BASE_URL
         )
 
+    def _get_wholesale_import_file_path_for_view(self, wholesale_import_instance):
+        """ Retrieves the file path of a wholesale import, so that it can be passed as a parameter and processed
+        through a view.
+
+        :param wholesale_import_instance: Instance of wholesale import, for which to retrieve file path.
+        :return: File path that can be passed as a parameter into a view to download the wholesale import file.
+        """
+        return self.__get_file_path_for_view(
+            instance=wholesale_import_instance,
+            field_with_file='file',
+            base_url=AbstractUrlValidator.WHOLESALE_BASE_URL
+        )
+
     def _add_person_photo(self):
         """ Creates a person photo in the database, and adds a reference to it through the '_person_photo' attribute.
 
@@ -744,6 +736,42 @@ class AbstractTestCase(TestCase):
             login_startswith=login_startswith
         )
         return str(response.content)
+
+    def _get_response_from_post_request(
+            self, fdp_user, url, expected_status_code, login_startswith, post_data, cast_response_as_string=True
+    ):
+        """ Retrieves an HTTP response after sending an HTTP request through a POST method to a particular view for
+        an FDP user.
+
+        :param fdp_user: FDP user for which to send HTTP request through a POST method.
+        :param url: Url to which to send HTTP request through a POST method.
+        :param expected_status_code: Expected HTTP status code that is returned in the response.
+        :param login_startswith: Url to which response may be redirected. Only used when HTTP status code is 302.
+        :param cast_response_as_string: True to cast the HTTP response content as a string when returning it, false to
+        return the raw HTTP response content. True by default.
+        :return: String representation of the HTTP response if cast_response_as_string is True, the raw HTTP response
+        otherwise.
+        """
+        client = Client(**self._local_client_kwargs)
+        client.logout()
+        two_factor = self._create_2fa_record(user=fdp_user)
+        response = self._do_login(
+            c=client,
+            username=fdp_user.email,
+            password=self._password,
+            two_factor=two_factor,
+            login_status_code=200,
+            two_factor_status_code=200,
+            will_login_succeed=True
+        )
+        response = self._do_post(
+            c=response.client,
+            url=url,
+            data=post_data,
+            expected_status_code=expected_status_code,
+            login_startswith=login_startswith
+        )
+        return str(response.content) if cast_response_as_string else response.content
 
     @staticmethod
     def _can_user_access_data(for_admin_only, for_host_only, has_fdp_org, fdp_user, fdp_org):

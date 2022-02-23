@@ -1,0 +1,41 @@
+#content {
+    width: 100%;
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.column {
+    max-width: 240px;
+    width: 240px;
+    min-width: 240px;
+    text-align: center;
+    margin: 2em;
+}
+.column i:not(.fa-star) {
+    font-size: 200%;
+}
+.column i.fa-star {
+    margin-right: 0.25em;
+}
+
+.column.template i { color: #45A26D; }
+.column.import i { color: #C4547F; }
+.column.log i { color: #ADBD39; }
+
+/* For mobile users (width <= 480px), apply full width */
+@media only screen and (max-width: 640px) {
+	.row {
+	    display: block;
+    }
+    .column {
+        max-width: initial;
+        width: initial;
+        min-width: initial;
+    }
+}
