@@ -6,12 +6,13 @@ from django.db.models import Q, Prefetch, Exists
 from django.db.models.expressions import RawSQL, Subquery, OuterRef
 from django.apps import apps
 from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, \
-    AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractAsOfDateBounded, Confidentiable, \
+    AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractAtLeastSinceDateBounded, Confidentiable, \
     AbstractFileValidator, AbstractUrlValidator, Linkable, AbstractConfiguration
 from supporting.models import State, Trait, PersonRelationshipType, Location, PersonIdentifierType, County, \
     Title, GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
     PersonIncidentTag, LeaveStatus, SituationRole, TraitType
 from fdpuser.models import FdpOrganization
+from django.urls import reverse
 from datetime import date
 
 
@@ -82,6 +83,14 @@ class Person(Confidentiable, Descriptable):
     #: Fields to display in the model form.
     form_fields = \
         ['name', 'birth_date_range_start', 'birth_date_range_end', 'traits'] + Confidentiable.confidentiable_form_fields
+
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_person', args=(self.pk,))
+
+    @property
+    def get_profile_url(self):
+        return reverse('profiles:officer', args=(self.pk,))
 
     def __get_birth_date(self):
         """ Retrieve the human-friendly version of the person's birth date.
@@ -452,6 +461,8 @@ class Person(Confidentiable, Descriptable):
                 ),
                 to_attr='officer_identifiers'
             ),
+            Prefetch('person_contacts', queryset=PersonContact.active_objects.all().order_by('-is_current', '-pk'),
+                     to_attr='officer_contact_infos'),
             Prefetch(
                 'person_groupings',
                 # don't need to filter persons, since filtered above
@@ -523,7 +534,7 @@ class Person(Confidentiable, Descriptable):
                             user=user,
                             filter_dict=None,
                             person_pk=pk,
-                            person_filter_by_dict={'pk': OuterRef('person_id'), 'is_law_enforcement': True}
+                            person_filter_by_dict={'pk': OuterRef('person_id')}
                         ),
                         to_attr='officer_other_persons'
                     ),
@@ -996,7 +1007,7 @@ class PersonPhoto(Archivable, Descriptable):
         ordering = ['person']
 
 
-class PersonIdentifier(Archivable, AbstractAsOfDateBounded):
+class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
     """ Identifier for a person such as a passport number, driver's license number, etc.
 
     Attributes:
@@ -1076,10 +1087,10 @@ class PersonIdentifier(Archivable, AbstractAsOfDateBounded):
         db_table = '{d}person_identifier'.format(d=settings.DB_PREFIX)
         verbose_name = _('Person identifier')
         unique_together = ('person', 'person_identifier_type', 'identifier')
-        ordering = ['person', 'person_identifier_type'] + AbstractAsOfDateBounded.order_by_date_fields
+        ordering = ['person', 'person_identifier_type'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
 
 
-class PersonTitle(Archivable, AbstractAsOfDateBounded):
+class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
     """ Title for a person such as detective, fdptain, director, etc.
 
     Attributes:
@@ -1109,7 +1120,7 @@ class PersonTitle(Archivable, AbstractAsOfDateBounded):
     )
 
     #: Fields to display in the model form.
-    form_fields = ['title', 'person', 'as_of']
+    form_fields = ['title', 'person', 'at_least_since']
 
     def __str__(self):
         """Defines string representation for a person title.
@@ -1150,10 +1161,10 @@ class PersonTitle(Archivable, AbstractAsOfDateBounded):
         unique_together = (
             'person', 'title', 'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
         )
-        ordering = ['person'] + AbstractAsOfDateBounded.order_by_date_fields
+        ordering = ['person'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
 
 
-class PersonRelationship(Archivable, AbstractAsOfDateBounded):
+class PersonRelationship(Archivable, AbstractAtLeastSinceDateBounded):
     """ Defines a relationship between two persons in the format: subject verb object.
 
     For example subject_person=Person #1, type=is brother of, object_person=Person #2.
@@ -1198,7 +1209,7 @@ class PersonRelationship(Archivable, AbstractAsOfDateBounded):
     )
 
     #: Fields to display in the model form.
-    form_fields = ['as_of']
+    form_fields = ['at_least_since']
 
     def __str__(self):
         """Defines string representation for a person relationship.
@@ -1247,7 +1258,7 @@ class PersonRelationship(Archivable, AbstractAsOfDateBounded):
         ordering = ['subject_person', 'type', 'object_person']
 
 
-class PersonPayment(Archivable, AbstractAsOfDateBounded):
+class PersonPayment(Archivable, AbstractAtLeastSinceDateBounded):
     """ A payment made to a payment for work over a period of time.
 
     Attributes:
@@ -1350,7 +1361,7 @@ class PersonPayment(Archivable, AbstractAsOfDateBounded):
 
     #: Fields to display in the model form.
     form_fields = [
-        'as_of', 'leave_status', 'base_salary', 'regular_hours', 'regular_gross_pay', 'overtime_hours', 'overtime_pay',
+        'at_least_since', 'leave_status', 'base_salary', 'regular_hours', 'regular_gross_pay', 'overtime_hours', 'overtime_pay',
         'total_other_pay', 'person',
     ]
 
@@ -1361,7 +1372,7 @@ class PersonPayment(Archivable, AbstractAsOfDateBounded):
         """
         return '{p} {d} {f} {o}'.format(
             p=_('payment for'),
-            d=self.as_of_bounding_dates,
+            d=self.at_least_since_bounding_dates,
             f=_('for'),
             o=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='person')
         )
@@ -1394,7 +1405,7 @@ class PersonPayment(Archivable, AbstractAsOfDateBounded):
         unique_together = (
             'person', 'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
         )
-        ordering = ['person'] + AbstractAsOfDateBounded.order_by_date_fields
+        ordering = ['person'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
 
 
 class Grouping(Archivable, Descriptable):
@@ -1769,6 +1780,10 @@ class Grouping(Archivable, Descriptable):
         """
         return queryset
 
+    @property
+    def get_profile_url(self):
+        return reverse('profiles:command', kwargs={"pk": self.pk})
+
     class Meta:
         db_table = '{d}grouping'.format(d=settings.DB_PREFIX)
         verbose_name = _('grouping')
@@ -1833,7 +1848,7 @@ class GroupingAlias(Archivable, AbstractAlias):
         ordering = ['grouping', 'name']
 
 
-class GroupingRelationship(Archivable, AbstractAsOfDateBounded):
+class GroupingRelationship(Archivable, AbstractAtLeastSinceDateBounded):
     """ Defines a relationship between two groupings in the format: subject verb object.
 
     For example subject_grouping=Command, type=Belongs To, object_grouping=Precinct.
@@ -1878,7 +1893,7 @@ class GroupingRelationship(Archivable, AbstractAsOfDateBounded):
     )
 
     #: Fields to display in the model form.
-    form_fields = ['as_of']
+    form_fields = ['at_least_since']
 
     def __str__(self):
         """Defines string representation for a grouping relationship.
@@ -1915,7 +1930,7 @@ class GroupingRelationship(Archivable, AbstractAsOfDateBounded):
         ordering = ['subject_grouping', 'type', 'object_grouping']
 
 
-class PersonGrouping(Archivable, AbstractAsOfDateBounded):
+class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
     """ Links between persons and groupings, e.g. describing an attorney's involvement in a law office or an
     officer's involvement in a command or precinct.
 
@@ -1968,7 +1983,7 @@ class PersonGrouping(Archivable, AbstractAsOfDateBounded):
     )
 
     #: Fields to display in the model form.
-    form_fields = ['is_inactive', 'as_of', 'grouping', 'type', 'person']
+    form_fields = ['is_inactive', 'at_least_since', 'grouping', 'type', 'person']
 
     def __str__(self):
         """Defines string representation for a link between a person and a grouping.
@@ -2013,6 +2028,24 @@ class PersonGrouping(Archivable, AbstractAsOfDateBounded):
             )
         )
 
+    @property
+    def at_least_since_bounding_dates(self):
+        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
+
+        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
+        """
+        def end_date_is_all_zeros(self) -> bool:
+            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
+                return True
+            else:
+                return False
+
+        if self.is_inactive and end_date_is_all_zeros(self):
+            return super(PersonGrouping, self).at_least_since_bounding_dates + ' until unknown-end-date'
+        else:
+            return super(PersonGrouping, self).at_least_since_bounding_dates
+
+
     class Meta:
         db_table = '{d}person_grouping'.format(d=settings.DB_PREFIX)
         verbose_name = _('Link between person and grouping')
@@ -2020,7 +2053,7 @@ class PersonGrouping(Archivable, AbstractAsOfDateBounded):
         unique_together = (
             'person', 'grouping', 'type', 'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
         )
-        ordering = AbstractAsOfDateBounded.order_by_date_fields + ['grouping', 'person']
+        ordering = AbstractAtLeastSinceDateBounded.order_by_date_fields + ['grouping', 'person']
 
 
 class Incident(Confidentiable, AbstractExactDateBounded):
@@ -2108,6 +2141,10 @@ class Incident(Confidentiable, AbstractExactDateBounded):
             t='...' if not self.description else self.description
         )
         return str_rep
+
+    @property
+    def get_edit_url(self):
+        return reverse('changing:edit_incident', kwargs={"pk": self.pk, "content_id": 0})
 
     @classmethod
     def filter_for_admin(cls, queryset, user):

@@ -2,6 +2,51 @@
 
 All releases will be logged in this file.
 
+## [5.0.0] - 2022-02-22
+
+### Added
+
+  - Officer profile page: Add contact info to identification section
+  - Edit records directly from officer profile page
+  - Add new import tool ('wholesale' importer)
+  - Add support center link to all pages for administrative users
+  - Bulk data manipulation management commands: bulk_delete, export_external_ids, bulk_perms_host_only, 
+    bulk_update_groups
+  - Add functional testing framework for developers
+
+### Changed
+
+  - Attachments: add mp3 as valid upload file in default settings -- and expand list with other common formats
+  - Change "as of" field on dates to "at least since" (see migration notes below)
+  - Officer profile page:
+    - Redesign identification section for improved readability
+    - Group membership show officer's relation to group, link to group, and print "until unknown-end-date" when end 
+      date is unknown
+    - Payroll section, collapse out of the way by default, and print hyphens when values are empty
+    - Redesign Associates section to: reflect subject object order, add dates of relationship, and link to 
+      associates' profiles
+    - Rename "Misconduct" to "Known incidents"
+    - Reverse order of incidents
+    - In incident details show persons' situation role and rename "other officers involved" to "others involved"
+  - Upgrade Django to 3.1.14, and sqlparse to 0.4.2 (security releases)
+
+### Removed
+
+  - Officer profile: Bolding of various data points under certain conditions in identification section.
+
+### Upgrading notes
+
+Changes to the associates section of the officer profile page require that relationship types (i.e. predicates) be 
+updated to include the preposition (e.g. 'of' 'with' 'for'). For example "Father" should be changed to "Father of" 
+and "Sibling" should be changed to "Sibling with". These must be updated manually.
+
+The new wholesale importer feature requires a database migration. Run:
+```shell
+python3 manage.py migrate
+```
+to apply these migrations to the database. You may get a 500 error until you do this.
+
+
 ## [4.0.0] - 2021-12-14
 
 ### Added

@@ -1,6 +1,8 @@
+from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 from inheritable.models import AbstractUrlValidator
 from inheritable.tests import AbstractTestCase, local_test_settings_required
+from django.test import TestCase
 from fdpuser.models import FdpOrganization, FdpUser
 from .models import Person, PersonContact, PersonAlias, PersonPhoto, PersonIdentifier, PersonTitle, \
     PersonRelationship, PersonPayment, PersonGrouping, PersonIncident, GroupingIncident, Grouping, Incident
@@ -486,7 +488,6 @@ class CoreTestCase(AbstractTestCase):
         # remove incidents with different confidentiality levels
         self.__delete_incidents_related_data()
 
-    @local_test_settings_required
     def test_admin_views(self):
         """ Test for Admin Changelist, Create Instance, Change Instance, Delete Instance and History Views all
         permutations of user roles, confidentiality levels and relevant models.
@@ -505,7 +506,6 @@ class CoreTestCase(AbstractTestCase):
                 'delete instance and history views for all permutations of user roles, confidentiality levels and '
                 'relevant models\n\n'))
 
-    @local_test_settings_required
     def test_download_person_photo_view(self):
         """ Test for Download Person Photo View for all permutations of user roles and confidentiality levels.
 
@@ -518,3 +518,102 @@ class CoreTestCase(AbstractTestCase):
         self.__test_download_person_photo_view(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         logger.debug(_('\nSuccessfully finished test for Download Person Photo view for all permutations of user roles and '
                 'confidentiality levels\n\n'))
+
+
+class UnitTests(AbstractTestCase):
+    def test_grouping_get_profile_url(self):
+        # Given there is a group
+        group = Grouping.objects.create(name="Hello World")
+        # When I reference get_profile_url
+        url = group.get_profile_url
+        # Then I should get the url to view it
+        self.assertIn('command', url)
+
+    def test_person_grouping_at_least_since_bounding_dates(self):
+        # Given the following truth table
+        truth_table = [
+            {
+                'output': 'from 04/28/2010 until unknown-end-date',
+                'inputs':
+                    {
+                        'is_inactive': True,
+                        'end_year': 0,
+                        'end_month': 0,
+                        'end_day': 0,
+                        'start_year': 2010,
+                        'start_month': 4,
+                        'start_day': 28,
+                    }
+            },
+            {
+                'output': 'from 04/28/2010',
+                'inputs':
+                    {
+                        'is_inactive': False,
+                        'end_year': 0,
+                        'end_month': 0,
+                        'end_day': 0,
+                        'start_year': 2010,
+                        'start_month': 4,
+                        'start_day': 28,
+                    }
+            },
+            {
+                'output': 'from 04/28/2010 until 04/28/2020',
+                'inputs':
+                    {
+                        'is_inactive': True,
+                        'end_year': 2020,
+                        'end_month': 4,
+                        'end_day': 28,
+                        'start_year': 2010,
+                        'start_month': 4,
+                        'start_day': 28,
+                    }
+            },
+            {
+                'output': 'from 04/28/2010 until 04/28/2020',
+                'inputs':
+                    {
+                        'is_inactive': False,
+                        'end_year': 2020,
+                        'end_month': 4,
+                        'end_day': 28,
+                        'start_year': 2010,
+                        'start_month': 4,
+                        'start_day': 28,
+                    }
+            }
+        ]
+
+        for i, scenario in enumerate(truth_table):
+            with self.subTest(scenario=(i, scenario)):
+                with transaction.atomic():  # ... maintain test isolation
+                    person = Person.objects.create(name='Test Person')
+                    grouping = Grouping.objects.create(name='Test Group')
+                    self.assertEqual(1, len(Person.objects.all()))
+                    person_grouping = PersonGrouping.objects.create(
+                        person=person,
+                        grouping=grouping,
+                        is_inactive=scenario['inputs']['is_inactive'],
+                        end_year=scenario['inputs']['end_year'],
+                        end_month=scenario['inputs']['end_month'],
+                        end_day=scenario['inputs']['end_day'],
+                        start_year=scenario['inputs']['start_year'],
+                        start_month=scenario['inputs']['start_month'],
+                        start_day=scenario['inputs']['start_day'],
+                    )
+
+                    # WHEN I call at_least_since_bounding_dates on the given inputs
+                    #
+                    #
+                    result = person_grouping.at_least_since_bounding_dates
+
+                    # THEN I should get the respective output from the truth table
+                    #
+                    #
+                    self.assertEqual(
+                        scenario['output'],
+                        result
+                    )
+                    transaction.set_rollback(True)  # ... maintain test isolation

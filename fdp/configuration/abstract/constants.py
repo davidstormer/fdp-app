@@ -50,6 +50,11 @@ CONST_AZURE_AD_PROVIDER = 'azuread-tenant-oauth2'
 CONST_MAX_EULA_FILE_BYTES = 104857600
 
 
+#: Value for the default maximum number of bytes that a user-uploaded file can have for an instance of the
+# WholesaleImport model.
+CONST_MAX_WHOLESALE_FILE_BYTES = 104857600
+
+
 #: Value for the default maximum number of bytes that a user-uploaded file can have for an instance of the Attachment
 # model.
 CONST_MAX_ATTACHMENT_FILE_BYTES = 104857600
@@ -68,17 +73,77 @@ CONST_SUPPORTED_EULA_FILE_TYPES = [
 ]
 
 
+#: A list of tuples that define the types of user-uploaded files that are supported for an instance of the
+# WholesaleImport model. Each tuple has two items: the first is a user-friendly short description of the supported file
+# type; the second is the expected extension of the supported file type.
+CONST_SUPPORTED_WHOLESALE_FILE_TYPES = [('Comma-separated value file', 'csv')]
+
+
 #: A list of tuples that define the types of user-uploaded files that are supported for an instance of the Attachment
 # model. Each tuple has two items: the first is a user-friendly short description of the supported file type; the second
 # is the expected extension of the supported file type.
 CONST_SUPPORTED_ATTACHMENT_FILE_TYPES = [
-    ('Adobe PDF', 'pdf'), ('Microsoft Word 97-2003', 'doc'), ('Microsoft Word 2007+', 'docx'), ('Text file', 'txt'),
-    ('Rich-text format', 'rtf'), ('JPG image file', 'jpg'), ('JPEG image file', 'jpeg'), ('PNG image file', 'png'),
-    ('GIF image file', 'gif'), ('BMP image file', 'bmp'), ('TIFF image file', 'tiff'), ('TIF image file', 'tif'),
-    ('Microsoft Excel 97-2003', 'xls'), ('Microsoft Excel 2007+', 'xlsx'), ('Comma-separated value file', 'csv'),
-    ('Microsoft PowerPoint 97-2003', 'ppt'), ('Microsoft PowerPoint 2007+', 'pptx'),
-    ('Apple Quicktime video file', 'mov'), ('MPEG-4 video file', 'mp4'), ('Open Web Media file', 'webm'),
-]
+    ('Adobe PDF', 'pdf'),
+    ('Microsoft Word 97-2003', 'doc'),
+    ('Microsoft Word 2007+', 'docx'),
+    ('Text file', 'txt'),
+    ('Rich-text format', 'rtf'),
+    ('JPG image file', 'jpg'),
+    ('JPEG image file', 'jpeg'),
+    ('PNG image file', 'png'),
+    ('GIF image file', 'gif'),
+    ('BMP image file', 'bmp'),
+    ('TIFF image file', 'tiff'),
+    ('TIF image file', 'tif'),
+    ('Microsoft Excel 97-2003', 'xls'),
+    ('Microsoft Excel 2007+', 'xlsx'),
+    ('Comma-separated value file', 'csv'),
+    ('text/tab-separated-values', 'tsv'),
+    ('Microsoft PowerPoint 97-2003', 'ppt'),
+    ('Microsoft PowerPoint 2007+', 'pptx'),
+    ('Apple Quicktime video file', 'mov'),
+    ('MPEG-4 video file', 'mp4'),
+    ('Open Web Media file', 'webm'),
+    ('video/x-msvideo', 'avi'),
+    ('application/x-dvi', 'dvi'),
+    ('video/quicktime', 'qt'),
+    ('audio/mpeg', 'mp2'),
+    ('audio/mpeg', 'mp3'),
+    ('audio/x-wav', 'wav'),
+    ('audio/x-aiff', 'aif'),
+    ('application/postscript', 'ps'),
+    ('application/postscript', 'ai'),
+    ('application/postscript', 'eps'),
+    ('application/x-pn-realaudio', 'ram'),
+    ('application/zip', 'zip'),
+    ('audio/basic', 'au'),
+    ('audio/basic', 'snd'),
+    ('audio/x-aiff', 'aifc'),
+    ('audio/x-aiff', 'aiff'),
+    ('audio/x-pn-realaudio', 'ra'),
+    ('image/ief', 'ief'),
+    ('image/svg+xml', 'svg'),
+    ('image/x-portable-anymap', 'pnm'),
+    ('image/x-portable-bitmap', 'pbm'),
+    ('image/x-portable-graymap', 'pgm'),
+    ('image/x-portable-pixmap', 'ppm'),
+    ('image/x-xbitmap', 'xbm'),
+    ('image/x-xpixmap', 'xpm'),
+    ('message/rfc822', 'eml'),
+    ('message/rfc822', 'mht'),
+    ('message/rfc822', 'mhtml'),
+    ('message/rfc822', 'nws'),
+    ('text/html', 'html'),
+    ('text/html', 'htm'),
+    ('text/richtext', 'rtx'),
+    ('text/x-vcard', 'vcf'),
+    ('text/xml', 'xml'),
+    ('video/mpeg', 'mpeg'),
+    ('video/mpeg', 'm1v'),
+    ('video/mpeg', 'mpa'),
+    ('video/mpeg', 'mpe'),
+    ('video/mpeg', 'mpg'),
+    ('video/x-sgi-movie', 'movie')]
 
 #: A list of tuples that define the types of user-uploaded files that are supported for an instance of the Person Photo
 # model. Each tuple has two items: the first is a user-friendly short description of the supported file type; the second
@@ -87,3 +152,41 @@ CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES = [
     ('JPG image file', 'jpg'), ('JPEG image file', 'jpeg'), ('PNG image file', 'png'),
     ('GIF image file', 'gif'), ('BMP image file', 'bmp'), ('TIFF image file', 'tiff'), ('TIF image file', 'tif')
 ]
+
+
+#: A list of names of models that are in the allowlist for use through the wholesale import tool.
+CONST_WHOLESALE_MODELS_ALLOWLIST = [
+    # From the 'sourcing' app
+    'Attachment',
+    'Content',
+    'ContentIdentifier',
+    'ContentCase',
+    'ContentPerson',
+    'ContentPersonAllegation',
+    'ContentPersonPenalty',
+    # From the 'core' app
+    'Person',
+    'PersonContact',
+    'PersonAlias',
+    'PersonPhoto',
+    'PersonIdentifier',
+    'PersonTitle',
+    'PersonRelationship',
+    'PersonPayment',
+    'Grouping',
+    'GroupingAlias',
+    'GroupingRelationship',
+    'PersonGrouping',
+    'Incident',
+    'PersonIncident',
+    'GroupingIncident',
+    # From the 'supporting' app
+    'State',
+    'County',
+    'Location',
+    'Court',
+]
+
+
+#: A list of names of fields that are excluded from use through the wholesale import tool.
+CONST_WHOLESALE_FIELDS_DENYLIST = []

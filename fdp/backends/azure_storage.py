@@ -89,7 +89,7 @@ if getattr(settings, 'USE_AZURE_SETTINGS', False):
                 url = url.lstrip('/')
             return urljoin(settings.FDP_MEDIA_URL, url)
 
-        def get_sas_expiring_url(self, name):
+        def get_sas_expiring_url(self, name, expiry=None):
             """ Retrieves an absolute and temporary URL where the file's contents can be accessed directly by a Web
             browser.
 
@@ -97,11 +97,15 @@ if getattr(settings, 'USE_AZURE_SETTINGS', False):
 
             :param name: Relative path for file including file name and extension.
             :return: Absolute URL.
+            :expiry: override default expiration time, in seconds.
             """
             # relative path of file including name and extension
             name = self._get_valid_path(name)
             # link expiration in seconds
-            expire = self.expiration_secs
+            if expiry:
+                expire = expiry
+            else:
+                expire = self.expiration_secs
             # shared access signature
             sas_token = self.custom_service.generate_blob_shared_access_signature(
                 self.azure_container,

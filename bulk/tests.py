@@ -61,7 +61,6 @@ class BulkTestCase(AbstractTestCase):
         else:
             logger.debug(_('Fdp Import File download check is successful (exception was raised for guest administrator)'))
 
-    @local_test_settings_required
     def test_bulk_import_host_only_access(self):
         """ Test that only host administrators can access bulk import.
 

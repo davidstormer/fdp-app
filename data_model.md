@@ -277,7 +277,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - subject_grouping - ForeignKey
         - type - ForeignKey
         - object_grouping - ForeignKey
@@ -422,7 +422,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - person - ForeignKey
         - grouping - ForeignKey
         - type - ForeignKey
@@ -452,7 +452,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - identifier - CharField
         - person_identifier_type - ForeignKey
         - person - ForeignKey
@@ -501,7 +501,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - base_salary - DecimalField
         - regular_hours - DecimalField
         - regular_gross_pay - DecimalField
@@ -552,7 +552,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - subject_person - ForeignKey
         - type - ForeignKey
         - object_person - ForeignKey
@@ -580,7 +580,7 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
-        - as_of - BooleanField
+        - at_least_since - BooleanField
         - title - ForeignKey
         - person - ForeignKey
     - Methods (non-private/internal):
@@ -805,6 +805,7 @@
         - agrees_to_eula()
         - can_view_admin()
         - can_view_core()
+        - can_view_host_admin()
         - check_password()
         - do_missing_social_auth_check()
         - email_user()
@@ -1679,4 +1680,55 @@
         - get_verbose_name_plural()
 
 
-# Total Models Listed: 88
+# wholesale.WholesaleImport
+    - Fields:
+        - wholesale_import_record - ManyToOneRel
+        - id - AutoField
+        - created_timestamp - DateTimeField
+        - started_timestamp - DateTimeField
+        - ended_timestamp - DateTimeField
+        - action - CharField
+        - file - FileField
+        - user - CharField
+        - import_models - JSONField
+        - import_errors - TextField
+        - imported_rows - PositiveIntegerField
+        - error_rows - PositiveIntegerField
+        - uuid - CharField
+    - Methods (non-private/internal):
+        - convert_implicit_references()
+        - do_import()
+        - finish_import_without_raising_exception()
+        - get_action_display()
+        - get_auto_external_id()
+        - get_col_heading_name()
+        - get_db_table()
+        - get_db_table_for_many_to_many()
+        - get_fields_to_add()
+        - get_fk_model()
+        - get_models_with_fields()
+        - get_next_by_created_timestamp()
+        - get_num_of_data_rows()
+        - get_previous_by_created_timestamp()
+        - get_uuid()
+        - get_verbose_name()
+        - get_verbose_name_plural()
+
+
+# wholesale.WholesaleImportRecord
+    - Fields:
+        - id - AutoField
+        - wholesale_import - ForeignKey
+        - row_num - PositiveBigIntegerField
+        - model_name - CharField
+        - instance_pk - PositiveBigIntegerField
+        - errors - TextField
+    - Methods (non-private/internal):
+        - get_db_table()
+        - get_db_table_for_many_to_many()
+        - get_fk_model()
+        - get_verbose_name()
+        - get_verbose_name_plural()
+
+
+# Total Models Listed: 90

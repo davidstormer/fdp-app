@@ -26,7 +26,7 @@ var Fdp = (function (fdpDef, $, w, d) {
         var collapsibleButtons = "button.collapsible";
         $(collapsibleButtons).each(function (i, elem) {
             var button = $(elem);
-            var div = button.next("div.collapsible");
+            var div = button.parent().next("div.collapsible");
             var onStart = function () { photos.slick('setPosition'); };
             var onComplete = null;
             Fdp.Common.initCollapsible(
