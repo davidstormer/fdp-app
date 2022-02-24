@@ -26,7 +26,7 @@ DATA_WIZARD_STATUS_CHECK_SECONDS = 3
 
 #: To enforce user authentication only through the Azure Active Directory backend, remove the comment from the below
 # import statement.
-from .configuration.azure.azure_only_settings import *
+# from .configuration.azure.azure_only_settings import *
 
 
 # Name of Python file containing class that defines person profile searches.
