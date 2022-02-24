@@ -18,11 +18,41 @@ import sys
 
 
 #: To configure hosting in a Microsoft Azure environment, remove the comment from the below import statement.
-# from .configuration.azure.azure_settings import *
+from .configuration.azure.azure_settings import *
+
+FDP_EULA_SPLASH_ENABLE = True
+
+DATA_WIZARD_STATUS_CHECK_SECONDS = 3
 
 #: To enforce user authentication only through the Azure Active Directory backend, remove the comment from the below
 # import statement.
 from .configuration.azure.azure_only_settings import *
+
+
+# Name of Python file containing class that defines person profile searches.
+FDP_PERSON_PROFILE_SEARCH_FILE = 'def_person'
+# Name of class inheriting from AbstractProfileSearch that defines person profile searches.
+FDP_PERSON_PROFILE_SEARCH_CLASS = 'PersonProfileSearch'
+# Name of Python file containing class that defines grouping profile searches.
+FDP_GROUPING_PROFILE_SEARCH_FILE = 'def_grouping'
+# Name of class inheriting from AbstractProfileSearch that defines grouping profile searches.
+FDP_GROUPING_PROFILE_SEARCH_CLASS = 'GroupingProfileSearch'
+# Name of Python file containing class that defines person changing searches.
+FDP_PERSON_CHANGING_SEARCH_FILE = 'def_person'
+# Name of class inheriting from AbstractChangingSearch that defines person changing searches.
+FDP_PERSON_CHANGING_SEARCH_CLASS = 'PersonChangingSearch'
+# Name of Python file containing class that defines incident changing searches.
+FDP_INCIDENT_CHANGING_SEARCH_FILE = 'def_incident'
+# Name of class inheriting from AbstractChangingSearch that defines person changing searches.
+FDP_INCIDENT_CHANGING_SEARCH_CLASS = 'IncidentChangingSearch'
+# Name of Python file containing class that defines content changing searches.
+FDP_CONTENT_CHANGING_SEARCH_FILE = 'def_content'
+# Name of class inheriting from AbstractChangingSearch that defines content changing searches.
+FDP_CONTENT_CHANGING_SEARCH_CLASS = 'ContentChangingSearch'
+# Name of Python file containing class that defines grouping changing searches.
+FDP_CONTENT_GROUPING_SEARCH_FILE = 'def_grouping'
+# Name of class inheriting from AbstractChangingSearch that defines content changing searches.
+FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
 
 # Send log messages to Azure Monitor
 # Uncomment the below code and paste in
