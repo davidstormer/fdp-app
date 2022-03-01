@@ -854,7 +854,7 @@ var Fdp = (function (fdpDef, $, w, d) {
      * @param {Object} element - Element to which to scroll. Must be wrapped in JQuery object.
      */
     commonDef.scrollToElement = function (element) {
-        $([d.documentElement, d.body]).animate({scrollTop: element.offset().top}, 2000);
+        $([d.documentElement, d.body]).animate({scrollTop: element.offset().top}, 100);
     };
 
     /**
