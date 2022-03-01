@@ -299,6 +299,7 @@ class ImportLogsListView(HostAdminSyncListView):
     """
     template_name = 'wholesale_import_logs.html'
     model = WholesaleImport
+    ordering = '-pk'
 
     def get_context_data(self, **kwargs):
         """ Adds the title, description and user details to the view context.
