@@ -420,7 +420,8 @@ class Confidentiable(Archivable):
         null=False,
         blank=False,
         default=False,
-        help_text=_('Select if only administrators for the specified organizations can access.'),
+        help_text=_("Restrict access to this record to users who are Administrators (both host and guest "
+                    "administrators). When combined with 'Host Only', then only host administrators can access this record."),
         verbose_name=_('admin only')
     )
 
@@ -428,8 +429,9 @@ class Confidentiable(Archivable):
         null=False,
         blank=False,
         default=False,
-        help_text=_('Select if only users belonging to the host organization can access. When combined with \'admin '
-                    'only\', then only host administrators can access.'),
+        help_text=_('Restrict access to this record to users belonging to the host organization (both host staff and '
+                    'host administrators). When combined with \'Admin Only\', then only host administrators can '
+                    'access this record.'),
         verbose_name=_('host only')
     )
 
@@ -688,8 +690,9 @@ class Linkable(models.Model):
         null=False,
         blank=False,
         default=False,
-        verbose_name=_('Is this a guess'),
-        help_text=_('Select if link is a guess')
+        verbose_name=_('This is a guess'),
+        help_text=_("Check if there is uncertainty that the person being linked to the content is the correct person "
+                    "involved")
     )
 
     class Meta:
@@ -712,7 +715,9 @@ class Descriptable(models.Model):
         null=False,
         blank=True,
         verbose_name=_('Description'),
-        help_text=_('Verbose, user-friendly narrative'),
+        help_text=_('Any information specific to this content. This will display on the '
+                    'officer profile page if not linked to an incident. Make sure to describe the content, '
+                    'not the incident.'),
     )
 
     def __get_truncated_description(self):
@@ -1992,7 +1997,7 @@ class AbstractAlias(Descriptable):
     name = models.CharField(
         null=False,
         blank=False,
-        help_text=_('Alternative name, such as a nickname, acronym, or common misspelling'),
+        help_text=_('Alternative name, such as a nickname, or maiden name'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('alias')
     )
@@ -2325,7 +2330,7 @@ class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
         null=False,
         blank=False,
         default=False,
-        help_text=_('Select if start date is the earliest known start date, but not necessarily the true start date'),
+        help_text=_("Select if start date is the earliest known start date, but not necessarily the true start date"),
     )
 
     #: Fields that can be used in the admin interface to filter by date
