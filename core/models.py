@@ -40,14 +40,16 @@ class Person(Confidentiable, Descriptable):
     birth_date_range_start = models.DateField(
         null=True,
         blank=True,
-        help_text=_('If birth date is known, ensure start and end ranges are the same'),
+        help_text=_(''),
         verbose_name=_('Starting range for birth date')
     )
 
     birth_date_range_end = models.DateField(
         null=True,
         blank=True,
-        help_text=_('If birth date is known, ensure start and end ranges are the same'),
+        help_text=_('Example: If you know that a person is 28 years old on Jan 24 2021 enter the start range as '
+                    'January 25 1992 and end range January 24 1993. If known birth date is exact, set start and end '
+                    'ranges to the same date'),
         verbose_name=_('Ending range for birth date')
     )
 
@@ -75,8 +77,7 @@ class Person(Confidentiable, Descriptable):
         related_query_name='person',
         db_table='{d}person_fdp_organization'.format(d=settings.DB_PREFIX),
         blank=True,
-        help_text=_('FDP organizations, which have exclusive access to person. Leave blank if all registered users '
-                    'can access.'),
+        help_text=_('Restrict access to users from the specified non-host organization (both staff and administrators).'),
         verbose_name=_('organization access')
     )
 
@@ -730,7 +731,7 @@ class PersonContact(Archivable, Descriptable):
     phone_number = models.CharField(
         null=False,
         blank=True,
-        help_text=_('Phone number for person'),
+        help_text=_('Phone number'),
         max_length=256,
         verbose_name=_('phone number')
     )
@@ -738,7 +739,7 @@ class PersonContact(Archivable, Descriptable):
     email = models.EmailField(
         null=False,
         blank=True,
-        help_text=_('Email address for'),
+        help_text=_('Email address'),
         verbose_name=_('email')
     )
 
@@ -746,7 +747,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Building number, street name, unit # and PO box if available'),
+        help_text=_('Street address'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('address')
     )
@@ -755,7 +756,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('City for address of person'),
+        help_text=_('City'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('city')
     )
@@ -767,7 +768,7 @@ class PersonContact(Archivable, Descriptable):
         related_query_name='person_contact',
         blank=True,
         null=True,
-        help_text=_('State for address of person'),
+        help_text=_('State'),
         verbose_name=_('state')
     )
 
@@ -775,7 +776,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('ZIP code for address of person'),
+        help_text=_('ZIP code'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('zip code')
     )
@@ -785,7 +786,7 @@ class PersonContact(Archivable, Descriptable):
         blank=False,
         default=False,
         verbose_name=_('Is current'),
-        help_text=_('Select if contact information is currently used by person'),
+        help_text=_('Check if contact information is currently used by person'),
     )
 
     person = models.ForeignKey(
@@ -1019,7 +1020,7 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
     identifier = models.CharField(
         null=False,
         blank=False,
-        help_text=_('Identifier number, such as the driver\'s license number, passport number, or similar'),
+        help_text=_("Identifier value. Can be non-numeric."),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('identifier')
     )
@@ -1031,7 +1032,7 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
         related_query_name='person_identifier',
         blank=False,
         null=False,
-        help_text=_('Type of documentation containing identifier, such as driver\'s license, passport, or similar'),
+        help_text=_("Type of identifier, such as shield number, driver's license, etc."),
         verbose_name=_('type')
     )
 
@@ -1104,7 +1105,7 @@ class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
         related_query_name='person_title',
         blank=False,
         null=False,
-        help_text=_('Title of person during period'),
+        help_text=_('Title or rank'),
         verbose_name=_('title')
     )
 
@@ -1970,7 +1971,7 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         related_query_name='person_grouping',
         blank=True,
         null=True,
-        help_text=_('Category for link between the person and grouping'),
+        help_text=_('The type of relationships between the person and the group'),
         verbose_name=_('type')
     )
 
@@ -1979,7 +1980,7 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         blank=False,
         default=False,
         verbose_name=_('Is inactive'),
-        help_text=_('Select if the link between person and grouping is no longer active')
+        help_text=_("Select if the person is no longer associate with group but the end date is unknown")
     )
 
     #: Fields to display in the model form.

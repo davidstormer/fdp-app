@@ -80,7 +80,8 @@ class AbstractIsLawEnforcementModelForm(AbstractWizardModelForm):
     law_enforcement = forms.ChoiceField(
         required=True,
         label=_('Is law enforcement'),
-        help_text=_('Is this entity part of law enforcement'),
+        help_text=_('Is this person a member of law enforcement? (only law enforcement are searchable to users and '
+                    'have profile pages)'),
         choices=LawEnforcementCategories.choices,
     )
 
@@ -1415,13 +1416,13 @@ class ContentCaseModelForm(AbstractWizardModelForm):
     """
     case_opened = DateWithComponentsField(
         required=True,
-        label=_('Case opened'),
+        label=_('Case opened date'),
         fields=()  # ignored
     )
 
     case_closed = DateWithComponentsField(
         required=True,
-        label=_('Case closed'),
+        label=_('Case closed date'),
         fields=()  # ignored
     )
 
