@@ -156,6 +156,12 @@ class ModelHelper(models.Model):
         """
         return apps.get_model(app_label=app_name, model_name=model_name)
 
+    @classmethod
+    def get_db_table_from_class_name(cls, model_name: str) -> str:
+        app_name = ModelHelper.get_app_name(model=model_name)
+        model_class = ModelHelper.get_model_class(app_name=app_name, model_name=model_name)
+        return model_class.get_db_table()
+
     @staticmethod
     def is_field_linked_to_another_model(model, field):
         """ Checks whether a field that is declared on a model links to any other model.
@@ -1981,7 +1987,9 @@ class WholesaleImport(Metable):
                     imported_rel_model_names.append(rel_model_name)
                     rel_model_dict = data_struct[rel_model_name]
                     external_ids = [external_id for external_id in rel_model_dict.keys()]
-                    filter_dict = {'table_imported_to': rel_model_name, 'pk_imported_from__in': external_ids}
+                    filter_dict = {
+                        'table_imported_to': ModelHelper.get_db_table_from_class_name(rel_model_name),
+                        'pk_imported_from__in': external_ids}
                     bulk_list = list(BulkImport.objects.only(*bulk_fields).filter(**filter_dict).values(*bulk_fields))
                     # cycle through external IDs that represent instances in this relation model
                     for external_id in external_ids:
@@ -2105,7 +2113,7 @@ class WholesaleImport(Metable):
         fields = ['pk_imported_from', 'pk_imported_to']
         external_to_internal_map = {
             str(tuple_value[0]): int(tuple_value[1]) for tuple_value in BulkImport.objects.filter(
-                table_imported_to=model_name,
+                table_imported_to=ModelHelper.get_db_table_from_class_name(model_name),
                 pk_imported_from__in=all_external_ids
             ).only(*fields).values_list(*fields)
         }
@@ -2261,7 +2269,7 @@ class WholesaleImport(Metable):
                 source_imported_from='wholesale add',
                 table_imported_from=model_name,
                 pk_imported_from=external_id_tuple[0],
-                table_imported_to=model_name,
+                table_imported_to=ModelHelper.get_db_table_from_class_name(model_name),
                 pk_imported_to=created_instance.pk,
                 data_imported=json_dumps(attr_dict, default=str)
             )
@@ -2422,7 +2430,7 @@ class WholesaleImport(Metable):
                 source_imported_from='wholesale update',
                 table_imported_from=model_name,
                 pk_imported_from=ids_dict[pk]['e'],
-                table_imported_to=model_name,
+                table_imported_to=ModelHelper.get_db_table_from_class_name(model_name),
                 pk_imported_to=pk,
                 data_imported=json_dumps(ids_dict[pk]['a'], default=str)
             )

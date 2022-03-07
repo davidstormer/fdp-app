@@ -1,4 +1,7 @@
-from django.test import Client
+import csv
+import io
+
+from django.test import Client, TestCase
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -8,7 +11,7 @@ from django.db.models import DateTimeField
 from inheritable.models import AbstractConfiguration, AbstractSql
 from inheritable.tests import AbstractTestCase, local_test_settings_required
 from bulk.models import BulkImport
-from core.models import Person, Incident, PersonIncident, PersonPayment
+from core.models import Person, Incident, PersonIncident, PersonPayment, PersonTitle, PersonAlias
 from fdpuser.models import FdpUser, FdpOrganization
 from supporting.models import Trait, PersonIdentifierType
 from sourcing.models import Attachment, AttachmentType, ContentType
@@ -204,7 +207,7 @@ class WholesaleTestCase(AbstractTestCase):
                 source_imported_from='wholesale import test',
                 table_imported_from=class_name,
                 pk_imported_from=f'{class_name}{BulkImport.objects.all().count()}',
-                table_imported_to=class_name,
+                table_imported_to=ModelHelper.get_db_table_from_class_name(class_name),
                 pk_imported_to=instance.pk,
                 data_imported=json_dumps({}, default=str)
             )
@@ -1660,26 +1663,29 @@ class WholesaleTestCase(AbstractTestCase):
             'does_external_id_exist': False
         }
         logger.debug(f'Starting sub-test for duplicate external IDs in template during an "add" import')
-        self.__check_duplicate_external_id_import(action=WholesaleImport.add_value, **unchanging_kwargs)
+        with self.subTest(action=WholesaleImport.add_value, msg='duplicate external IDs in template during an "add" import'):
+            self.__check_duplicate_external_id_import(action=WholesaleImport.add_value, **unchanging_kwargs)
         logger.debug(f'Starting sub-test for duplicate external IDs in template during an "update" import')
-        self.__check_duplicate_external_id_import(action=WholesaleImport.update_value, **unchanging_kwargs)
-        # external IDs duplicate between template and database
-        person = Person.objects.create(name='Unnamed')
-        self.__add_external_ids(instances=(person,), class_name='Person')
-        unique_external_id = getattr(person, self.__test_external_id_attr)
-        self.assertEqual(BulkImport.objects.filter(pk_imported_from=unique_external_id).count(), 1)
-        csv_content = f'{p}.{external_col}{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
-                      f'{unique_external_id}{comma}{unique_person_name}'
+        with self.subTest(action=WholesaleImport.update_value, msg='duplicate external IDs in template during an "update" import'):
+            self.__check_duplicate_external_id_import(action=WholesaleImport.update_value, **unchanging_kwargs)
         logger.debug(f'Starting sub-test for duplicate external IDs in template and DB during an "add" import')
-        self.__check_duplicate_external_id_import(
-            action=WholesaleImport.add_value,
-            csv_content=csv_content,
-            expected_error=f'Cannot add models in database. '
-                           f'The following external IDs already exist: {unique_external_id}.',
-            imported_person_name=unique_person_name,
-            duplicate_external_id=unique_external_id,
-            does_external_id_exist=True
-        )
+        with self.subTest(action=WholesaleImport.add_value, msg='duplicate external IDs in template and DB during an "add" import'):
+            # external IDs duplicate between template and database
+            person = Person.objects.create(name='Unnamed')
+            self.__add_external_ids(instances=(person,), class_name='Person')
+            unique_external_id = getattr(person, self.__test_external_id_attr)
+            self.assertEqual(BulkImport.objects.filter(pk_imported_from=unique_external_id).count(), 1)
+            csv_content = f'{p}.{external_col}{comma}{p}.{self.__field_for_person}{self.__csv_lineterminator}' \
+                          f'{unique_external_id}{comma}{unique_person_name}'
+            self.__check_duplicate_external_id_import(
+                action=WholesaleImport.add_value,
+                csv_content=csv_content,
+                expected_error=f'Cannot add models in database. '
+                               f'The following external IDs already exist: {unique_external_id}.',
+                imported_person_name=unique_person_name,
+                duplicate_external_id=unique_external_id,
+                does_external_id_exist=True
+            )
         # skip this test since "update" imports reference existing external IDs by default
         logger.debug(f'Skipping sub-test for duplicate external IDs between template and DB during an "update" import')
         logger.debug(_('\nSuccessfully finished test for duplicate external IDs during imports\n\n'))
@@ -1750,3 +1756,65 @@ class WholesaleTestCase(AbstractTestCase):
         self.assertEqual(attachment_pk, wholesale_import_record.instance_pk)
         self.assertEqual((Attachment.objects.get(pk=attachment_pk)).fdp_organizations.all().count(), 0)
         logger.debug(_('\nSuccessfully finished test for imports setting many-to-many fields to None\n\n'))
+
+    def make_csv_content(self, csv_data: list) -> str:
+        """
+        """
+        csv_output = io.StringIO()
+        csv_writer = csv.writer(csv_output)
+        for row in csv_data:
+            csv_writer.writerow(row)
+        csv_content = csv_output.getvalue()
+        return csv_content
+
+    def test_FDAB376_datawizard_era_table_imported_to(self):
+        """Test that wholesale importer is compatible with existing BulkImport.table_imported_to format.
+        Shows that this bug is fixed https://fdpapp.atlassian.net/browse/FDAB-376
+        """
+
+        # Given there's a record in the system with an accompanying BulkImport with the table_imported_to filed
+        # containing the TABLE NAME, not the model name.
+        external_id = "ext-id-veratraldehyde"
+        existing_record = Person.objects.create(name='Test Person decagramme')
+        BulkImport.objects.create(
+            table_imported_to=Person.get_db_table(), # <- This c.f. FDAB-376
+            pk_imported_to=existing_record.pk,
+            pk_imported_from=external_id,
+            data_imported='{}'  # make constraints happy...
+        )
+
+        # And there's an import sheet with a new record referencing the existing record via its external id
+        csv_data = [
+            ['PersonAlias.name', 'PersonAlias.person__external'],
+            ['person-alias-availment', external_id],
+        ]
+        csv_content = self.make_csv_content(csv_data)
+
+        # When I run a bulk import
+        #
+        #
+        self.__create_and_start_import(csv_content=csv_content)
+
+        # Then there should be no error about missing external id
+        row_errors = WholesaleImportRecord.objects.last().errors
+        self.assertEqual(
+            '',
+            row_errors,
+            msg=f"Error recorded on row import row"
+        )
+
+        num_errors = WholesaleImport.objects.last().error_rows
+        self.assertEqual(
+            0,
+            num_errors,
+            msg='Errors encountered in import'
+        )
+
+        # and the new record should be in the system
+        new_record = PersonAlias.objects.get(name='person-alias-availment')
+
+        # and linked to the existing record
+        self.assertEqual(
+            new_record.person.pk,
+            existing_record.pk
+        )
