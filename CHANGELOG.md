@@ -2,6 +2,14 @@
 
 All releases will be logged in this file.
 
+## [5.0.1] - 2022-03-07
+
+### Changed
+
+- Wholesale batch listing: fix incorrect sorting order
+- Wholesale: fix backward-incompatibility with existing external ids table field use
+- Changing pages: fix slow scroll animation when adding new items in inline formsets on changing pages
+
 ## [5.0.0] - 2022-02-22
 
 ### Added
