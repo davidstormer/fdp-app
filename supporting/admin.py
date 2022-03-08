@@ -1,5 +1,5 @@
 from django.contrib import admin
-from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin
+from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, HostOnlyAdmin
 from .models import State, Trait, PersonRelationshipType, County, Location, PersonIdentifierType, Title, \
     GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
     PersonIncidentTag, Allegation, AllegationOutcome, ContentType, Court, ContentIdentifierType, ContentCaseOutcome, \
@@ -11,7 +11,7 @@ from .models import State, Trait, PersonRelationshipType, County, Location, Pers
     IncidentTag, PersonIncidentTag, AllegationOutcome, ContentType, Court, ContentIdentifierType, ContentCaseOutcome,
     AttachmentType, LeaveStatus, SituationRole, Allegation
 )
-class SupportingAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class SupportingAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for classes defined in the supporting app, which have only a name attribute.
 
     """
@@ -24,7 +24,7 @@ class SupportingAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(PersonRelationshipType, GroupingRelationshipType)
-class SupportingRelationshipTypeAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class SupportingRelationshipTypeAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for relationship type classes defined in the supporting app.
 
     """
@@ -37,7 +37,7 @@ class SupportingRelationshipTypeAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(Trait)
-class TraitAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class TraitAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for traits.
 
     """
@@ -50,7 +50,7 @@ class TraitAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(County)
-class CountyAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class CountyAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for counties.
 
     """
@@ -63,7 +63,7 @@ class CountyAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(Location)
-class LocationAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class LocationAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for locations.
 
     """

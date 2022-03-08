@@ -1,12 +1,12 @@
 from django.contrib import admin
-from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, ConfidentiableAdmin
+from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, ConfidentiableAdmin, HostOnlyAdmin
 from .models import Person, PersonContact, PersonAlias, PersonPhoto, PersonIdentifier, PersonTitle, \
     PersonRelationship, PersonPayment, Grouping, GroupingAlias, GroupingRelationship, \
     PersonGrouping, Incident, PersonIncident, GroupingIncident
 
 
 @admin.register(Person)
-class PersonAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
+class PersonAdmin(HostOnlyAdmin, ConfidentiableAdmin):
     """ Admin interface for persons.
 
     """
@@ -21,7 +21,7 @@ class PersonAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
 
 
 @admin.register(PersonContact)
-class PersonContactAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class PersonContactAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for contact information for persons.
 
     """
@@ -34,7 +34,7 @@ class PersonContactAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(PersonAlias)
-class PersonAliasAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class PersonAliasAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for person aliases.
 
     """
@@ -47,7 +47,7 @@ class PersonAliasAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(PersonPhoto)
-class PersonPhotoAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class PersonPhotoAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for person photos.
 
     """
@@ -60,7 +60,7 @@ class PersonPhotoAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(PersonIdentifier)
-class PersonIdentifierAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class PersonIdentifierAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for person identifiers.
 
     """
@@ -73,7 +73,7 @@ class PersonIdentifierAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(PersonTitle)
-class PersonTitleAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class PersonTitleAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for person titles.
 
     """
@@ -86,7 +86,7 @@ class PersonTitleAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(PersonRelationship)
-class PersonRelationshipAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class PersonRelationshipAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for relationships between people.
 
     """
@@ -99,7 +99,7 @@ class PersonRelationshipAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(PersonPayment)
-class PersonPaymentAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class PersonPaymentAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for person payments.
 
     """
@@ -112,7 +112,7 @@ class PersonPaymentAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(Grouping)
-class GroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class GroupingAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for groupings of people.
 
     """
@@ -125,7 +125,7 @@ class GroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(GroupingAlias)
-class GroupingAliasAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class GroupingAliasAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for grouping aliases.
 
     """
@@ -138,7 +138,7 @@ class GroupingAliasAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(GroupingRelationship)
-class GroupingRelationshipAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class GroupingRelationshipAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for grouping relationships.
 
     """
@@ -155,7 +155,7 @@ class GroupingRelationshipAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(PersonGrouping)
-class PersonGroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class PersonGroupingAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for links between persons and groupings.
 
     """
@@ -168,7 +168,7 @@ class PersonGroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(Incident)
-class IncidentAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
+class IncidentAdmin(HostOnlyAdmin, ConfidentiableAdmin):
     """ Admin interface for incidents.
 
     """
@@ -183,7 +183,7 @@ class IncidentAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
 
 
 @admin.register(PersonIncident)
-class PersonIncidentAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class PersonIncidentAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for links between persons and incidents.
 
     """
@@ -199,7 +199,7 @@ class PersonIncidentAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(GroupingIncident)
-class GroupingIncidentAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class GroupingIncidentAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for links between groupings and incidents.
 
     """

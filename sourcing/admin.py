@@ -1,11 +1,11 @@
 from django.contrib import admin
-from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, ConfidentiableAdmin
+from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, ConfidentiableAdmin, HostOnlyAdmin
 from .models import Attachment, Content, ContentCase, ContentIdentifier, ContentPerson, ContentPersonAllegation, \
     ContentPersonPenalty
 
 
 @admin.register(Attachment)
-class AttachmentAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
+class AttachmentAdmin(HostOnlyAdmin, ConfidentiableAdmin):
     """ Admin interface for attachments.
 
     """
@@ -18,7 +18,7 @@ class AttachmentAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
 
 
 @admin.register(Content)
-class ContentAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
+class ContentAdmin(HostOnlyAdmin, ConfidentiableAdmin):
     """ Admin interface for contents.
 
     """
@@ -33,7 +33,7 @@ class ContentAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
 
 
 @admin.register(ContentCase)
-class ContentCaseAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class ContentCaseAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for case contents.
 
     """
@@ -48,7 +48,7 @@ class ContentCaseAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(ContentIdentifier)
-class ContentIdentifierAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
+class ContentIdentifierAdmin(HostOnlyAdmin, ConfidentiableAdmin):
     """ Admin interface for content identifiers.
 
     """
@@ -61,7 +61,7 @@ class ContentIdentifierAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
 
 
 @admin.register(ContentPerson)
-class ContentPersonAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class ContentPersonAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for content persons.
 
     """
@@ -74,7 +74,7 @@ class ContentPersonAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(ContentPersonAllegation)
-class ContentPersonAllegationAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class ContentPersonAllegationAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for allegations against persons linked to contents.
 
     """
@@ -89,7 +89,7 @@ class ContentPersonAllegationAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
 
 @admin.register(ContentPersonPenalty)
-class PenaltyAdmin(FdpInheritableAdmin, ArchivableAdmin):
+class PenaltyAdmin(HostOnlyAdmin, ArchivableAdmin):
     """ Admin interface for penalties for allegations against persons involved in incidents.
 
     """
