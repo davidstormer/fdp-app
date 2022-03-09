@@ -2936,9 +2936,9 @@ class AllegationPenaltyLinkUpdateView(ContentUpdateView):
 class ContentRoundup(AdminAccessMixin, TemplateView):
     template_name = "content_roundup.html"
 
-    def _full_text_search(self, query_string):
+    def _full_text_search(self, query_string, user):
         if query_string == '':
-            return Content.objects.all().order_by('-pk')
+            return Content.objects.all().filter_for_confidential_by_user(user=user).order_by('-pk')
         search_query = SearchQuery(query_string, search_type='websearch')
         search_vector = SearchVector('description')
         content_list = (
@@ -2952,6 +2952,7 @@ class ContentRoundup(AdminAccessMixin, TemplateView):
                 fragment_delimiter=' <strong>&mldr;</strong><br> '))
             .annotate(rank=SearchRank(search_vector, search_query))
             .filter(search_vectors=search_query)
+            .filter_for_confidential_by_user(user=user)
             .order_by('-rank')
         )
         return content_list
@@ -2959,7 +2960,7 @@ class ContentRoundup(AdminAccessMixin, TemplateView):
     # Handle searches vai POST so that the query string is kept out of the URL (security)
     def post(self, request, *args, **kwargs):
         query_string = request.POST.get('q')
-        content_list = self._full_text_search(query_string)
+        content_list = self._full_text_search(query_string, request.user)
         paginator = Paginator(content_list, 25)
 
         page_number = request.POST.get('page')
@@ -2971,7 +2972,7 @@ class ContentRoundup(AdminAccessMixin, TemplateView):
         })
 
     def get(self, request, *args):
-        content_list = self._full_text_search('')
+        content_list = self._full_text_search('', request.user)
         paginator = Paginator(content_list, 25)
 
         page_obj = paginator.get_page(1)

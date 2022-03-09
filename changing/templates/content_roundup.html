@@ -26,9 +26,9 @@
 </form>
 
 {% if page_obj %}
-    <div class="results">
+    <span class="results">
         {% for content in page_obj %}
-        <a href="{{ content.get_edit_url }}">{{ content.name|truncatechars:100 }}</a><br>
+        <a href="{{ content.get_edit_url }}">{{ content.name|truncatechars:100 }}</a> <span class="content-type">{{ content.type|default:'' }}</span><br>
         <blockquote>{{ content.headline|safe }}</blockquote>
         {% endfor %}
     </div>
