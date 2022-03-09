@@ -2936,8 +2936,7 @@ class AllegationPenaltyLinkUpdateView(ContentUpdateView):
 class ContentRoundup(AdminAccessMixin, TemplateView):
     template_name = "content_roundup.html"
 
-    def post(self, request, *args, **kwargs):
-        query_string = request.POST.get('q')
+    def _full_text_search(self, query_string):
         search_query = SearchQuery(query_string, search_type='websearch')
         search_vector = SearchVector('description')
         content_list = (
@@ -2950,6 +2949,11 @@ class ContentRoundup(AdminAccessMixin, TemplateView):
             .filter(search_vectors=search_query)
             .order_by('-rank')
         )
+        return content_list
+
+    def post(self, request, *args, **kwargs):
+        query_string = request.POST.get('q')
+        content_list = self._full_text_search(query_string)
         paginator = Paginator(content_list, 25)
 
         page_number = request.POST.get('page')

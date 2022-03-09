@@ -1,5 +1,10 @@
+import timeit
+
+from django.test import TestCase
+
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
+from faker import Faker
 from inheritable.tests import AbstractTestCase, local_test_settings_required
 from fdpuser.models import FdpOrganization, FdpUser
 from core.models import Person, PersonRelationship, Incident, PersonIncident
@@ -7,6 +12,8 @@ from sourcing.models import Content, ContentPerson, Attachment, ContentIdentifie
 from supporting.models import PersonRelationshipType, ContentIdentifierType, Allegation
 from .forms import WizardSearchForm
 import logging
+
+from .views import ContentRoundup
 
 logger = logging.getLogger(__name__)
 
@@ -1340,3 +1347,29 @@ class ChangingTestCase(AbstractTestCase):
         self.__test_attachment_changing_async_view(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         logger.debug(_('\nSuccessfully finished test for asynchronous Changing views for all permutations of user roles, '
                 'confidentiality levels and relevant models\n\n'))
+
+
+class RoundupTestCase(TestCase):
+    def test_roundup_search_performance(self):
+        # Given there are ten thousand content records in the system filled with simulated natural language English text
+        my_faker = Faker()
+        for x in range(10):
+            records_to_create = []
+            for y in range(1000):
+                records_to_create.append(Content(name=my_faker.text(max_nb_chars=250), description=my_faker.text(max_nb_chars=1048)))
+            Content.objects.bulk_create(records_to_create)
+
+        # When I do a full text search on them with a common word
+        def do_search():
+            results = ContentRoundup()._full_text_search('happy')
+            # Force evaluation of the queryset https://docs.djangoproject.com/en/4.0/ref/models/querysets/#when-querysets-are-evaluated
+            list(results)
+
+        runtime = timeit.repeat(lambda: do_search(), number=1, repeat=3)[-1]
+
+        # Then the time elapsed should be under three seconds
+        self.assertLess(
+            runtime,
+            3,
+            msg='Time elapsed greater than three seconds'
+        )

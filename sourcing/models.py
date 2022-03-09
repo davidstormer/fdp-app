@@ -1,3 +1,4 @@
+from django.contrib.postgres.search import SearchQuery, SearchVector, SearchHeadline, SearchRank
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
@@ -389,6 +390,20 @@ class Content(Confidentiable, Descriptable):
     def get_allegations_penalties_edit_url(self):
         return reverse('changing:link_allegations_penalties', kwargs={"pk": self.pk})
 
+    def full_text_search(self, query_string):
+        search_query = SearchQuery(query_string, search_type='websearch')
+        search_vector = SearchVector('description')
+        results = (
+            self.objects
+            .annotate(search_vectors=search_vector, )
+            .annotate(headline=SearchHeadline('description',
+                                              search_query,
+                                              start_sel='<strong>', stop_sel='</strong>'))
+            .annotate(rank=SearchRank(search_vector, search_query))
+            .filter(search_vectors=search_query)
+            .order_by('-rank')
+        )
+        return results
 
     class Meta:
         db_table = '{d}content'.format(d=settings.DB_PREFIX)
