@@ -2937,20 +2937,26 @@ class ContentRoundup(AdminAccessMixin, TemplateView):
     template_name = "content_roundup.html"
 
     def _full_text_search(self, query_string):
+        if query_string == '':
+            return Content.objects.all().order_by('-pk')
         search_query = SearchQuery(query_string, search_type='websearch')
         search_vector = SearchVector('description')
         content_list = (
             Content.objects
             .annotate(search_vectors=search_vector, )
-            .annotate(headline=SearchHeadline('description',
-                                              search_query,
-                                              start_sel='<strong>', stop_sel='</strong>'))
+            .annotate(headline=SearchHeadline(
+                'description',
+                search_query,
+                start_sel='<strong>', stop_sel='</strong>',
+                max_fragments=4,
+                fragment_delimiter=' <strong>&mldr;</strong><br> '))
             .annotate(rank=SearchRank(search_vector, search_query))
             .filter(search_vectors=search_query)
             .order_by('-rank')
         )
         return content_list
 
+    # Handle searches vai POST so that the query string is kept out of the URL (security)
     def post(self, request, *args, **kwargs):
         query_string = request.POST.get('q')
         content_list = self._full_text_search(query_string)
@@ -2961,4 +2967,16 @@ class ContentRoundup(AdminAccessMixin, TemplateView):
         return self.render_to_response({
             'query': query_string,
             'page_obj': page_obj,
+            'count': content_list.count()
+        })
+
+    def get(self, request, *args):
+        content_list = self._full_text_search('')
+        paginator = Paginator(content_list, 25)
+
+        page_obj = paginator.get_page(1)
+        return self.render_to_response({
+            'query': '',
+            'page_obj': page_obj,
+            'count': content_list.count()
         })

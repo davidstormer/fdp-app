@@ -13,21 +13,23 @@
 
 {% if query %}
 <h1>Content search: "{{ query }}"</h1>
+<p>{{ count }} records found</p>
 {% else %}
 <h1>Content Roundup</h1>
+<p>{{ count }} records</p>
 {% endif %}
 
 <form method="post">
     {% csrf_token %}
-    <input type="text" name="q" value="{{ query }}">
+    <input type="text" name="q" value="{{ query }}" size="100">
     <input type="submit" value="Search">
 </form>
 
 {% if page_obj %}
     <div class="results">
         {% for content in page_obj %}
-        <a href="{{ content.get_edit_url }}">{{ content.name }}</a><br>
-        <p>{{ content.headline|safe }}</p>
+        <a href="{{ content.get_edit_url }}">{{ content.name|truncatechars:100 }}</a><br>
+        <blockquote>{{ content.headline|safe }}</blockquote>
         {% endfor %}
     </div>
 
@@ -48,7 +50,7 @@
             {% endif %}
 
             <span class="current">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
             </span>
 
             {% if page_obj.has_next %}
