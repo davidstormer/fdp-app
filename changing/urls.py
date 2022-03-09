@@ -1,8 +1,9 @@
+from django.conf import settings
 from django.urls import path, re_path
 from inheritable.models import AbstractUrlValidator
 from . import views
 from .forms import WizardSearchForm
-
+from .views import ContentRoundup
 
 app_name = 'changing'
 
@@ -55,3 +56,6 @@ urlpatterns = [
     path('{u}<int:pk>/'.format(u=AbstractUrlValidator.LINK_ALLEGATIONS_PENALTIES_URL),
          views.AllegationPenaltyLinkUpdateView.as_view(), name='link_allegations_penalties'),
 ]
+
+if getattr(settings, 'CONTENT_ROUNDUP_FEATURE_ENABLE', False):
+    urlpatterns.append(path('changing/content/roundup', ContentRoundup.as_view(), name='content_roundup'))

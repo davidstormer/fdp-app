@@ -1,4 +1,6 @@
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchHeadline, SearchRank
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.utils.translation import gettext as _
 from django.utils.http import unquote_plus
 from django.urls import reverse
@@ -7,11 +9,13 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import QueryDict
 from django.forms import formsets
+from django.views.generic import TemplateView
+
 from inheritable.models import Archivable, AbstractImport, AbstractSql, AbstractUrlValidator, AbstractSearchValidator, \
     JsonData, Confidentiable
 from inheritable.forms import DateWithComponentsField
 from inheritable.views import AdminSyncTemplateView, AdminSyncFormView, AdminSyncCreateView, AdminSyncUpdateView, \
-    AdminAsyncJsonView, PopupContextMixin
+    AdminAsyncJsonView, PopupContextMixin, AdminAccessMixin
 from fdpuser.models import FdpOrganization
 from sourcing.models import Attachment, Content, ContentIdentifier, ContentPerson, ContentPersonAllegation, \
     ContentPersonPenalty
@@ -80,6 +84,7 @@ def get_next_url(next_path: str, fallback: str) -> str:
     # If all else fails take me to the default success url
     return fallback
 
+
 class AbstractPopupView(PopupContextMixin):
     """ Abstract view from which pages adding and editing models in a popup context inherit.
 
@@ -87,6 +92,7 @@ class AbstractPopupView(PopupContextMixin):
     can be added inline on content forms).
 
     """
+
     def _close_popup(self, popup_model_form, not_popup_url):
         """ Closes the popup window, or if form is not rendered in a popup window, then redirects to next step.
 
@@ -633,8 +639,8 @@ class WizardSearchResultsTemplateView(AdminSyncTemplateView):
         # SELECT * FROM ... SQL query to retrieve records matching search criteria
         self._sql_select_query = self.__get_specific_select_query()
         self._select_params = self.__search_class.temp_table_params \
-            + self.__search_class.score_params \
-            + self.__search_class.from_params
+                              + self.__search_class.score_params \
+                              + self.__search_class.from_params
 
     def __do_search(self):
         """ Perform the search and set the queryset and queryset count properties.
@@ -1125,6 +1131,7 @@ class AsyncGetGroupingsView(AbstractAsyncGetModelView):
     """ Asynchronously retrieves groupings that can be linked to a model instance.
 
     """
+
     def _get_specific_queryset(self, filter_dict):
         """ Retrieves a queryset of search results based on the search criteria entered by the user.
 
@@ -1451,8 +1458,8 @@ class PersonCreateView(AdminSyncCreateView, AbstractPersonView):
         contact_forms = context[self._contacts_key]
         photo_forms = context[self._photos_key]
         forms_are_valid = identifier_forms.is_valid() and grouping_forms.is_valid() and title_forms.is_valid() \
-            and payment_forms.is_valid() and alias_forms.is_valid() and contact_forms.is_valid() \
-            and photo_forms.is_valid()
+                          and payment_forms.is_valid() and alias_forms.is_valid() and contact_forms.is_valid() \
+                          and photo_forms.is_valid()
         if forms_are_valid:
             if self._validate_relationship_formset(relationship_forms=relationship_forms, user=self.request.user):
                 self._save_forms(
@@ -1524,8 +1531,8 @@ class PersonUpdateView(AdminSyncUpdateView, AbstractPersonView):
         contact_forms = context[self._contacts_key]
         photo_forms = context[self._photos_key]
         forms_are_valid = identifier_forms.is_valid() and grouping_forms.is_valid() and title_forms.is_valid() \
-            and payment_forms.is_valid() and alias_forms.is_valid() and contact_forms.is_valid() \
-            and photo_forms.is_valid()
+                          and payment_forms.is_valid() and alias_forms.is_valid() and contact_forms.is_valid() \
+                          and photo_forms.is_valid()
         if forms_are_valid:
             if self._validate_relationship_formset(relationship_forms=relationship_forms, user=self.request.user):
                 self._save_forms(
@@ -1568,6 +1575,7 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
     """ Asynchronously retrieves persons that can be linked to a model instance.
 
     """
+
     def _get_specific_queryset(self, filter_dict):
         """ Retrieves a queryset of search results based on the search criteria entered by the user.
 
@@ -2316,7 +2324,7 @@ class ContentCreateView(AdminSyncCreateView, AbstractContentView):
         attachment_forms = context[self._attachments_key]
         incident_forms = context[self._incidents_key]
         forms_are_valid = identifier_forms.is_valid() and case_forms.is_valid() and person_forms.is_valid() \
-            and attachment_forms.is_valid() and incident_forms.is_valid()
+                          and attachment_forms.is_valid() and incident_forms.is_valid()
         if forms_are_valid:
             self._save_forms(
                 form=form,
@@ -2390,7 +2398,7 @@ class ContentUpdateView(AdminSyncUpdateView, AbstractContentView):
             attachment_forms = context[self._attachments_key]
             incident_forms = context[self._incidents_key]
             forms_are_valid = identifier_forms.is_valid() and case_forms.is_valid() and person_forms.is_valid() \
-                and attachment_forms.is_valid() and incident_forms.is_valid()
+                              and attachment_forms.is_valid() and incident_forms.is_valid()
             if forms_are_valid:
                 self._save_forms(
                     form=form,
@@ -2462,6 +2470,7 @@ class AsyncGetAttachmentsView(AbstractAsyncGetModelView):
     """ Asynchronously retrieves attachments that can be linked to a model instance.
 
     """
+
     def _get_specific_queryset(self, filter_dict):
         """ Retrieves a queryset of search results based on the search criteria entered by the user.
 
@@ -2557,6 +2566,7 @@ class AsyncGetIncidentsView(AbstractAsyncGetModelView):
     """ Asynchronously retrieves incidents that can be linked to a model instance.
 
     """
+
     def _get_specific_queryset(self, filter_dict):
         """ Retrieves a queryset of search results based on the search criteria entered by the user.
 
@@ -2921,3 +2931,30 @@ class AllegationPenaltyLinkUpdateView(ContentUpdateView):
             return penalty_forms.is_valid()
         else:
             return False
+
+
+class ContentRoundup(AdminAccessMixin, TemplateView):
+    template_name = "content_roundup.html"
+
+    def post(self, request, *args, **kwargs):
+        query_string = request.POST.get('q')
+        search_query = SearchQuery(query_string, search_type='websearch')
+        search_vector = SearchVector('description')
+        content_list = (
+            Content.objects
+            .annotate(search_vectors=search_vector, )
+            .annotate(headline=SearchHeadline('description',
+                                              search_query,
+                                              start_sel='<strong>', stop_sel='</strong>'))
+            .annotate(rank=SearchRank(search_vector, search_query))
+            .filter(search_vectors=search_query)
+            .order_by('-rank')
+        )
+        paginator = Paginator(content_list, 25)
+
+        page_number = request.POST.get('page')
+        page_obj = paginator.get_page(page_number)
+        return self.render_to_response({
+            'query': query_string,
+            'page_obj': page_obj,
+        })

@@ -39,3 +39,9 @@ p.helpmsg i {
 	    font-size: 150%;
     }
 }
+
+
+/* Pagination (POST based queries) */
+div.pagination-post form {
+    display: inline-block;
+}
