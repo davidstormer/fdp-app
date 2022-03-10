@@ -353,7 +353,8 @@ DATABASES['default'] = {
     'HOST': get_from_environment_var(environment_var=ENV_VAR_FOR_FDP_DATABASE_HOST, raise_exception=True),
     'PORT': get_from_environment_var(
         environment_var=ENV_VAR_FOR_FDP_DATABASE_PORT, raise_exception=False, default_val=5432
-    )
+    ),
+    'CONN_MAX_AGE': 60,  # One minute
 }
 
 
