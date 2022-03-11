@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 import tablib
 from import_export.results import InvalidRow, Result
 
-from ...narwhal import MODEL_ALLOW_LIST, resource_model_mapping, do_import
+from ...narwhal import MODEL_ALLOW_LIST, resource_model_mapping, do_import, ImportReportRow
 
 help_text = """UNDER CONSTRUCTION Import data into the system"""
 
@@ -20,13 +20,11 @@ class Command(BaseCommand):
         parser.add_argument('input_file')
 
     def handle(self, *args, **options):
-        result = do_import(options['model'], options['input_file'])
-        if result.has_validation_errors():
-            for invalid_row in result.invalid_rows:
-                self.error(f"{invalid_row.number} | {invalid_row.error_dict} | {invalid_row.values}")
-        if result.has_errors():
-            for error_row in result.row_errors():
-                row_num = error_row[0]
-                errors = error_row[1]
-                for error in errors:
-                    self.error(f"{row_num} | {error.error} | {dict(error.row)}")
+        report = do_import(options['model'], options['input_file'])
+
+        if report.validation_errors:
+            for row in report.validation_errors:
+                self.error(f"{row.row_number} | {row.error_message} | {row.row_data}")
+        if report.database_errors:
+            for row in report.database_errors:
+                self.error(f"{row.row_number} | {row.error_message} | {row.row_data}")
