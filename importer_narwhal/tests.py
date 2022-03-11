@@ -10,7 +10,7 @@ class NarwhalTestCase(TestCase):
         with self.subTest(value='INVALID'):
             with self.assertRaises(ValueError):
                 BooleanWidgetValidated().clean(value='INVALID')
-        with self.subTest(value='TRUE'):
+        with self.subTest(value='CHECKED'):
             self.assertTrue(
                 BooleanWidgetValidated().clean(value='TRUE'),
                 msg='Unexpected validation error for "TRUE"'
