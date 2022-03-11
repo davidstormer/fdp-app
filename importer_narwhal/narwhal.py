@@ -1,5 +1,8 @@
+import tablib
 from import_export import resources
 from import_export.resources import ModelResource
+from import_export.results import Result
+
 from importer_narwhal.widgets import BooleanWidgetValidated
 from wholesale.models import ModelHelper
 
@@ -17,6 +20,7 @@ class FdpModelResource(ModelResource):
     """Customized django-import-export ModelResource
     """
     pass
+
 
 # Some of the stock widgets don't meet our needs
 # Override them with our custom versions
@@ -41,3 +45,18 @@ def _compile_resources():
 
 
 resource_model_mapping = _compile_resources()
+
+
+def do_import(input_file: str):
+    """Main api interface with narwhal importer
+    """
+    with open(input_file, 'r') as fd:
+        input_sheet = tablib.Dataset().load(fd)
+        resource_class = resource_model_mapping['Person']
+        resource = resource_class()
+        result = resource.import_data(input_sheet, dry_run=True)
+        if result.has_validation_errors():
+            return result
+        else:
+            result = resource.import_data(input_sheet, dry_run=False)
+            return result
