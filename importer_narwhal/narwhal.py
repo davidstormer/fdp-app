@@ -1,7 +1,6 @@
 import tablib
 from import_export import resources
 from import_export.resources import ModelResource
-from import_export.results import Result
 
 from importer_narwhal.widgets import BooleanWidgetValidated
 from wholesale.models import ModelHelper
