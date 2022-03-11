@@ -164,3 +164,52 @@ class NarwhalImportCommand(TestCase):
                 'Joe',
                 command_output.getvalue()
             )
+            # But not more than once
+            self.assertEqual(
+                1,
+                command_output.getvalue().count('violates unique constraint')
+            )
+
+    def test_exception_error_scenario_multiple(self):
+        """Handle database layer errors
+        """
+
+        # Given there's an import sheet that tries to create a Person identifier that already exists
+        # And there are several rows before the problem row
+        command_output = StringIO()
+
+        person_record = Person.objects.create(name='My Test Person')
+        PersonAlias.objects.create(person=person_record, name='toxiphoric')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'name'])
+            csv_writer.writeheader()
+            for i in range(10):
+                row = {}
+                row['person'] = person_record.pk
+                row['name'] = f"alias-{uuid4()}"
+                imported_records.append(row)
+            imported_records[3]['name'] = 'toxiphoric'  # <- Dupe #1
+            imported_records[7]['name'] = 'toxiphoric'  # <- Dupe #2
+
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            call_command('narwhal_import', 'PersonAlias', csv_fd.name, stdout=command_output)
+
+            # THEN I should see an error in the output for each instance of the exception
+            self.assertIn(
+                '4 | duplicate key value violates unique constraint',
+                command_output.getvalue()
+            )
+            self.assertIn(
+                '8 | duplicate key value violates unique constraint',
+                command_output.getvalue()
+            )
+            self.assertEqual(
+                2,
+                command_output.getvalue().count('violates unique constraint')
+            )
