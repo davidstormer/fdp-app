@@ -10,12 +10,18 @@ class FdpModelResource(ModelResource):
 
 
 class BooleanWidgetValidated(widgets.BooleanWidget):
+    def render(self, value, obj=None):
+        if value is None:
+            return ""
+        return 'TRUE' if value else 'FALSE'
+
     def clean(self, value, row=None, *args, **kwargs):
-        if value in self.NULL_VALUES:
+        value = value.lower()
+        if value in ["", None, "null", "none"]:
             return None
-        elif value in self.TRUE_VALUES:
+        elif value in ["1", 1, True, "true", 'checked']:
             return True
-        elif value in self.FALSE_VALUES:
+        elif value in ["0", 0, False, "false"]:
             return False
         else:
             raise ValueError("Enter a valid boolean value.")
