@@ -1,4 +1,8 @@
+from unittest import skip
+
 import tablib
+
+from functional_tests.common_import_export import import_record_with_extid
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
 from core.models import PersonAlias
 from django.test import TestCase
@@ -47,7 +51,7 @@ class NarwhalTestCase(TestCase):
 
 
 class NarwhalImportCommand(TestCase):
-    """Functional test
+    """Functional tests
     """
 
     def test_success_scenario(self):
@@ -210,3 +214,48 @@ class NarwhalImportCommand(TestCase):
                 2,
                 command_output.getvalue().count('violates unique constraint')
             )
+
+    def test_external_id_keys(self):
+        """Test that importer supports using external IDs to reference existing records in the system
+        """
+
+        # Given theres an import sheet that references an existing record in the system (e.g. foreign key relationship)
+        existing_record = import_record_with_extid(Person, {"name": 'gnathopod'}, external_id='carbocinchomeronic')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person__external_id', 'name'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['person__external_id'] = existing_record['external_id']
+                row['name'] = f"alias-{uuid4()}"
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonAlias', csv_fd.name, stdout=command_output)
+
+        print(command_output.getvalue())
+        # Then I shouldn't see an error message
+        self.assertNotIn(
+            'violates not-null constraint',
+            command_output.getvalue()
+        )
+        # Then I should see the new record linked to the existing one
+        self.assertEqual(
+            existing_record['record'].pk,
+            PersonAlias.objects.first().person.pk
+        )
+
+
+    @skip
+    def natural_keys(self):
+        pass
+
+    @skip
+    def generate_new_types(self):
+        pass
