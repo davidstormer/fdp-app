@@ -81,4 +81,41 @@ class NarwhalImportCommand(TestCase):
                 10,
                 Person.objects.all().count()
             )
-            
+
+    def test_validation_error_scenario(self):
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there is a csv with an invalid value
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(10):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'checked'
+                imported_records.append(row)
+
+            imported_records[7]['is_law_enforcement'] = 'INVALID VALUE'  # <- invalid boolean
+
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+            # THEN the records should not be added to the system
+            self.assertEqual(
+                0,
+                Person.objects.all().count()
+            )
+            # THEN I should see an error in the output
+            self.assertIn(
+                'Error',
+                command_output.getvalue()
+            )
+
+
+    def test_exception_error_scenario(self):
+        print("FINISH ME!!!")
