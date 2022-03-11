@@ -94,7 +94,7 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
         if value:
             try:
                 return self.get_queryset(value, row, *args, **kwargs).get(**{self.field: value})
-            except:
+            except self.model.DoesNotExist:
                 return self.model.objects.create(name=value)
         else:
             return None
