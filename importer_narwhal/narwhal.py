@@ -47,6 +47,19 @@ def _compile_resources():
 resource_model_mapping = _compile_resources()
 
 
+class ImportReportRow:
+    def __init__(self, row_number: int, error_message: str, row_data: str):
+        self.row_number = row_number
+        self.error_message = error_message
+        self.row_data = row_data
+
+
+class ImportReport:
+    def __init__(self):
+        self.validation_errors = []
+        self.database_errors = []
+
+
 def do_import(model_name: str, input_file: str):
     """Main api interface with narwhal importer
     """
@@ -55,8 +68,22 @@ def do_import(model_name: str, input_file: str):
         resource_class = resource_model_mapping[model_name]
         resource = resource_class()
         result = resource.import_data(input_sheet, dry_run=True)
+
+        import_report = ImportReport()
+
         if result.has_validation_errors():
-            return result
+            for invalid_row in result.invalid_rows:
+                import_report.validation_errors.append(
+                    ImportReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
+                )
         else:
             result = resource.import_data(input_sheet, dry_run=False)
-            return result
+            if result.has_errors():
+                for error_row in result.row_errors():
+                    row_num = error_row[0]
+                    errors = error_row[1]
+                    for error in errors:
+                        import_report.database_errors.append(
+                            ImportReportRow(row_num, str(error.error), str(dict(error.row)))
+                        )
+        return import_report
