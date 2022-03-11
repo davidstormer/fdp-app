@@ -23,8 +23,10 @@ class Command(BaseCommand):
         report = do_import(options['model'], options['input_file'])
 
         if report.validation_errors:
+            self.error("Error:")
             for row in report.validation_errors:
                 self.error(row)
         if report.database_errors:
+            self.error("Error:")
             for row in report.database_errors:
                 self.error(row)
