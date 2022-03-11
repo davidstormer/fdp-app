@@ -224,11 +224,11 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['person__external_id', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['person__external', 'name'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
-                row['person__external_id'] = existing_record['external_id']
+                row['person__external'] = existing_record['external_id']
                 row['name'] = f"alias-{uuid4()}"
                 imported_records.append(row)
             for row in imported_records:

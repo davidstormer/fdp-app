@@ -2,6 +2,7 @@ import tablib
 from import_export import resources
 from import_export.resources import ModelResource
 
+from bulk_data_manipulation.common import get_record_from_external_id
 from importer_narwhal.widgets import BooleanWidgetValidated
 from wholesale.models import ModelHelper
 
@@ -28,14 +29,19 @@ FdpModelResource.WIDGETS_MAP['BooleanField'] = \
     BooleanWidgetValidated
 
 
+def get_data_model_from_name(model_name):
+    app_name = ModelHelper.get_app_name(model=model_name)
+    model_class = ModelHelper.get_model_class(app_name=app_name, model_name=model_name)
+    return model_class
+
+
 # We'll need a mapping of FDP data models and their corresponding
 # django-import-export resource.
 def _compile_resources():
     import_export_resources = {}
 
     for model_name in MODEL_ALLOW_LIST:
-        app_name = ModelHelper.get_app_name(model=model_name)
-        model_class = ModelHelper.get_model_class(app_name=app_name, model_name=model_name)
+        model_class = get_data_model_from_name(model_name)
 
         resource = resources. \
             modelresource_factory(
@@ -45,6 +51,26 @@ def _compile_resources():
 
 
 resource_model_mapping = _compile_resources()
+
+
+def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
+    for model_name in MODEL_ALLOW_LIST:
+        # Look for any fields that follow the pattern '[model name]__external' and dereference them to their pks
+        try:
+            external_id = row[f'{model_name.lower()}__external']
+            model_class = get_data_model_from_name(model_name)
+            referenced_record = get_record_from_external_id(model_class, external_id)
+            row[model_name.lower()] = referenced_record.pk
+        except KeyError:
+            pass
+
+
+def global_before_import_row(resource_class, row, row_number=None, **kwargs):
+    dereference_external_ids(resource_class, row, row_number, **kwargs)
+
+
+for resource in resource_model_mapping.keys():
+    resource_model_mapping[resource].before_import_row = global_before_import_row
 
 
 class ImportReportRow:
