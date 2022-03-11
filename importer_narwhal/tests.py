@@ -1,7 +1,8 @@
 import tablib
+from django.db import IntegrityError
 from django.test import TestCase
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
-from core.models import Person
+from core.models import Person, PersonAlias
 
 
 class NarwhalTestCase(TestCase):
@@ -121,4 +122,45 @@ class NarwhalImportCommand(TestCase):
             )
 
     def test_exception_error_scenario(self):
-        print("FINISH ME!!!")
+        """Handle database layer errors
+        """
+
+        # Given there's an import sheet that tries to create a Person identifier that already exists
+        # And there are several rows before the problem row
+        command_output = StringIO()
+
+        person_record = Person.objects.create(name='My Test Person')
+        PersonAlias.objects.create(person=person_record, name='Joe')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'name'])
+            csv_writer.writeheader()
+            for i in range(10):
+                row = {}
+                row['person'] = person_record.pk
+                row['name'] = f"alias-{uuid4()}"
+                imported_records.append(row)
+            imported_records[7]['name'] = 'Joe'  # <- Dupe
+
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            call_command('narwhal_import', 'PersonAlias', csv_fd.name, stdout=command_output)
+
+            # THEN none of the records from the sheet should be added to the system
+            self.assertEqual(
+                1,
+                PersonAlias.objects.all().count()
+            )
+            # THEN I should see an error in the output
+            self.assertIn(
+                '8 | duplicate key value violates unique constraint',
+                command_output.getvalue()
+            )
+            self.assertIn(
+                'Joe',
+                command_output.getvalue()
+            )
