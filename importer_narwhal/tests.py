@@ -253,20 +253,45 @@ class NarwhalImportCommand(TestCase):
             PersonAlias.objects.first().person.pk
         )
 
+    def test_natural_keys_person_identifier_type(self):
+        """Test that the importer can find person_identifier_type by its value, rather than pk
+        """
+        # Given theres an import sheet that references an existing record in the system by name value, not identifier
+        existing_record = import_record_with_extid(Person, {"name": 'marteline'}, external_id='sinusoidal')
+        person_identifier_type = PersonIdentifierType.objects.create(name='unkissed')
 
-    @skip
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person__external', 'identifier', 'person_identifier_type'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['person__external'] = existing_record['external_id']
+                row['identifier'] = f"identifier-{uuid4()}"
+                row['person_identifier_type'] = 'unkissed'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonIdentifier', csv_fd.name, stdout=command_output)
+
+        print(command_output.getvalue())
+        # Then I should see the new record linked to the existing one
+        self.assertEqual(
+            existing_record['record'].pk,
+            PersonIdentifier.objects.first().person.pk
+        )
+
     def test_generate_new_types(self):
         """Test that importer can add new "types" when they don't exist in the system yet
         Uses PersonIdentifier records to test this
         """
-        pass
-
-    def test_natural_keys_person_identifier_type(self):
-        """Test that the importer can find person_identifier_type by its value, rather than pk
-        """
-        # Given theres an import sheet that references an existing record in the system (e.g. foreign key relationship)
+        # Given theres an import sheet that references a type that's NOT in the system
         existing_record = import_record_with_extid(Person, {"name": 'marteline'}, external_id='sinusoidal')
-        person_identifier_type = PersonIdentifierType.objects.create(name='unkissed')
+        # person_identifier_type = PersonIdentifierType.objects.create(name='unkissed')
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []

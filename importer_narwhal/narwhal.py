@@ -79,10 +79,21 @@ for resource in resource_model_mapping.keys():
 
 
 # Experiment with natural keys
+class PersonIdentifierGetOrCreate(ForeignKeyWidget):
+    def clean(self, value, row=None, *args, **kwargs):
+        if value:
+            try:
+                return self.get_queryset(value, row, *args, **kwargs).get(**{self.field: value})
+            except:
+                return PersonIdentifierType.objects.create(name=value)
+        else:
+            return None
+
+
 resource_model_mapping['PersonIdentifier'].fields['person_identifier_type'] = fields.Field(
     column_name='person_identifier_type',
     attribute='person_identifier_type',
-    widget=ForeignKeyWidget(PersonIdentifierType, 'name')
+    widget=PersonIdentifierGetOrCreate(PersonIdentifierType, 'name')
 )
 
 
