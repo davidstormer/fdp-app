@@ -1,6 +1,6 @@
 import tablib
 from django.test import TestCase
-from .narwhal import BooleanWidgetValidated, import_export_resources
+from .narwhal import BooleanWidgetValidated, resource_model_mapping
 from core.models import Person
 
 
@@ -27,7 +27,7 @@ class NarwhalTestCase(TestCase):
             )
 
     def test_resources(self):
-        ResourceClass = import_export_resources['Person']
+        ResourceClass = resource_model_mapping['Person']
         resource = ResourceClass()
         dataset = tablib.Dataset(['person quasicontinuous'], headers=['name'])
         result = resource.import_data(dataset, dry_run=False)
