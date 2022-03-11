@@ -228,6 +228,8 @@ INSTALLED_APPS = [
     'bulk_data_manipulation',
     # allows users to add and update large volumes of data through a simplified and automated process
     'wholesale',
+    # allows user to add and update large volumes of data through a simplified and automated process
+    'importer_narwhal',
 ]
 
 

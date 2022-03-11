@@ -38,3 +38,40 @@ class NarwhalTestCase(TestCase):
         self.assertEqual(Person.objects.last().name,
             'person quasicontinuous'
         )
+
+from django.test import TestCase
+from django.core.management import call_command
+from io import StringIO
+import tempfile
+import csv
+from uuid import uuid4
+from core.models import Person
+
+
+class NarwhalImportCommand(TestCase):
+    """Functional test
+    """
+
+    def test_success_scenario(self):
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there is a csv describing a new Person record
+            row = {}
+            row['name'] = f'Test Person {uuid4()}'
+            row['is_law_enforcement'] = 'checked'
+            csv_writer = csv.DictWriter(csv_fd, row.keys())
+            csv_writer.writeheader()
+            csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+            print(command_output.getvalue())
+
+            # THEN the record should be added to the system
+            self.assertEqual(
+                True,
+                Person.objects.get(name=row['name']).is_law_enforcement,
+            )

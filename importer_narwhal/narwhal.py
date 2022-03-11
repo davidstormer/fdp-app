@@ -27,7 +27,7 @@ FdpModelResource.WIDGETS_MAP['BooleanField'] = \
 
 # We'll need a mapping of FDP data models and their corresponding
 # django-import-export resource.
-def compile_resources():
+def _compile_resources():
     import_export_resources = {}
 
     for model_name in MODEL_ALLOW_LIST:
@@ -41,4 +41,4 @@ def compile_resources():
     return import_export_resources
 
 
-resource_model_mapping = compile_resources()
+resource_model_mapping = _compile_resources()
