@@ -1,9 +1,11 @@
 import tablib
-from import_export import resources
+from import_export import resources, fields
 from import_export.resources import ModelResource
+from import_export.widgets import ForeignKeyWidget
 
 from bulk_data_manipulation.common import get_record_from_external_id
 from importer_narwhal.widgets import BooleanWidgetValidated
+from supporting.models import PersonIdentifierType
 from wholesale.models import ModelHelper
 
 # The mother list of models to be able to import to.
@@ -36,7 +38,7 @@ def get_data_model_from_name(model_name):
 
 
 # We'll need a mapping of FDP data models and their corresponding
-# django-import-export resource.
+# django-import-export resource. This creates it:
 def _compile_resources():
     import_export_resources = {}
 
@@ -53,6 +55,7 @@ def _compile_resources():
 resource_model_mapping = _compile_resources()
 
 
+# Handle external IDs
 def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
     for model_name in MODEL_ALLOW_LIST:
         # Look for any fields that follow the pattern '[model name]__external' and dereference them to their pks
@@ -65,14 +68,25 @@ def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
             pass
 
 
+# Modify the before_import_row hook with our custom transformations
 def global_before_import_row(resource_class, row, row_number=None, **kwargs):
     dereference_external_ids(resource_class, row, row_number, **kwargs)
 
 
+# Amend the resources map with update resources, applying the above customizations
 for resource in resource_model_mapping.keys():
     resource_model_mapping[resource].before_import_row = global_before_import_row
 
 
+# Experiment with natural keys
+resource_model_mapping['PersonIdentifier'].fields['person_identifier_type'] = fields.Field(
+    column_name='person_identifier_type',
+    attribute='person_identifier_type',
+    widget=ForeignKeyWidget(PersonIdentifierType, 'name')
+)
+
+
+# Define data models for holding the error report data from an import that was run
 class ImportReportRow:
     def __init__(self, row_number: int, error_message: str, row_data: str):
         self.row_number = row_number
@@ -95,6 +109,7 @@ class ImportReport:
         """
 
 
+# The business
 def do_import(model_name: str, input_file: str):
     """Main api interface with narwhal importer
     """
