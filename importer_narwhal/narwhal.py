@@ -56,6 +56,8 @@ resource_model_mapping = _compile_resources()
 
 
 # Handle external IDs
+#
+#
 def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
     for model_name in MODEL_ALLOW_LIST:
         # Look for any fields that follow the pattern '[model name]__external' and dereference them to their pks
@@ -78,24 +80,40 @@ for resource in resource_model_mapping.keys():
     resource_model_mapping[resource].before_import_row = global_before_import_row
 
 
-# Experiment with natural keys
-class PersonIdentifierGetOrCreate(ForeignKeyWidget):
+# Get or create types by natural key
+#
+#
+get_or_create_foreign_key_fields = [
+    'person_identifier_type',
+]
+
+
+class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
     def clean(self, value, row=None, *args, **kwargs):
         if value:
             try:
                 return self.get_queryset(value, row, *args, **kwargs).get(**{self.field: value})
             except:
-                return PersonIdentifierType.objects.create(name=value)
+                return self.model.objects.create(name=value)
         else:
             return None
 
 
-resource_model_mapping['PersonIdentifier'].fields['person_identifier_type'] = fields.Field(
-    column_name='person_identifier_type',
-    attribute='person_identifier_type',
-    widget=PersonIdentifierGetOrCreate(PersonIdentifierType, 'name')
-)
+for resource in resource_model_mapping.keys():
+    for field_name in resource_model_mapping[resource].fields.keys():
+        for get_or_create_foreign_key_field in get_or_create_foreign_key_fields:
+            if field_name == get_or_create_foreign_key_field:
+                model_name = ''.join([word.capitalize() for word in field_name.split('_')])
+                resource_model_mapping[resource].fields[field_name] = fields.Field(
+                    column_name=field_name,
+                    attribute=field_name,
+                    widget=ForeignKeyWidgetGetOrCreate(get_data_model_from_name(model_name), 'name')
+                )
 
+
+# Nice error reports
+#
+#
 
 # Define data models for holding the error report data from an import that was run
 class ImportReportRow:
@@ -132,8 +150,11 @@ def do_import(model_name: str, input_file: str):
 
         import_report = ImportReport()
 
+        # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
+        # encounter any database level errors. We'll use this here:
         if result.has_validation_errors():
             for invalid_row in result.invalid_rows:
+                # Nice error reports continued...
                 import_report.validation_errors.append(
                     ImportReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
                 )
@@ -144,6 +165,7 @@ def do_import(model_name: str, input_file: str):
                     row_num = error_row[0]
                     errors = error_row[1]
                     for error in errors:
+                        # Nice error reports continued...
                         import_report.database_errors.append(
                             ImportReportRow(row_num, str(error.error), str(dict(error.row)))
                         )
