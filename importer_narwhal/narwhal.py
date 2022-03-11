@@ -18,7 +18,6 @@ class FdpModelResource(ModelResource):
     """
     pass
 
-
 # Some of the stock widgets don't meet our needs
 # Override them with our custom versions
 FdpModelResource.WIDGETS_MAP['BooleanField'] = \
