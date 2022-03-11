@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
         if report.validation_errors:
             for row in report.validation_errors:
-                self.error(f"{row.row_number} | {row.error_message} | {row.row_data}")
+                self.error(row)
         if report.database_errors:
             for row in report.database_errors:
-                self.error(f"{row.row_number} | {row.error_message} | {row.row_data}")
+                self.error(row)

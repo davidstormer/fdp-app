@@ -53,11 +53,20 @@ class ImportReportRow:
         self.error_message = error_message
         self.row_data = row_data
 
+    def __repr__(self):
+        return f"{self.row_number} | {self.error_message} | {self.row_data}"
+
 
 class ImportReport:
     def __init__(self):
         self.validation_errors = []
         self.database_errors = []
+
+    def __str__(self):
+        return f"""
+        validation_errors: {len(self.validation_errors)}
+        database_errors: {len(self.database_errors)}
+        """
 
 
 def do_import(model_name: str, input_file: str):
