@@ -13,6 +13,7 @@ MODEL_ALLOW_LIST = [
     'Content',
     'PersonRelationship',
     'PersonIdentifier',
+    'PersonAlias',
 ]
 
 
@@ -47,12 +48,12 @@ def _compile_resources():
 resource_model_mapping = _compile_resources()
 
 
-def do_import(input_file: str):
+def do_import(model_name: str, input_file: str):
     """Main api interface with narwhal importer
     """
     with open(input_file, 'r') as fd:
         input_sheet = tablib.Dataset().load(fd)
-        resource_class = resource_model_mapping['Person']
+        resource_class = resource_model_mapping[model_name]
         resource = resource_class()
         result = resource.import_data(input_sheet, dry_run=True)
         if result.has_validation_errors():
