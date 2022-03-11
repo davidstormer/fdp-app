@@ -89,6 +89,7 @@ get_or_create_foreign_key_fields = [
 
 
 class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
+    # c.f. https://stackoverflow.com/questions/32369984/django-import-export-new-values-in-foriegn-key-model
     def clean(self, value, row=None, *args, **kwargs):
         if value:
             try:
