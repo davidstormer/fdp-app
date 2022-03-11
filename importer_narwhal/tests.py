@@ -1,8 +1,13 @@
 import tablib
-from django.db import IntegrityError
-from django.test import TestCase
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
-from core.models import Person, PersonAlias
+from core.models import PersonAlias
+from django.test import TestCase
+from django.core.management import call_command
+from io import StringIO
+import tempfile
+import csv
+from uuid import uuid4
+from core.models import Person
 
 
 class NarwhalTestCase(TestCase):
@@ -39,14 +44,6 @@ class NarwhalTestCase(TestCase):
         self.assertEqual(Person.objects.last().name,
             'person quasicontinuous'
         )
-
-from django.test import TestCase
-from django.core.management import call_command
-from io import StringIO
-import tempfile
-import csv
-from uuid import uuid4
-from core.models import Person
 
 
 class NarwhalImportCommand(TestCase):
