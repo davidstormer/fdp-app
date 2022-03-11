@@ -112,10 +112,13 @@ class NarwhalImportCommand(TestCase):
             )
             # THEN I should see an error in the output
             self.assertIn(
-                'Error',
+                'is_law_enforcement',
                 command_output.getvalue()
             )
-
+            self.assertIn(
+                'Enter a valid boolean value',
+                command_output.getvalue()
+            )
 
     def test_exception_error_scenario(self):
         print("FINISH ME!!!")
