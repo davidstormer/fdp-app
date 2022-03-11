@@ -59,6 +59,10 @@ resource_model_mapping = _compile_resources()
 #
 #
 def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
+    other_external_id_fields_mapping = {
+        'subject_person': 'Person',
+        'object_person': 'Person',
+    }
     for model_name in MODEL_ALLOW_LIST:
         # Look for any fields that follow the pattern '[model name]__external' and dereference them to their pks
         try:
@@ -66,6 +70,15 @@ def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
             model_class = get_data_model_from_name(model_name)
             referenced_record = get_record_from_external_id(model_class, external_id)
             row[model_name.lower()] = referenced_record.pk
+        except KeyError:
+            pass
+    for field_name in other_external_id_fields_mapping.keys():
+        # Look for any fields from the other external id fields above and dereference them to their pks
+        try:
+            external_id = row[f'{field_name}__external']
+            model_class = get_data_model_from_name(other_external_id_fields_mapping[field_name])
+            referenced_record = get_record_from_external_id(model_class, external_id)
+            row[field_name] = referenced_record.pk
         except KeyError:
             pass
 
@@ -85,6 +98,7 @@ for resource in resource_model_mapping.keys():
 #
 get_or_create_foreign_key_fields = [
     'person_identifier_type',
+    'person_relationship_type',
 ]
 
 
@@ -141,7 +155,7 @@ class ImportReport:
 
 # The business
 def do_import(model_name: str, input_file: str):
-    """Main api interface with narwhal importer
+    """Main api interface for narwhal importer
     """
     with open(input_file, 'r') as fd:
         input_sheet = tablib.Dataset().load(fd)
