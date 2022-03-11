@@ -3,8 +3,8 @@ from import_export.resources import ModelResource
 from importer_narwhal.widgets import BooleanWidgetValidated
 from wholesale.models import ModelHelper
 
-# The available list of models to import to
-# in the interface is based on this.
+# The mother list of models to be able to import to.
+# The options in the interface are based on this.
 MODEL_ALLOW_LIST = [
     'Person',
     'Content',
@@ -25,7 +25,7 @@ FdpModelResource.WIDGETS_MAP['BooleanField'] = \
     BooleanWidgetValidated
 
 
-# We'll need a mother list of models and their corresponding
+# We'll need a mapping of FDP data models and their corresponding
 # django-import-export resource.
 def compile_resources():
     import_export_resources = {}
