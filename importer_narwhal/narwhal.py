@@ -92,7 +92,7 @@ for resource in resource_model_mapping.keys():
     resource_model_mapping[resource].before_import_row = global_before_import_row
 
 
-# Get or create types by natural key
+# Setup FDP 'type' fields to use custom 'get or create' widget
 #
 #
 get_or_create_foreign_key_fields = \
@@ -115,7 +115,7 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
         else:
             return None
 
-
+# Customize the 'type' fields to use the new ForeignKeyWidgetGetOrCreate widget
 # For every supported model
 for model_name in resource_model_mapping.keys():
     # Go through each field
