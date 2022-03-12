@@ -2,6 +2,7 @@ from unittest import skip
 
 import tablib
 
+from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from supporting.models import PersonIdentifierType, PersonRelationshipType
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
@@ -216,7 +217,7 @@ class NarwhalImportCommand(TestCase):
                 command_output.getvalue().count('violates unique constraint')
             )
 
-    def test_external_id_keys(self):
+    def test_external_id_keys_success_scenario(self):
         """Test that importer supports using external IDs to reference existing records in the system
         Uses PersonAlias records to test this
         """
@@ -241,7 +242,6 @@ class NarwhalImportCommand(TestCase):
             command_output = StringIO()
             call_command('narwhal_import', 'PersonAlias', csv_fd.name, stdout=command_output)
 
-        print(command_output.getvalue())
         # Then I shouldn't see an error message
         self.assertNotIn(
             'violates not-null constraint',
@@ -251,6 +251,44 @@ class NarwhalImportCommand(TestCase):
         self.assertEqual(
             existing_record['record'].pk,
             PersonAlias.objects.first().person.pk
+        )
+
+    def test_external_id_keys_missing_external_id_scenario(self):
+        """Test that a missing person identifier is gracefully handled
+        """
+
+        # Given theres an import sheet that references an existing record in the system (e.g. foreign key relationship)
+        # BUT the external id is missing...
+        existing_record = import_record_with_extid(Person, {"name": 'gnathopod'}, external_id='carbocinchomeronic')
+
+        BulkImport.objects.last().delete()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person__external', 'name'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['person__external'] = existing_record['external_id']
+                row['name'] = f"alias-{uuid4()}"
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonAlias', csv_fd.name, stdout=command_output)
+
+        # Then I should see an error message
+        self.assertIn(
+            "Can't find external id carbocinchomeronic",
+            command_output.getvalue()
+        )
+        # Then the records from the sheet shouldn't be imported
+        self.assertEqual(
+            0,
+            PersonAlias.objects.all().count()
         )
 
     def test_natural_keys_person_identifier_type(self):
@@ -278,7 +316,6 @@ class NarwhalImportCommand(TestCase):
             command_output = StringIO()
             call_command('narwhal_import', 'PersonIdentifier', csv_fd.name, stdout=command_output)
 
-        print(command_output.getvalue())
         # Then I should see the new record linked to the existing one
         self.assertEqual(
             existing_record['record'].pk,
@@ -311,7 +348,6 @@ class NarwhalImportCommand(TestCase):
             command_output = StringIO()
             call_command('narwhal_import', 'PersonIdentifier', csv_fd.name, stdout=command_output)
 
-        print(command_output.getvalue())
         # Then I should see the new record linked to the existing one
         self.assertEqual(
             existing_record['record'].pk,
@@ -345,7 +381,6 @@ class NarwhalImportCommand(TestCase):
             command_output = StringIO()
             call_command('narwhal_import', 'PersonRelationship', csv_fd.name, stdout=command_output)
 
-        print(command_output.getvalue())
         # Then I should see the new type created
         self.assertEqual(
             'vaudeville',
