@@ -96,10 +96,11 @@ for resource in resource_model_mapping.keys():
 # Get or create types by natural key
 #
 #
-get_or_create_foreign_key_fields = [
-    'person_identifier_type',
-    'person_relationship_type',
-]
+get_or_create_foreign_key_fields = \
+    {
+        'PersonIdentifier': ['person_identifier_type', ],
+        'PersonRelationship': ['type', ],
+    }
 
 
 class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
@@ -114,15 +115,15 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
             return None
 
 
-for resource in resource_model_mapping.keys():
-    for field_name in resource_model_mapping[resource].fields.keys():
-        for get_or_create_foreign_key_field in get_or_create_foreign_key_fields:
-            if field_name == get_or_create_foreign_key_field:
-                model_name = ''.join([word.capitalize() for word in field_name.split('_')])
-                resource_model_mapping[resource].fields[field_name] = fields.Field(
+for model_name in resource_model_mapping.keys():
+    for field_name in resource_model_mapping[model_name].fields.keys():
+        for get_or_create_foreign_key_field in get_or_create_foreign_key_fields.get(model_name, []):
+            if get_or_create_foreign_key_field == field_name:
+                foreign_key_model = get_data_model_from_name(model_name)._meta.get_field(field_name).remote_field.model
+                resource_model_mapping[model_name].fields[field_name] = fields.Field(
                     column_name=field_name,
                     attribute=field_name,
-                    widget=ForeignKeyWidgetGetOrCreate(get_data_model_from_name(model_name), 'name')
+                    widget=ForeignKeyWidgetGetOrCreate(foreign_key_model, 'name')
                 )
 
 
