@@ -5,7 +5,6 @@ from import_export.widgets import ForeignKeyWidget
 
 from bulk_data_manipulation.common import get_record_from_external_id
 from importer_narwhal.widgets import BooleanWidgetValidated
-from supporting.models import PersonIdentifierType
 from wholesale.models import ModelHelper
 
 # The mother list of models to be able to import to.
@@ -88,7 +87,7 @@ def global_before_import_row(resource_class, row, row_number=None, **kwargs):
     dereference_external_ids(resource_class, row, row_number, **kwargs)
 
 
-# Amend the resources map with update resources, applying the above customizations
+# Amend the resources in the map by applying the above customizations
 for resource in resource_model_mapping.keys():
     resource_model_mapping[resource].before_import_row = global_before_import_row
 
@@ -103,6 +102,8 @@ get_or_create_foreign_key_fields = \
     }
 
 
+# The stock foreign key widget doesn't create records if they don't exist
+# Create a new custom widget that does this
 class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
     # c.f. https://stackoverflow.com/questions/32369984/django-import-export-new-values-in-foriegn-key-model
     def clean(self, value, row=None, *args, **kwargs):
@@ -115,15 +116,24 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
             return None
 
 
+# For every supported model
 for model_name in resource_model_mapping.keys():
+    # Go through each field
     for field_name in resource_model_mapping[model_name].fields.keys():
+        # If one of them is on the list of fields to customize...
         for get_or_create_foreign_key_field in get_or_create_foreign_key_fields.get(model_name, []):
             if get_or_create_foreign_key_field == field_name:
+                # Customize the field with the ForeignKeyWidgetGetOrCreate widget
                 foreign_key_model = get_data_model_from_name(model_name)._meta.get_field(field_name).remote_field.model
                 resource_model_mapping[model_name].fields[field_name] = fields.Field(
                     column_name=field_name,
                     attribute=field_name,
-                    widget=ForeignKeyWidgetGetOrCreate(foreign_key_model, 'name')
+                    widget=ForeignKeyWidgetGetOrCreate(
+                        foreign_key_model,
+                        'name'  # <- Assumes that the 'natural' key is in the 'name' field
+                                # may need to be factored into get_or_create_foreign_key_fields
+                                # in the future to handle other fields.
+                    )
                 )
 
 
