@@ -261,7 +261,7 @@ class NarwhalImportCommand(TestCase):
         # BUT the external id is missing...
         existing_record = import_record_with_extid(Person, {"name": 'gnathopod'}, external_id='carbocinchomeronic')
 
-        BulkImport.objects.last().delete()
+        BulkImport.objects.last().delete()  # <--- this
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
@@ -283,6 +283,44 @@ class NarwhalImportCommand(TestCase):
         # Then I should see an error message
         self.assertIn(
             "Can't find external id carbocinchomeronic",
+            command_output.getvalue()
+        )
+        # Then the records from the sheet shouldn't be imported
+        self.assertEqual(
+            0,
+            PersonAlias.objects.all().count()
+        )
+
+    def test_external_id_keys_missing_record_scenario(self):
+        """Test that a missing record is gracefully handled when referenced by an external id
+        """
+
+        # Given theres an import sheet that references an existing record in the system (e.g. foreign key relationship)
+        # BUT the external id is missing...
+        existing_record = import_record_with_extid(Person, {"name": 'gnathopod'}, external_id='carbocinchomeronic')
+
+        Person.objects.last().delete()  # <--- this
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person__external', 'name'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['person__external'] = existing_record['external_id']
+                row['name'] = f"alias-{uuid4()}"
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonAlias', csv_fd.name, stdout=command_output)
+
+        # Then I should see an error message
+        self.assertIn(
+            "Can't find record, does not exist!",
             command_output.getvalue()
         )
         # Then the records from the sheet shouldn't be imported
