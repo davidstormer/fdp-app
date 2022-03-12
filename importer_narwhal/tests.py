@@ -5,7 +5,7 @@ import tablib
 from functional_tests.common_import_export import import_record_with_extid
 from supporting.models import PersonIdentifierType, PersonRelationshipType
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
-from core.models import PersonAlias, PersonIdentifier
+from core.models import PersonAlias, PersonIdentifier, PersonRelationship
 from django.test import TestCase
 from django.core.management import call_command
 from io import StringIO
@@ -320,22 +320,22 @@ class NarwhalImportCommand(TestCase):
 
     def test_generate_new_types_person_relationship_types(self):
         """Test that importer can add new "types" when they don't exist in the system yet
-        Uses PersonIdentifier records to test this
+        Uses PersonRelationship records to test this
         """
-        # Given theres an import sheet that references a type that's NOT in the system
+        # Given there's an import sheet that references a type that's NOT in the system
         person_subject = import_record_with_extid(Person, {"name": 'marteline'}, external_id='sinusoidal')
         person_object = import_record_with_extid(Person, {"name": 'marteline2'}, external_id='sinusoidal2')
-        person_relationship_type = PersonRelationshipType.objects.create(name='commonsensical')
+        # person_relationship_type = PersonRelationshipType.objects.create(name='commonsensical')
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['subject_person__external', 'object_person__external', 'person_relationship_type'])
+            csv_writer = csv.DictWriter(csv_fd, ['subject_person__external', 'object_person__external', 'type'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['subject_person__external'] = person_subject['external_id']
                 row['object_person__external'] = person_object['external_id']
-                row['person_relationship_type'] = 'commonsensical'
+                row['type'] = 'vaudeville'
                 imported_records.append(row)
             for row in imported_records:
                 csv_writer.writerow(row)
@@ -346,5 +346,14 @@ class NarwhalImportCommand(TestCase):
             call_command('narwhal_import', 'PersonRelationship', csv_fd.name, stdout=command_output)
 
         print(command_output.getvalue())
-        # Then I should see the new record linked to the existing one
-        self.fail('finish me')
+        # Then I should see the new type created
+        self.assertEqual(
+            'vaudeville',
+            PersonRelationshipType.objects.last().name
+        )
+
+        # And the person relationship should use the new type
+        self.assertEqual(
+            'vaudeville',
+            PersonRelationship.objects.last().type.name
+        )
