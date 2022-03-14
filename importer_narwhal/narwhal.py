@@ -1,6 +1,7 @@
 import tablib
 from import_export import resources, fields
 from import_export.resources import ModelResource
+from import_export.results import Result, RowResult
 from import_export.widgets import ForeignKeyWidget
 
 from bulk_data_manipulation.common import get_record_from_external_id
@@ -142,7 +143,7 @@ for model_name in resource_model_mapping.keys():
 #
 
 # Define data models for holding the error report data from an import that was run
-class ImportReportRow:
+class ErrorReportRow:
     def __init__(self, row_number: int, error_message: str, row_data: str):
         self.row_number = row_number
         self.error_message = error_message
@@ -152,10 +153,25 @@ class ImportReportRow:
         return f"{self.row_number} | {self.error_message} | {self.row_data}"
 
 
+class ImportedReportRow:
+    # Row number, action, error (bool), info (error message or diff), pk, repr / link
+    def __init__(self, row_number: int, action: str, error: bool, info: str, pk, name: str):
+        self.row_number = row_number
+        self.action = action
+        self.error = error
+        self.info = info
+        self.pk = pk
+        self.name = name
+
+    def __str__(self):
+        return f"{self.row_number} | {self.action} | {self.error} | {self.pk} | {self.name}"
+
+
 class ImportReport:
     def __init__(self):
         self.validation_errors = []
         self.database_errors = []
+        self.imported_records = []
 
     def __str__(self):
         return f"""
@@ -173,16 +189,15 @@ def do_import(model_name: str, input_file: str):
         resource_class = resource_model_mapping[model_name]
         resource = resource_class()
         result = resource.import_data(input_sheet, dry_run=True)
-
         import_report = ImportReport()
 
         # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
-        # encounter any database level errors. We'll use this here:
+        # encounter any database level errors. We'll apply this pattern here:
         if result.has_validation_errors():
             for invalid_row in result.invalid_rows:
                 # Nice error reports continued...
                 import_report.validation_errors.append(
-                    ImportReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
+                    ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
                 )
         else:
             result = resource.import_data(input_sheet, dry_run=False)
@@ -193,6 +208,16 @@ def do_import(model_name: str, input_file: str):
                     for error in errors:
                         # Nice error reports continued...
                         import_report.database_errors.append(
-                            ImportReportRow(row_num, str(error.error), str(dict(error.row)))
+                            ErrorReportRow(row_num, str(error.error), str(dict(error.row)))
                         )
+            for row_num, row in enumerate(result.rows):
+                import_report.imported_records.append(
+                    ImportedReportRow(
+                        row_num,
+                        row.import_type,
+                        row.validation_error,
+                        row.diff,
+                        row.object_id,
+                        row.object_repr)
+                )
         return import_report
