@@ -1,19 +1,21 @@
 from django.core.management.base import BaseCommand
-import tablib
-from import_export.results import InvalidRow, Result
+from ...narwhal import MODEL_ALLOW_LIST, do_import
 
-from ...narwhal import MODEL_ALLOW_LIST, resource_model_mapping, do_import, ImportReportRow
-
-help_text = """UNDER CONSTRUCTION Import data into the system"""
+help_text = """Import data into the system"""
 
 
 class Command(BaseCommand):
     help = help_text
 
-    def error(self, message):
+    def print_error(self, message):
         self.stdout.write(self.style.ERROR(
             message
         ))
+
+    def print_info(self, message):
+        self.stdout.write(
+            message
+        )
 
     def add_arguments(self, parser):
         parser.add_argument('model', choices=MODEL_ALLOW_LIST, help="Model class, e.g. 'Person'")
@@ -22,11 +24,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         report = do_import(options['model'], options['input_file'])
 
+        if report.imported_records:
+            for row in report.imported_records:
+                self.print_info(str(row))
         if report.validation_errors:
-            self.error("Error:")
+            self.print_error("Error:")
             for row in report.validation_errors:
-                self.error(row)
+                self.print_error(str(row))
         if report.database_errors:
-            self.error("Error:")
+            self.print_error("Error:")
             for row in report.database_errors:
-                self.error(row)
+                self.print_error(str(row))

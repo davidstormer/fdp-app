@@ -430,3 +430,36 @@ class NarwhalImportCommand(TestCase):
             'vaudeville',
             PersonRelationship.objects.last().type.name
         )
+
+    def test_update_existing_records(self):
+        # Given there are existing records in the system
+        existing_records = []
+        for i in range(10):
+            existing_records.append(Person.objects.create(name='Old Name'))
+        # and Given there's an import sheet that references them by pk
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name'])
+            csv_writer.writeheader()
+            for existing_record in existing_records:
+                row = {}
+                row['id'] = existing_record.pk
+                row['name'] = 'NEW Name'
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # When I run the command
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+            # Then the records should be updated with the new values
+            for record in Person.objects.all():
+                self.assertEqual(
+                    'NEW Name',
+                    record.name
+                )
+
+            # Then there should be a message about them being updated
+            self.assertIn(
+                'update',
+                command_output.getvalue()
+            )
