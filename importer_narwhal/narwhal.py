@@ -1,10 +1,12 @@
+import os
+
 import tablib
 from import_export import resources, fields
 from import_export.resources import ModelResource
-from import_export.results import Result, RowResult
 from import_export.widgets import ForeignKeyWidget
 
 from bulk_data_manipulation.common import get_record_from_external_id
+from importer_narwhal.models import ImportBatch
 from importer_narwhal.widgets import BooleanWidgetValidated
 from wholesale.models import ModelHelper
 
@@ -184,24 +186,34 @@ class ImportReport:
 def do_import(model_name: str, input_file: str):
     """Main api interface for narwhal importer
     """
+
+    batch_record = ImportBatch()
+    batch_record.target_model_name = model_name
+    batch_record.submitted_file_name = os.path.basename(input_file)
+
     with open(input_file, 'r') as fd:
         input_sheet = tablib.Dataset().load(fd)
         resource_class = resource_model_mapping[model_name]
         resource = resource_class()
         result = resource.import_data(input_sheet, dry_run=True)
+        batch_record.number_of_rows = len(result.rows)
         import_report = ImportReport()
 
         # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
         # encounter any database level errors. We'll apply this pattern here:
         if result.has_validation_errors():
+            batch_record.errors_encountered = True
+            batch_record.save()
             for invalid_row in result.invalid_rows:
                 # Nice error reports continued...
                 import_report.validation_errors.append(
                     ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
                 )
-        else:
+        else:  # We're safe to proceed with live rounds
             result = resource.import_data(input_sheet, dry_run=False)
             if result.has_errors():
+                batch_record.errors_encountered = True
+                batch_record.save()
                 for error_row in result.row_errors():
                     row_num = error_row[0]
                     errors = error_row[1]
@@ -210,14 +222,18 @@ def do_import(model_name: str, input_file: str):
                         import_report.database_errors.append(
                             ErrorReportRow(row_num, str(error.error), str(dict(error.row)))
                         )
-            for row_num, row in enumerate(result.rows):
-                import_report.imported_records.append(
-                    ImportedReportRow(
-                        row_num,
-                        row.import_type,
-                        row.validation_error,
-                        row.diff,
-                        row.object_id,
-                        row.object_repr)
-                )
+            else:
+                batch_record.errors_encountered = False
+                batch_record.save()
+                for row_num, row in enumerate(result.rows):
+                    import_report.imported_records.append(
+                        ImportedReportRow(
+                            row_num,
+                            row.import_type,
+                            row.validation_error,
+                            row.diff,
+                            row.object_id,
+                            row.object_repr)
+                    )
+
         return import_report
