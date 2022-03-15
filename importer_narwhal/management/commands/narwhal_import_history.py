@@ -20,9 +20,22 @@ class Command(BaseCommand):
         )
 
     def add_arguments(self, parser):
-        pass
+        parser.add_argument('batch_number', type=int, nargs='?')
 
     def handle(self, *args, **options):
-        batches = ImportBatch.objects.all().order_by('-pk')
-        for batch in batches:
-            self.print_info(str(batch))
+        if options['batch_number']:
+            batch = ImportBatch.objects.get(pk=options['batch_number'])
+            self.print_info(
+                f"""Batch number: {batch.pk}
+Start time: {batch.start_time:%Y-%m-%d %H:%M:%S}
+File name: {batch.submitted_file_name}
+Model name: {batch.target_model_name}
+Rows: {batch.number_of_rows}
+Errors: {'Errors encountered' if batch.errors_encountered else 'No errors'}"""
+            )
+            for row in batch.imported_rows.all():
+                self.print_info(str(row))
+        else:
+            batches = ImportBatch.objects.all().order_by('-pk')
+            for batch in batches:
+                self.print_info(str(batch))
