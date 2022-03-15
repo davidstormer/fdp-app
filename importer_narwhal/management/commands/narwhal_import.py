@@ -27,6 +27,8 @@ class Command(BaseCommand):
         if report.imported_records:
             for row in report.imported_records:
                 self.print_info(str(row))
+        else:
+            self.print_error("NO RECORDS IMPORTED")
         if report.validation_errors:
             self.print_error("Error:")
             for row in report.validation_errors:

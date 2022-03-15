@@ -1,12 +1,10 @@
 import os
 from datetime import datetime
-from unittest import skip
-
 import tablib
-
 from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from supporting.models import PersonIdentifierType, PersonRelationshipType
+from .models import ImportBatch
 from .narwhal import BooleanWidgetValidated, resource_model_mapping, do_import
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship
 from django.test import TestCase
@@ -546,3 +544,31 @@ class TestImportHistoryCommand(TestCase):
         self.assertIn('32', output)
         self.assertIn('33', output)
         self.assertIn(os.path.basename(csv_fd.name), output)
+
+    def test_import_history_detail_rows(self):
+        # GIVEN an import has been run
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(4):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'checked'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+            do_import('Person', csv_fd.name)
+
+            # WHEN I pass the batch number as an argument to the import_history command
+            command_output_stream = StringIO()
+            batch_number = ImportBatch.objects.last().pk
+            call_command('narwhal_import_history', batch_number, stdout=command_output_stream)
+
+            # THEN I should see a listing showing the rows of the import
+            command_output = command_output_stream.getvalue()
+            for row in imported_records:
+                self.assertIn(
+                    row['name'],
+                    command_output
+                )
