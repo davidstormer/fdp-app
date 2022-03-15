@@ -6,7 +6,7 @@ from import_export.resources import ModelResource
 from import_export.widgets import ForeignKeyWidget
 
 from bulk_data_manipulation.common import get_record_from_external_id
-from importer_narwhal.models import ImportBatch
+from importer_narwhal.models import ImportBatch, ImportedRow
 from importer_narwhal.widgets import BooleanWidgetValidated
 from wholesale.models import ModelHelper
 
@@ -226,6 +226,12 @@ def do_import(model_name: str, input_file: str):
                 batch_record.errors_encountered = False
                 batch_record.save()
                 for row_num, row in enumerate(result.rows):
+                    ImportedRow.objects.create(
+                        row_number=row_num,
+                        import_batch=batch_record,
+                        imported_record_name=row.object_repr,
+                        imported_record_pk=row.object_id,
+                    )
                     import_report.imported_records.append(
                         ImportedReportRow(
                             row_num,
