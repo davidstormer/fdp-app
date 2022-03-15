@@ -1,3 +1,5 @@
+import os
+from datetime import datetime
 from unittest import skip
 
 import tablib
@@ -5,7 +7,7 @@ import tablib
 from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from supporting.models import PersonIdentifierType, PersonRelationshipType
-from .narwhal import BooleanWidgetValidated, resource_model_mapping
+from .narwhal import BooleanWidgetValidated, resource_model_mapping, do_import
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship
 from django.test import TestCase
 from django.core.management import call_command
@@ -124,6 +126,17 @@ class NarwhalImportCommand(TestCase):
                 command_output.getvalue()
             )
 
+            # AND WHEN I run the import_history command
+            history_command_output = StringIO()
+            time_started = datetime.now()
+            call_command('narwhal_import_history', stdout=history_command_output)
+
+            # THEN the listing should indiciate "Errors encountered"
+            self.assertIn(
+                "Errors encountered",
+                history_command_output.getvalue()
+            )
+
     def test_exception_error_scenario(self):
         """Handle database layer errors
         """
@@ -155,7 +168,7 @@ class NarwhalImportCommand(TestCase):
 
             # THEN none of the records from the sheet should be added to the system
             self.assertEqual(
-                1,
+                1,  # <-- 1 for the existing record
                 PersonAlias.objects.all().count()
             )
             # THEN I should see an error in the output
@@ -171,6 +184,17 @@ class NarwhalImportCommand(TestCase):
             self.assertEqual(
                 1,
                 command_output.getvalue().count('violates unique constraint')
+            )
+
+            # AND WHEN I run the import_history command
+            history_command_output = StringIO()
+            time_started = datetime.now()
+            call_command('narwhal_import_history', stdout=history_command_output)
+
+            # THEN the listing should indiciate "Errors encountered"
+            self.assertIn(
+                "Errors encountered",
+                history_command_output.getvalue()
             )
 
     def test_exception_error_scenario_multiple(self):
@@ -463,3 +487,62 @@ class NarwhalImportCommand(TestCase):
                 'update',
                 command_output.getvalue()
             )
+
+
+class TestImportHistoryCommand(TestCase):
+    def test_import_history_success_scenario(self):
+        # GIVEN an import has been run
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(42):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'checked'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+            do_import('Person', csv_fd.name)
+
+            # WHEN I run the import_history command
+            command_output = StringIO()
+            time_started = datetime.now()
+            call_command('narwhal_import_history', stdout=command_output)
+
+            # THEN I should see a listing showing the number, import time, filename, model, number of records,
+            # and whether it succeeded or not.
+            output = command_output.getvalue()
+            self.assertIn('Person', output)
+            self.assertIn('42', output)
+            self.assertIn(os.path.basename(csv_fd.name), output)
+
+    def test_import_history_success_scenario_multiple(self):
+        # GIVEN several imports have been run
+        for x in range(3):
+            with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+                imported_records = []
+                csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
+                csv_writer.writeheader()
+                for i in range(31 + x):
+                    row = {}
+                    row['name'] = f'Test Person {uuid4()}'
+                    row['is_law_enforcement'] = 'checked'
+                    csv_writer.writerow(row)
+                    imported_records.append(row)
+                csv_fd.flush()  # Make sure it's actually written to the filesystem!
+                do_import('Person', csv_fd.name)
+
+        # WHEN I run the import_history command
+        command_output = StringIO()
+        time_started = datetime.now()
+        call_command('narwhal_import_history', stdout=command_output)
+
+        # THEN I should see a listing showing the number, import time, filename, model, number of records,
+        # and whether it succeeded or not.
+        output = command_output.getvalue()
+        self.assertIn('Person', output)
+        self.assertIn('31', output)
+        self.assertIn('32', output)
+        self.assertIn('33', output)
+        self.assertIn(os.path.basename(csv_fd.name), output)
