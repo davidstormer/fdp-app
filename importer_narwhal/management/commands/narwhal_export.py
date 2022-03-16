@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from ...narwhal_export import do_export
+from ...narwhal import do_export
 
 help_text = """Import data into the system"""
 
