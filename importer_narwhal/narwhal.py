@@ -2,9 +2,11 @@ import os
 
 import tablib
 from import_export import resources, fields
+from import_export.fields import Field
 from import_export.resources import ModelResource
 from import_export.widgets import ForeignKeyWidget
 
+from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
 from importer_narwhal.models import ImportBatch, ImportedRow
 from importer_narwhal.widgets import BooleanWidgetValidated
@@ -24,7 +26,18 @@ MODEL_ALLOW_LIST = [
 class FdpModelResource(ModelResource):
     """Customized django-import-export ModelResource
     """
-    pass
+    external_id = Field()
+
+    def dehydrate_external_id(self, record):
+        try:
+            bulk_import_record = \
+                BulkImport.objects.get(
+                    table_imported_to=record.__class__.get_db_table(),
+                    pk_imported_to=record.pk)
+            return bulk_import_record.pk_imported_from
+        except BulkImport.DoesNotExist:
+            return ''
+
 
 
 # Some of the stock widgets don't meet our needs
@@ -243,3 +256,11 @@ def do_import(model_name: str, input_file: str):
                     )
 
         return import_report
+
+
+def do_export(model_name, file_name):
+    resource_class = resource_model_mapping[model_name]
+    model_resource = resource_class()
+    data_set = model_resource.export()
+    with open(file_name, 'w') as fd:
+        fd.write(data_set.csv)
