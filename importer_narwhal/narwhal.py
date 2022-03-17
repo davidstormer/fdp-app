@@ -38,6 +38,8 @@ class FdpModelResource(ModelResource):
         except BulkImport.DoesNotExist:
             return ''
 
+    class Meta:
+        skip_unchanged = True
 
 
 # Some of the stock widgets don't meet our needs
@@ -195,6 +197,11 @@ class ImportReport:
         """
 
 
+def clean_diff_html(diff_html: str) -> str:
+    return diff_html.replace(' style="background:#e6ffe6;"', '') \
+        .replace(' style="background:#ffe6e6;"', '')
+
+
 # The business
 def do_import(model_name: str, input_file: str):
     """Main api interface for narwhal importer
@@ -242,6 +249,9 @@ def do_import(model_name: str, input_file: str):
                     ImportedRow.objects.create(
                         row_number=row_num,
                         import_batch=batch_record,
+                        action=row.import_type,
+                        errors=row.validation_error,
+                        info=clean_diff_html(str(row.diff)),
                         imported_record_name=row.object_repr,
                         imported_record_pk=row.object_id,
                     )

@@ -88,12 +88,22 @@ class NarwhalExportCommand(TestCase):
             5,
             Person.objects.filter(name__icontains='edited').count()
         )
-        # And Then the history logs should show diffs of those changes
-        # TODO
-        # history_command_output_stream = StringIO()
-        # batch_number = ImportBatch.objects.last().pk
-        # call_command('narwhal_import_history', batch_number, stdout=history_command_output_stream)
-        # print(history_command_output_stream.getvalue())
+        # And Then the history logs should show five updates and accompanying diffs
+        history_command_output_stream = StringIO()
+        batch_number = ImportBatch.objects.last().pk
+        call_command('narwhal_import_history', batch_number, stdout=history_command_output_stream)
+        history_command_output = history_command_output_stream.getvalue()
 
+        self.assertEqual(
+            5,
+            history_command_output.count("update")
+        )
+        self.assertEqual(
+            5,
+            history_command_output.count("<del>to_</del><span>edit</span><ins>ed</ins>")
+        )
         # And Then the history logs should not show edits to records that had no changes in the CSV
-        # TODO
+        self.assertEqual(
+            5,
+            history_command_output.count("skip")
+        )
