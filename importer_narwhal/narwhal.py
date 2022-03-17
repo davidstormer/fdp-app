@@ -286,3 +286,16 @@ def do_export(model_name, file_name):
     data_set = model_resource.export()
     with open(file_name, 'w') as fd:
         fd.write(data_set.csv)
+
+
+def delete_batch(batch_number: str or int) -> list:
+    batch = ImportBatch.objects.get(pk=batch_number)
+    model = get_data_model_from_name(batch.target_model_name)
+    not_found = []
+    for row in batch.imported_rows.all():
+        try:
+            record = model.objects.get(pk=row.imported_record_pk)
+            record.delete()
+        except model.DoesNotExist:
+            not_found.append(f"{model}:{row.pk}")
+    return not_found
