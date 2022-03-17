@@ -7,6 +7,7 @@ import tempfile
 from uuid import uuid4
 from core.models import Person
 from functional_tests.common_import_export import import_record_with_extid
+from importer_narwhal.models import ImportBatch
 
 
 class NarwhalExportCommand(TestCase):
@@ -38,3 +39,61 @@ class NarwhalExportCommand(TestCase):
                         file_contents,
                         msg="External IDs missing from csv output"
                     )
+
+    def test_bulk_edit_scenario(self):
+        # Given there are existing records in the system,
+        # some with "to_edit" in their name
+        existing_records = []
+        for i in range(5):
+            existing_records.append(import_record_with_extid(Person, {'name': f'Person record {uuid4()}'}))
+        for i in range(5):
+            existing_records.append(import_record_with_extid(Person, {'name': f'Person record to_edit {uuid4()}'}))
+
+        # Belt, _and_ suspenders...?
+        # self.assertEqual(
+        #     5,
+        #     Person.objects.filter(name__icontains='to_edit').count()
+        # )
+
+        # When I do an export, and edit the cells of the CSV, changing "to_edit" to "edited"
+        # and then import the CSV.
+        def search_replace(filename, search_for, replace_with):
+            # Read in the file
+            with open(filename, 'r') as file:
+                filedata = file.read()
+
+            # Replace the target string
+            filedata = filedata.replace(search_for, replace_with)
+
+            # Write the file out again
+            with open(filename, 'w') as file:
+                file.write(filedata)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bulk_edit_sheet_fn = temp_dir + '/bulk_edit_sheet.csv'
+            call_command('narwhal_export', 'Person', bulk_edit_sheet_fn)
+
+            search_replace(bulk_edit_sheet_fn, 'to_edit', 'edited')
+
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', bulk_edit_sheet_fn, stdout=command_output)
+
+        # Then the records should be updated with the edits
+        self.assertEqual(
+            0,
+            Person.objects.filter(name__icontains='to_edit').count(),
+            msg="Records with 'to_edit' in their name still found in the system!"
+        )
+        self.assertEqual(
+            5,
+            Person.objects.filter(name__icontains='edited').count()
+        )
+        # And Then the history logs should show diffs of those changes
+        # TODO
+        # history_command_output_stream = StringIO()
+        # batch_number = ImportBatch.objects.last().pk
+        # call_command('narwhal_import_history', batch_number, stdout=history_command_output_stream)
+        # print(history_command_output_stream.getvalue())
+
+        # And Then the history logs should not show edits to records that had no changes in the CSV
+        # TODO
