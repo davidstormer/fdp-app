@@ -1,8 +1,9 @@
 from django.core.management.base import BaseCommand
 
 from ...models import ImportBatch
+from ...narwhal import delete_batch
 
-help_text = """Display history of imports"""
+help_text = """Delete records created by an import"""
 
 
 class Command(BaseCommand):
@@ -19,25 +20,21 @@ class Command(BaseCommand):
         )
 
     def add_arguments(self, parser):
-        parser.add_argument('batch_number', type=int, nargs='?')
+        parser.add_argument('batch_number')
 
     def handle(self, *args, **options):
-        if options['batch_number']:
-            batch = ImportBatch.objects.get(pk=options['batch_number'])
-            self.print_info(
-                f"""Batch number: {batch.pk}
+        batch = ImportBatch.objects.get(pk=options['batch_number'])
+        self.print_info(
+            f"""Batch number: {batch.pk}
 Start time: {batch.start_time:%Y-%m-%d %H:%M:%S}
 File name: {batch.submitted_file_name}
 Model name: {batch.target_model_name}
 Rows: {batch.number_of_rows}
 Errors: {'Errors encountered' if batch.errors_encountered else 'No errors'}"""
-            )
-            for row in batch.imported_rows.all():
-                self.print_info(str(row))
-            for row in batch.error_rows.all():
-                self.print_info(str(row))
-
+        )
+        batch_number_confirmation = input("Are you sure you want to delete these records? "
+                                          "Enter the batch number to confirm:")
+        if str(options['batch_number']) == str(batch_number_confirmation):
+            delete_batch(options['batch_number'])
         else:
-            batches = ImportBatch.objects.all().order_by('-pk')
-            for batch in batches:
-                self.print_info(str(batch))
+            self.print_error("Numbers don't match. Quiting.")
