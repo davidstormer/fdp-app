@@ -572,3 +572,30 @@ class TestImportHistoryCommand(TestCase):
                     row['name'],
                     command_output
                 )
+
+    def test_import_history_detail_error_rows(self):
+        # GIVEN an import has been run with validation errors
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(4):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'BREAK'  # <-- bad value
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+            do_import('Person', csv_fd.name)
+
+            # WHEN I pass the batch number as an argument to the import_history command
+            command_output_stream = StringIO()
+            batch_number = ImportBatch.objects.last().pk
+            call_command('narwhal_import_history', batch_number, stdout=command_output_stream)
+
+            # THEN I should see a listing showing the error rows of the import
+            command_output = command_output_stream.getvalue()
+            self.assertEqual(
+                4,
+                command_output.count("Enter a valid boolean value")
+            )
