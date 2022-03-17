@@ -8,7 +8,7 @@ from import_export.widgets import ForeignKeyWidget
 
 from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
-from importer_narwhal.models import ImportBatch, ImportedRow
+from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
 from importer_narwhal.widgets import BooleanWidgetValidated
 from wholesale.models import ModelHelper
 
@@ -226,6 +226,12 @@ def do_import(model_name: str, input_file: str):
             batch_record.save()
             for invalid_row in result.invalid_rows:
                 # Nice error reports continued...
+                ErrorRow.objects.create(
+                    import_batch=batch_record,
+                    row_number=invalid_row.number,
+                    error_message=str(invalid_row.error_dict),
+                    row_data=str(invalid_row.values)
+                )
                 import_report.validation_errors.append(
                     ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
                 )
@@ -239,6 +245,12 @@ def do_import(model_name: str, input_file: str):
                     errors = error_row[1]
                     for error in errors:
                         # Nice error reports continued...
+                        ErrorRow.objects.create(
+                            import_batch=batch_record,
+                            row_number=row_num,
+                            error_message=str(error.error),
+                            row_data=str(dict(error.row))
+                        )
                         import_report.database_errors.append(
                             ErrorReportRow(row_num, str(error.error), str(dict(error.row)))
                         )

@@ -27,3 +27,13 @@ class ImportedRow(models.Model):
 
     def __str__(self):
         return f"{self.row_number} | {self.action} | {self.errors} | {self.info} | {self.imported_record_name} | {self.imported_record_pk}"
+
+
+class ErrorRow(models.Model):
+    import_batch = models.ForeignKey(ImportBatch, on_delete=models.CASCADE, related_name='error_rows')
+    row_number = models.IntegerField()
+    error_message = models.TextField()
+    row_data = models.TextField()
+
+    def __str__(self):
+        return f"{self.row_number} | {self.error_message} | {self.row_data}"
