@@ -35,6 +35,9 @@ Errors: {'Errors encountered' if batch.errors_encountered else 'No errors'}"""
             )
             for row in batch.imported_rows.all():
                 self.print_info(str(row))
+            for row in batch.error_rows.all():
+                self.print_info(str(row))
+
         else:
             batches = ImportBatch.objects.all().order_by('-pk')
             for batch in batches:
