@@ -19,8 +19,11 @@ class ImportBatch(models.Model):
 class ImportedRow(models.Model):
     import_batch = models.ForeignKey(ImportBatch, on_delete=models.CASCADE, related_name='imported_rows')
     row_number = models.IntegerField()
-    imported_record_name = models.CharField(max_length=1024)
-    imported_record_pk = models.CharField(max_length=128)
+    action = models.CharField(max_length=128, null=True)
+    errors = models.TextField(null=True)
+    info = models.TextField(null=True)
+    imported_record_pk = models.CharField(max_length=128, null=True)
+    imported_record_name = models.CharField(max_length=1024, null=True)
 
     def __str__(self):
-        return f"{self.row_number} | {self.imported_record_name} | {self.imported_record_pk}"
+        return f"{self.row_number} | {self.action} | {self.errors} | {self.info} | {self.imported_record_name} | {self.imported_record_pk}"
