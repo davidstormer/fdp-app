@@ -1,9 +1,9 @@
 # Overview
-The 'narwhal importer' is based on the django-import-export package.
+The 'narwhal importer' is built on the django-import-export package.
 
 # Features
 - Traceable error reporting on a pre row level for both validation errors and database errors
-- Foreign key lookups by pk, external identifier, or value 
+- Foreign key lookups by pk, external identifier, or value (where practical)
 - Flexible boolean values (e.g. 'checked' for True)
 - Update existing records
 
