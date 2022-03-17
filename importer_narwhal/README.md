@@ -11,6 +11,7 @@ The 'narwhal importer' is based on the django-import-export package.
 Use the 'narwhal_import' management command to use the importer.
 
 # TODO
+- Bulk delete previous batch
 - Template generator
 - Background task manager for long running batches
 - GUI front end
