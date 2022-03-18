@@ -48,5 +48,42 @@ class NarwhalDeleteImportBatch(TestCase):
                 Person.objects.all().count()
             )
 
-    # TODO: refuse when there's an update in the batch history
+    def test_update_existing_records(self):
+        # Given an import was run that included updates
+        existing_records = []
+        for i in range(10):
+            existing_records.append(Person.objects.create(name='Old Name'))
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name'])
+            csv_writer.writeheader()
+            for existing_record in existing_records:
+                row = {}
+                row['id'] = existing_record.pk
+                row['name'] = 'NEW Name'
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+        # When I run the delete import batch command
+        # WHEN I run the delete_import_batch command on it and type in the batch number
+        batch_number = ImportBatch.objects.last().pk
+        delete_import_batch_command_output_stream = StringIO()
+        with patch('builtins.input', lambda *args: batch_number):
+            call_command('narwhal_delete_import_batch', batch_number, stdout=delete_import_batch_command_output_stream)
+        output = delete_import_batch_command_output_stream.getvalue()
+
+        # And none of the records from the batch should be deleted
+        for record in existing_records:
+            self.assertEqual(
+                "NEW Name",
+                Person.objects.get(pk=record.pk).name
+            )
+
+        # Then it should give me an error
+        self.assertIn(
+            'Cannot delete',
+            output
+        )
+
     # TODO: handle missing records
