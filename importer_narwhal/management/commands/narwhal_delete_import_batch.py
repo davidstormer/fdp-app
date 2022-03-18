@@ -26,7 +26,7 @@ class Command(BaseCommand):
         batch = ImportBatch.objects.get(pk=options['batch_number'])
         self.print_info(
             f"""Batch number: {batch.pk}
-Start time: {batch.start_time:%Y-%m-%d %H:%M:%S}
+Start time: {batch.started:%Y-%m-%d %H:%M:%S}
 File name: {batch.submitted_file_name}
 Model name: {batch.target_model_name}
 Rows: {batch.number_of_rows}
