@@ -5,6 +5,7 @@ from django.utils import timezone
 from import_export import resources, fields
 from import_export.fields import Field
 from import_export.resources import ModelResource
+from import_export.results import RowResult
 from import_export.widgets import ForeignKeyWidget
 
 from bulk.models import BulkImport
@@ -97,10 +98,10 @@ def _compile_resources():
 
 resource_model_mapping = _compile_resources()
 
-
+# Before import
+#
+#
 # On import, locate relationship columns in external id form, and resolve the respective pk
-#
-#
 def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
     nonstandard_external_id_fields_mapping = {
         'subject_person': 'Person',
@@ -127,13 +128,28 @@ def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
 
 
 # Modify the before_import_row hook with our custom transformations
-def global_before_import_row(resource_class, row, row_number=None, **kwargs):
+def before_import_row(resource_class, row, row_number=None, **kwargs):
     dereference_external_ids(resource_class, row, row_number, **kwargs)
 
 
-# Amend the resources in the map by applying the above customizations
+# After import
+#
+#
+# On import, import the external id in the 'external_id' column
+def import_external_id(resource_class, row, row_result, row_number, **kwargs):
+    external_id = row.get('external_id', None)
+    RowResult().object_id
+    import pdb; pdb.set_trace()
+
+
+def after_import_row(resource_class, row, row_result, row_number=None, **kwargs):
+    import_external_id(resource_class, row, row_result, row_number, **kwargs)
+
+
+# Amend the resources in the map by applying the above pre and post import customizations
 for resource in resource_model_mapping.keys():
-    resource_model_mapping[resource].before_import_row = global_before_import_row
+    resource_model_mapping[resource].before_import_row = before_import_row
+    resource_model_mapping[resource].after_import_row = after_import_row
 
 
 # Setup FDP 'type' fields to use custom 'get or create' widget
