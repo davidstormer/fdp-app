@@ -1,6 +1,7 @@
 import os
 
 import tablib
+from django.utils import timezone
 from import_export import resources, fields
 from import_export.fields import Field
 from import_export.resources import ModelResource
@@ -207,7 +208,7 @@ def do_import(model_name: str, input_file: str):
     """Main api interface for narwhal importer
     """
 
-    batch_record = ImportBatch()
+    batch_record = ImportBatch.objects.create()
     batch_record.target_model_name = model_name
     batch_record.submitted_file_name = os.path.basename(input_file)
 
@@ -256,7 +257,6 @@ def do_import(model_name: str, input_file: str):
                         )
             else:
                 batch_record.errors_encountered = False
-                batch_record.save()
                 for row_num, row in enumerate(result.rows):
                     ImportedRow.objects.create(
                         row_number=row_num,
@@ -276,6 +276,8 @@ def do_import(model_name: str, input_file: str):
                             row.object_id,
                             row.object_repr)
                     )
+                batch_record.completed = timezone.now()
+                batch_record.save()
 
         return import_report
 
