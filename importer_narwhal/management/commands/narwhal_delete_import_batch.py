@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from ...models import ImportBatch
-from ...narwhal import delete_batch, BatchDeleteFailed
+from ...narwhal import delete_batch, BatchDeleteFoundUpdates
 
 help_text = """Delete records created by an import"""
 
@@ -37,7 +37,7 @@ Errors: {'Errors encountered' if batch.errors_encountered else 'No errors'}"""
         if str(options['batch_number']) == str(batch_number_confirmation):
             try:
                 delete_batch(options['batch_number'])
-            except BatchDeleteFailed:
+            except BatchDeleteFoundUpdates:
                 self.print_error("Updates found in batch. Cannot delete. Quiting.")
         else:
             self.print_error("Numbers don't match. Quiting.")
