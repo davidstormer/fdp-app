@@ -1,4 +1,20 @@
+from django.template.defaultfilters import filesizeformat
+from django.core.exceptions import ValidationError
 from django.db import models
+import os
+
+
+def validate_import_sheet_extension(file):
+    allowed_extensions = ['csv']
+    extension = os.path.splitext(file)[1][1:].lower()
+    if extension not in allowed_extensions:
+        raise ValidationError(f'{extension} file not allowed. File must end in one of {allowed_extensions}')
+
+
+def validate_import_sheet_file_size(file):
+    max_file_size = 1e+7  # 10mb
+    if file.size > max_file_size:
+        raise ValidationError(f'File size {filesizeformat(file.size)} too large. File must be less than {filesizeformat(max_file_size)}.')
 
 
 class ImportBatch(models.Model):
@@ -8,6 +24,13 @@ class ImportBatch(models.Model):
     number_of_rows = models.IntegerField(null=True)
     errors_encountered = models.BooleanField(null=True)
     submitted_file_name = models.CharField(max_length=1024)
+    import_sheet = models.FileField(
+        upload_to='import-sheets/%Y/%m/%d/%H/%M/%S/',
+        validators=[
+            validate_import_sheet_extension,
+            validate_import_sheet_file_size
+        ]
+    )
 
     def __str__(self):
         # number, import time, filename, model, number of records,
