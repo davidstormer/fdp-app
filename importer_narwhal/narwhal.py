@@ -288,8 +288,18 @@ def do_export(model_name, file_name):
         fd.write(data_set.csv)
 
 
+class BatchDeleteFailed(Exception):
+    pass
+
+
 def delete_batch(batch_number: str or int) -> list:
     batch = ImportBatch.objects.get(pk=batch_number)
+    # Check to make sure there aren't any updates in the batch
+    for row in batch.imported_rows.all():
+        if row.action == 'update':
+            raise BatchDeleteFailed('Updates in batch. Cannot delete batch.')
+
+    # Now delete
     model = get_data_model_from_name(batch.target_model_name)
     not_found = []
     for row in batch.imported_rows.all():
