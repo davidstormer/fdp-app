@@ -53,6 +53,7 @@ class FdpModelResource(ModelResource):
     """
     external_id = Field()
 
+    # On export retrieve external id of record and fill it into the 'external_id' column
     def dehydrate_external_id(self, record):
         try:
             bulk_import_record = \
@@ -97,11 +98,11 @@ def _compile_resources():
 resource_model_mapping = _compile_resources()
 
 
-# Handle external IDs
+# On import, locate relationship columns in external id form, and resolve the respective pk
 #
 #
 def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
-    other_external_id_fields_mapping = {
+    nonstandard_external_id_fields_mapping = {
         'subject_person': 'Person',
         'object_person': 'Person',
     }
@@ -114,11 +115,11 @@ def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
             row[model_name.lower()] = referenced_record.pk
         except KeyError:
             pass
-    for field_name in other_external_id_fields_mapping.keys():
+    for field_name in nonstandard_external_id_fields_mapping.keys():
         # Look for any fields from the other external id fields above and dereference them to their pks
         try:
             external_id = row[f'{field_name}__external']
-            model_class = get_data_model_from_name(other_external_id_fields_mapping[field_name])
+            model_class = get_data_model_from_name(nonstandard_external_id_fields_mapping[field_name])
             referenced_record = get_record_from_external_id(model_class, external_id)
             row[field_name] = referenced_record.pk
         except KeyError:

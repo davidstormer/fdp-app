@@ -5,6 +5,7 @@ from django.db import models
 
 from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
+from sourcing.models import Content
 from supporting.models import PersonIdentifierType, PersonRelationshipType
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
@@ -513,3 +514,61 @@ class NarwhalImportCommand(TestCase):
                 'update',
                 command_output.getvalue()
             )
+
+    def test_multiple_sheets_external_ids_person_personalias(self):
+        """Test typical import scenario Person, Content, Incident
+        """
+        # Make person records
+        # Given there's an import sheet of Person records with external ids of the new records and I import it
+        def import_person_records() -> dict:
+            with tempfile.NamedTemporaryFile(mode='w') as person_csv_fd:
+                imported_person_records = []
+                person_csv_writer = csv.DictWriter(person_csv_fd, ['external_id', 'name'])
+                person_csv_writer.writeheader()
+                for i in range(3):
+                    row = {}
+                    row['external_id'] = f'person-extid-{uuid4()}'
+                    row['name'] = f"person-name-{uuid4()}"
+                    imported_person_records.append(row)
+
+                for row in imported_person_records:
+                    person_csv_writer.writerow(row)
+                person_csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+                command_output = StringIO()
+                call_command('narwhal_import', 'Person', person_csv_fd.name, stdout=command_output)
+                return {
+                    'imported_records': imported_person_records,
+                    'command_output': command_output.getvalue()
+                }
+        person_import_result = import_person_records()
+
+        # When I import person aliases linked to the person records by their newly created external ids
+        def import_person_alias_records() -> dict:
+            with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+                imported_records = []
+                csv_writer = csv.DictWriter(csv_fd, ['name', 'person__external'])
+                csv_writer.writeheader()
+                for person in person_import_result['imported_records']:
+                    row = {}
+                    row['name'] = f"alias-name-{uuid4()}"
+                    row['person__external'] = person['external_id']
+                    imported_records.append(row)
+
+                for row in imported_records:
+                    csv_writer.writerow(row)
+                csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+                command_output = StringIO()
+                call_command('narwhal_import', 'PersonAlias', csv_fd.name, stdout=command_output)
+                return {
+                    'imported_records': imported_records,
+                    'command_output': command_output.getvalue()
+                }
+        content_import_result = import_person_alias_records()
+
+        # Then I should not see "Can't find external id" in the output of the alias import command
+        self.assertNotIn(
+            "Can't find external id",
+            content_import_result['command_output']
+        )
+        # Then the content records should be linked to the person records
+        import pdb; pdb.set_trace()
