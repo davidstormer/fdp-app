@@ -1,17 +1,47 @@
 from datetime import datetime
 import tablib
+from django.core.exceptions import ValidationError
+from django.db import models
+
 from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from supporting.models import PersonIdentifierType, PersonRelationshipType
+from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship
-from django.test import TestCase
+from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
 from io import StringIO
 import tempfile
 import csv
 from uuid import uuid4
 from core.models import Person
+
+
+class NarwhalSimpleTestCase(SimpleTestCase):
+    def test_validate_import_sheet_extension(self):
+        with self.subTest(msg="success"):
+            validate_import_sheet_extension('hello.csv')
+
+        with self.subTest(msg="wrong extension"):
+            with self.assertRaises(ValidationError):
+                validate_import_sheet_extension('hello.ppt')
+
+        with self.subTest(msg="missing extension"):
+            with self.assertRaises(ValidationError):
+                validate_import_sheet_extension('hello')
+
+    def test_validate_import_sheet_file_size(self):
+        with self.subTest(msg='too big'):
+            file = models.FileField()  # Does this really make a FileField instance?
+            file.size = 1000000 * 11
+            with self.assertRaises(ValidationError):
+                validate_import_sheet_file_size(file)
+
+        with self.subTest(msg='not too big'):
+            file = models.FileField()
+            file.size = 1000000 * 9
+            validate_import_sheet_file_size(file)
 
 
 class NarwhalTestCase(TestCase):
