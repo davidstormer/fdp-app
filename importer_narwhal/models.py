@@ -2,18 +2,27 @@ from django.db import models
 
 
 class ImportBatch(models.Model):
-    start_time = models.DateTimeField(auto_now=True)
+    started = models.DateTimeField(auto_now_add=True)
+    completed = models.DateTimeField(null=True)
     target_model_name = models.CharField(max_length=256)
-    number_of_rows = models.IntegerField()
-    errors_encountered = models.BooleanField()
+    number_of_rows = models.IntegerField(null=True)
+    errors_encountered = models.BooleanField(null=True)
     submitted_file_name = models.CharField(max_length=1024)
 
     def __str__(self):
         # number, import time, filename, model, number of records,
         # and whether it succeeded or not.
-        return f"{self.pk} | {self.start_time:%Y-%m-%d %H:%M:%S} | {self.submitted_file_name} | " \
+        return f"{self.pk} | {self.started_fmt} | {self.completed_fmt} | {self.submitted_file_name} | " \
                f"{self.target_model_name} | {self.number_of_rows} | "\
                f"{'Errors encountered' if self.errors_encountered else 'No errors'}"
+
+    @property
+    def started_fmt(self):
+        return f"{self.started:%Y-%m-%d %H:%M:%S}"
+
+    @property
+    def completed_fmt(self):
+        return f"{self.completed:%Y-%m-%d %H:%M:%S}" if self.completed else 'Aborted'
 
 
 class ImportedRow(models.Model):
