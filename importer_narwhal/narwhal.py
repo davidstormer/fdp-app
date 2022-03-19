@@ -1,3 +1,4 @@
+import json
 import os
 
 import tablib
@@ -98,6 +99,7 @@ def _compile_resources():
 
 resource_model_mapping = _compile_resources()
 
+
 # Before import
 #
 #
@@ -135,11 +137,21 @@ def before_import_row(resource_class, row, row_number=None, **kwargs):
 # After import
 #
 #
-# On import, import the external id in the 'external_id' column
+# After import, generate the external id in the 'external_id' column
 def import_external_id(resource_class, row, row_result, row_number, **kwargs):
-    external_id = row.get('external_id', None)
-    RowResult().object_id
-    import pdb; pdb.set_trace()
+    # TODO: I think this should maybe be a 'get or create' logic, rather than just always create...?
+    # If so, if there's a pk in the sheet too it should probably compare to the one in the BulkImport record,
+    # and balk if there's an inconsistency?
+    if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+        external_id = row.get('external_id', None)
+        if external_id:
+            model = resource_class.Meta.model
+            BulkImport.objects.create(
+                table_imported_to=model.get_db_table(),
+                pk_imported_to=row_result.object_id,
+                pk_imported_from=external_id,
+                data_imported=json.dumps(dict(row))  # make constraints happy...
+            )
 
 
 def after_import_row(resource_class, row, row_result, row_number=None, **kwargs):
@@ -174,6 +186,7 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
                 return self.model.objects.create(name=value)
         else:
             return None
+
 
 # Customize the 'type' fields to use the new ForeignKeyWidgetGetOrCreate widget
 # For every supported model
