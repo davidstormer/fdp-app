@@ -563,12 +563,18 @@ class NarwhalImportCommand(TestCase):
                     'imported_records': imported_records,
                     'command_output': command_output.getvalue()
                 }
-        content_import_result = import_person_alias_records()
+        person_alias_import_result = import_person_alias_records()
 
         # Then I should not see "Can't find external id" in the output of the alias import command
         self.assertNotIn(
             "Can't find external id",
-            content_import_result['command_output']
+            person_alias_import_result['command_output']
         )
-        # Then the content records should be linked to the person records
-        import pdb; pdb.set_trace()
+        # Then the alias records should be linked to the person records
+        for i in range(3):
+            alias_name = person_alias_import_result['imported_records'][i]['name']
+            person_alias = PersonAlias.objects.get(name=alias_name)
+            self.assertEqual(
+                person_import_result['imported_records'][i]['name'],
+                person_alias.person.name
+            )
