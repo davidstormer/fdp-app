@@ -16,3 +16,14 @@ Use the 'narwhal_import' management command to use the importer.
 - Background task manager for long running batches
 - GUI front end
 - Guest / Host / Admin access control filtering
+
+# External IDs
+On import
+Row level
+Cell / relation level
+
+On update
+Row level
+Cell / relation level
+
+Uniqueness
