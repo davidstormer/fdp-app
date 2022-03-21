@@ -146,11 +146,19 @@ def import_external_id(resource_class, row, row_result, row_number, **kwargs):
         external_id = row.get('external_id', None)
         if external_id:
             model = resource_class.Meta.model
+            # Check to see if external id already exists, raise an error if so
+            found = BulkImport.objects.filter(
+                table_imported_to=model.get_db_table(),
+                pk_imported_from=external_id
+            )
+            if len(found) > 0:
+                raise Exception(f"External ID already exists: {model}:{external_id}")
+            # If doesn't exist go ahead and create it
             BulkImport.objects.create(
                 table_imported_to=model.get_db_table(),
                 pk_imported_to=row_result.object_id,
                 pk_imported_from=external_id,
-                data_imported=json.dumps(dict(row))  # make constraints happy...
+                data_imported=json.dumps(dict(row))
             )
 
 

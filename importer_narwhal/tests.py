@@ -1,4 +1,6 @@
 from datetime import datetime
+from unittest import skip
+
 import tablib
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -266,6 +268,115 @@ class NarwhalImportCommand(TestCase):
             self.assertEqual(
                 2,
                 command_output.getvalue().count('violates unique constraint')
+            )
+
+    def test_create_external_ids(self):
+        # Given there is an import sheet with an "external_id" column,
+        # which specifies that a new external id should be created when the record is imported.
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_rows = []
+            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name'])
+            csv_writer.writeheader()
+            for i in range(3):
+                row = {}
+                row['external_id'] = f'external-id-{uuid4()}'
+                row['name'] = f'Test Person {uuid4()}'
+                csv_writer.writerow(row)
+                imported_rows.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # When I run the import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+            # Then I should see new BulkImport records in the system linking the external ids to the records
+            try:
+                for imported_row in imported_rows:
+                    BulkImport.objects.get(pk_imported_from=imported_row['external_id'])
+            except BulkImport.DoesNotExist:
+                self.fail(f"Couldn't find external id {imported_row['external_id']}")
+
+    def test_duplicate_external_id_with_existing(self):
+        # Given there is an import sheet with an external_id that already exists in the system
+        duplicate_external_id = f'external-id-{uuid4()}'
+
+        BulkImport.objects.create(
+            table_imported_to=Person.get_db_table(),
+            pk_imported_to=1,
+            pk_imported_from=duplicate_external_id,
+            data_imported='{}'  # make constraints happy...
+        )
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_rows = []
+            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name'])
+            csv_writer.writeheader()
+            for i in range(3):
+                row = {}
+                row['external_id'] = f'external-id-{uuid4()}'
+                row['name'] = f'Test Person {uuid4()}'
+                csv_writer.writerow(row)
+                imported_rows.append(row)
+            row = {}
+            row['external_id'] = duplicate_external_id  # <-- this
+            row['name'] = f'Test Person {uuid4()}'
+            csv_writer.writerow(row)
+            imported_rows.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # When I run the import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+            # Then none of the records should have been imported
+            self.assertEqual(
+                0,
+                Person.objects.all().count(),
+                msg="Records were imported"
+            )
+            # Then I should see an error
+            self.assertIn(
+                'External ID already exists',
+                command_output.getvalue()
+            )
+
+    def test_duplicate_external_id_within_sheet(self):
+        # Given there is an import sheet with duplicate external_id
+        # (not that already exist in the system)
+        duplicate_external_id = f'external-id-{uuid4()}'
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_rows = []
+            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name'])
+            csv_writer.writeheader()
+            for i in range(3):
+                row = {}
+                row['external_id'] = f'external-id-{uuid4()}'
+                row['name'] = f'Test Person {uuid4()}'
+                csv_writer.writerow(row)
+                imported_rows.append(row)
+            for i in range(2):                                # <-- this
+                row = {}
+                row['external_id'] = duplicate_external_id
+                row['name'] = f'Test Person {uuid4()}'
+                csv_writer.writerow(row)
+                imported_rows.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # When I run the import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+            # Then none of the records should have been imported
+            self.assertEqual(
+                0,
+                Person.objects.all().count(),
+                msg="Records were imported"
+            )
+            # Then I should see an error
+            self.assertIn(
+                'External ID already exists',
+                command_output.getvalue()
             )
 
     def test_external_id_keys_success_scenario(self):
