@@ -179,6 +179,7 @@ get_or_create_foreign_key_fields = \
     {
         'PersonIdentifier': ['person_identifier_type', ],
         'PersonRelationship': ['type', ],
+        'Content': ['type', ],
     }
 
 

@@ -593,6 +593,41 @@ class NarwhalImportCommand(TestCase):
             PersonRelationship.objects.last().type.name
         )
 
+    def test_generate_new_types_content_types(self):
+        """Test that importer can add new "types" when they don't exist in the system yet
+        Uses Content records to test this
+        """
+        # Given theres an import sheet that references a type that's NOT in the system
+        # NOT IN THE SYSTEM: content_type = ContentType.objects.create(name='restopper')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['description', 'type'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['description'] = f"identifier-{uuid4()}"
+                row['type'] = 'restopper'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Content', csv_fd.name, stdout=command_output)
+
+        # Then I should see a new content type created matching the name 'restopper'
+        self.assertEqual(
+            1,
+            Content.objects.all().count(),
+            msg="New content type wasn't created"
+        )
+        self.assertEqual(
+            'restopper',
+            Content.objects.first().type.name
+        )
+
     def test_update_existing_records(self):
         # Given there are existing records in the system
         existing_records = []
