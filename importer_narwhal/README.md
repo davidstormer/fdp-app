@@ -12,6 +12,7 @@ The 'narwhal importer' is built on the django-import-export package.
 Use the 'narwhal_import' management command to use the importer.
 
 # TODO
+- Natural key get or create many to many relationships -- 'PersonTitle': ['title', ]?
 - Template generator
 - Background task manager for long running batches
 - GUI front end
