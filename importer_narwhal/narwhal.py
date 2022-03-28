@@ -276,7 +276,9 @@ def do_import(model_name: str, input_file: str):
     batch_record.submitted_file_name = os.path.basename(input_file)
 
     with open(input_file, 'r') as fd:
-        input_sheet = tablib.Dataset().load(fd)
+        input_sheet = tablib.Dataset().load(fd, "csv")
+        # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
+        # https://github.com/jazzband/tablib/issues/502
         resource_class = resource_model_mapping[model_name]
         resource = resource_class()
         result = resource.import_data(input_sheet, dry_run=True)
