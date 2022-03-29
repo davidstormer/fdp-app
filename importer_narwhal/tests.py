@@ -9,10 +9,10 @@ from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
-    Trait, Title
+    Trait, Title, County, LeaveStatus, State
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
-from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle
+from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment
 from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
 from io import StringIO
@@ -701,6 +701,58 @@ class NarwhalImportCommand(TestCase):
         self.assertEqual(
             'windling',
             PersonTitle.objects.first().title.name
+        )
+
+    def test_person_payment_handle_county_leave_status(self):
+        """Test that PersonPayment
+        county is 'natural key' but is not 'get or create' -- because it requires a 'state' value which can't be assumed
+        leave_status is regular 'get or create'
+        """
+        # Given theres a PersonPayment import sheet that references a leave status that's NOT in the system
+        # and a county that IS in the system.
+        # NOT IN THE SYSTEM: leave_status = LeaveStatus.objects.create(name='shareman')
+        state = State.objects.create(name='Washington')
+        county = County.objects.create(name='nocuous', state=state)
+        person = Person.objects.create(name='Test Person')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'county', 'leave_status'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['person'] = person.pk
+                row['county'] = 'nocuous'
+                row['leave_status'] = 'shareman'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonPayment', csv_fd.name, stdout=command_output)
+
+        # Then I should see a new PersonPayment created
+        self.assertEqual(
+            'nocuous',
+            PersonPayment.objects.first().county.name
+        )
+        self.assertEqual(
+            'shareman',
+            PersonPayment.objects.first().leave_status.name
+        )
+        # and a new leave status
+        self.assertEqual(
+            1,
+            LeaveStatus.objects.all().count(),
+            msg="New LeaveStatus wasn't created"
+        )
+        # and no new county
+        self.assertEqual(
+            1,
+            County.objects.all().count(),
+            msg="New County wasn't created"
         )
 
     def test_update_existing_records(self):
