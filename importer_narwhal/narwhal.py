@@ -184,6 +184,7 @@ get_or_create_foreign_key_fields = \
         'Content': ['type', ],
         'ContentPerson': ['situation_role', ],
         'Trait': ['type', ],
+        'PersonTitle': ['title', ],
     }
 
 
