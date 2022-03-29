@@ -174,10 +174,10 @@ for resource in resource_model_mapping.keys():
     resource_model_mapping[resource].after_import_row = after_import_row
 
 
-# Setup FDP 'type' fields to use custom 'get or create' widget
+# Setup FDP 'types & tags' fields
 #
 #
-get_or_create_foreign_key_fields = \
+foreign_key_fields_get_or_create = \
     {
         'PersonIdentifier': ['person_identifier_type', ],
         'PersonRelationship': ['type', ],
@@ -185,6 +185,17 @@ get_or_create_foreign_key_fields = \
         'ContentPerson': ['situation_role', ],
         'Trait': ['type', ],
         'PersonTitle': ['title', ],
+        'PersonPayment': ['leave_status'],  # No county because it requires a state value
+    }
+
+foreign_key_fields_get_only = \
+    {
+        'PersonPayment': ['county'],
+    }
+
+many_to_many_fields_get_only = \
+    {
+        'Person': ['traits', ],
     }
 
 
@@ -203,50 +214,34 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
 
 
 # Customize the 'type' fields to use the new ForeignKeyWidgetGetOrCreate widget
-# For every supported model
-for model_name in resource_model_mapping.keys():
-    # Go through each field
-    for field_name in resource_model_mapping[model_name].fields.keys():
-        # If one of them is on the list of fields to customize...
-        for get_or_create_foreign_key_field in get_or_create_foreign_key_fields.get(model_name, []):
-            if get_or_create_foreign_key_field == field_name:
-                # Customize the field with the ForeignKeyWidgetGetOrCreate widget
-                foreign_key_model = get_data_model_from_name(model_name)._meta.get_field(field_name).remote_field.model
-                resource_model_mapping[model_name].fields[field_name] = fields.Field(
-                    column_name=field_name,
-                    attribute=field_name,
-                    widget=ForeignKeyWidgetGetOrCreate(
-                        foreign_key_model,
-                        'name'  # <- Assumes that the 'natural' key is in the 'name' field
-                                # may need to be factored into get_or_create_foreign_key_fields
-                                # in the future to handle other fields.
+def apply_custom_widgets(target_fields, widget):
+    # For every supported model
+    for model_name in resource_model_mapping.keys():
+        # Go through each field
+        for field_name in resource_model_mapping[model_name].fields.keys():
+            # If one of them is on the list of fields to customize...
+            for get_or_create_foreign_key_field in target_fields.get(model_name, []):
+                if get_or_create_foreign_key_field == field_name:
+                    # Customize the field with the ForeignKeyWidgetGetOrCreate widget
+                    foreign_key_model = get_data_model_from_name(model_name)._meta.get_field(field_name).remote_field.model
+                    resource_model_mapping[model_name].fields[field_name] = fields.Field(
+                        column_name=field_name,
+                        attribute=field_name,
+                        widget=widget(
+                            model=foreign_key_model,
+                            field='name'  # <- Assumes that the 'natural' key is in the 'name' field
+                                    # may need to be factored into get_or_create_foreign_key_fields
+                                    # in the future to handle other fields.
+                        )
                     )
-                )
+
+
+# Set up 'type' fields (foreign key one to many)
+apply_custom_widgets(foreign_key_fields_get_or_create, ForeignKeyWidgetGetOrCreate)
+apply_custom_widgets(foreign_key_fields_get_only, ForeignKeyWidget)
 
 # Set up "tag" fields (m2m) -- for now not 'get or create' just get
-# For every supported model
-get_or_create_many_to_many_fields = \
-    {
-        'Person': ['traits', ],
-    }
-
-for model_name in resource_model_mapping.keys():
-    # Go through each field
-    for field_name in resource_model_mapping[model_name].fields.keys():
-        # If one of them is on the list of fields to customize...
-        for get_or_create_foreign_key_field in get_or_create_many_to_many_fields.get(model_name, []):
-            if get_or_create_foreign_key_field == field_name:
-                # Customize the field with the ForeignKeyWidgetGetOrCreate widget
-                foreign_key_model = get_data_model_from_name(model_name)._meta.get_field(field_name).remote_field.model
-                resource_model_mapping[model_name].fields[field_name] = fields.Field(
-                    column_name=field_name,
-                    attribute=field_name,
-                    widget=ManyToManyWidget(
-                        model=foreign_key_model,
-                        field='name'  # <- Assumes that the 'natural' key is in the 'name' field
-                                      # may need to be factored in the future to handle other field names.
-                    )
-                )
+apply_custom_widgets(many_to_many_fields_get_only, ManyToManyWidget)
 
 # Nice error reports
 #
