@@ -185,7 +185,8 @@ foreign_key_fields_get_or_create = \
         'ContentPerson': ['situation_role', ],
         'Trait': ['type', ],
         'PersonTitle': ['title', ],
-        'PersonPayment': ['leave_status'],  # No county because it requires a state value
+        'PersonPayment': ['leave_status', ],  # No county because it requires a state value
+        'PersonGrouping': ['type', ],
     }
 
 foreign_key_fields_get_only = \
