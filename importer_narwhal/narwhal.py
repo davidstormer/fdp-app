@@ -175,10 +175,13 @@ for resource in resource_model_mapping.keys():
 # Setup FDP 'type' fields to use custom 'get or create' widget
 #
 #
+# TODO: add widget for m2m fields: `'Person': ['traits', ],`
 get_or_create_foreign_key_fields = \
     {
         'PersonIdentifier': ['person_identifier_type', ],
         'PersonRelationship': ['type', ],
+        'PersonTitle': ['title', ],
+        'Person': ['titles', ],
     }
 
 

@@ -1,14 +1,16 @@
 import csv
+from unittest import skip
 
 from django.test import TestCase
 from django.core.management import call_command
 from io import StringIO
 import tempfile
 from uuid import uuid4
-from core.models import Person, Incident
+from core.models import Person, Incident, PersonTitle
 from functional_tests.common_import_export import import_record_with_extid
 from importer_narwhal.models import ImportBatch
 from sourcing.models import Content
+from supporting.models import Title, TraitType, Trait
 
 
 class NarwhalExportCommand(TestCase):
@@ -83,11 +85,87 @@ class NarwhalExportCommand(TestCase):
         self.assertEqual(
             0,
             Person.objects.filter(name__icontains='to_edit').count(),
-            msg="Records with 'to_edit' in their name still found in the system!"
+            msg=f"Records with 'to_edit' in their name still found in the system! Output: {command_output.getvalue()}"
         )
         self.assertEqual(
             5,
             Person.objects.filter(name__icontains='edited').count()
+        )
+        # And Then the history logs should show five updates and accompanying diffs
+        history_command_output_stream = StringIO()
+        batch_number = ImportBatch.objects.last().pk
+        call_command('narwhal_import_history', batch_number, stdout=history_command_output_stream)
+        history_command_output = history_command_output_stream.getvalue()
+
+        self.assertEqual(
+            5,
+            history_command_output.count("update")
+        )
+        self.assertEqual(
+            5,
+            history_command_output.count("<del>to_</del><span>edit</span><ins>ed</ins>")
+        )
+        # And Then the history logs should not show edits to records that had no changes in the CSV
+        self.assertEqual(
+            5,
+            history_command_output.count("skip")
+        )
+
+    def test_bulk_edit_scenario_person_person_titles_update(self):
+        # Given there are existing records in the system,
+        # some with "to_edit" in their name
+        title = Title.objects.create(name='ketchup')
+        existing_records = []
+        for i in range(5):
+            existing_records.append(import_record_with_extid(Person, {'name': f'Person record {uuid4()}'}))
+        for i in range(5):
+            person_import = import_record_with_extid(Person, {'name': f'Person record to_edit {uuid4()}'})
+            existing_records.append(person_import['record'])
+            PersonTitle.objects.create(
+                person=person_import['record'],
+                title=title
+            )
+
+        # Belt, _and_ suspenders...?
+        # self.assertEqual(
+        #     5,
+        #     Person.objects.filter(name__icontains='to_edit').count()
+        # )
+
+        # When I do an export, and edit the cells of the CSV, changing "to_edit" to "edited"
+        # and then import the CSV.
+        def search_replace(filename, search_for, replace_with):
+            # Read in the file
+            with open(filename, 'r') as file:
+                filedata = file.read()
+
+            # Replace the target string
+            filedata = filedata.replace(search_for, replace_with)
+
+            # Write the file out again
+            with open(filename, 'w') as file:
+                file.write(filedata)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bulk_edit_sheet_fn = temp_dir + '/bulk_edit_sheet.csv'
+            call_command('narwhal_export', 'Person', bulk_edit_sheet_fn)
+
+            search_replace(bulk_edit_sheet_fn, 'to_edit', 'edited')
+            search_replace(bulk_edit_sheet_fn, 'ketchup', 'worcester')
+
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', bulk_edit_sheet_fn, stdout=command_output)
+
+        # Then the records should be updated with the edits
+        import pdb; pdb.set_trace()
+        self.assertEqual(
+            1,
+            Title.objects.filter(name__icontains='worcester').count()
+        )
+        self.assertEqual(
+            0,
+            Title.objects.filter(name__icontains='ketchup').count(),
+            msg=f"Records with 'ketchup' in their name still found in the system! Output: {command_output.getvalue()}"
         )
         # And Then the history logs should show five updates and accompanying diffs
         history_command_output_stream = StringIO()
@@ -244,3 +322,46 @@ class NarwhalExportCommand(TestCase):
             5,
             history_command_output.count("skip")
         )
+
+    def test_export_person_titles_values(self):
+        """Test that when I export person titles, that the titles are outputed as values, not pks
+        """
+        # Given there are person title records in the system
+        person = Person.objects.create(name='test person record')
+        title = Title.objects.create(name='ketchup')
+        PersonTitle.objects.create(
+            person=person,
+            title=title
+        )
+        # When I do an export of PersonTitle records
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file = temp_dir + '/output.csv'
+            command_output_stream = StringIO()
+            call_command('narwhal_export', 'PersonTitle', output_file, stdout=command_output_stream)
+
+        # Then I should see their _values_ not pks in the 'title' column of the output file
+            with open(output_file, 'r') as file_fd:
+                file_contents = file_fd.read()
+                self.assertIn(
+                    'ketchup',
+                    file_contents
+                )
+
+    @skip
+    def test_export_person_traits_values(self):
+        person = Person.objects.create(name='test person record')
+        trait_type = TraitType.objects.create(name='test trait type')
+        trait = Trait.objects.create(name='lawgiver', type=trait_type)
+        person.traits.add(trait)
+        # When I do an export of Person records
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file = temp_dir + '/output.csv'
+            command_output_stream = StringIO()
+            call_command('narwhal_export', 'Person', output_file, stdout=command_output_stream)
+        # Then I should see their _values_ not pks in the 'title' column of the output file
+            with open(output_file, 'r') as file_fd:
+                file_contents = file_fd.read()
+                self.assertIn(
+                    'lawgiver',
+                    file_contents
+                )
