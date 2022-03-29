@@ -7,8 +7,8 @@ from django.db import models
 
 from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
-from sourcing.models import Content
-from supporting.models import PersonIdentifierType, PersonRelationshipType
+from sourcing.models import Content, ContentPerson
+from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship
@@ -606,7 +606,7 @@ class NarwhalImportCommand(TestCase):
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
-                row['description'] = f"identifier-{uuid4()}"
+                row['description'] = f"description-{uuid4()}"
                 row['type'] = 'restopper'
                 imported_records.append(row)
             for row in imported_records:
@@ -620,13 +620,52 @@ class NarwhalImportCommand(TestCase):
         # Then I should see a new content type created matching the name 'restopper'
         self.assertEqual(
             1,
-            Content.objects.all().count(),
+            ContentType.objects.all().count(),
             msg="New content type wasn't created"
         )
         self.assertEqual(
             'restopper',
             Content.objects.first().type.name
         )
+
+    def test_generate_new_types_person_content_situation_role(self):
+        """Test that importer can add new "types" when they don't exist in the system yet
+        Uses ContentPerson situation role
+        """
+        # Given theres a ContentPerson import sheet that references a situation role that's NOT in the system
+        # NOT IN THE SYSTEM: situation_role = SituationRole.objects.create(name='unfrequentedness')
+        content = Content.objects.create(description='Test Content')
+        person = Person.objects.create(name='Test Person')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['content', 'person', 'situation_role'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['content'] = content.pk
+                row['person'] = person.pk
+                row['situation_role'] = 'unfrequentedness'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'ContentPerson', csv_fd.name, stdout=command_output)
+
+        # Then I should see a new SituationRole created matching the name 'unfrequentedness'
+        self.assertEqual(
+            1,
+            SituationRole.objects.all().count(),
+            msg="New SituationRole wasn't created"
+        )
+        self.assertEqual(
+            'unfrequentedness',
+            ContentPerson.objects.first().situation_role.name
+        )
+
 
     def test_update_existing_records(self):
         # Given there are existing records in the system
