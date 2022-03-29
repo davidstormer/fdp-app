@@ -60,11 +60,14 @@ class FdpModelResource(ModelResource):
     # On export retrieve external id of record and fill it into the 'external_id' column
     def dehydrate_external_id(self, record):
         try:
-            bulk_import_record = \
-                BulkImport.objects.get(
+            bulk_import_records = \
+                BulkImport.objects.filter(
                     table_imported_to=record.__class__.get_db_table(),
                     pk_imported_to=record.pk)
-            return bulk_import_record.pk_imported_from
+            # Handle multiple external ids pointing to the same record
+            external_ids = []
+            [external_ids.append(bulk_import.pk_imported_from) for bulk_import in bulk_import_records]
+            return ','.join(external_ids)
         except BulkImport.DoesNotExist:
             return ''
 
