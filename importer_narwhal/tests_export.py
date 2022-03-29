@@ -6,6 +6,8 @@ from django.core.management import call_command
 from io import StringIO
 import tempfile
 from uuid import uuid4
+
+from bulk.models import BulkImport
 from core.models import Person, Incident
 from functional_tests.common_import_export import import_record_with_extid
 from importer_narwhal.models import ImportBatch
@@ -388,3 +390,37 @@ class NarwhalExportCommand(TestCase):
             5,
             history_command_output.count("skip")
         )
+
+    def test_multiple_external_ids_on_single_record(self):
+        """Because there's no unique constraint on external IDs..."""
+
+        # Given there are two unique IDs (BulkImport) pointing to the same record
+        bulk_import = import_record_with_extid(Person, {'name': f'Person record apophlegmatic'},
+                                               external_id='External ID #1')
+        BulkImport.objects.create(
+            table_imported_to=Person.get_db_table(),
+            pk_imported_to=bulk_import['record'].pk,
+            pk_imported_from='External ID #2',
+            data_imported='{}'  # make constraints happy...
+        )
+
+        # When I run an export
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file_name = temp_dir + '/bulk_edit_sheet.csv'
+            call_command('narwhal_export', 'Person', output_file_name)
+
+            # Then there should be an export file with the record in it
+            with open(output_file_name, 'r') as file_fd:
+                file_contents = file_fd.read()
+                self.assertIn(
+                    'apophlegmatic',
+                    file_contents
+                )
+            # And it should contain BOTH external IDs that point to the record...
+            # True story this actually happened once!
+            with open(output_file_name, 'r') as file_fd:
+                file_contents = file_fd.read()
+                self.assertIn(
+                    'External ID #1,External ID #2',
+                    file_contents
+                )
