@@ -7,7 +7,7 @@ from import_export import resources, fields
 from import_export.fields import Field
 from import_export.resources import ModelResource
 from import_export.results import RowResult
-from import_export.widgets import ForeignKeyWidget
+from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 
 from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
@@ -47,6 +47,8 @@ MODEL_ALLOW_LIST = [
     'County',
     'Location',
     'Court',
+    'Trait',
+    'TraitType',
 ]
 
 
@@ -181,6 +183,7 @@ get_or_create_foreign_key_fields = \
         'PersonRelationship': ['type', ],
         'Content': ['type', ],
         'ContentPerson': ['situation_role', ],
+        'Trait': ['type', ],
     }
 
 
@@ -219,10 +222,35 @@ for model_name in resource_model_mapping.keys():
                     )
                 )
 
+# Set up "tag" fields (m2m) -- for now not 'get or create' just get
+# For every supported model
+get_or_create_many_to_many_fields = \
+    {
+        'Person': ['traits', ],
+    }
+
+for model_name in resource_model_mapping.keys():
+    # Go through each field
+    for field_name in resource_model_mapping[model_name].fields.keys():
+        # If one of them is on the list of fields to customize...
+        for get_or_create_foreign_key_field in get_or_create_many_to_many_fields.get(model_name, []):
+            if get_or_create_foreign_key_field == field_name:
+                # Customize the field with the ForeignKeyWidgetGetOrCreate widget
+                foreign_key_model = get_data_model_from_name(model_name)._meta.get_field(field_name).remote_field.model
+                resource_model_mapping[model_name].fields[field_name] = fields.Field(
+                    column_name=field_name,
+                    attribute=field_name,
+                    widget=ManyToManyWidget(
+                        model=foreign_key_model,
+                        field='name'  # <- Assumes that the 'natural' key is in the 'name' field
+                                      # may need to be factored in the future to handle other field names.
+                    )
+                )
 
 # Nice error reports
 #
 #
+
 
 # Define data models for holding the error report data from an import that was run
 class ErrorReportRow:

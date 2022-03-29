@@ -8,7 +8,7 @@ from django.db import models
 from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson
-from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType
+from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, Trait
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship
@@ -665,7 +665,6 @@ class NarwhalImportCommand(TestCase):
             'unfrequentedness',
             ContentPerson.objects.first().situation_role.name
         )
-
 
     def test_update_existing_records(self):
         # Given there are existing records in the system
