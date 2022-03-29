@@ -9,6 +9,7 @@ from core.models import Person, Incident
 from functional_tests.common_import_export import import_record_with_extid
 from importer_narwhal.models import ImportBatch
 from sourcing.models import Content
+from supporting.models import TraitType, Trait
 
 
 class NarwhalExportCommand(TestCase):
@@ -244,3 +245,68 @@ class NarwhalExportCommand(TestCase):
             5,
             history_command_output.count("skip")
         )
+
+    def test_m2m_traits_export_natural_keys_via_person(self):
+        # Given there are traits in the system linked to a person
+        trait_type = TraitType.objects.create(name='trait-type-name-miscellanist')
+        trait1 = Trait.objects.create(name='trait-auxamylase', type=trait_type)
+        person = Person.objects.create(name="Test Person")
+        person.traits.add(trait1)
+        # When I export the Person records
+        # Then I should see the trait VALUES in the export sheet
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file = temp_dir + '/output.csv'
+            # When I run the command
+            command_output = StringIO()
+            call_command('narwhal_export', 'Person', output_file, stdout=command_output)
+
+            # Then there should be a csv file with the records in it
+            with open(output_file, 'r') as file_fd:
+                file_contents = file_fd.read()
+                self.assertIn(
+                    'auxamylase',
+                    file_contents
+                )
+
+    def test_m2m_traits_export_natural_keys(self):
+        # Given there are traits in the system linked to a person
+        trait1 = Trait.objects.create(name='trait-auxamylase')
+        person = Person.objects.create(name="Test Person")
+        person.traits.add(trait1)
+        # When I export the Person records
+        # Then I should see the trait VALUES in the export sheet
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file = temp_dir + '/output.csv'
+            # When I run the command
+            command_output = StringIO()
+            call_command('narwhal_export', 'Trait', output_file, stdout=command_output)
+
+            # Then there should be a csv file with the records in it
+            with open(output_file, 'r') as file_fd:
+                file_contents = file_fd.read()
+                self.assertIn(
+                    'auxamylase',
+                    file_contents
+                )
+
+    def test_m2m_trait_types_export_natural_keys_via_trait(self):
+        # Given there are traits in the system linked to a person
+        trait_type = TraitType.objects.create(name='trait-type-name-miscellanist')
+        trait1 = Trait.objects.create(name='trait-auxamylase', type=trait_type)
+        person = Person.objects.create(name="Test Person")
+        person.traits.add(trait1)
+        # When I export the Person records
+        # Then I should see the trait VALUES in the export sheet
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file = temp_dir + '/output.csv'
+            # When I run the command
+            command_output = StringIO()
+            call_command('narwhal_export', 'Trait', output_file, stdout=command_output)
+
+            # Then there should be a csv file with the records in it
+            with open(output_file, 'r') as file_fd:
+                file_contents = file_fd.read()
+                self.assertIn(
+                    'miscellanist',
+                    file_contents
+                )
