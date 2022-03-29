@@ -9,10 +9,11 @@ from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
-    Trait, Title, County, LeaveStatus, State
+    Trait, Title, County, LeaveStatus, State, PersonGroupingType
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
-from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment
+from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
+    PersonGrouping
 from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
 from io import StringIO
@@ -701,6 +702,44 @@ class NarwhalImportCommand(TestCase):
         self.assertEqual(
             'windling',
             PersonTitle.objects.first().title.name
+        )
+
+    def test_generate_new_types_person_grouping_type(self):
+        """Test that importer can add new "types" when they don't exist in the system yet
+        Uses PersonGrouping Type
+        """
+        # Given theres a PersonGrouping import sheet that references a PersonGroupingType that's NOT in the system
+        # NOT IN THE SYSTEM: grouping_type = PersonGroupingType.objects.create(name='ethaldehyde')
+        person = Person.objects.create(name='Test Person')
+        group = Grouping.objects.create(name='Test Group')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'grouping', 'type'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['person'] = person.pk
+                row['grouping'] = group.pk
+                row['type'] = 'ethaldehyde'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonGrouping', csv_fd.name, stdout=command_output)
+
+        # Then I should see a new PersonGroupingType created matching the name 'ethaldehyde'
+        self.assertEqual(
+            1,
+            PersonGroupingType.objects.all().count(),
+            msg="New PersonGroupingType wasn't created"
+        )
+        self.assertEqual(
+            'ethaldehyde',
+            PersonGrouping.objects.first().type.name
         )
 
     def test_person_payment_handle_county_leave_status(self):
