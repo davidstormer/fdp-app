@@ -194,7 +194,8 @@ foreign_key_fields_get_or_create = \
 
 foreign_key_fields_get_only = \
     {
-        'PersonPayment': ['county'],
+        'PersonPayment': ['county', ],
+        'Grouping': ['counties', ],
     }
 
 many_to_many_fields_get_only = \
