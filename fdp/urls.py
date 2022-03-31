@@ -17,6 +17,8 @@ from inheritable.models import AbstractConfiguration
 
 
 # Configuration is for hosting in an Microsoft Azure environment.
+from .views import BootstrapStyleGuide
+
 if AbstractConfiguration.is_using_azure_configuration():
     from .urlconf.azure_urls import *
 # Configuration is for hosting in a local development environment.
@@ -25,3 +27,8 @@ elif AbstractConfiguration.is_using_local_configuration():
 # Unknown configuration
 else:
     urlpatterns = []
+
+if settings.DEBUG is True:
+    urlpatterns.append(
+        path('bootstrap-style-guide', BootstrapStyleGuide.as_view())
+    )
