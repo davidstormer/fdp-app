@@ -1,0 +1,70 @@
+/* HEADER */
+nav.main {
+  background-color: #417690;
+  color: #ffc;
+  padding: 10px 40px;
+}
+nav.main .container-fluid {
+  padding-left: 0;
+}
+nav.main .navbar-brand {
+  font-size: 24px;
+}
+nav.main a.navbar-brand,
+nav.main a.navbar-brand:visited {
+  color: #f5dd5d;
+}
+nav.main a,
+nav.main a:visited,
+nav.main a:hover {
+  color: #fff;
+}
+
+#user-tools {
+  padding: 0;
+  margin: 0 0 0 20px;
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-align: right;
+}
+
+#user-tools a {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+#user-tools a:focus, #user-tools a:hover {
+  text-decoration: none;
+  border-bottom-color: #79aec8;
+  color: #79aec8;
+}
+
+/* BREADCRUMBS */
+
+nav.breadcrumbs {
+  --bs-breadcrumb-divider: '›';
+  background: #79aec8;
+  padding: 10px 40px;
+  border: none;
+  font-size: 14px;
+  color: #c4dce8;
+  text-align: left;
+}
+
+nav.breadcrumbs a {
+  color: #fff;
+}
+
+nav.breadcrumbs a:focus, nav.breadcrumbs a:hover {
+  color: #c4dce8;
+}
+
+nav.breadcrumbs .breadcrumb-item.active,
+nav.breadcrumbs .breadcrumb-item::before {
+  color: #c4dce8;
+}
+
+ol.breadcrumb {
+  margin-bottom: 0;
+}
