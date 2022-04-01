@@ -98,3 +98,8 @@ span#release-number {
   font-weight: bold;
   font-size: 14px;
 }
+
+/* Legacy rules */
+.hidden {
+  display: none;
+}
