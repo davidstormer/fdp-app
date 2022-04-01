@@ -28,7 +28,6 @@ elif AbstractConfiguration.is_using_local_configuration():
 else:
     urlpatterns = []
 
-if settings.DEBUG is True:
-    urlpatterns.append(
-        path('bootstrap-style-guide', BootstrapStyleGuide.as_view())
-    )
+urlpatterns.append(
+    path('bootstrap-style-guide', BootstrapStyleGuide.as_view())
+)
