@@ -1449,7 +1449,6 @@ class Grouping(Archivable, Descriptable):
     name = models.CharField(
         null=False,
         blank=True,
-        help_text=_('Name of grouping'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('name')
     )
@@ -1458,7 +1457,6 @@ class Grouping(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Phone number for grouping'),
         max_length=256,
         verbose_name=_('phone number')
     )
@@ -1467,7 +1465,6 @@ class Grouping(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Email address for grouping'),
         verbose_name=_('email')
     )
 
@@ -1475,7 +1472,7 @@ class Grouping(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Full address for grouping'),
+        help_text=_('Full address of group'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('address')
     )
@@ -1485,7 +1482,7 @@ class Grouping(Archivable, Descriptable):
         blank=False,
         default=False,
         verbose_name=_('Is inactive'),
-        help_text=_('Select if the grouping is no longer active')
+        help_text=_("Select if the grouping is no longer active. Instead of deleting a group, mark it as inactive so that all the data relating to the group and the group history remains. This can also be used if you don't know the ceased date for a group but you know that they are no longer active.")
     )
 
     is_law_enforcement = models.BooleanField(
@@ -1506,7 +1503,7 @@ class Grouping(Archivable, Descriptable):
     cease_date = models.DateField(
         null=True,
         blank=True,
-        help_text=_('Date grouping ceased to exist'),
+        help_text=_('Date grouping ceased to exist. If unknown leave blank and check "Is inactive"'),
         verbose_name=_('cease date')
     )
 
@@ -1516,7 +1513,8 @@ class Grouping(Archivable, Descriptable):
         related_query_name='grouping',
         db_table='{d}grouping_county'.format(d=settings.DB_PREFIX),
         blank=True,
-        help_text=_('Counties in which the grouping operates'),
+        help_text=_('All counties where the group operates, has jurisdiction in. If county not on list <a '
+                    'href="/admin/supporting/county/" target="_blank">manage options here</a>'),
         verbose_name=_('counties')
     )
 
@@ -1534,7 +1532,7 @@ class Grouping(Archivable, Descriptable):
 
     #: Fields to display in the model form.
     form_fields = [
-        'name', 'phone_number', 'email', 'address', 'is_inactive', 'inception_date', 'cease_date', 'counties',
+        'name', 'phone_number', 'email', 'address', 'inception_date', 'cease_date', 'is_inactive', 'counties',
         'description', 'belongs_to_grouping', 'belongs_to_grouping_name'
     ]
 
@@ -1812,6 +1810,10 @@ class Grouping(Archivable, Descriptable):
         verbose_name = _('grouping')
         unique_together = ('name', 'address')
         ordering = ['name']
+
+
+Grouping._meta.get_field('description').help_text = "Description of group and what it does. Appears on the group's " \
+                                                    "profile page."
 
 
 class GroupingAlias(Archivable, AbstractAlias):
@@ -2183,7 +2185,7 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         blank=True,
         null=True,
-        help_text=_('Location where incident occurred'),
+        help_text=_('Location of incident'),
         verbose_name=_('location')
     )
 
@@ -2194,7 +2196,8 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         blank=True,
         null=True,
-        help_text=_('Type of location where incident occurred'),
+        help_text=_('If type not on list <a href="/admin/supporting/incidentlocationtype/" '
+                    'target="_blank">manage options here</a>'),
         verbose_name=_('location type')
     )
 
@@ -2205,7 +2208,8 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         blank=True,
         null=True,
-        help_text=_('Reason for encounter during incident'),
+        help_text=_('If reason not on list <a href="/admin/supporting/encounterreason/" '
+                    'target="_blank">manage options here</a>'),
         verbose_name=_('encounter reason')
     )
 
@@ -2215,7 +2219,8 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         db_table='{d}incident_incident_tag'.format(d=settings.DB_PREFIX),
         blank=True,
-        help_text=_('Tags describing incident'),
+        help_text=_('Add all tags that describe the incident. Add as many tags as are relevant. <a '
+                    'href="/admin/supporting/incidenttag/" target="_blank">manage options here</a>'),
         verbose_name=_('tags')
     )
 
@@ -2285,6 +2290,10 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         ordering = AbstractExactDateBounded.order_by_date_fields + ['location']
 
 
+Incident._meta.get_field('description').help_text = \
+    "The main text that appears on officer profiles under known incidents"
+
+
 class PersonIncident(Archivable, Descriptable, Linkable, AbstractKnownInfo):
     """ Links between people and incidents, e.g. describing a victim or officer in an incident.
 
@@ -2334,7 +2343,8 @@ class PersonIncident(Archivable, Descriptable, Linkable, AbstractKnownInfo):
         related_query_name='person_incident',
         blank=True,
         null=True,
-        help_text=_('Categorizes the person\'s involvement in the incident'),
+        help_text=_('Select the role the person had in this particular incident. If role not on list <a '
+                    'href="/admin/supporting/situationrole/" target="_blank">manage options here</a>'),
         verbose_name=_('situation role')
     )
 

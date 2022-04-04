@@ -691,8 +691,7 @@ class Linkable(models.Model):
         blank=False,
         default=False,
         verbose_name=_('This is a guess'),
-        help_text=_("Check if there is uncertainty that the person being linked to the content is the correct person "
-                    "involved")
+        help_text=_("Check if there is uncertainty that the person being linked is the correct person involved")
     )
 
     class Meta:
@@ -715,9 +714,7 @@ class Descriptable(models.Model):
         null=False,
         blank=True,
         verbose_name=_('Description'),
-        help_text=_('Any information specific to this content. This will display on the '
-                    'officer profile page if not linked to an incident. Make sure to describe the content, '
-                    'not the incident.'),
+        help_text=_(''),
     )
 
     def __get_truncated_description(self):

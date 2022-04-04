@@ -275,6 +275,10 @@ class GroupingModelForm(AbstractIsLawEnforcementModelForm):
     belongs_to_grouping_name = AsyncSearchCharField(
         required=False,
         label=_('Belongs to'),
+        help_text="The top-level group that this group belongs to. For commands or precincts, this is the main law "
+                  "enforcement agency at the top of their hierarchy. All subgroups should have something in this "
+                  "field. Leave this field blank for top-level agencies (police departments, sheriff's offices, "
+                  "etc). All other relationships are defined in the relationships section below."
     )
 
     #: Fields to show in the form
@@ -1082,13 +1086,17 @@ class IncidentModelForm(AbstractWizardModelForm, PopupForm):
     """
     incident_started = DateWithComponentsField(
         required=True,
-        label=_('Incident started'),
+        label=_('Incident start date'),
         fields=()  # ignored
     )
 
     incident_ended = DateWithComponentsField(
         required=True,
-        label=_('Incident ended'),
+        label=_('Incident end date'),
+        help_text="Enter the same date for start and end if the incident happened on a single day. Typically "
+                  "the end date does not include resulting investigations "
+                  "cases, or reporting. Enter a zero for day, month, or year when unknown. Enter all zeros if whole "
+                  "date is unknown.",
         fields=()  # ignored
     )
 
@@ -1164,6 +1172,9 @@ class PersonIncidentModelForm(AbstractWizardModelForm):
     person_name = AsyncSearchCharField(
         required=True,
         label=_('Person'),
+        help_text="Any person related to the incident that your organization tracks, not only the officers involved. "
+                  "This incident will appear on profiles of linked persons. If person not on list <a "
+                  "href='/changing/persons/add/person/' target='_blank'>add them here</a>"
     )
 
     #: Fields to show in the form
@@ -1211,7 +1222,9 @@ class GroupingIncidentModelForm(AbstractWizardModelForm):
     """
     grouping_name = AsyncSearchCharField(
         required=True,
-        label=_('Grouping'),
+        label=_('Group'),
+        help_text='Link groups involved in the incident. This incident will appear on profiles of linked groups. If '
+                  'group not on list <a href="/changing/groupings/add/grouping/" target="_blank">add them here</a>'
     )
 
     #: Fields to show in the form
