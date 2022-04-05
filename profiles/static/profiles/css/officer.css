@@ -235,6 +235,11 @@ div#custom-header-text {
     margin-top: -1em;
 }
 a.custom-text-edit-link {
+    opacity: 0;
     float: right;
     margin-right: -1em;
+}
+div#custom-header-text:hover a.custom-text-edit-link {
+    transition-duration: .2s;
+    opacity: 100%;
 }

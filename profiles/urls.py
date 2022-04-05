@@ -32,5 +32,5 @@ urlpatterns = [
         views.CommandDownloadAllFilesView.as_view(),
         name='command_download_all_files'
     ),
-    path('admin/custom-text-settings', SiteSettingsPage.as_view(), name='site_settings')
+    path('admin/site-settings', SiteSettingsPage.as_view(), name='site_settings')
 ]

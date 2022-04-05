@@ -5,7 +5,7 @@ from inheritable.views import SecuredSyncFormView, SecuredSyncListView, SecuredS
 from django.conf import settings
 from django.utils.translation import gettext as _
 from django.utils.http import urlquote, urlunquote
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.http import QueryDict, HttpResponse
 from .models import OfficerSearch, OfficerView, CommandSearch, CommandView, SiteSetting, get_site_setting, \
     set_site_setting
@@ -1149,7 +1149,14 @@ class CommandDownloadAllFilesView(SecuredSyncView):
 class SiteSettingsPage(AdminSyncFormView):
     template_name = 'custom_text_settings.html'
     form_class = SiteSettingsForm
-    success_url = '/admin/custom-text-settings'
+    success_url = reverse_lazy('profiles:site_settings')
+
+    def get_context_data(self, **kwargs):
+        context = super(SiteSettingsPage, self).get_context_data(**kwargs)
+        context.update({
+            'title': _('Site settings'),
+        })
+        return context
 
     def get_initial(self):
         data = {}

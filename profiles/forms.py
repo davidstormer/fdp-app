@@ -2,6 +2,8 @@ from django import forms
 from django.conf import settings
 from django.utils.translation import gettext as _
 
+from profiles.common import CUSTOM_TEXT_ALLOWED_TAGS
+
 
 class OfficerSearchForm(forms.Form):
     """ Synchronous form to search for officers.
@@ -35,5 +37,7 @@ class SiteSettingsForm(forms.Form):
 
     profile_text_above = forms.CharField(
         widget=forms.Textarea,
-        help_text="This text will appear at the top of the officer and command profile pages."
+        help_text=f"This text will appear at the top of the officer and command profile pages. Allowed HTML tags: "
+                  f"{', '.join(CUSTOM_TEXT_ALLOWED_TAGS)}.",
+        required=False
     )

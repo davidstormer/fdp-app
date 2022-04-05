@@ -43,7 +43,7 @@
 
     {% if custom_header_text %}
     <div id="custom-header-text">
-        <a href="/admin/custom-text-settings" class="custom-text-edit-link"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+        <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
         <p>{{ custom_header_text|sanitize_html|safe }}</p>
     </div>
     {% endif %}

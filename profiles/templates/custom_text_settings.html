@@ -4,7 +4,9 @@
 {% if not is_popup %}
 {% block breadcrumbs %}
 <div class="breadcrumbs">
-    <a href="{% url 'profiles:index' %}">{% translate 'Searches' %}</a>
+    <a href="{% url 'profiles:index' %}">{% translate 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a>
     &rsaquo;
     {{ title }}
 </div>
