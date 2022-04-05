@@ -1,7 +1,7 @@
 from django.urls import path
 from inheritable.models import AbstractUrlValidator
 from . import views
-
+from .views import SiteSettingsPage
 
 app_name = 'profiles'
 
@@ -31,5 +31,6 @@ urlpatterns = [
         '{u}<int:pk>'.format(u=AbstractUrlValidator.COMMAND_DOWNLOAD_ALL_FILES_URL),
         views.CommandDownloadAllFilesView.as_view(),
         name='command_download_all_files'
-    )
+    ),
+    path('admin/custom-text-settings', SiteSettingsPage.as_view())
 ]

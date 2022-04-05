@@ -41,8 +41,9 @@
 
 {% block content %}
 
-
-
+    {% if custom_header_text %}
+    <div id="custom-header-text"><p>{{ custom_header_text|sanitize_html|safe }}</p></div>
+    {% endif %}
 
     <h1>{{ object.name }} </h1>
 

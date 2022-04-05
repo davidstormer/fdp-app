@@ -29,3 +29,11 @@ class CommandSearchForm(forms.Form):
         max_length=settings.MAX_NAME_LEN,
         help_text=_('Search by name or abbreviation')
     )
+
+
+class SiteSettingsForm(forms.Form):
+
+    profile_text_above = forms.CharField(
+        widget=forms.Textarea,
+        help_text="This text will appear at the top of the officer and command profile pages."
+    )

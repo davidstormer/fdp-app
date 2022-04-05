@@ -1,14 +1,15 @@
 from inheritable.models import AbstractUrlValidator, AbstractSearchValidator, \
     AbstractFileValidator
 from inheritable.views import SecuredSyncFormView, SecuredSyncListView, SecuredSyncDetailView, SecuredSyncView, \
-    SecuredSyncTemplateView
+    SecuredSyncTemplateView, AdminSyncFormView
 from django.conf import settings
 from django.utils.translation import gettext as _
 from django.utils.http import urlquote, urlunquote
 from django.urls import reverse
 from django.http import QueryDict, HttpResponse
-from .models import OfficerSearch, OfficerView, CommandSearch, CommandView
-from .forms import OfficerSearchForm, CommandSearchForm
+from .models import OfficerSearch, OfficerView, CommandSearch, CommandView, SiteSetting, get_site_setting, \
+    set_site_setting
+from .forms import OfficerSearchForm, CommandSearchForm, SiteSettingsForm
 from inheritable.models import Archivable, AbstractSql, AbstractImport
 from core.models import Person, PersonIdentifier, PersonGrouping, Grouping, GroupingAlias
 from sourcing.models import Content, ContentPerson, ContentPersonAllegation
@@ -357,6 +358,7 @@ class OfficerDetailView(SecuredSyncDetailView):
             'attachments_key': self.__attachments_key,
             'strings_key': self.__strings_key,
             'links_key': self.__links_key,
+            'custom_header_text': get_site_setting('profile_text_above'),
         })
         return context
 
@@ -1142,3 +1144,21 @@ class CommandDownloadAllFilesView(SecuredSyncView):
         :return: ZIP archive of all attachments.
         """
         return self.__get(request=request, pk=pk)
+
+
+class SiteSettingsPage(AdminSyncFormView):
+    template_name = 'custom_text_settings.html'
+    form_class = SiteSettingsForm
+    success_url = '/admin/custom-text-settings'
+
+    def get_initial(self):
+        data = {}
+        data['profile_text_above'] = get_site_setting('profile_text_above')
+        return data
+
+    def form_valid(self, form):
+        set_site_setting(
+            'profile_text_above',
+            form.cleaned_data['profile_text_above']
+        )
+        return super().form_valid(form)

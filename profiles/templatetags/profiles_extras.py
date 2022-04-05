@@ -4,6 +4,7 @@ from django import template
 from django.template import Template, Context
 from core.models import PersonContact
 from supporting.models import State
+from profiles.common import sanitize_custom_text_html
 
 register = template.Library()
 
@@ -52,6 +53,13 @@ def parenthesize(text: any) -> str:
         return template.render(Context({'text': text}))
     else:
         return text
+
+
+@register.filter
+def sanitize_html(untrusted_html: str) -> str:
+    """Sanitize user submitted text, allowing short-list of html tags for formatting.
+    """
+    return sanitize_custom_text_html(untrusted_html)
 
 
 @register.simple_tag(takes_context=True)
