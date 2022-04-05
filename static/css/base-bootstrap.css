@@ -74,6 +74,15 @@ ol.breadcrumb {
   margin-bottom: 0;
 }
 
+nav.breadcrumbs li:after {
+    content: '›';
+    margin: 0 0.25em;
+}
+
+nav.breadcrumbs li:last-child:after {
+    content: '';
+}
+
 /* Help center button */
 a.help-center-button {
   font-size: 14px;
@@ -95,6 +104,15 @@ a.help-center-button .fa-question-circle {
 }
 
 /* Footer & Release number styling */
+a.custom-text-edit-link {
+    opacity: 0;
+    float: right;
+    margin-right: -1em;
+}
+div#custom-text-block-global:hover a.custom-text-edit-link {
+    transition-duration: .2s;
+    opacity: 100%;
+}
 div#footer-global {
   text-align: right;
 }
@@ -107,4 +125,9 @@ span#release-number {
 /* Legacy rules */
 .hidden {
   display: none;
+}
+
+/* Forms */
+legend {
+    color: #417690;
 }

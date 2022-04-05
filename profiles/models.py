@@ -1,8 +1,10 @@
+from abc import ABC
+
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.core.validators import validate_ipv46_address
-from inheritable.models import AbstractForeignKeyValidator, AbstractIpAddressValidator
+from inheritable.models import AbstractForeignKeyValidator, AbstractIpAddressValidator, Archivable
 from fdpuser.models import FdpUser
 from core.models import Person, Grouping
 
@@ -367,3 +369,44 @@ class CommandView(AbstractView):
         verbose_name = _('Command view')
         verbose_name_plural = _('Command views')
         ordering = ['timestamp']
+
+
+class SiteSettingKeys:
+    """This is the official list of site setting key names"""
+
+    CUSTOM_TEXT_BLOCKS__PROFILE_PAGE_TOP = 'custom_text_blocks-profile_page_top'
+    CUSTOM_TEXT_BLOCKS__PROFILE_INCIDENTS = 'custom_text_blocks-profile_incidents'
+    CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER = 'custom_text_blocks-global_footer'
+
+
+class SiteSetting(Archivable):
+    key = models.CharField(max_length=settings.MAX_NAME_LEN)
+    value = models.JSONField()
+
+    @classmethod
+    def filter_for_admin(cls, queryset, user):
+        """ Required for the Archivable parent class...
+        """
+        return queryset
+
+    def __str__(self):
+        return f"{self.key}: {self.value}"
+
+
+def get_site_setting(setting_name: str) -> str:
+    try:
+        return SiteSetting.objects.get(key=setting_name).value
+    except SiteSetting.DoesNotExist:
+        return None
+
+
+def set_site_setting(setting_name: str, value: str):
+    try:
+        existing_setting = SiteSetting.objects.get(key=setting_name)
+        existing_setting.value = value
+        existing_setting.save()
+    except SiteSetting.DoesNotExist:
+        SiteSetting.objects.create(
+            key=setting_name,
+            value=value
+        )
