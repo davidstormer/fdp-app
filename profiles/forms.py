@@ -35,9 +35,16 @@ class CommandSearchForm(forms.Form):
 
 class SiteSettingsForm(forms.Form):
 
-    profile_text_above = forms.CharField(
+    officer_profile_page_top = forms.CharField(
         widget=forms.Textarea,
         help_text=f"This text will appear at the top of the officer and command profile pages. Allowed HTML tags: "
                   f"{', '.join(CUSTOM_TEXT_ALLOWED_TAGS)}.",
+        required=False
+    )
+
+    officer_profile_incidents = forms.CharField(
+        widget=forms.Textarea,
+        help_text=f"This text will appear at the top of the incidents section of officer profile pages. Allowed HTML "
+                  f"tags: {', '.join(CUSTOM_TEXT_ALLOWED_TAGS)}.",
         required=False
     )

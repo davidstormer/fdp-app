@@ -262,7 +262,8 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     'django.template.context_processors.debug',
     'django.template.context_processors.request',
     'django.contrib.auth.context_processors.auth',
-    'django.contrib.messages.context_processors.messages'
+    'django.contrib.messages.context_processors.messages',
+    'profiles.common.global_custom_text_block_context_processor'
 ]
 # Defines a part of the dictionary that is the first item in the Django's standard TEMPLATES setting list
 # TEMPLATE_FIRST_DICT['OPTIONS'] = {'context_processors': TEMPLATE_CONTEXT_PROCESSORS}

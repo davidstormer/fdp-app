@@ -358,7 +358,9 @@ class OfficerDetailView(SecuredSyncDetailView):
             'attachments_key': self.__attachments_key,
             'strings_key': self.__strings_key,
             'links_key': self.__links_key,
-            'custom_header_text': get_site_setting('profile_text_above'),
+            'custom_header_text': get_site_setting('custom_text_blocks-officer_profile_page_top'),
+            'custom_text_block_incidents': get_site_setting('custom_text_blocks-officer_profile_incidents'),
+
         })
         return context
 
@@ -1150,7 +1152,7 @@ class SiteSettingsPage(AdminSyncFormView):
     template_name = 'custom_text_settings.html'
     form_class = SiteSettingsForm
     success_url = reverse_lazy('profiles:site_settings')
-
+    # custom_text_blocks-officer_profile_incidents
     def get_context_data(self, **kwargs):
         context = super(SiteSettingsPage, self).get_context_data(**kwargs)
         context.update({
@@ -1160,12 +1162,17 @@ class SiteSettingsPage(AdminSyncFormView):
 
     def get_initial(self):
         data = {}
-        data['profile_text_above'] = get_site_setting('profile_text_above')
+        data['officer_profile_page_top'] = get_site_setting('custom_text_blocks-officer_profile_page_top')
+        data['officer_profile_incidents'] = get_site_setting('custom_text_blocks-officer_profile_incidents')
         return data
 
     def form_valid(self, form):
         set_site_setting(
-            'profile_text_above',
-            form.cleaned_data['profile_text_above']
+            'custom_text_blocks-officer_profile_page_top',
+            form.cleaned_data['officer_profile_page_top']
+        )
+        set_site_setting(
+            'custom_text_blocks-officer_profile_incidents',
+            form.cleaned_data['officer_profile_incidents']
         )
         return super().form_valid(form)

@@ -332,6 +332,13 @@
         <div class="section-heading">
             <h2>Known Incidents</h2>
         </div>
+        {% if custom_text_block_incidents %}
+        <div id="custom-text-block-incidents">
+            <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            <p>{{ custom_text_block_incidents|sanitize_html|safe }}</p>
+        </div>
+        {% endif %}
+
         {% if has_attachments %}
         <p>
             <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">

@@ -51,3 +51,17 @@ a.help-center-button {
 a.help-center-button .fa-question-circle {
     font-size: 120%;
 }
+
+/* Global custom text block footer*/
+div#custom-text-block-global {
+  padding: 20px 40px;
+}
+a.custom-text-edit-link {
+    opacity: 0;
+    float: right;
+    margin-right: -1em;
+}
+div#custom-text-block-global:hover a.custom-text-edit-link {
+    transition-duration: .2s;
+    opacity: 100%;
+}
