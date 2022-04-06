@@ -1994,7 +1994,7 @@ class AbstractAlias(Descriptable):
     name = models.CharField(
         null=False,
         blank=False,
-        help_text=_('Alternative name, such as a nickname, or maiden name'),
+        help_text=_('Alternative name, such as a nickname, or maiden name. Do not add variations in case or punctuation.'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('alias')
     )

@@ -1873,6 +1873,10 @@ class GroupingAlias(Archivable, AbstractAlias):
         ordering = ['grouping', 'name']
 
 
+GroupingAlias._meta.get_field('name').help_text = \
+    "Alternative name such as acronym, abbreviation, code, or nickname. Do not add variations in case or punctuation."
+
+
 class GroupingRelationship(Archivable, AbstractAtLeastSinceDateBounded):
     """ Defines a relationship between two groupings in the format: subject verb object.
 

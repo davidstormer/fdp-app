@@ -35,7 +35,7 @@ class Attachment(Confidentiable, Descriptable):
         blank=False,
         max_length=settings.MAX_NAME_LEN,
         help_text=_(
-            'Name of attachment. If a user-friendly name is not available, use the file name, title of article, etc.'
+            'The name of the attachment as shown to users.'
         ),
         verbose_name=_('name')
     )
@@ -45,8 +45,7 @@ class Attachment(Confidentiable, Descriptable):
         blank=True,
         null=False,
         help_text=_(
-            'Uploaded file as the attachment. Should be less than {s}MB. '
-            'Ignore if linking an attachment via the web.'.format(
+            'If the attachment is a file, upload it here. Should be less than {s}MB.'.format(
                 s=AbstractFileValidator.get_megabytes_from_bytes(
                     num_of_bytes=AbstractConfiguration.max_attachment_file_bytes()
                 )
@@ -70,8 +69,8 @@ class Attachment(Confidentiable, Descriptable):
     link = models.URLField(
         null=False,
         blank=True,
-        help_text=_('URL for an attachment linked via the web. Ignore if uploading a file as the attachment.'),
-        verbose_name=_('web link')
+        help_text=_('If the attachment is located on the web, add the web address.'),
+        verbose_name=_('Web address')
     )
 
     type = models.ForeignKey(
@@ -81,7 +80,7 @@ class Attachment(Confidentiable, Descriptable):
         related_query_name='attachment',
         blank=True,
         null=True,
-        help_text=_('Category for attachment'),
+        help_text=_('<a href="/admin/supporting/attachmenttype/" target="_blank">Manage options here</a>'),
         verbose_name=_('type')
     )
 

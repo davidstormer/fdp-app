@@ -176,7 +176,12 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
         required=True,
         label=_('Relationship'),
         queryset=GroupingRelationshipType.active_objects,
-        fields=()  # ignored
+        fields=(),  # ignored
+        help_text="Document a relationship between this group and another group (don't repeat the relationship in "
+                  "the 'Belongs to' field). Select the relationship type, select a group they relate to, "
+                  "and if needed "
+                  "change the direction of the relationship hierarchy. Only set the relationship for one group, it "
+                  "will display on both groups' profiles."
     )
 
     primary_key = forms.IntegerField(
@@ -278,7 +283,7 @@ class GroupingModelForm(AbstractIsLawEnforcementModelForm):
         help_text="The top-level group that this group belongs to. For commands or precincts, this is the main law "
                   "enforcement agency at the top of their hierarchy. All subgroups should have something in this "
                   "field. Leave this field blank for top-level agencies (police departments, sheriff's offices, "
-                  "etc). All other relationships are defined in the relationships section below."
+                  "etc). All other relationships are defined in the 'Relationships' section below."
     )
 
     #: Fields to show in the form
@@ -764,7 +769,10 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
         required=True,
         label=_('Relationship'),
         queryset=PersonRelationshipType.active_objects,
-        fields=()  # ignored
+        fields=(),  # ignored
+        help_text="Document a relationship between this person and another person. Select the relationship type, "
+                  "select the person they relate to, and if needed change the direction of the relationship. Note: you "
+                  "only need to set up the relationship for one person and it will display on both persons' profiles."
     )
 
     primary_key = forms.IntegerField(
