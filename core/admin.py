@@ -1,8 +1,42 @@
 from django.contrib import admin
+from django.contrib.admin import ModelAdmin
+
 from inheritable.admin import FdpInheritableAdmin, ArchivableAdmin, ConfidentiableAdmin
 from .models import Person, PersonContact, PersonAlias, PersonPhoto, PersonIdentifier, PersonTitle, \
     PersonRelationship, PersonPayment, Grouping, GroupingAlias, GroupingRelationship, \
     PersonGrouping, Incident, PersonIncident, GroupingIncident
+from reversion.models import Version, Revision
+
+
+class VersionInline(admin.StackedInline):
+    model = Version
+    fields = [
+        'object_id',
+        'content_type',
+        'serialized_data',
+    ]
+
+
+@admin.register(Revision)
+class RevisionAdmin(ModelAdmin):
+    inlines = [
+        VersionInline,
+    ]
+
+    list_display = [
+        '__str__',
+        'user',
+        'date_created',
+    ]
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Person)
