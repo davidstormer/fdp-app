@@ -1164,6 +1164,7 @@ class SiteSettingsPage(AdminSyncFormView):
         data = {}
         data['officer_profile_page_top'] = get_site_setting('custom_text_blocks-officer_profile_page_top')
         data['officer_profile_incidents'] = get_site_setting('custom_text_blocks-officer_profile_incidents')
+        data['global_footer'] = get_site_setting('custom_text_blocks-global_footer')
         return data
 
     def form_valid(self, form):
@@ -1174,5 +1175,9 @@ class SiteSettingsPage(AdminSyncFormView):
         set_site_setting(
             'custom_text_blocks-officer_profile_incidents',
             form.cleaned_data['officer_profile_incidents']
+        )
+        set_site_setting(
+            'custom_text_blocks-global_footer',
+            form.cleaned_data['global_footer']
         )
         return super().form_valid(form)

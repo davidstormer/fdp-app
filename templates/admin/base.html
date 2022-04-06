@@ -118,7 +118,9 @@
         <!-- END Content -->
         {% if custom_text_block_global %}
         <div id="custom-text-block-global">
+            {% if is_admin %}
             <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            {% endif %}
             <p>{{ custom_text_block_global|sanitize_html|safe }}</p>
         </div>
         {% endif %}

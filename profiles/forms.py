@@ -37,14 +37,21 @@ class SiteSettingsForm(forms.Form):
 
     officer_profile_page_top = forms.CharField(
         widget=forms.Textarea,
-        help_text=f"This text will appear at the top of the officer and command profile pages. Allowed HTML tags: "
-                  f"{', '.join(CUSTOM_TEXT_ALLOWED_TAGS)}.",
+        help_text=f"This text will appear at the top of the officer and command profile pages. (Allowed HTML tags: "
+                  f"{', '.join(CUSTOM_TEXT_ALLOWED_TAGS)})",
         required=False
     )
 
     officer_profile_incidents = forms.CharField(
         widget=forms.Textarea,
-        help_text=f"This text will appear at the top of the incidents section of officer profile pages. Allowed HTML "
-                  f"tags: {', '.join(CUSTOM_TEXT_ALLOWED_TAGS)}.",
+        help_text=f"This text will appear at the top of the incidents section of officer profile pages. (Allowed HTML "
+                  f"tags: {', '.join(CUSTOM_TEXT_ALLOWED_TAGS)})",
+        required=False
+    )
+
+    global_footer = forms.CharField(
+        widget=forms.Textarea,
+        help_text=f"This text will appear at the bottom of every page, including the home page. (Allowed HTML "
+                  f"tags: {', '.join(CUSTOM_TEXT_ALLOWED_TAGS)})",
         required=False
     )
