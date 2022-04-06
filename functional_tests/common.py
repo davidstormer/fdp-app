@@ -47,7 +47,7 @@ def setup_user(is_host: bool = True,
 
 def wait(fn, *args, **kwargs):
     """Call a given function repeatedly until it doesn't raise AssertionError or WebDriverException.
-    Gives up after max_wait in seconds.
+    Gives up after five seconds.
     """
     max_wait = 5
     start_time = time.time()
