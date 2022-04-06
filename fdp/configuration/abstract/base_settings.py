@@ -228,6 +228,9 @@ INSTALLED_APPS = [
     'bulk_data_manipulation',
     # allows users to add and update large volumes of data through a simplified and automated process
     'wholesale',
+    # bootstrap compatible forms
+    "crispy_forms",
+    "crispy_bootstrap5",
 ]
 
 
@@ -705,3 +708,7 @@ FDP_MAX_PERSON_PHOTO_FILE_BYTES = CONST_MAX_PERSON_PHOTO_FILE_BYTES
 # model. Each tuple has two items: the first is a user-friendly short description of the supported file type; the second
 # is the expected extension of the supported file type.
 FDP_SUPPORTED_PERSON_PHOTO_FILE_TYPES = CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES
+
+# Set up bootstrap5 compatible forms
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
