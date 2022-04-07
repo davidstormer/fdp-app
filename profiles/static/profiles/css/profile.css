@@ -15,6 +15,9 @@ body.profile.officer div.main h2 {
     font-size: 32px !important;
     font-weight: normal;
 }
+button.collapsible {
+  margin-bottom: 1em;
+}
 
 /* Payroll */
 span.empty-table-field {
@@ -65,4 +68,40 @@ div.collapsible-controls {
 
 button.collapsible:before {
     display: none;
+}
+
+/* Custom header text box */
+div#custom-header-text {
+    font-size: 16px;
+    background-color: #e2e3e5;
+    border: 1px solid #d6d8db;
+    border-radius: 1px;
+    padding: 1em 2em;
+    margin-bottom: 1em;
+    margin-top: -1em;
+}
+a.custom-text-edit-link {
+    opacity: 0;
+    float: right;
+    margin-right: -1em;
+}
+div#custom-header-text:hover a.custom-text-edit-link {
+    transition-duration: .2s;
+    opacity: 100%;
+}
+
+/* Custom incidents text box */
+div#custom-text-block-incidents {
+    font-size: 16px;
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 1px;
+    border-left: 4px solid #ffe186;
+    padding: 1em 2em;
+    margin-bottom: 1em;
+    margin-top: -1em;
+}
+div#custom-text-block-incidents:hover a.custom-text-edit-link {
+    transition-duration: .2s;
+    opacity: 100%;
 }

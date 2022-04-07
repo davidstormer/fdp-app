@@ -13,6 +13,7 @@
     {% compress css %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/responsive_grid.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/collapsible.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/profile.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/command.css' %}">
     {% endcompress %}
 {% endblock %}
@@ -32,6 +33,14 @@
 {% endif %}
 
 {% block content %}
+    {% if custom_text_block_profile_top %}
+    <div id="custom-header-text">
+        {% if is_admin %}
+        <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+        {% endif %}
+        {{ custom_text_block_profile_top|sanitize_html|safe }}
+    </div>
+    {% endif %}
 
     <h2>
         <span class="h2main">{{ object.name }}</span>
@@ -165,6 +174,14 @@
     <button type="button" class="collapsible expanded">{% translate 'Misconduct' %}</button>
     <div class="collapsible">
         {% if object.command_misconducts %}
+        {% if custom_text_block_incidents %}
+        <div id="custom-text-block-incidents">
+            {% if is_admin %}
+            <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            {% endif %}
+            {{ custom_text_block_incidents|sanitize_html|safe }}
+        </div>
+        {% endif %}
         {% for command_misconduct in object.command_misconducts %}
         <div class="mispad">
             <button type="button" class="collapsible expanded">{% if not command_misconduct.incident.exact_bounding_dates %}{% translate 'On an unknown date' %}{% else %}{{ command_misconduct.incident.exact_bounding_dates|capfirst }}{% endif %}</button>

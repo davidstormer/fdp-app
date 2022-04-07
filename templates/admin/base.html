@@ -1,4 +1,4 @@
-{% load i18n static compress fdp_extras %}<!DOCTYPE html>
+{% load i18n static compress fdp_extras profiles_extras %}<!DOCTYPE html>
 {% get_current_language as LANGUAGE_CODE %}{% get_current_language_bidi as LANGUAGE_BIDI %}
 <html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>
 <head>
@@ -116,6 +116,15 @@
           <br class="clear">
         </div>
         <!-- END Content -->
+        {% if custom_text_block_global %}
+        <div id="custom-text-block-global">
+            {% if is_admin %}
+            <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            {% endif %}
+            {{ custom_text_block_global|sanitize_html|safe }}
+        </div>
+        {% endif %}
+
         {% block footer %}<div id="footer"></div>{% endblock %}
       </div>
     </div>
