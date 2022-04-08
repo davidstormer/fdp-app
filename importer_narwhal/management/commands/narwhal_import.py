@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from ...narwhal import MODEL_ALLOW_LIST, do_import
+from ...narwhal import MODEL_ALLOW_LIST, do_import_from_disk
 
 help_text = """Import data into the system"""
 
@@ -22,7 +22,7 @@ class Command(BaseCommand):
         parser.add_argument('input_file')
 
     def handle(self, *args, **options):
-        report = do_import(options['model'], options['input_file'])
+        report = do_import_from_disk(options['model'], options['input_file'])
 
         if report.imported_records:
             for row in report.imported_records:
