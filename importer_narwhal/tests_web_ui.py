@@ -176,13 +176,13 @@ class TestWebUI(SeleniumFunctionalTestCase):
                     command_output
                 )
 
-    def test_import_history_detail_error_rows(self):
+    def test_import_batch_page_errors_teaser(self):
         # GIVEN an import has been run with validation errors
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
             csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
             csv_writer.writeheader()
-            for i in range(4):
+            for i in range(100):
                 row = {}
                 row['name'] = f'Test Person {uuid4()}'
                 row['is_law_enforcement'] = 'BREAK'  # <-- bad value
@@ -197,7 +197,7 @@ class TestWebUI(SeleniumFunctionalTestCase):
 
             # THEN I should see a listing showing the error rows of the import
             self.assertEqual(
-                4,
+                10,
                 self.browser.page_source.count("Enter a valid boolean value")
             )
 
