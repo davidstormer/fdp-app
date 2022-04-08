@@ -1,0 +1,36 @@
+{% extends "common/base-bootstrap.html" %}
+{% load i18n admin_urls static compress crispy_forms_tags %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a></li>
+<li>{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="datum datum-batch_number"><span class="label">Batch number:</span> {{object.pk}}</div>
+<div class="datum datum-started"><span class="label">Started:</span> {{object.started_fmt}}</div>
+<div class="datum datum-completed"><span class="label">Completed:</span>  {{object.completed_fmt}}</div>
+<div class="datum datum-submitted_file_name"><span class="label">File name:</span>  {{object.submitted_file_name}}</div>
+<div class="datum datum-target_model_name"><span class="label">Model name:</span>  {{object.target_model_name}}</div>
+<div class="datum datum-number_of_rows"><span class="label">Rows:</span>  {{object.number_of_rows}}</div>
+
+<h2>Errors</h2>
+{% if object.error_rows.all.values %}
+<table>
+<tr>
+  <th>Row number</th>
+  <th>Error message</th>
+  <th>Row data</th>
+</tr>
+{% for error in object.error_rows.all.values %}
+<tr>
+  <td> {{ error.row_number }}</td>
+  <td> {{ error.error_message }}</td>
+  <td> {{ error.row_data }}</td>
+</tr>
+{% endfor %}
+</table>
+{% else %}
+None
+{% endif %}
+{% endblock %}
