@@ -14,9 +14,9 @@
 <div class="datum datum-target_model_name"><span class="label">Model name:</span>  {{object.target_model_name}}</div>
 <div class="datum datum-number_of_rows"><span class="label">Rows:</span>  {{object.number_of_rows}}</div>
 
-<h2>Errors</h2>
 {% if object.error_rows.all.values %}
-<table>
+<h2>Errors</h2>
+<table class="table table-striped">
 <tr>
   <th>Row number</th>
   <th>Error message</th>
@@ -24,13 +24,46 @@
 </tr>
 {% for error in object.error_rows.all.values %}
 <tr>
-  <td> {{ error.row_number }}</td>
-  <td> {{ error.error_message }}</td>
-  <td> {{ error.row_data }}</td>
+  <td class="datum-row_number">{{ error.row_number }}</td>
+  <td class="datum-error_message">{{ error.error_message }}</td>
+  <td class="datum-row_data">
+    <button class="btn btn-link" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapse-{{ error.row_number }}" aria-expanded="false"
+            aria-controls="multiCollapse{{ error.row_number }}">show</button>
+    <div id="collapse-{{ error.row_number }}" class="collapse">{{ error.row_data }}</div>
+  </td>
 </tr>
 {% endfor %}
 </table>
-{% else %}
-None
+
+
+{% elif object.imported_rows.all.values %}
+<h2>Imported</h2>
+<table class="table table-striped">
+<tr>
+  <th>Row number</th>
+  <th>Errors</th>
+  <th>PK</th>
+  <th>Name</th>
+  <th>Data</th>
+</tr>
+{% for imported_row in object.imported_rows.all.values %}
+<tr>
+  <td class="datum-row_number">{{ imported_row.row_number }}</td>
+  <td class="datum-error">{{ imported_row.errors }}</td>
+  <td class="datum-pk">{{ imported_row.imported_record_pk }}</td>
+  <td class="datum-name">{{ imported_row.imported_record_name }}</td>
+  <td class="datum-info">
+    <button class="btn btn-link" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapse-{{ imported_row.row_number }}" aria-expanded="false"
+            aria-controls="multiCollapse{{ imported_row.row_number }}">show</button>
+    <div id="collapse-{{ imported_row.row_number }}" class="collapse">{{ imported_row.info }}</div>
+  </td>
+</tr>
+{% endfor %}
+</table>
 {% endif %}
+
+
+
 {% endblock %}
