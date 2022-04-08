@@ -296,14 +296,16 @@ def clean_diff_html(diff_html: str) -> str:
         .replace(' style="background:#ffe6e6;"', '')
 
 
-# The business
-def do_import(model_name: str, input_file: str):
-    """Main api interface for narwhal importer
-    """
-
+def make_import_batch(model_name: str, input_file: str):
     batch_record = ImportBatch.objects.create()
     batch_record.target_model_name = model_name
     batch_record.submitted_file_name = os.path.basename(input_file)
+
+
+# The business
+def do_import(batch_pk):
+    """Main api interface for narwhal importer
+    """
 
     with open(input_file, 'r') as fd:
         input_sheet = tablib.Dataset().load(fd, "csv")

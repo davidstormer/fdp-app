@@ -1,3 +1,4 @@
+from django.db.models.fields.files import FieldFile
 from django.template.defaultfilters import filesizeformat
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -6,6 +7,8 @@ import os
 
 def validate_import_sheet_extension(file):
     allowed_extensions = ['csv']
+    if isinstance(file, FieldFile):
+        file = file.name
     extension = os.path.splitext(file)[1][1:].lower()
     if extension not in allowed_extensions:
         raise ValidationError(f'{extension} file not allowed. File must end in one of {allowed_extensions}')
@@ -17,9 +20,10 @@ def validate_import_sheet_file_size(file):
         raise ValidationError(f'File size {filesizeformat(file.size)} too large. File must be less than {filesizeformat(max_file_size)}.')
 
 
+# TODO: turn started into created, and add another started that's not auto_now_add
 class ImportBatch(models.Model):
     started = models.DateTimeField(auto_now_add=True)
-    completed = models.DateTimeField(null=True)
+    completed = models.DateTimeField(null=True, blank=True)
     target_model_name = models.CharField(max_length=256)
     number_of_rows = models.IntegerField(null=True)
     errors_encountered = models.BooleanField(null=True)
