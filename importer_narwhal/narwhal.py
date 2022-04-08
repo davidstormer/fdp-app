@@ -1,8 +1,10 @@
 import json
 import os
 import re
+from pathlib import Path
 
 import tablib
+from django.core.files import File
 from django.utils import timezone
 from import_export import resources, fields
 from import_export.fields import Field
@@ -379,87 +381,94 @@ def clean_diff_html(diff_html: str) -> str:
         .replace(' style="background:#ffe6e6;"', '')
 
 
-def make_import_batch(model_name: str, input_file: str):
+def do_import_from_disk(model_name: str, input_file: str):
+    """Creates and import batch from a csv file located on the local disk, and then runs it.
+    Used by management commands and tests. Not intended for use by web views.
+    """
     batch_record = ImportBatch.objects.create()
     batch_record.target_model_name = model_name
     batch_record.submitted_file_name = os.path.basename(input_file)
+    path = Path(input_file)
+    with path.open(mode='rb') as f:
+        batch_record.import_sheet = File(f, name=path.name)
+        batch_record.save()
+    return run_import_batch(batch_record)
 
 
 # The business
-def do_import(batch_pk):
+def run_import_batch(batch_record):
     """Main api interface for narwhal importer
     """
+    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8")
+    input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
+    # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
+    # https://github.com/jazzband/tablib/issues/502
+    resource_class = resource_model_mapping[batch_record.target_model_name]
+    resource = resource_class()
+    result = resource.import_data(input_sheet, dry_run=True)
+    batch_record.number_of_rows = len(result.rows)
+    import_report = ImportReport()
 
-    with open(input_file, 'r') as fd:
-        input_sheet = tablib.Dataset().load(fd, "csv")
-        # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
-        # https://github.com/jazzband/tablib/issues/502
-        resource_class = resource_model_mapping[model_name]
-        resource = resource_class()
-        result = resource.import_data(input_sheet, dry_run=True)
-        batch_record.number_of_rows = len(result.rows)
-        import_report = ImportReport()
-
-        # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
-        # encounter any database level errors. We'll apply this pattern here:
-        if result.has_validation_errors():
+    # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
+    # encounter any database level errors. We'll apply this pattern here:
+    if result.has_validation_errors():
+        batch_record.errors_encountered = True
+        batch_record.save()
+        for invalid_row in result.invalid_rows:
+            # Nice error reports continued...
+            ErrorRow.objects.create(
+                import_batch=batch_record,
+                row_number=invalid_row.number,
+                error_message=str(invalid_row.error_dict),
+                row_data=str(invalid_row.values)
+            )
+            import_report.validation_errors.append(
+                ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
+            )
+    else:  # We're safe to proceed with live rounds
+        result = resource.import_data(input_sheet, dry_run=False)
+        if result.has_errors():
             batch_record.errors_encountered = True
             batch_record.save()
-            for invalid_row in result.invalid_rows:
-                # Nice error reports continued...
-                ErrorRow.objects.create(
-                    import_batch=batch_record,
-                    row_number=invalid_row.number,
-                    error_message=str(invalid_row.error_dict),
-                    row_data=str(invalid_row.values)
-                )
-                import_report.validation_errors.append(
-                    ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
-                )
-        else:  # We're safe to proceed with live rounds
-            result = resource.import_data(input_sheet, dry_run=False)
-            if result.has_errors():
-                batch_record.errors_encountered = True
-                batch_record.save()
-                for error_row in result.row_errors():
-                    row_num = error_row[0]
-                    errors = error_row[1]
-                    for error in errors:
-                        # Nice error reports continued...
-                        ErrorRow.objects.create(
-                            import_batch=batch_record,
-                            row_number=row_num,
-                            error_message=str(error.error),
-                            row_data=str(dict(error.row))
-                        )
-                        import_report.database_errors.append(
-                            ErrorReportRow(row_num, str(error.error), str(dict(error.row)))
-                        )
-            else:
-                batch_record.errors_encountered = False
-                for row_num, row in enumerate(result.rows):
-                    ImportedRow.objects.create(
-                        row_number=row_num,
+            for error_row in result.row_errors():
+                row_num = error_row[0]
+                errors = error_row[1]
+                for error in errors:
+                    # Nice error reports continued...
+                    ErrorRow.objects.create(
                         import_batch=batch_record,
-                        action=row.import_type,
-                        errors=row.validation_error,
-                        info=clean_diff_html(str(row.diff)),
-                        imported_record_name=row.object_repr,
-                        imported_record_pk=row.object_id,
+                        row_number=row_num,
+                        error_message=str(error.error),
+                        row_data=str(dict(error.row))
                     )
-                    import_report.imported_records.append(
-                        ImportedReportRow(
-                            row_num,
-                            row.import_type,
-                            row.validation_error,
-                            row.diff,
-                            row.object_id,
-                            row.object_repr)
+                    import_report.database_errors.append(
+                        ErrorReportRow(row_num, str(error.error), str(dict(error.row)))
                     )
-                batch_record.completed = timezone.now()
-                batch_record.save()
+        else:
+            batch_record.errors_encountered = False
+            for row_num, row in enumerate(result.rows):
+                ImportedRow.objects.create(
+                    row_number=row_num,
+                    import_batch=batch_record,
+                    action=row.import_type,
+                    errors=row.validation_error,
+                    info=clean_diff_html(str(row.diff)),
+                    imported_record_name=row.object_repr,
+                    imported_record_pk=row.object_id,
+                )
+                import_report.imported_records.append(
+                    ImportedReportRow(
+                        row_num,
+                        row.import_type,
+                        row.validation_error,
+                        row.diff,
+                        row.object_id,
+                        row.object_repr)
+                )
+            batch_record.completed = timezone.now()
+            batch_record.save()
 
-        return import_report
+    return import_report
 
 
 def do_export(model_name, file_name):
