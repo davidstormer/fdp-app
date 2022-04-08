@@ -14,7 +14,7 @@
 <div class="datum datum-target_model_name"><span class="label">Model name:</span>  {{object.target_model_name}}</div>
 <div class="datum datum-number_of_rows"><span class="label">Rows:</span>  {{object.number_of_rows}}</div>
 
-{% if object.error_rows.all.values %}
+{% if error_rows_paginated %}
 <h2>Errors</h2>
 <table class="table table-striped">
 <tr>
@@ -22,7 +22,7 @@
   <th>Error message</th>
   <th>Row data</th>
 </tr>
-{% for error in object.error_rows.all.values %}
+{% for error in error_rows_paginated %}
 <tr>
   <td class="datum-row_number">{{ error.row_number }}</td>
   <td class="datum-error_message">{{ error.error_message }}</td>
@@ -37,7 +37,7 @@
 </table>
 
 
-{% elif object.imported_rows.all.values %}
+{% elif imported_rows_paginated %}
 <h2>Imported</h2>
 <table class="table table-striped">
 <tr>
@@ -47,7 +47,7 @@
   <th>Name</th>
   <th>Data</th>
 </tr>
-{% for imported_row in object.imported_rows.all.values %}
+{% for imported_row in imported_rows_paginated %}
 <tr>
   <td class="datum-row_number">{{ imported_row.row_number }}</td>
   <td class="datum-error">{{ imported_row.errors }}</td>
@@ -64,6 +64,39 @@
 </table>
 {% endif %}
 
+    <div class="pagination-post">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <form method="get">
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <input type="submit" value="&laquo; first">
+                </form>
+                <form method="get">
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <input type="hidden" name="page" value="{{ page_obj.previous_page_number }}">
+                    <input type="submit" value="previous">
+                </form>
+            {% endif %}
 
+            {% if page_obj.paginator.num_pages > 1 %}
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            {% endif %}
+
+            {% if page_obj.has_next %}
+                <form method="get">
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <input type="hidden" name="page" value="{{ page_obj.next_page_number }}">
+                    <input type="submit" value="next">
+                </form>
+                <form method="get">
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <input type="hidden" name="page" value="{{ page_obj.paginator.num_pages }}">
+                    <input type="submit" value="last &raquo;">
+                </form>
+            {% endif %}
+        </span>
+    </div>
 
 {% endblock %}
