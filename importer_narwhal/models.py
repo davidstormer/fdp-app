@@ -51,11 +51,17 @@ class ImportBatch(models.Model):
 
     @property
     def started_fmt(self):
-        return f"{self.started:%Y-%m-%d %H:%M:%S}"
+        if self.started:
+            return f"{self.started:%Y-%m-%d %H:%M:%S}"
+        else:
+            return "Not started yet"
 
     @property
     def completed_fmt(self):
-        return f"{self.completed:%Y-%m-%d %H:%M:%S}" if self.completed else 'Aborted'
+        if self.started:
+            return f"{self.completed:%Y-%m-%d %H:%M:%S}" if self.completed else 'Aborted'
+        else:
+            return "Not started yet"
 
 
 class ImportedRow(models.Model):

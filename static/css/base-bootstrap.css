@@ -153,3 +153,26 @@ legend {
 .datum .value {
   vertical-align: top;
 }
+
+/* STEPPERS */
+ul.fdp-stepper {
+    display: flex;
+    justify-content: space-evenly;
+    padding: 0;
+    margin-bottom: 3em;
+
+    font-weight: bold;
+    color: #6c757d;
+}
+.fdp-stepper li {
+    list-style: none;
+    padding: 1em;
+}
+li.fdp-stepper-line {
+    height: 1px;
+    padding: 1.8em 0 0 0;
+    flex-grow: 1;
+    border-bottom: 1px solid #adb5bd;
+    margin-right: 1em;
+    margin-left: 1em;
+}
