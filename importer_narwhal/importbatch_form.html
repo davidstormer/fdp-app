@@ -1,0 +1,34 @@
+{% extends "common/base-bootstrap.html" %}
+{% load i18n admin_urls static compress crispy_forms_tags %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a></li>
+<li>{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="Steps" class="col-md-10 offset-md-1">
+<ul class="fdp-stepper">
+  <li>
+    Set up
+  </li>
+  <li class="fdp-stepper-line"></li>
+  <li>
+    Verify
+  </li>
+  <li class="fdp-stepper-line"></li>
+  <li>
+    Run
+  </li>
+  <li class="fdp-stepper-line"></li>
+  <li>
+    Review
+  </li>
+</ul>
+</nav>
+<form method="post">
+  {% csrf_token %}
+  {{ form|crispy }}
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}

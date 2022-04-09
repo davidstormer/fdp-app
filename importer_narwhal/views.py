@@ -1,8 +1,14 @@
 from django.core.paginator import Paginator
 from django.shortcuts import render
-from django.views.generic import DetailView
+from django.views.generic import DetailView, CreateView
 
 from importer_narwhal.models import ImportBatch
+
+
+class ImportBatchCreateView(CreateView):
+
+    model = ImportBatch
+    fields = ['target_model_name', 'import_sheet']
 
 
 class ImportBatchDetailView(DetailView):
