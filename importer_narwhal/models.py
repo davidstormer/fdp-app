@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 import os
 
+from django.urls import reverse
+
 
 def validate_import_sheet_extension(file):
     allowed_extensions = ['csv']
@@ -22,7 +24,8 @@ def validate_import_sheet_file_size(file):
 
 # TODO: turn started into created, and add another started that's not auto_now_add
 class ImportBatch(models.Model):
-    started = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
+    started = models.DateTimeField(null=True, blank=True)
     completed = models.DateTimeField(null=True, blank=True)
     target_model_name = models.CharField(max_length=256)
     number_of_rows = models.IntegerField(null=True)
@@ -35,6 +38,9 @@ class ImportBatch(models.Model):
             validate_import_sheet_file_size
         ]
     )
+
+    def get_absolute_url(self):
+        return reverse('importer_narwhal:batch', kwargs={'pk': self.pk})
 
     def __str__(self):
         # number, import time, filename, model, number of records,
