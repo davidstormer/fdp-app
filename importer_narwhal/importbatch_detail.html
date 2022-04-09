@@ -7,15 +7,15 @@
 {% endblock %}
 
 {% block content %}
-<div class="datum datum-batch_number"><span class="label">Batch number:</span> {{object.pk}}</div>
-<div class="datum datum-started"><span class="label">Started:</span> {{object.started_fmt}}</div>
-<div class="datum datum-completed"><span class="label">Completed:</span>  {{object.completed_fmt}}</div>
-<div class="datum datum-submitted_file_name"><span class="label">File name:</span>  {{object.submitted_file_name}}</div>
-<div class="datum datum-target_model_name"><span class="label">Model name:</span>  {{object.target_model_name}}</div>
-<div class="datum datum-number_of_rows"><span class="label">Rows:</span>  {{object.number_of_rows}}</div>
+<div class="datum datum-batch_number"><span class="label">Batch number</span> <span class="value">{{object.pk}}</span></div>
+<div class="datum datum-started"><span class="label">Started</span> <span class="value">{{object.started_fmt}}</span></div>
+<div class="datum datum-completed"><span class="label">Completed</span>  <span class="value">{{object.completed_fmt}}</span></div>
+<div class="datum datum-submitted_file_name"><span class="label">File name</span>  <span class="value">{{object.submitted_file_name}}</span></div>
+<div class="datum datum-target_model_name"><span class="label">Model name</span>  <span class="value">{{object.target_model_name}}</span></div>
+<div class="datum datum-number_of_rows"><span class="label">Rows</span>  <span class="value">{{object.number_of_rows}}</span></div>
 
-{% if error_rows_paginated %}
 <h2>Errors</h2>
+{% if error_rows_paginated %}
 <table class="table table-striped">
 <tr>
   <th>Row number</th>
@@ -35,10 +35,12 @@
 </tr>
 {% endfor %}
 </table>
+{% else %}
+<p>None</p>
+{% endif %}
 
-
-{% elif imported_rows_paginated %}
 <h2>Imported</h2>
+{% if imported_rows_paginated %}
 <table class="table table-striped">
 <tr>
   <th>Row number</th>
@@ -62,41 +64,20 @@
 </tr>
 {% endfor %}
 </table>
+{% else %}
+<p>None</p>
 {% endif %}
 
-    <div class="pagination-post">
-        <span class="step-links">
-            {% if page_obj.has_previous %}
-                <form method="get">
-                    <input type="hidden" name="q" value="{{ query }}">
-                    <input type="submit" value="&laquo; first">
-                </form>
-                <form method="get">
-                    <input type="hidden" name="q" value="{{ query }}">
-                    <input type="hidden" name="page" value="{{ page_obj.previous_page_number }}">
-                    <input type="submit" value="previous">
-                </form>
-            {% endif %}
-
-            {% if page_obj.paginator.num_pages > 1 %}
-            <span class="current">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-            </span>
-            {% endif %}
-
-            {% if page_obj.has_next %}
-                <form method="get">
-                    <input type="hidden" name="q" value="{{ query }}">
-                    <input type="hidden" name="page" value="{{ page_obj.next_page_number }}">
-                    <input type="submit" value="next">
-                </form>
-                <form method="get">
-                    <input type="hidden" name="q" value="{{ query }}">
-                    <input type="hidden" name="page" value="{{ page_obj.paginator.num_pages }}">
-                    <input type="submit" value="last &raquo;">
-                </form>
-            {% endif %}
-        </span>
-    </div>
+{% if page_obj.paginator.num_pages > 1 %}
+  <nav aria-label="Pagination">
+    <ul class="pagination">
+      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}"><a class="page-link" href="?page=1">&laquo; First</a></li>
+      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}"><a class="page-link" href="?page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% endif %}">Previous</a></li>
+      <li class="page-item disabled"><a class="page-link" tabindex="-1" aria-disabled="true" href="#">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</a></li>
+      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}"><a class="page-link" href="?page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}">Next</a></li>
+      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}"><a class="page-link" href="?page={% if page_obj.has_next %}{{ page_obj.paginator.num_pages }}{% endif %}">Last &raquo;</a></li>
+    </ul>
+  </nav>
+{% endif %}
 
 {% endblock %}

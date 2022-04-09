@@ -15,9 +15,9 @@ class ImportBatchDetailView(DetailView):
 
         page_number = self.request.GET.get('page')
         imported_rows_paginator = Paginator(
-            context['object'].imported_rows.all().values(), 10)
+            context['object'].imported_rows.all().order_by('row_number').values(), 100)
         error_rows_paginator = Paginator(
-            context['object'].error_rows.all().values(), 10)
+            context['object'].error_rows.all().order_by('row_number').values(), 100)
         context['error_rows_paginated'] = error_rows_paginator.get_page(page_number or 1)
         context['imported_rows_paginated'] = imported_rows_paginator.get_page(page_number or 1)
         context['page_obj'] = context['error_rows_paginated'] or context['imported_rows_paginated']
