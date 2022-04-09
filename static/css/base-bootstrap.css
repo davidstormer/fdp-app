@@ -1,4 +1,10 @@
 /* GLOBAL STYLES */
+a,
+.btn-link,
+.page-link
+{
+  color: #447e9b;
+}
 .text-error {
   color: #dc3545;
 }
