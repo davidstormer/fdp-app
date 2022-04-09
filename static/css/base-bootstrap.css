@@ -131,3 +131,15 @@ span#release-number {
 legend {
     color: #417690;
 }
+
+/* Data display */
+.datum {
+    margin-bottom: 0.5em;
+}
+.datum .label {
+    width: 8em;
+    display: inline-block;
+}
+.datum .value {
+  vertical-align: top;
+}
