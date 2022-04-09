@@ -20,7 +20,7 @@
 <tr>
   <th>Row number</th>
   <th>Error message</th>
-  <th>Row data</th>
+  <th>Data</th>
 </tr>
 {% for error in error_rows_paginated %}
 <tr>
@@ -30,8 +30,10 @@
     <button class="btn btn-link" type="button" data-bs-toggle="collapse"
             data-bs-target="#collapse-{{ error.row_number }}" aria-expanded="false"
             aria-controls="multiCollapse{{ error.row_number }}">show</button>
-    <div id="collapse-{{ error.row_number }}" class="collapse">{{ error.row_data }}</div>
   </td>
+</tr>
+<tr id="collapse-{{ error.row_number }}" class="collapse">
+  <td colspan="3">{{ error.row_data }}</td>
 </tr>
 {% endfor %}
 </table>
@@ -59,8 +61,10 @@
     <button class="btn btn-link" type="button" data-bs-toggle="collapse"
             data-bs-target="#collapse-{{ imported_row.row_number }}" aria-expanded="false"
             aria-controls="multiCollapse{{ imported_row.row_number }}">show</button>
-    <div id="collapse-{{ imported_row.row_number }}" class="collapse">{{ imported_row.info }}</div>
   </td>
+</tr>
+<tr id="collapse-{{ imported_row.row_number }}" class="collapse">
+  <td colspan="5">{{ imported_row.info }}</td>
 </tr>
 {% endfor %}
 </table>
