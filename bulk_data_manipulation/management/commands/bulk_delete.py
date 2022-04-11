@@ -97,56 +97,41 @@ class Command(BaseCommand):
             f"Delete {model} records..."
         ))
 
-        skip_list = []
-        if options['skip_revisions'] is not None:
-            for record in model.objects.all():
-                revisions = Version.objects.get_for_object(record)
-                if len(revisions) >= int(options['skip_revisions']):
-                    try:
-                        external_id = BulkImport.objects.get(table_imported_to=model.get_db_table(),
-                                                             pk_imported_to=record.pk).pk_imported_from
-                        skip_list.append(external_id)
-                    except:
-                        pass
-
         with open(options['input_file'], 'r') as csv_fd:
             try:
                 with transaction.atomic():
                     errors = []
                     for external_id in csv_fd:
                         external_id = external_id.strip()
-                        if external_id not in skip_list:
+                        try:
                             try:
-                                try:
-                                    if options['force']:
-                                        delete_imported_record(model, external_id,
-                                                               delete_external_id=False if options[
-                                                                   'keep_ext_ids'] else True,
-                                                               delete_multiple=True)
-                                    else:
-                                        delete_imported_record(model, external_id,
-                                                               delete_external_id=False if options[
-                                                                   'keep_ext_ids'] else True)
-                                    if int(options['verbosity']) > 1:
-                                        self.stdout.write(f"Deleted: {model}|{external_id}")
-                                except BulkImport.MultipleObjectsReturned as e:
-                                    bulk_imports = BulkImport.objects.filter(
-                                        pk_imported_from=external_id,
-                                        table_imported_to=model.get_db_table()
-                                    )
-                                    bulk_import_pks = [bulk_import.pk for bulk_import in bulk_imports]
-                                    bulk_import_pks.sort()
-                                    records_pks = []
-                                    for bulk_import in bulk_imports:
-                                        records_pks.append(bulk_import.pk_imported_to)
-                                    records_pks.sort()
-                                    raise BulkImport.MultipleObjectsReturned(
-                                        f"Multiple records found for external id {external_id}; BulkImports:"
-                                        f" {bulk_import_pks}; {model}: {records_pks}")
-                            except Exception as e:
-                                errors.append(e)
-                        else:
-                            self.stdout.write(self.style.WARNING(f"Skipping {external_id}"))
+                                if options['force']:
+                                    delete_imported_record(model, external_id,
+                                                           delete_external_id=False if options[
+                                                               'keep_ext_ids'] else True,
+                                                           delete_multiple=True)
+                                else:
+                                    delete_imported_record(model, external_id,
+                                                           delete_external_id=False if options[
+                                                               'keep_ext_ids'] else True)
+                                if int(options['verbosity']) > 1:
+                                    self.stdout.write(f"Deleted: {model}|{external_id}")
+                            except BulkImport.MultipleObjectsReturned as e:
+                                bulk_imports = BulkImport.objects.filter(
+                                    pk_imported_from=external_id,
+                                    table_imported_to=model.get_db_table()
+                                )
+                                bulk_import_pks = [bulk_import.pk for bulk_import in bulk_imports]
+                                bulk_import_pks.sort()
+                                records_pks = []
+                                for bulk_import in bulk_imports:
+                                    records_pks.append(bulk_import.pk_imported_to)
+                                records_pks.sort()
+                                raise BulkImport.MultipleObjectsReturned(
+                                    f"Multiple records found for external id {external_id}; BulkImports:"
+                                    f" {bulk_import_pks}; {model}: {records_pks}")
+                        except Exception as e:
+                            errors.append(e)
 
                     if len(errors) > 0:
                         self.stdout.write(self.style.ERROR("Errors encountered!"))
