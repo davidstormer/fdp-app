@@ -86,9 +86,14 @@ class BulkDelete(TestCase):
             for new_person_name in new_person_names:
                 Person.objects.get(name=new_person_name)
             # and given there is a file listing their external ids
+            csv_writer = csv.DictWriter(csv_fd, ['id__external'])
+            csv_writer.writeheader()
             for external_id in new_external_ids:
-                csv_fd.write(f"{external_id}\n")
-            csv_fd.flush()  # Make sure the file is actually written to disk!
+                row = {}
+                row['id__external'] = external_id
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
 
             # WHEN I run the command with a verbosity greater than 1
             call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--verbosity=2', stdout=command_output)
@@ -109,8 +114,13 @@ class BulkDelete(TestCase):
             import_record_with_extid(Person, {"name": new_person_name}, external_id='1638388421')
             Person.objects.get(name=new_person_name)
             # AND given there is a file listing its external id
-            csv_fd.write('1638388421\n')
-            csv_fd.flush()
+            csv_writer = csv.DictWriter(csv_fd, ['id__external'])
+            csv_writer.writeheader()
+            row = {}
+            row['id__external'] = 1638388421
+            csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
             # WHEN I run the command with the file as a positional argument
             call_command('bulk_delete', 'core.models.Person', csv_fd.name, stdout=command_output)
             # THEN the record should be removed from the system
@@ -134,10 +144,14 @@ class BulkDelete(TestCase):
                 new_external_ids.append(new_external_id)
             for new_person_name in new_person_names:
                 Person.objects.get(name=new_person_name)
-            # AND given there is a file listing their external ids
+            # and given there is a file listing their external ids
+            csv_writer = csv.DictWriter(csv_fd, ['id__external'])
+            csv_writer.writeheader()
             for external_id in new_external_ids:
-                csv_fd.write(f"{external_id}\n")
-            csv_fd.flush()  # Make sure the file is actually written to disk!
+                row = {}
+                row['id__external'] = external_id
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
             # WHEN I run the command with the file as a positional argument
             call_command('bulk_delete', 'core.models.Person', csv_fd.name, stdout=command_output)
             # THEN the records should be removed from the system
@@ -174,9 +188,14 @@ class BulkDelete(TestCase):
             new_person_pks.sort()
             for new_person_name in new_person_names:
                 Person.objects.get(name=new_person_name)
-            # AND given there is a file listing their external ids
-            csv_fd.write(f"{new_external_id}\n")
-            csv_fd.flush()  # Make sure the file is actually written to disk!
+            # and given there is a file listing their external ids
+            csv_writer = csv.DictWriter(csv_fd, ['id__external'])
+            csv_writer.writeheader()
+            for external_id in new_external_ids:
+                row = {}
+                row['id__external'] = external_id
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
 
             # WHEN I run the command with the file as a positional argument
             call_command('bulk_delete', 'core.models.Person', csv_fd.name, stdout=command_output)
@@ -190,8 +209,6 @@ class BulkDelete(TestCase):
             self.assertIn(f"{Person}: {new_person_pks}", command_output.getvalue())
 
     def test_bulk_delete_force_mode_duplicate_external_ids(self):
-        """Functional test: delete records from an input file
-        """
         command_output = StringIO()
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
@@ -218,18 +235,26 @@ class BulkDelete(TestCase):
             new_person_pks.sort()
             for new_person_name in new_person_names:
                 Person.objects.get(name=new_person_name)
-            # AND given there is a file listing their external ids
-            csv_fd.write(f"{new_external_id}\n")
-            csv_fd.flush()  # Make sure the file is actually written to disk!
+            # and given there is a file listing the external id
+            csv_writer = csv.DictWriter(csv_fd, ['id__external'])
+            csv_writer.writeheader()
+            for external_id in new_external_ids:
+                row = {}
+                row['id__external'] = new_external_id
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
 
             # WHEN I run the command with the --force flag
             call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--force', stdout=command_output)
+
+            print(command_output.getvalue())
 
             # THEN all of the records should be removed from the system
             #
             self.assertEqual(
                 0,
-                Person.objects.all().count()
+                Person.objects.all().count(),
+                msg="Not all of the records have been removed from the system"
             )
             # And there should be no BulkImport records
             self.assertEqual(
@@ -272,8 +297,13 @@ class BulkDelete(TestCase):
             Person.objects.all()[1].delete()
 
             # AND given there is a file listing their external ids
-            csv_fd.write(f"{new_external_id}\n")
-            csv_fd.flush()  # Make sure the file is actually written to disk!
+            csv_writer = csv.DictWriter(csv_fd, ['id__external'])
+            csv_writer.writeheader()
+            row = {}
+            row['id__external'] = new_external_id
+            csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
 
             # WHEN I run the command with the --force flag
             call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--force', '--verbosity=2',
@@ -307,21 +337,27 @@ class BulkDelete(TestCase):
             new_external_ids = []
             for i in range(10):
                 new_person_name = f"person-name-{uuid4()}"
-                new_external_id = f"external-id-{uuid4()}"
+                new_external_id = f"external-id-{uuid4()}-{i}"
                 import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
                 new_person_names.append(new_person_name)
                 new_external_ids.append(new_external_id)
             for new_person_name in new_person_names:
                 Person.objects.get(name=new_person_name)
-            # and given there is a file listing their external ids
+            # and given there is a file listing the external id
+            csv_writer = csv.DictWriter(csv_fd, ['id__external'])
+            csv_writer.writeheader()
             for external_id in new_external_ids:
-                csv_fd.write(f"{external_id}\n")
-            csv_fd.flush()  # Make sure the file is actually written to disk!
+                row = {}
+                row['id__external'] = external_id
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
             # AND one of the records has been deleted
             Person.objects.all()[2].delete()
 
             # WHEN I run the command with the "--force" flag
             call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--force', stdout=command_output)
+
+            # print(command_output.getvalue())
 
             # THEN all the records should be removed from the system.
             self.assertEqual(
