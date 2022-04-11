@@ -34,24 +34,38 @@ class BulkDelete(TestCase):
             for new_person_name in new_person_names:
                 Person.objects.get(name=new_person_name)
             # and given there is a file listing their external ids
+            csv_writer = csv.DictWriter(csv_fd, ['id__external'])
+            csv_writer.writeheader()
             for external_id in new_external_ids:
-                csv_fd.write(f"{external_id}\n")
-            csv_fd.flush()  # Make sure the file is actually written to disk!
+                row = {}
+                row['id__external'] = external_id
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
 
             # WHEN I run the command
-            call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--force', stdout=command_output)
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, stdout=command_output)
 
-            # THEN all the records should be removed from the system.
+            # THEN all of the BulkImport records (external ids) should also be removed from the system.
+            with self.subTest():
+                self.assertEqual(
+                    0,
+                    BulkImport.objects.all().count(),
+                    msg="BulkImport records remain"
+                )
+
+            # and there should be no errors in the output
+            with self.subTest():
+                self.assertNotIn(
+                    "Errors encountered",
+                    command_output.getvalue()
+                )
+
+            # and all the records should be removed from the system.
             self.assertEqual(
                 0,
-                Person.objects.all().count()
-            )
-
-            # and all of the BulkImport records (external ids) should also be removed from the system.
-            self.assertEqual(
-                0,
-                BulkImport.objects.all().count(),
-                msg="BulkImport records remain"
+                Person.objects.all().count(),
+                msg="Records weren't deleted"
             )
 
     def test_bulk_delete_verbose(self):
