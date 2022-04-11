@@ -79,9 +79,6 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('model', type=str, help="Model class, e.g. 'core.models.Person'")
         parser.add_argument('input_file', type=str)
-        parser.add_argument('--skip-revisions', default=None,
-                            help="Skips records if they have revisions equal to or greater than given number e.g. "
-                                 "'--skip-revisions=1'")
         parser.add_argument('--force', action='store_true',
                             help="Don't undo if records can't be found, skip them instead. When duplicate external "
                                  "ids are found, keep going and delete the associated records.")
