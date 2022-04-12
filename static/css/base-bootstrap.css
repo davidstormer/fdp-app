@@ -155,7 +155,6 @@ ul.fdp-stepper {
     display: flex;
     justify-content: space-evenly;
     padding: 0;
-    margin-bottom: 3em;
 
     font-weight: bold;
     color: #6c757d;
@@ -166,9 +165,35 @@ ul.fdp-stepper {
 }
 li.fdp-stepper-line {
     height: 1px;
-    padding: 1.8em 0 0 0;
+    padding: 2em 0 0 0;
     flex-grow: 1;
-    border-bottom: 1px solid #adb5bd;
-    margin-right: 1em;
-    margin-left: 1em;
+    border-bottom: 1px solid lightgray;
+}
+span.stepper-step-number {
+    display: inline-block;
+    background-color: #447e9b;
+    border: 1px solid gray;
+    height: 2em;
+    width: 2em;
+    text-align: center;
+    border-radius: 1em;
+    line-height: 2em;
+    color: white;
+    margin-right: .5em;
+}
+/*
+.fdp-stepper li.active {
+    border: 1px solid gray;
+    background-color: #447e9b;
+    color: white;
+    border-radius: 2px;
+}
+*/
+.fdp-stepper li.pending {
+  font-weight: normal;
+  color: lightgray;
+}
+li.pending span.stepper-step-number {
+  background-color: lightgray;
+  border: none;
 }

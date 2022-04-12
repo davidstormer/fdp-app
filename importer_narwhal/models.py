@@ -25,6 +25,8 @@ def validate_import_sheet_file_size(file):
 # TODO: turn started into created, and add another started that's not auto_now_add
 class ImportBatch(models.Model):
     created = models.DateTimeField(auto_now_add=True)
+    dry_run_started = models.DateTimeField(null=True, blank=True)
+    dry_run_completed = models.DateTimeField(null=True, blank=True)
     started = models.DateTimeField(null=True, blank=True)
     completed = models.DateTimeField(null=True, blank=True)
     target_model_name = models.CharField(max_length=256)
