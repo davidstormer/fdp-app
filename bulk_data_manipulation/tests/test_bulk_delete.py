@@ -542,13 +542,25 @@ class BulkDelete(TestCase):
                 new_external_ids.append(new_external_id)
             for new_person_name in new_person_names:
                 Person.objects.get(name=new_person_name)
-            # and given there is a file listing their external ids
+            # AND given there is a file listing their external ids
+            csv_writer = csv.DictWriter(csv_fd, ['id__external'])
+            csv_writer.writeheader()
             for external_id in new_external_ids:
-                csv_fd.write(f"{external_id}\n")
-            csv_fd.flush()  # Make sure the file is actually written to disk!
+                row = {}
+                row['id__external'] = external_id
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
 
             # WHEN I run the command with the "--keep-ext-ids" flag
             call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--keep-ext-ids', stdout=command_output)
+
+            # and the records should be deleted
+            with self.subTest(msg="Actual records"):
+                self.assertEqual(
+                    0,
+                    Person.objects.all().count(),
+                    msg="Records not deleted from the system"
+                )
 
             # THEN all the external ids (bulk imports) should still be there
             self.assertEqual(
@@ -679,8 +691,13 @@ class AtomicRollbacks(TransactionTestCase):
                     "Person.external_id": person_ext_id
                 })
             # AND given there is a file listing their external ids
+            csv_writer = csv.DictWriter(csv_fd, ['id__external'])
+            csv_writer.writeheader()
             for record in imported_records_log:
-                csv_fd.write(f"{record['Person.external_id']}\n"); csv_fd.flush()  # <- ACTUALLY WRITE TO DISK
+                row = {}
+                row['id__external'] = record["Person.external_id"]
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
 
             # AND ONE OF THE RECORDS TO BE DELETED HAS ALREADY BEEN DELETED ###############################
             Person.objects.get(pk=imported_records_log[3]['Person.pk']).delete()
