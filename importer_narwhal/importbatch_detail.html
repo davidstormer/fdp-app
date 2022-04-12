@@ -7,12 +7,101 @@
 {% endblock %}
 
 {% block content %}
-<div class="datum datum-batch_number"><span class="label">Batch number</span> <span class="value">{{object.pk}}</span></div>
-<div class="datum datum-started"><span class="label">Started</span> <span class="value">{{object.started_fmt}}</span></div>
-<div class="datum datum-completed"><span class="label">Completed</span>  <span class="value">{{object.completed_fmt}}</span></div>
-<div class="datum datum-submitted_file_name"><span class="label">File name</span>  <span class="value">{{object.import_sheet.file.name}}</span></div>
-<div class="datum datum-target_model_name"><span class="label">Model name</span>  <span class="value">{{object.target_model_name}}</span></div>
-<div class="datum datum-number_of_rows"><span class="label">Rows</span>  <span class="value">{{object.number_of_rows}}</span></div>
+
+{% if state != 'done' %}
+<nav aria-label="Workflow">
+<ul class="fdp-stepper col-md-10 offset-md-1">
+  <li class="{% if stepper_number == 1 %}active{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 1 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      1
+      {% endif %}
+    </span>
+    <span>Set up</span>
+  </li>
+  <li class="fdp-stepper-line"></li>
+  <li class="{% if stepper_number == 2 %}active{% endif %} {% if stepper_number < 2 %}pending{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 2 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      2
+      {% endif %}
+    </span>
+    <span>Validate</span>
+  </li>
+  <li class="fdp-stepper-line"></li>
+  <li class="{% if stepper_number == 3 %}active{% endif %} {% if stepper_number < 3 %}pending{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 3 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      3
+      {% endif %}
+    </span>
+    <span>Import</span>
+  </li>
+  <li class="fdp-stepper-line"></li>
+  <li class="{% if stepper_number == 4 %}active{% endif %} {% if stepper_number < 4 %}pending{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 4 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      4
+      {% endif %}
+    </span>
+    <span>Review</span>
+  </li>
+</ul>
+</nav>
+<hr>
+
+{% endif %}
+
+{% if state == 'pre-validate' %}
+Your batch has been set up. Now it needs to be validated.
+<form method="post" action="{% url 'importer_narwhal:dry-run-report' object.pk %}">
+  {% csrf_token %}
+  <input class="btn btn-primary" type="submit" value="Validate Batch">
+</form>
+{% elif state == 'post-validate-errors' %}
+<p>Your batch has been validated. And there were errors! See below for more details.</p>
+{% elif state == 'post-validate-ready' %}
+Your batch has been validated. And there were no errors! Now it's time to actually import the records.
+<form method="post" action="{% url 'importer_narwhal:records' object.pk %}">
+  {% csrf_token %}
+  <input class="btn btn-primary" type="submit" value="Import the records">
+</form>
+{% elif state == 'mid-import' %}
+<p>Importing...</p>
+{% elif state == 'complete' %}
+<p>Import finished</p>
+{% endif %}
+
+
+<div class="card mb-4">
+  <h2 class="card-header">{{ title }}</h2>
+  <div class="card-body">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item"><div class="datum datum-target_model_name"><span class="label">Model name</span>  <span class="value">{{object.target_model_name}}</span></div></li>
+      <li class="list-group-item"><div class="datum datum-submitted_file_name"><span class="label">File name</span>  <span class="value">{{object.import_sheet.file.name}}</span></div></li>
+      <li class="list-group-item"><div class="datum datum-number_of_rows"><span class="label">Rows</span>  <span class="value">{{object.number_of_rows}}</span></div></li>
+    </ul>
+  </div>
+</div>
+
+<div class="card mb-5">
+  <h2 class="card-header">Status</h2>
+  <div class="card-body">
+    <div class="datum datum-errors-encountered"><span class="label">Errors Encountered</span> <span class="value">{{object.errors_encountered}}</span></div>
+    <div class="datum datum-dry-run-started"><span class="label">Validation Started</span> <span class="value">{{object.dry_run_started}}</span></div>
+    <div class="datum datum-dry-run-completed"><span class="label">Validation Completed</span>  <span class="value">{{object.dry_run_completed}}</span></div>
+    <div class="datum datum-started"><span class="label">Import Started</span> <span class="value">{{object.started_fmt}}</span></div>
+    <div class="datum datum-completed"><span class="label">Import Completed</span>  <span class="value">{{object.completed_fmt}}</span></div>
+  </div>
+</div>
 
 <h2>Errors</h2>
 {% if error_rows_paginated %}
@@ -41,7 +130,7 @@
 <p>None</p>
 {% endif %}
 
-<h2>Imported</h2>
+<h2>Rows</h2>
 {% if imported_rows_paginated %}
 <table class="table table-striped">
 <tr>

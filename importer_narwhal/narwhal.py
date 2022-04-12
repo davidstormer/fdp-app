@@ -395,10 +395,55 @@ def do_import_from_disk(model_name: str, input_file: str):
     return run_import_batch(batch_record)
 
 
+def do_dry_run(batch_record):
+    batch_record.dry_run_started = timezone.now()
+    batch_record.save()
+    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8")
+    input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
+    # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
+    # https://github.com/jazzband/tablib/issues/502
+    resource_class = resource_model_mapping[batch_record.target_model_name]
+    resource = resource_class()
+    result = resource.import_data(input_sheet, dry_run=True)
+    batch_record.number_of_rows = len(result.rows)
+    import_report = ImportReport()
+
+    # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
+    # encounter any database level errors. We'll apply this pattern here:
+    if result.has_validation_errors():
+        batch_record.errors_encountered = True
+        batch_record.save()
+        for row_num, row in enumerate(result.rows):
+            ImportedRow.objects.create(
+                row_number=row_num,
+                import_batch=batch_record,
+                action=row.import_type,
+                errors=row.validation_error,
+                info=clean_diff_html(str(row.diff)),
+                imported_record_name=row.object_repr,
+                imported_record_pk=row.object_id,
+            )
+        for invalid_row in result.invalid_rows:
+            # Nice error reports continued...
+            ErrorRow.objects.create(
+                import_batch=batch_record,
+                row_number=invalid_row.number,
+                error_message=str(invalid_row.error_dict),
+                row_data=str(invalid_row.values)
+            )
+            import_report.validation_errors.append(
+                ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
+            )
+    batch_record.dry_run_completed = timezone.now()
+    batch_record.save()
+
+
 # The business
 def run_import_batch(batch_record):
     """Main api interface for narwhal importer
     """
+    batch_record.started = timezone.now()
+    batch_record.save()
     import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8")
     input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
     # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
@@ -425,6 +470,8 @@ def run_import_batch(batch_record):
             import_report.validation_errors.append(
                 ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
             )
+            batch_record.completed = timezone.now()
+            batch_record.save()
     else:  # We're safe to proceed with live rounds
         result = resource.import_data(input_sheet, dry_run=False)
         if result.has_errors():
@@ -444,6 +491,8 @@ def run_import_batch(batch_record):
                     import_report.database_errors.append(
                         ErrorReportRow(row_num, str(error.error), str(dict(error.row)))
                     )
+                    batch_record.completed = timezone.now()
+                    batch_record.save()
         else:
             batch_record.errors_encountered = False
             for row_num, row in enumerate(result.rows):
