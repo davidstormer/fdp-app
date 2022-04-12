@@ -7,25 +7,54 @@
 {% endblock %}
 
 {% block content %}
-<nav aria-label="Steps" class="col-md-10 offset-md-1">
-<ul class="fdp-stepper">
-  <li>
-    Set up
+<nav aria-label="Workflow">
+<ul class="fdp-stepper col-md-10 offset-md-1">
+  <li class="{% if stepper_number == 1 %}active{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 1 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      1
+      {% endif %}
+    </span>
+    <span>Set up</span>
   </li>
   <li class="fdp-stepper-line"></li>
-  <li>
-    Verify
+  <li class="{% if stepper_number == 2 %}active{% endif %} {% if stepper_number < 2 %}pending{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 2 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      2
+      {% endif %}
+    </span>
+    <span>Validate</span>
   </li>
   <li class="fdp-stepper-line"></li>
-  <li>
-    Run
+  <li class="{% if stepper_number == 3 %}active{% endif %} {% if stepper_number < 3 %}pending{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 3 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      3
+      {% endif %}
+    </span>
+    <span>Import</span>
   </li>
   <li class="fdp-stepper-line"></li>
-  <li>
-    Review
+  <li class="{% if stepper_number == 4 %}active{% endif %} {% if stepper_number < 4 %}pending{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 4 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      4
+      {% endif %}
+    </span>
+    <span>Review</span>
   </li>
 </ul>
 </nav>
+<hr>
 <form method="post" enctype="multipart/form-data">
   {% csrf_token %}
   {{ form|crispy }}

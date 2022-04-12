@@ -122,9 +122,3 @@ class TestImportHistoryCommand(TestCase):
                 4,
                 command_output.count("Enter a valid boolean value")
             )
-
-            # And there should be no completed time
-            self.assertIn(
-                'Completed: Aborted',
-                command_output
-            )

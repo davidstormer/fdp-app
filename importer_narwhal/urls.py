@@ -6,5 +6,7 @@ app_name = 'importer_narwhal'
 
 urlpatterns = [
     path('batch/<int:pk>', views.ImportBatchDetailView.as_view(), name="batch"),
-    path('batch/set-up', views.ImportBatchCreateView.as_view(), name="batch-create"),
+    path('batch/<int:pk>/dry-run-report', views.StartDryRun.as_view(), name="dry-run-report"),
+    path('batch/<int:pk>/records', views.RunImportBatch.as_view(), name="records"),
+    path('batch/new', views.ImportBatchCreateView.as_view(), name="new-batch"),
 ]
