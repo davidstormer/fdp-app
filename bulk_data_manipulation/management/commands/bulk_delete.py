@@ -130,19 +130,10 @@ class Command(CsvBulkCommand):
                 external_id = external_id.strip()
                 try:
                     if options['force']:
-                        try:
-                            delete_imported_record(model, external_id,
-                                                   delete_external_id=False if options[
-                                                       'keep_ext_ids'] else True,
-                                                   delete_multiple=True)
-                        except RecordMissing as e:
-                            self.stdout.write(self.style.WARNING(
-                                f"{e}"
-                            ))
-                        except ExternalIdMissing as e:
-                            self.stdout.write(self.style.WARNING(
-                                f"{e}"
-                            ))
+                        delete_imported_record(model, external_id,
+                                               delete_external_id=False if options[
+                                                   'keep_ext_ids'] else True,
+                                               delete_multiple=True)
                     else:
                         delete_imported_record(model, external_id,
                                                delete_external_id=False if options[

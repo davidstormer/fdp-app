@@ -101,7 +101,12 @@ class CsvBulkCommand(BaseCommand):
                         try:
                             callback_func(model, row, **kwargs)
                         except Exception as e:
-                            errors.append({'row_num': csv_reader.line_num, 'message': e})
+                            if options.get('force'):
+                                self.stdout.write(self.style.WARNING(
+                                    f"{e}"
+                                ))
+                            else:
+                                errors.append({'row_num': csv_reader.line_num, 'message': e})
 
                     if len(errors) > 0:
                         self.stdout.write(self.style.ERROR("Errors encountered! Undoing..."))
