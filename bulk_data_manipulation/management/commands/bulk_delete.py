@@ -76,21 +76,22 @@ def delete_imported_record(model, external_id, delete_external_id=False, delete_
                                 f" {bulk_import_record.pk_imported_to} ext_id: {external_id}")
 
 
-def delete_imported_record_by_pk(model, pk, external_id=None, delete_external_id=False):
+def delete_imported_record_by_pk(model, pk, external_id=None, delete_external_id=True):
     try:
         record = model.objects.get(pk=pk)
         record.delete()
     except model.DoesNotExist as e:
         raise RecordMissing(f"Can't delete! Record does not exist model: {model} {pk}")
-    if delete_external_id:
+    if delete_external_id and external_id:
         try:
             bulk_import_record = BulkImport.objects.get(
                 pk_imported_from=external_id,
+                pk_imported_to=pk,
                 table_imported_to=model.get_db_table()
             )
+            bulk_import_record.delete()
         except BulkImport.DoesNotExist as e:
-            raise ExternalIdMissing(f"Can't find external id {external_id} for model {model}")
-        bulk_import_record.delete()
+            raise RecordMissing(f"Can't delete! External id does not exist: {model} {external_id}")
 
 
 class Command(CsvBulkCommand):
@@ -116,13 +117,14 @@ class Command(CsvBulkCommand):
 
         def callback_func(model: Model, row: dict) -> None:
             """This function takes a row from the main loop in csv_bulk_action and processes it."""
-            external_id = row.get("id__external")
-            pk_to_delete = row.get("pk")
-            if pk_to_delete:
-                pk_to_delete = pk_to_delete.strip()
-                if external_id:
-                    external_id = external_id.strip()
-                    delete_imported_record_by_pk(model, pk_to_delete, external_id=external_id, delete_external_id=True)
+            external_id = row.get("id__external", '').strip()
+            pk_to_delete = row.get("pk", '').strip()
+
+            if pk_to_delete and external_id and options['keep_ext_ids']:
+                delete_imported_record_by_pk(model, pk_to_delete, external_id, delete_external_id=False)
+            elif pk_to_delete and external_id and not options['keep_ext_ids']:
+                delete_imported_record_by_pk(model, pk_to_delete, external_id, delete_external_id=True)
+            elif pk_to_delete:
                 delete_imported_record_by_pk(model, pk_to_delete)
             elif external_id:
                 external_id = external_id.strip()

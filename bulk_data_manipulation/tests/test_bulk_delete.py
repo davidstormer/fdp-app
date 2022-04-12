@@ -187,16 +187,6 @@ class BulkDelete(TestCase):
             # WHEN I run the command
             call_command('bulk_delete', 'core.models.Person', csv_fd.name, stdout=command_output)
 
-            print(command_output.getvalue())
-
-            # THEN all of the BulkImport records (external ids) should also be removed from the system.
-            with self.subTest():
-                self.assertEqual(
-                    0,
-                    BulkImport.objects.all().count(),
-                    msg="BulkImport records remain"
-                )
-
             # and there should be no errors in the output
             with self.subTest():
                 self.assertNotIn(
@@ -209,6 +199,123 @@ class BulkDelete(TestCase):
                 0,
                 Person.objects.all().count(),
                 msg="Records weren't deleted"
+            )
+
+    def test_bulk_delete_by_pk_and_external_ids(self):
+        """Test that when given both pks and external IDs the tool will not only delete the records, but also the
+        external ids (BulkImport records)"""
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            new_person_names = []
+            new_external_ids = []
+            new_pks = []
+            new_records = []
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                new_external_id = f"external-id-{uuid4()}"
+                record, _ = import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
+                new_person_names.append(new_person_name)
+                new_external_ids.append(new_external_id)
+                new_pks.append(record.pk)
+                new_records.append({
+                    'pk': record.pk,
+                    'external_id': new_external_id
+                })
+            for new_person_name in new_person_names:
+                Person.objects.get(name=new_person_name)
+            # and given there is a file listing their external ids
+            csv_writer = csv.DictWriter(csv_fd, ['pk', 'id__external'])
+            csv_writer.writeheader()
+            for record in new_records:
+                row = {}
+                row['pk'] = record['pk']
+                row['id__external'] = record['external_id']
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+
+            # WHEN I run the command
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, stdout=command_output)
+
+            # and all the records should be removed from the system.
+            with self.subTest():
+                self.assertEqual(
+                    0,
+                    Person.objects.all().count(),
+                    msg="Records weren't deleted"
+                )
+
+            # and there should be no errors in the output
+            with self.subTest():
+                self.assertNotIn(
+                    "Errors encountered",
+                    command_output.getvalue()
+                )
+
+            # THEN all of the BulkImport records (external ids) should also be removed from the system.
+            self.assertEqual(
+                0,
+                BulkImport.objects.all().count(),
+                msg="BulkImport records remain"
+            )
+
+    def test_bulk_delete_by_pk_and_external_ids_keep_external_ids(self):
+        """Test that when given both pks and external IDs but the --keep-external-ids flag the tool will not delete the
+        external ids (BulkImport records)"""
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            new_person_names = []
+            new_external_ids = []
+            new_pks = []
+            new_records = []
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                new_external_id = f"external-id-{uuid4()}"
+                record, _ = import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
+                new_person_names.append(new_person_name)
+                new_external_ids.append(new_external_id)
+                new_pks.append(record.pk)
+                new_records.append({
+                    'pk': record.pk,
+                    'external_id': new_external_id
+                })
+            for new_person_name in new_person_names:
+                Person.objects.get(name=new_person_name)
+            # and given there is a file listing their external ids
+            csv_writer = csv.DictWriter(csv_fd, ['pk', 'id__external'])
+            csv_writer.writeheader()
+            for record in new_records:
+                row = {}
+                row['pk'] = record['pk']
+                row['id__external'] = record['external_id']
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--keep-ext-ids', stdout=command_output)
+
+            # and all the records should be removed from the system.
+            with self.subTest():
+                self.assertEqual(
+                    0,
+                    Person.objects.all().count(),
+                    msg="Records weren't deleted"
+                )
+
+            # and there should be no errors in the output
+            with self.subTest():
+                self.assertNotIn(
+                    "Errors encountered",
+                    command_output.getvalue()
+                )
+
+            # THEN all of the BulkImport records (external ids) should also be removed from the system.
+            self.assertEqual(
+                10,
+                BulkImport.objects.all().count(),
+                msg="BulkImport records were deleted"
             )
 
     def test_bulk_delete_duplicate_external_ids(self):
@@ -407,8 +514,6 @@ class BulkDelete(TestCase):
             # WHEN I run the command with the "--force" flag
             call_command('bulk_delete', 'core.models.Person', csv_fd.name, '--force', stdout=command_output)
 
-            # print(command_output.getvalue())
-
             # THEN all the records should be removed from the system.
             self.assertEqual(
                 0,
@@ -588,7 +693,8 @@ class AtomicRollbacks(TransactionTestCase):
         # THEN the output should say that it's rolling back
         #
         #
-        self.assertIn("Undoing", command_output.getvalue())
+        with self.subTest(msg="Command output"):
+            self.assertIn("Undoing", command_output.getvalue())
 
         # AND the database should be in the state it was before calling the 'data_update' command
         self.assertEqual(
