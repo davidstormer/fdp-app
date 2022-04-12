@@ -201,6 +201,50 @@ class BulkDelete(TestCase):
                 msg="Records weren't deleted"
             )
 
+    def test_bulk_delete_by_pk_some_missing(self):
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            new_person_names = []
+            new_external_ids = []
+            new_pks = []
+            for i in range(10):
+                new_person_name = f"person-name-{uuid4()}"
+                new_external_id = f"external-id-{uuid4()}"
+                record, _ = import_record_with_extid(Person, {"name": new_person_name}, external_id=new_external_id)
+                new_person_names.append(new_person_name)
+                new_external_ids.append(new_external_id)
+                new_pks.append(record.pk)
+            for new_person_name in new_person_names:
+                Person.objects.get(name=new_person_name)
+            # and given there is a file listing their external ids
+            csv_writer = csv.DictWriter(csv_fd, ['pk'])
+            csv_writer.writeheader()
+            for pk in new_pks:
+                row = {}
+                row['pk'] = pk
+                csv_writer.writerow(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            Person.objects.last().delete()  # <-- BUT ONE HAS ALREADY BEEN DELETED
+
+            # WHEN I run the command
+            call_command('bulk_delete', 'core.models.Person', csv_fd.name, stdout=command_output)
+
+            # and there should be errors in the output
+            with self.subTest():
+                self.assertIn(
+                    "Errors encountered",
+                    command_output.getvalue()
+                )
+
+            # and all the records should NOT be removed from the system.
+            self.assertEqual(
+                10 - 1,  # Minus the one I deleted as part of the test
+                Person.objects.all().count(),
+                msg="Records weren't deleted"
+            )
+
     def test_bulk_delete_by_pk_and_external_ids(self):
         """Test that when given both pks and external IDs the tool will not only delete the records, but also the
         external ids (BulkImport records)"""
