@@ -1,4 +1,7 @@
 import csv
+import hashlib
+import ipaddress
+from datetime import datetime, timedelta
 from unittest import skip
 
 from django.test import TestCase
@@ -9,6 +12,7 @@ from uuid import uuid4
 
 from bulk.models import BulkImport
 from core.models import Person, Incident
+from functional_tests.common import FunctionalTestCase
 from functional_tests.common_import_export import import_record_with_extid
 from importer_narwhal.models import ImportBatch
 from sourcing.models import Content
@@ -423,4 +427,110 @@ class NarwhalExportCommand(TestCase):
                 self.assertIn(
                     'External ID #1,External ID #2',
                     file_contents
+                )
+
+
+class ExportAccessLog(FunctionalTestCase):
+    # Typical output: dict_keys(['id', 'user_agent', 'ip_address', 'username', 'http_accept', 'path_info',
+    # 'attempt_time', 'logout_time'])
+    def test_access_time(self):
+        # Given someone has logged into the system
+        admin_client = self.log_in(is_administrator=True)
+
+        # When I run an export
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file_name = temp_dir + '/output.csv'
+            call_command('narwhal_export', 'AccessLog', output_file_name)
+
+            # Then I should see a record of them logging in
+            with open(output_file_name, 'r') as file_fd:
+                csv_reader = csv.DictReader(file_fd)
+
+                row = next(csv_reader)
+                access_time = row['attempt_time']
+                self.assertAlmostEqual(
+                    datetime.now(),
+                    datetime.fromisoformat(access_time),
+                    delta=timedelta(10)
+                )
+
+    def test_ip_address_hashed(self):
+        # Given someone has logged into the system (from 127.0.0.1)
+        admin_client = self.log_in(is_administrator=True)
+
+        # When I run an export
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file_name = temp_dir + '/output.csv'
+            call_command('narwhal_export', 'AccessLog', output_file_name)
+
+            # Then I should see a hash instead of an IP address
+            with open(output_file_name, 'r') as file_fd:
+                csv_reader = csv.DictReader(file_fd)
+                row = next(csv_reader)
+                ip_address = row['ip_address'].strip()
+
+                try:
+                    ipaddress.ip_address(ip_address)
+                    self.fail(f'IP address found in ip_address column: {ip_address}')
+                except ValueError:
+                    pass
+
+                self.assertEqual(
+                    ip_address,
+                    hashlib.sha256('127.0.0.1'.encode('utf-8')).hexdigest()
+                )
+
+    def test_username_hashed(self):
+        # Given someone has logged into the system (as noreply@gmail.com)
+        admin_client = self.log_in_as('hello@example.com', is_administrator=True)
+
+        # When I run an export
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file_name = temp_dir + '/output.csv'
+            call_command('narwhal_export', 'AccessLog', output_file_name)
+
+            # Then I should see a hash instead of an IP address
+            with open(output_file_name, 'r') as file_fd:
+                csv_reader = csv.DictReader(file_fd)
+                row = next(csv_reader)
+                username = row['username'].strip()
+
+                self.assertNotIn(
+                    'hello@example.com',
+                    username,
+                )
+
+                self.assertEqual(
+                    username,
+                    hashlib.sha256('hello@example.com'.encode('utf-8')).hexdigest()
+                )
+
+    def test_is_administrator(self):
+        """Test that a new 'is_administrator' field is present in the output"""
+        # Given two ppl have logged into the system, first admin, second not admin
+        admin_client = self.log_in_as('hello-admin@example.com', is_administrator=True)
+        admin_client = self.log_in_as('hello-not-admin@example.com', is_administrator=False)
+
+        # When I run an export
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file_name = temp_dir + '/output.csv'
+            call_command('narwhal_export', 'AccessLog', output_file_name)
+
+            with open(output_file_name, 'r') as file_fd:
+                csv_reader = csv.DictReader(file_fd)
+
+                # Then I should see a first row where is_administrator=TRUE
+                row = next(csv_reader)
+                is_administrator = row['is_administrator'].strip()
+                self.assertEqual(
+                    'TRUE',
+                    is_administrator
+                )
+
+                # Then I should see a second row where is_administrator=FALSE
+                row = next(csv_reader)
+                is_administrator = row['is_administrator'].strip()
+                self.assertEqual(
+                    'FALSE',
+                    is_administrator
                 )
