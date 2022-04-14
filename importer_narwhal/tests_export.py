@@ -534,3 +534,29 @@ class ExportAccessLog(FunctionalTestCase):
                     'FALSE',
                     is_administrator
                 )
+
+
+class ExportOfficerSearchLog(FunctionalTestCase):
+    def test_officer_search(self):
+        # Given someone has done a search for an officer
+        admin_client = self.log_in(is_administrator=True)
+
+        admin_client.post('/officer/search/', params={
+            'search': 'addams',
+        })
+
+        # When I run an export
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file_name = temp_dir + '/output.csv'
+            call_command('narwhal_export', 'OfficerSearch', output_file_name)
+
+            # Then I should see a record of the search
+            with open(output_file_name, 'r') as file_fd:
+                csv_reader = csv.DictReader(file_fd)
+
+                row = next(csv_reader)
+                parsed_search_criteria = row['parsed_search_criteria']
+                self.assertIn(
+                    'addams',
+                    parsed_search_criteria
+                )
