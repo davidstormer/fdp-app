@@ -92,6 +92,37 @@ class FunctionalTestCase(AbstractTestCase):
         )
         return client
 
+    def log_in_as(self, email, is_host=True, is_administrator=False, is_superuser=False) -> object:
+        """Log into the system
+        - Create an account
+        - Set the password
+        - Set up 2FA tokens
+        - Log into the system
+
+        Returns a Django test client object
+        """
+        client = Client()
+        fdp_user = self._create_fdp_user(
+            password=self._password,
+            is_host=is_host,
+            is_administrator=is_administrator,
+            is_superuser=is_superuser,
+            email_counter=FdpUser.objects.all().count(),
+            email=email
+        )
+        two_factor = self._create_2fa_record(user=fdp_user)
+        # log in user
+        login_response = self._do_login(
+            c=client,
+            username=fdp_user.email,
+            password=self._password,
+            two_factor=two_factor,
+            login_status_code=200,
+            two_factor_status_code=200,
+            will_login_succeed=True
+        )
+        return client
+
     @staticmethod
     def get_element_text(document_html: str, cssselector: str, nth_element: int = 0) -> str:
         """Parse given html using beautiful soup, then find given element using CSS style selectors, then finally get

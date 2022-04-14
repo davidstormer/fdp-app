@@ -1,7 +1,9 @@
+import hashlib
 import json
 import os
 
 import tablib
+from axes.models import AccessLog
 from django.utils import timezone
 from import_export import resources, fields
 from import_export.fields import Field
@@ -11,6 +13,7 @@ from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 
 from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
+from fdpuser.models import FdpUser
 from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
 from importer_narwhal.widgets import BooleanWidgetValidated
 from wholesale.models import ModelHelper
@@ -377,8 +380,32 @@ def do_import(model_name: str, input_file: str):
         return import_report
 
 
+class AccessLogResource(resources.ModelResource):
+
+    is_administrator = Field()
+
+    class Meta:
+        model = AccessLog
+
+    def dehydrate_ip_address(self, access_log):
+        return hashlib.sha256(access_log.ip_address.encode('utf-8')).hexdigest()
+
+    def dehydrate_username(self, access_log):
+        return hashlib.sha256(access_log.username.encode('utf-8')).hexdigest()
+
+    def dehydrate_is_administrator(self, access_log):
+        user = FdpUser.objects.get(email=access_log.username)
+        if user.is_administrator:
+            return 'TRUE'
+        else:
+            return 'FALSE'
+
+
 def do_export(model_name, file_name):
-    resource_class = resource_model_mapping[model_name]
+    if model_name == 'AccessLog':
+        resource_class = AccessLogResource
+    else:
+        resource_class = resource_model_mapping[model_name]
     model_resource = resource_class()
     data_set = model_resource.export()
     with open(file_name, 'w') as fd:
