@@ -621,3 +621,52 @@ class ExportOfficerSearchLog(SeleniumFunctionalTestCase):
                         is_sha256(value),
                         msg=f"Value is not a sha256 hash: {value}"
                     )
+
+    def test_is_administrator(self):
+        """Test that a new 'is_administrator' field is present in the output"""
+        # Given two ppl have done an officer search, first admin, second not admin
+        user = self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + '/officer/search/')
+        self.input('search').send_keys('monastic mustachio')
+        self.submit_button('Search').click()
+        self.log_out()
+
+        user = self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/officer/search/')
+        self.input('search').send_keys('monastic mustachio')
+        self.submit_button('Search').click()
+
+        # When I run an export
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file_name = temp_dir + '/output.csv'
+            call_command('narwhal_export', 'AccessLog', output_file_name)
+
+            self.browser.get(self.live_server_url + '/officer/search/')
+
+            self.input('search').send_keys('monastic mustachio')
+            self.submit_button('Search').click()
+
+            # When I run an export
+            with tempfile.TemporaryDirectory() as temp_dir:
+                output_file_name = temp_dir + '/output.csv'
+                call_command('narwhal_export', 'OfficerSearch', output_file_name)
+
+                # Then I should see a record of the search
+                with open(output_file_name, 'r') as file_fd:
+                    csv_reader = csv.DictReader(file_fd)
+
+                    # Then I should see a first row where is_administrator=TRUE
+                    row = next(csv_reader)
+                    is_administrator = row['is_administrator']
+                    self.assertEqual(
+                        'TRUE',
+                        is_administrator
+                    )
+
+                    # Then I should see a second row where is_administrator=FALSE
+                    row = next(csv_reader)
+                    is_administrator = row['is_administrator']
+                    self.assertEqual(
+                        'FALSE',
+                        is_administrator
+                    )
