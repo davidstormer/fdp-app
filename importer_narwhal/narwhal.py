@@ -11,6 +11,7 @@ from django.utils import timezone
 import import_export
 from import_export import resources, fields
 import import_export.fields
+from import_export.fields import Field
 from import_export.resources import ModelResource
 from import_export.results import RowResult
 from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
@@ -22,8 +23,7 @@ from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
 from core.models import PersonAlias, Person, Grouping, GroupingAlias, GroupingRelationship
 from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow, MODEL_ALLOW_LIST
 from importer_narwhal.widgets import BooleanWidgetValidated
-from profiles.models import OfficerSearch, CommandSearch, OfficerView
-from profiles.models import OfficerSearch
+from profiles.models import OfficerSearch, CommandSearch, OfficerView, CommandView
 from supporting.models import GroupingRelationshipType
 from wholesale.models import ModelHelper
 
@@ -661,76 +661,59 @@ class AccessLogResource(resources.ModelResource):
             return 'FALSE'
 
 
-class OfficerSearchResource(resources.ModelResource):
+class CommonSearchViewResource(resources.ModelResource):
+    """Handles common elements of CommandSearchResource, OfficerViewResource, etc"""
 
     is_administrator = Field()
+
+    def dehydrate_fdp_user(self, record):
+        return hashlib.sha256(record.fdp_user.email.encode('utf-8')).hexdigest()
+
+    def dehydrate_ip_address(self, record):
+        return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
+
+    def dehydrate_is_administrator(self, record):
+        user = record.fdp_user
+        if user.is_administrator or user.is_superuser:
+            return 'TRUE'
+        else:
+            return 'FALSE'
+
+
+class OfficerSearchResource(CommonSearchViewResource):
 
     class Meta:
         model = OfficerSearch
 
-    def dehydrate_fdp_user(self, record):
-        return hashlib.sha256(record.fdp_user.email.encode('utf-8')).hexdigest()
-
-    def dehydrate_ip_address(self, record):
-        return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
-
     def dehydrate_parsed_search_criteria(self, record):
         return hashlib.sha256(str(record.parsed_search_criteria).encode('utf-8')).hexdigest()
 
-    def dehydrate_is_administrator(self, record):
-        user = record.fdp_user
-        if user.is_administrator or user.is_superuser:
-            return 'TRUE'
-        else:
-            return 'FALSE'
 
-
-class CommandSearchResource(resources.ModelResource):
-
-    is_administrator = Field()
+class CommandSearchResource(CommonSearchViewResource):
 
     class Meta:
         model = CommandSearch
 
-    def dehydrate_fdp_user(self, record):
-        return hashlib.sha256(record.fdp_user.email.encode('utf-8')).hexdigest()
-
-    def dehydrate_ip_address(self, record):
-        return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
-
     def dehydrate_parsed_search_criteria(self, record):
         return hashlib.sha256(str(record.parsed_search_criteria).encode('utf-8')).hexdigest()
 
-    def dehydrate_is_administrator(self, record):
-        user = record.fdp_user
-        if user.is_administrator or user.is_superuser:
-            return 'TRUE'
-        else:
-            return 'FALSE'
 
-
-class OfficerViewResource(resources.ModelResource):
-
-    is_administrator = Field()
+class OfficerViewResource(CommonSearchViewResource):
 
     class Meta:
         model = OfficerView
 
-    def dehydrate_fdp_user(self, record):
-        return hashlib.sha256(record.fdp_user.email.encode('utf-8')).hexdigest()
-
-    def dehydrate_ip_address(self, record):
-        return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
-
-    def dehydrate_is_administrator(self, record):
-        user = record.fdp_user
-        if user.is_administrator or user.is_superuser:
-            return 'TRUE'
-        else:
-            return 'FALSE'
-
     def dehydrate_person(self, record):
         return hashlib.sha256(str(record.person.pk).encode('utf-8')).hexdigest()
+
+
+class CommandViewResource(CommonSearchViewResource):
+
+    class Meta:
+        model = CommandView
+
+    def dehydrate_grouping(self, record):
+        return hashlib.sha256(str(record.grouping.pk).encode('utf-8')).hexdigest()
 
 
 usage_logs_model_mapping = {
@@ -738,6 +721,7 @@ usage_logs_model_mapping = {
     'OfficerSearch': OfficerSearchResource,
     'CommandSearch': OfficerSearchResource,
     'OfficerView': OfficerViewResource,
+    'CommandView': CommandViewResource,
 }
 
 
