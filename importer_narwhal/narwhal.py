@@ -22,6 +22,7 @@ from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
 from core.models import PersonAlias, Person, Grouping, GroupingAlias, GroupingRelationship
 from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow, MODEL_ALLOW_LIST
 from importer_narwhal.widgets import BooleanWidgetValidated
+from profiles.models import OfficerSearch
 from supporting.models import GroupingRelationshipType
 from wholesale.models import ModelHelper
 
@@ -659,9 +660,26 @@ class AccessLogResource(resources.ModelResource):
             return 'FALSE'
 
 
+class OfficerSearchResource(resources.ModelResource):
+
+    class Meta:
+        model = OfficerSearch
+
+    def dehydrate_fdp_user(self, record):
+        return hashlib.sha256(record.fdp_user.email.encode('utf-8')).hexdigest()
+
+    def dehydrate_ip_address(self, record):
+        return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
+
+    def dehydrate_parsed_search_criteria(self, record):
+        return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
+
+
 def do_export(model_name, file_name):
     if model_name == 'AccessLog':
         resource_class = AccessLogResource
+    elif model_name == 'OfficerSearch':
+        resource_class = OfficerSearchResource
     else:
         resource_class = resource_model_mapping[model_name]
     model_resource = resource_class()

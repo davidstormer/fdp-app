@@ -183,7 +183,7 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         """Shorthand for self.browser.find_element(By.CSS_SELECTOR, css_selector)"""
         return self.browser.find_element(By.CSS_SELECTOR, css_selector)
 
-    def log_in(self, is_host=True, is_administrator=False, is_superuser=False) -> object:
+    def log_in(self, is_host=True, is_administrator=False, is_superuser=False) -> FdpUser:
         """Log into the system
         - Create an account
         - Set the password
@@ -238,3 +238,9 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         for i in range(nth_result):
             group_input.send_keys(Keys.DOWN)
         group_input.send_keys(Keys.ENTER)
+
+    def input(self, name: str) -> WebElement:
+        return wait(self.browser.find_element, By.CSS_SELECTOR, f'input[name="{name}"]')
+
+    def submit_button(self, value: str) -> WebElement:
+        return wait(self.browser.find_element, By.CSS_SELECTOR, f"input[value='{value}']")
