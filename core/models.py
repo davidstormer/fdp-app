@@ -1,3 +1,4 @@
+from django.contrib.postgres.search import TrigramSimilarity
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
@@ -7,13 +8,24 @@ from django.db.models.expressions import RawSQL, Subquery, OuterRef
 from django.apps import apps
 from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, \
     AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractAtLeastSinceDateBounded, Confidentiable, \
-    AbstractFileValidator, AbstractUrlValidator, Linkable, AbstractConfiguration
+    AbstractFileValidator, AbstractUrlValidator, Linkable, AbstractConfiguration, ConfidentiableManager
 from supporting.models import State, Trait, PersonRelationshipType, Location, PersonIdentifierType, County, \
     Title, GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
     PersonIncidentTag, LeaveStatus, SituationRole, TraitType
 from fdpuser.models import FdpOrganization
 from django.urls import reverse
 from datetime import date
+
+
+class PersonManager(ConfidentiableManager):
+    def search_by_name(self, query: str):
+        stuff = (
+            self
+            .annotate(tg_similarity=TrigramSimilarity('name', query))
+            .filter(tg_similarity__gt=0.1)
+            .order_by('-tg_similarity')
+        )
+        return stuff
 
 
 class Person(Confidentiable, Descriptable):
@@ -706,6 +718,8 @@ class Person(Confidentiable, Descriptable):
         :return: Filtered queryset.
         """
         return queryset
+
+    objects = PersonManager()
 
     class Meta:
         db_table = '{d}person'.format(d=settings.DB_PREFIX)
