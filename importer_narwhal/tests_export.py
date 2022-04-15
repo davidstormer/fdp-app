@@ -1,6 +1,7 @@
 import csv
 import hashlib
 import ipaddress
+import re
 from datetime import datetime, timedelta
 from unittest import skip
 
@@ -10,11 +11,14 @@ from io import StringIO
 import tempfile
 from uuid import uuid4
 
+from selenium.webdriver.common.by import By
+
 from bulk.models import BulkImport
 from core.models import Person, Incident
-from functional_tests.common import FunctionalTestCase
+from functional_tests.common import FunctionalTestCase, SeleniumFunctionalTestCase, wait
 from functional_tests.common_import_export import import_record_with_extid
 from importer_narwhal.models import ImportBatch
+from profiles.models import OfficerSearch
 from sourcing.models import Content
 from supporting.models import TraitType, Trait
 
@@ -433,7 +437,7 @@ class NarwhalExportCommand(TestCase):
 class ExportAccessLog(FunctionalTestCase):
     # Typical output: dict_keys(['id', 'user_agent', 'ip_address', 'username', 'http_accept', 'path_info',
     # 'attempt_time', 'logout_time'])
-    def test_access_time(self):
+    def test_export_access_time(self):
         # Given someone has logged into the system
         admin_client = self.log_in(is_administrator=True)
 
@@ -536,14 +540,15 @@ class ExportAccessLog(FunctionalTestCase):
                 )
 
 
-class ExportOfficerSearchLog(FunctionalTestCase):
-    def test_officer_search(self):
+class ExportOfficerSearchLog(SeleniumFunctionalTestCase):
+    # Typical output: dict_keys(['id', 'parsed_search_criteria', 'timestamp', 'ip_address', 'num_of_results', 'fdp_user'])
+    def test_export_officer_search(self):
         # Given someone has done a search for an officer
-        admin_client = self.log_in(is_administrator=True)
+        user = self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + '/officer/search/')
 
-        admin_client.post('/officer/search/', params={
-            'search': 'addams',
-        })
+        self.input('search').send_keys('monastic mustachio')
+        self.submit_button('Search').click()
 
         # When I run an export
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -553,10 +558,66 @@ class ExportOfficerSearchLog(FunctionalTestCase):
             # Then I should see a record of the search
             with open(output_file_name, 'r') as file_fd:
                 csv_reader = csv.DictReader(file_fd)
-
                 row = next(csv_reader)
-                parsed_search_criteria = row['parsed_search_criteria']
-                self.assertIn(
-                    'addams',
-                    parsed_search_criteria
+                search_time = row['timestamp']
+                self.assertAlmostEqual(
+                    datetime.now(),
+                    datetime.fromisoformat(search_time),
+                    delta=timedelta(10)
                 )
+
+            # Subtests to make this test run faster
+
+            # Then I should see a hash instead of an ip address
+            with self.subTest(msg="ip_address hashed"):
+                with open(output_file_name, 'r') as file_fd:
+                    csv_reader = csv.DictReader(file_fd)
+                    row = next(csv_reader)
+                    ip_address = row['ip_address'].strip()
+
+                    try:
+                        ipaddress.ip_address(ip_address)
+                        self.fail(f'IP address found in ip_address column: {ip_address}')
+                    except ValueError:
+                        pass
+
+                    self.assertEqual(
+                        ip_address,
+                        hashlib.sha256('127.0.0.1'.encode('utf-8')).hexdigest()
+                    )
+
+            # Then I should see a hash instead of a username
+            with self.subTest(msg="username hashed"):
+                with open(output_file_name, 'r') as file_fd:
+                    csv_reader = csv.DictReader(file_fd)
+                    row = next(csv_reader)
+                    username = row['fdp_user'].strip()
+                    self.assertNotIn(
+                        user.email,
+                        username,
+                    )
+
+                    self.assertEqual(
+                        username,
+                        hashlib.sha256(user.email.encode('utf-8')).hexdigest(),
+                        msg="fdp_user field doesn't match expected hash"
+                    )
+
+            # Then I should see a hash instead of a parsed_search_criteria data structure
+            with self.subTest(msg="parsed_search_criteria hashed"):
+                with open(output_file_name, 'r') as file_fd:
+                    csv_reader = csv.DictReader(file_fd)
+                    row = next(csv_reader)
+                    value = row['parsed_search_criteria']
+
+                    record = OfficerSearch.objects.last()
+
+                    def is_sha256(value):
+                        if re.match("^[0-9a-fA-F]{64}$", value):
+                            return True
+                        else:
+                            return False
+                    self.assertTrue(
+                        is_sha256(value),
+                        msg=f"Value is not a sha256 hash: {value}"
+                    )
