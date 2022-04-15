@@ -654,11 +654,14 @@ class AccessLogResource(resources.ModelResource):
         return hashlib.sha256(access_log.username.encode('utf-8')).hexdigest()
 
     def dehydrate_is_administrator(self, access_log):
-        user = FdpUser.objects.get(email=access_log.username)
-        if user.is_administrator:
-            return 'TRUE'
-        else:
-            return 'FALSE'
+        try:
+            user = FdpUser.objects.get(email=access_log.username)
+            if user.is_administrator:
+                return 'TRUE'
+            else:
+                return 'FALSE'
+        except FdpUser.DoesNotExist:
+            return 'ACCOUNT MISSING'
 
 
 class CommonSearchViewResource(resources.ModelResource):
