@@ -404,6 +404,8 @@ class AccessLogResource(resources.ModelResource):
 
 class OfficerSearchResource(resources.ModelResource):
 
+    is_administrator = Field()
+
     class Meta:
         model = OfficerSearch
 
@@ -415,6 +417,13 @@ class OfficerSearchResource(resources.ModelResource):
 
     def dehydrate_parsed_search_criteria(self, record):
         return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
+
+    def dehydrate_is_administrator(self, record):
+        user = record.fdp_user
+        if user.is_administrator:
+            return 'TRUE'
+        else:
+            return 'FALSE'
 
 
 def do_export(model_name, file_name):

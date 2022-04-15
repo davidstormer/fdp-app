@@ -217,6 +217,10 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         # all done
         return user
 
+    def log_out(self):
+        self.browser.get(self.live_server_url + '/account/logout/')
+
+
     def enter_autocomplete_data(self, input_css_selector: str, results_css_selector: str, search_string: str,
                                 nth_result: int = 1) -> None:
         """Interacts with the autocomplete widget to select a database entity.
