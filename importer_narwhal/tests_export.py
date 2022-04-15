@@ -3,6 +3,7 @@ import hashlib
 import ipaddress
 import re
 from datetime import datetime, timedelta
+from time import sleep
 from unittest import skip
 
 from django.test import TestCase
@@ -15,10 +16,11 @@ from selenium.webdriver.common.by import By
 
 from bulk.models import BulkImport
 from core.models import Person, Incident
+from fdpuser.models import FdpUser
 from functional_tests.common import FunctionalTestCase, SeleniumFunctionalTestCase, wait
 from functional_tests.common_import_export import import_record_with_extid
 from importer_narwhal.models import ImportBatch
-from profiles.models import OfficerSearch
+from profiles.models import OfficerSearch, CommandSearch, OfficerView
 from sourcing.models import Content
 from supporting.models import TraitType, Trait
 
@@ -669,4 +671,68 @@ class ExportOfficerSearchLog(SeleniumFunctionalTestCase):
                     self.assertEqual(
                         'FALSE',
                         is_administrator
+                    )
+
+
+class TestOfficerProfileViewLog(FunctionalTestCase):
+    def test_export_profile_views(self):
+        # Given someone has accessed an officer profile page
+        officer = Person.objects.create(name='Foobar', is_law_enforcement=True)
+        admin_client = self.log_in(is_administrator=True)
+        user = FdpUser.objects.last()
+        response = admin_client.get(officer.get_profile_url, follow=True)
+        self.assertContains(
+            response,
+            'Foobar'
+        )
+
+        # When I run an export
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_file_name = temp_dir + '/output-foobar.csv'
+            call_command('narwhal_export', 'OfficerView', output_file_name)
+
+            # Then I should see a record of them accessing the page
+            with open(output_file_name, 'r') as file_fd:
+                csv_reader = csv.DictReader(file_fd)
+                row = next(csv_reader)
+                search_time = row['timestamp']
+                self.assertAlmostEqual(
+                    datetime.now(),
+                    datetime.fromisoformat(search_time),
+                    delta=timedelta(10)
+                )
+
+            # Then I should see a hash instead of an ip address
+            with self.subTest(msg="ip_address hashed"):
+                with open(output_file_name, 'r') as file_fd:
+                    csv_reader = csv.DictReader(file_fd)
+                    row = next(csv_reader)
+                    ip_address = row['ip_address'].strip()
+
+                    try:
+                        ipaddress.ip_address(ip_address)
+                        self.fail(f'IP address found in ip_address column: {ip_address}')
+                    except ValueError:
+                        pass
+
+                    self.assertEqual(
+                        ip_address,
+                        hashlib.sha256('127.0.0.1'.encode('utf-8')).hexdigest()
+                    )
+
+            # Then I should see a hash instead of a username
+            with self.subTest(msg="username hashed"):
+                with open(output_file_name, 'r') as file_fd:
+                    csv_reader = csv.DictReader(file_fd)
+                    row = next(csv_reader)
+                    username = row['fdp_user'].strip()
+                    self.assertNotIn(
+                        user.email,
+                        username,
+                    )
+
+                    self.assertEqual(
+                        username,
+                        hashlib.sha256(user.email.encode('utf-8')).hexdigest(),
+                        msg="fdp_user field doesn't match expected hash"
                     )

@@ -22,6 +22,7 @@ from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
 from core.models import PersonAlias, Person, Grouping, GroupingAlias, GroupingRelationship
 from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow, MODEL_ALLOW_LIST
 from importer_narwhal.widgets import BooleanWidgetValidated
+from profiles.models import OfficerSearch, CommandSearch, OfficerView
 from profiles.models import OfficerSearch
 from supporting.models import GroupingRelationshipType
 from wholesale.models import ModelHelper
@@ -674,23 +675,78 @@ class OfficerSearchResource(resources.ModelResource):
         return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
 
     def dehydrate_parsed_search_criteria(self, record):
-        return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
+        return hashlib.sha256(str(record.parsed_search_criteria).encode('utf-8')).hexdigest()
 
     def dehydrate_is_administrator(self, record):
         user = record.fdp_user
-        if user.is_administrator:
+        if user.is_administrator or user.is_superuser:
             return 'TRUE'
         else:
             return 'FALSE'
 
 
+class CommandSearchResource(resources.ModelResource):
+
+    is_administrator = Field()
+
+    class Meta:
+        model = CommandSearch
+
+    def dehydrate_fdp_user(self, record):
+        return hashlib.sha256(record.fdp_user.email.encode('utf-8')).hexdigest()
+
+    def dehydrate_ip_address(self, record):
+        return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
+
+    def dehydrate_parsed_search_criteria(self, record):
+        return hashlib.sha256(str(record.parsed_search_criteria).encode('utf-8')).hexdigest()
+
+    def dehydrate_is_administrator(self, record):
+        user = record.fdp_user
+        if user.is_administrator or user.is_superuser:
+            return 'TRUE'
+        else:
+            return 'FALSE'
+
+
+class OfficerViewResource(resources.ModelResource):
+
+    is_administrator = Field()
+
+    class Meta:
+        model = OfficerView
+
+    def dehydrate_fdp_user(self, record):
+        return hashlib.sha256(record.fdp_user.email.encode('utf-8')).hexdigest()
+
+    def dehydrate_ip_address(self, record):
+        return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
+
+    def dehydrate_is_administrator(self, record):
+        user = record.fdp_user
+        if user.is_administrator or user.is_superuser:
+            return 'TRUE'
+        else:
+            return 'FALSE'
+
+    def dehydrate_person(self, record):
+        return hashlib.sha256(str(record.person.pk).encode('utf-8')).hexdigest()
+
+
+usage_logs_model_mapping = {
+    'AccessLog': AccessLogResource,
+    'OfficerSearch': OfficerSearchResource,
+    'CommandSearch': OfficerSearchResource,
+    'OfficerView': OfficerViewResource,
+}
+
+
 def do_export(model_name, file_name):
-    if model_name == 'AccessLog':
-        resource_class = AccessLogResource
-    elif model_name == 'OfficerSearch':
-        resource_class = OfficerSearchResource
-    else:
+    try:
         resource_class = resource_model_mapping[model_name]
+    except KeyError:
+        resource_class = usage_logs_model_mapping[model_name]
+
     model_resource = resource_class()
     data_set = model_resource.export()
     with open(file_name, 'w') as fd:

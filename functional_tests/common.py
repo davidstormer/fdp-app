@@ -248,3 +248,6 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
 
     def submit_button(self, value: str) -> WebElement:
         return wait(self.browser.find_element, By.CSS_SELECTOR, f"input[value='{value}']")
+
+    def el(self, css_selector) -> WebElement:
+        return wait(self.browser.find_element, By.CSS_SELECTOR, css_selector)
