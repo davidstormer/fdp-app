@@ -19,13 +19,13 @@ from datetime import date
 
 class PersonManager(ConfidentiableManager):
     def search_by_name(self, query: str):
-        stuff = (
+        results = (
             self
             .annotate(tg_similarity=TrigramSimilarity('name', query))
             .filter(tg_similarity__gt=0.1)
             .order_by('-tg_similarity')
         )
-        return stuff
+        return results
 
 
 class Person(Confidentiable, Descriptable):
