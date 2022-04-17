@@ -13,7 +13,7 @@ class PersonSearchByName(TestCase):
         with self.subTest(msg="admin can see"):
             # When I call a query as an admin
             admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-            admin_results = Person.objects.search_by_name('Mohammed', admin_user)
+            admin_results = Person.objects.search_by_name('Mohammed Alabbadi', admin_user)
 
             # Then I should see the matching record in the results
             self.assertEqual(
@@ -23,7 +23,7 @@ class PersonSearchByName(TestCase):
 
         # When I call the same query as a non-admin user
         admin_user = FdpUser.objects.create(email='usertwo@localhost',is_administrator=False)
-        non_admin_results = Person.objects.search_by_name('Mohammed', admin_user)
+        non_admin_results = Person.objects.search_by_name('Mohammed Alabbadi', admin_user)
 
         # Then I should NOT see the matching record in the results
         self.assertEqual(
@@ -38,7 +38,7 @@ class PersonSearchByName(TestCase):
         with self.subTest(msg="admin can see"):
             host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True,
                                                      is_host=True)
-            admin_results = Person.objects.search_by_name('Mohammed', host_admin_user)
+            admin_results = Person.objects.search_by_name("Mohammed Alabbadi", host_admin_user)
 
             self.assertEqual(
                 "Mohammed Alabbadi",
@@ -47,7 +47,7 @@ class PersonSearchByName(TestCase):
 
         guest_admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False,
                                                   is_host=False)
-        guest_admin_results = Person.objects.search_by_name('Mohammed', guest_admin_user)
+        guest_admin_results = Person.objects.search_by_name("Mohammed Alabbadi", guest_admin_user)
 
         # Then I should NOT see the matching record in the results
         self.assertEqual(
@@ -60,7 +60,7 @@ class PersonSearchByName(TestCase):
 
         with self.subTest(msg="admin can see"):
             host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-            admin_results = Person.objects.search_by_name('Mohammed', host_admin_user)
+            admin_results = Person.objects.search_by_name("Mohammed Alabbadi", host_admin_user)
 
             self.assertEqual(
                 0,
@@ -68,14 +68,14 @@ class PersonSearchByName(TestCase):
             )
 
         non_admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False)
-        non_admin_results = Person.objects.search_by_name('Mohammed', non_admin_user)
+        non_admin_results = Person.objects.search_by_name("Mohammed Alabbadi", non_admin_user)
 
         self.assertEqual(
             0,
             len(non_admin_results)
         )
 
-    def test_person_search_by_name_descrimination(self):
+    def test_person_search_by_name_discrimination(self):
         # Given there are some Person records in the system marked as law enforcement
         Person.objects.create(name="Chelsea Webster", is_law_enforcement=True)
         Person.objects.create(name="Maria E Garcia", is_law_enforcement=True)
@@ -134,6 +134,9 @@ class PersonSearchByName(TestCase):
     def test_check_variation_matches(self):
         things_to_check = [
             # {'source': "", 'query': "", 'scenario': ""},
+            {'source': "Nicholas Agnoletti", 'query': "Nicholas", 'scenario': "query contains only first name"},
+            {'source': "Nicholas Agnoletti", 'query': "Agnoletti", 'scenario': "query contains only last name"},
+            {'source': "Nicholas Agnoletti", 'query': "Agnoletti Nicholas", 'scenario': "query reverses name order"},
             {'source': 'Jill Braaten', 'query': "Jill Braten", 'scenario': "spelling: missing repeated vowel in query"},
             {'source': "Joe O'Connell", 'query': "Joe OConnell", 'scenario': "punctuation: apostrophe missing in query"},
             {'source': "Joe O'Connell", 'query': "Joe OConner", 'scenario': "punctuation: apostrophe missing and misspelled in query"},
