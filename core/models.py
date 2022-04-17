@@ -12,15 +12,17 @@ from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValid
 from supporting.models import State, Trait, PersonRelationshipType, Location, PersonIdentifierType, County, \
     Title, GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
     PersonIncidentTag, LeaveStatus, SituationRole, TraitType
-from fdpuser.models import FdpOrganization
+from fdpuser.models import FdpOrganization, FdpUser
 from django.urls import reverse
 from datetime import date
 
 
 class PersonManager(ConfidentiableManager):
-    def search_by_name(self, query: str):
+    def search_by_name(self, query: str, user: FdpUser, is_law_enforcement=True):
         results = (
-            self
+            self.all()
+            .filter(is_law_enforcement=is_law_enforcement)
+            .filter_for_confidential_by_user(user=user)
             .annotate(tg_similarity=TrigramSimilarity('name', query))
             .filter(tg_similarity__gt=0.1)
             .order_by('-tg_similarity')
