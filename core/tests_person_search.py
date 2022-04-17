@@ -1,9 +1,80 @@
 from django.db import transaction
 from django.test import TestCase
 from core.models import Person
+from fdpuser.models import FdpUser
 
 
 class PersonSearchByName(TestCase):
+    def test_access_controls_for_admin_only(self):
+        # Given there is a record marked "admin only" in the system
+        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True,
+                              for_admin_only=True)
+
+        with self.subTest(msg="admin can see"):
+            # When I call a query as an admin
+            admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+            admin_results = Person.objects.search_by_name('Mohammed', admin_user)
+
+            # Then I should see the matching record in the results
+            self.assertEqual(
+                "Mohammed Alabbadi",
+                admin_results[0].name
+            )
+
+        # When I call the same query as a non-admin user
+        admin_user = FdpUser.objects.create(email='usertwo@localhost',is_administrator=False)
+        non_admin_results = Person.objects.search_by_name('Mohammed', admin_user)
+
+        # Then I should NOT see the matching record in the results
+        self.assertEqual(
+            0,
+            len(non_admin_results)
+        )
+
+    def test_access_controls_for_host_only(self):
+        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True,
+                              for_host_only=True)
+
+        with self.subTest(msg="admin can see"):
+            host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True,
+                                                     is_host=True)
+            admin_results = Person.objects.search_by_name('Mohammed', host_admin_user)
+
+            self.assertEqual(
+                "Mohammed Alabbadi",
+                admin_results[0].name
+            )
+
+        guest_admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False,
+                                                  is_host=False)
+        guest_admin_results = Person.objects.search_by_name('Mohammed', guest_admin_user)
+
+        # Then I should NOT see the matching record in the results
+        self.assertEqual(
+            0,
+            len(guest_admin_results)
+        )
+
+    def test_access_is_law_enforcement(self):
+        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=False)
+
+        with self.subTest(msg="admin can see"):
+            host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+            admin_results = Person.objects.search_by_name('Mohammed', host_admin_user)
+
+            self.assertEqual(
+                0,
+                len(admin_results)
+            )
+
+        non_admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False)
+        non_admin_results = Person.objects.search_by_name('Mohammed', non_admin_user)
+
+        self.assertEqual(
+            0,
+            len(non_admin_results)
+        )
+
     def test_person_search_by_name_descrimination(self):
         # Given there are some Person records in the system marked as law enforcement
         Person.objects.create(name="Chelsea Webster", is_law_enforcement=True)
@@ -12,7 +83,8 @@ class PersonSearchByName(TestCase):
         Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True)
 
         # When I call a query for one of their first names
-        results = Person.objects.search_by_name('Mohammed')
+        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+        results = Person.objects.search_by_name('Mohammed', user=admin_user)
 
         # Then I should only get back the one record containing that name, and not any of the other records
         self.assertEqual(
@@ -41,7 +113,8 @@ class PersonSearchByName(TestCase):
             Person.objects.create(name=officer_name, is_law_enforcement=True)
 
         # When I call a query for "Roger Hobbes"
-        results = Person.objects.search_by_name("Roger Hobbes")
+        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+        results = Person.objects.search_by_name("Roger Hobbes", user=admin_user)
 
         # Then I should get back both "Roger Hobbes" and "Roger E. Hobbes" as the first two results
         self.assertEqual(
@@ -75,9 +148,10 @@ class PersonSearchByName(TestCase):
             with self.subTest(msg=str(thing)):
                 with transaction.atomic():  # Maintain test isolation
                     # Given there's an officer with the name...
-                    Person.objects.create(name=thing['source'])
+                    Person.objects.create(name=thing['source'], is_law_enforcement=True)
                     # When I call search_by_name for...
-                    results = Person.objects.search_by_name(thing['query'])
+                    admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+                    results = Person.objects.search_by_name(thing['query'], user=admin_user)
                     # Then I should see the record returned
                     self.assertEqual(
                         1,

@@ -313,6 +313,8 @@ class OfficerSearchResultsListView(SecuredSyncListView):
         self.__get_officer_results()
         return self.__result_list
 
+class RoundupOfficerSearchView():
+    pass
 
 class OfficerDetailView(SecuredSyncDetailView):
     """ Page that displays the profile for an officer.
