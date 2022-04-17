@@ -1,0 +1,52 @@
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="q" value="{{ query }}" size="100">
+    <input type="submit" value="Search">
+</form>
+
+{% if page_obj %}
+    <ul class="results">
+        {% for officer in page_obj %}
+        <li class="row-{{ forloop.counter }}">
+        <a href="{{ officer.get_profile_url }}" class="profile-link">{{ officer }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="pagination-post">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <input type="submit" value="&laquo; first">
+                </form>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <input type="hidden" name="page" value="{{ page_obj.previous_page_number }}">
+                    <input type="submit" value="previous">
+                </form>
+            {% endif %}
+
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <input type="hidden" name="page" value="{{ page_obj.next_page_number }}">
+                    <input type="submit" value="next">
+                </form>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <input type="hidden" name="page" value="{{ page_obj.paginator.num_pages }}">
+                    <input type="submit" value="last &raquo;">
+                </form>
+            {% endif %}
+        </span>
+    </div>
+{% endif %}
