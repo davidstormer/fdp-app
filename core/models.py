@@ -1,10 +1,11 @@
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.db.models.functions import Coalesce
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.db.models import Q, Prefetch, Exists
-from django.db.models.expressions import RawSQL, Subquery, OuterRef
+from django.db.models.expressions import RawSQL, Subquery, OuterRef, F
 from django.apps import apps
 from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, \
     AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractAtLeastSinceDateBounded, Confidentiable, \
@@ -18,12 +19,49 @@ from datetime import date
 
 
 class PersonManager(ConfidentiableManager):
+    def search_all_fields(self, query: str, user: FdpUser, is_law_enforcement=True):
+        """Searches multiple fields
+        name
+        identifiers
+        """
+        results = (
+            self.all()
+            .filter(is_law_enforcement=is_law_enforcement)
+            .filter_for_confidential_by_user(user=user)
+            .annotate(
+                search_tgs_name=TrigramSimilarity('name', query),
+                search_tgs_identifiers=TrigramSimilarity('person_identifier__identifier', query),
+                search_tgs_aliases=TrigramSimilarity('person_alias__name', query)
+            )
+            .annotate(
+                search_rank=
+                Coalesce(F('search_tgs_name'), 0)
+                + Coalesce(F('search_tgs_identifiers'), 0)
+                + Coalesce(F('search_tgs_aliases'), 0)
+            )
+            .filter(search_rank__gt=0.1)
+            .order_by('-search_rank')
+            .distinct()  # https://docs.djangoproject.com/en/3.2/topics/db/queries/#spanning-multi-valued-relationships
+        )
+        return results
+
     def search_by_name(self, query: str, user: FdpUser, is_law_enforcement=True):
         results = (
             self.all()
             .filter(is_law_enforcement=is_law_enforcement)
             .filter_for_confidential_by_user(user=user)
             .annotate(tg_similarity=TrigramSimilarity('name', query))
+            .filter(tg_similarity__gt=0.1)
+            .order_by('-tg_similarity')
+        )
+        return results
+
+    def search_by_identifiers(self, query: str, user: FdpUser, is_law_enforcement=True):
+        results = (
+            self.all()
+            .filter(is_law_enforcement=is_law_enforcement)
+            .filter_for_confidential_by_user(user=user)
+            .annotate(tg_similarity=TrigramSimilarity('person_identifier__identifier', query))
             .filter(tg_similarity__gt=0.1)
             .order_by('-tg_similarity')
         )
