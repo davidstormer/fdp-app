@@ -1,10 +1,51 @@
+from unittest import skip
+
 from django.db import transaction
 from django.test import TestCase
-from core.models import Person
+from core.models import Person, PersonAlias
 from fdpuser.models import FdpUser
 
 
+class PersonSearchAllFields(TestCase):
+    def test_search_all_fields_num_queries(self):
+        """Ensure that the method doesn't call more queries than intended
+        """
+        for _ in range(100):
+            person_record = Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True)
+            PersonAlias.objects.create(name=f'Alias 1 for {person_record}', person=person_record)
+            PersonAlias.objects.create(name=f'Alias 2 for {person_record}', person=person_record)
+
+        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+        with self.assertNumQueries(4):
+            results = Person.objects.search_all_fields('Mohammed', user=admin_user)
+            for result in results:
+                list(result.person_aliases.all())
+                list(result.person_titles.all())
+                list(result.person_identifiers.all())
+
+
 class PersonSearchByName(TestCase):
+    def test_person_search_by_name_discrimination(self):
+        # Given there are some Person records in the system marked as law enforcement
+        Person.objects.create(name="Chelsea Webster", is_law_enforcement=True)
+        Person.objects.create(name="Maria E. Garcia", is_law_enforcement=True)
+        Person.objects.create(name="Maria Celeste Ulberg Hansen", is_law_enforcement=True)
+        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True)
+
+        # When I call a query for one of their first names
+        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+        results = Person.objects.search_by_name('Mohammed', user=admin_user)
+
+        # Then I should only get back the one record containing that name, and not any of the other records
+        self.assertEqual(
+            1,
+            len(results)
+        )
+        self.assertEqual(
+            "Mohammed Alabbadi",
+            results[0].name
+        )
+
     def test_access_controls_for_admin_only(self):
         # Given there is a record marked "admin only" in the system
         Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True,
@@ -73,27 +114,6 @@ class PersonSearchByName(TestCase):
         self.assertEqual(
             0,
             len(non_admin_results)
-        )
-
-    def test_person_search_by_name_discrimination(self):
-        # Given there are some Person records in the system marked as law enforcement
-        Person.objects.create(name="Chelsea Webster", is_law_enforcement=True)
-        Person.objects.create(name="Maria E Garcia", is_law_enforcement=True)
-        Person.objects.create(name="Maria Celeste Ulberg Hansen", is_law_enforcement=True)
-        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True)
-
-        # When I call a query for one of their first names
-        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-        results = Person.objects.search_by_name('Mohammed', user=admin_user)
-
-        # Then I should only get back the one record containing that name, and not any of the other records
-        self.assertEqual(
-            1,
-            len(results)
-        )
-        self.assertEqual(
-            "Mohammed Alabbadi",
-            results[0].name
         )
 
     def test_middle_initials_ranking(self):

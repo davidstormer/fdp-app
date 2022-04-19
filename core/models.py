@@ -43,7 +43,16 @@ class PersonManager(ConfidentiableManager):
             .order_by('-search_rank')
             .distinct()  # https://docs.djangoproject.com/en/3.2/topics/db/queries/#spanning-multi-valued-relationships
         )
-        return results
+
+        # Do some prefetching of one-to-many relationships,
+        # because they're almost always used in search results listings.
+        results_prefetched = results.prefetch_related(
+            'person_aliases',
+            'person_titles',
+            'person_identifiers',
+        )
+
+        return results_prefetched
 
     def search_by_name(self, query: str, user: FdpUser, is_law_enforcement=True):
         results = (
