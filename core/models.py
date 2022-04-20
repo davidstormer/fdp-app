@@ -24,25 +24,32 @@ class PersonManager(ConfidentiableManager):
         name
         identifiers
         """
-        results = (
-            self.all()
-            .filter(is_law_enforcement=is_law_enforcement)
-            .filter_for_confidential_by_user(user=user)
-            .annotate(
-                search_tgs_name=TrigramSimilarity('name', query),
-                search_tgs_identifiers=TrigramSimilarity('person_identifier__identifier', query),
-                search_tgs_aliases=TrigramSimilarity('person_alias__name', query)
+        if query == '':
+            results = (
+                self.all()
+                .filter(is_law_enforcement=is_law_enforcement)
+                .filter_for_confidential_by_user(user=user)
             )
-            .annotate(
-                search_rank=
-                Coalesce(F('search_tgs_name'), 0)
-                + Coalesce(F('search_tgs_identifiers'), 0)
-                + Coalesce(F('search_tgs_aliases'), 0)
+        else:
+            results = (
+                self.all()
+                .filter(is_law_enforcement=is_law_enforcement)
+                .filter_for_confidential_by_user(user=user)
+                .annotate(
+                    search_tgs_name=TrigramSimilarity('name', query),
+                    search_tgs_identifiers=TrigramSimilarity('person_identifier__identifier', query),
+                    search_tgs_aliases=TrigramSimilarity('person_alias__name', query)
+                )
+                .annotate(
+                    search_rank=
+                    Coalesce(F('search_tgs_name'), 0)
+                    + Coalesce(F('search_tgs_identifiers'), 0)
+                    + Coalesce(F('search_tgs_aliases'), 0)
+                )
+                .filter(search_rank__gt=0.1)
+                .order_by('-search_rank')
+                .distinct()  # https://docs.djangoproject.com/en/3.2/topics/db/queries/#spanning-multi-valued-relationships
             )
-            .filter(search_rank__gt=0.1)
-            .order_by('-search_rank')
-            .distinct()  # https://docs.djangoproject.com/en/3.2/topics/db/queries/#spanning-multi-valued-relationships
-        )
 
         # Do some prefetching of one-to-many relationships,
         # because they're almost always used in search results listings.
