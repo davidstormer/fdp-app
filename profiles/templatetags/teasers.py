@@ -17,6 +17,7 @@ def teaser_person(person: Person) -> str:
     groups = [person_grouping.grouping.name for person_grouping in person.person_groupings.all()]
 
     context = Context({
+        'profile_url': person.get_profile_url,
         'name': person.name,
         'aliases': aliases,
         'identifiers': identifiers,
@@ -24,10 +25,23 @@ def teaser_person(person: Person) -> str:
     })
 
     # TEMPLATING
-    template_ = Template("""{{name}} 
+    template_ = Template("""<a href="{{profile_url}}">{{name}}</a> 
     {% if aliases %}({{ aliases|join:', ' }}){% endif %}
     {% if identifiers %} &ndash; {{ identifiers|join:', ' }}{% endif %}
     {% if groups %} &ndash; {{ groups|join:', ' }}{% endif %}
     """)
 
     return template_.render(context)
+
+
+@register.filter
+def person_search_ranking_debug(person: Person) -> str:
+    template_ = Template("""
+    <p>
+    name: {{ person.search_tgs_name }}
+    identifiers: {{ search_tgs_identifiers }}
+    aliases: {{ search_tgs_aliases }}
+    </p>
+    """)
+
+    return template_.render(Context({'person': person}))
