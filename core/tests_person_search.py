@@ -2,8 +2,32 @@ from unittest import skip
 
 from django.db import transaction
 from django.test import TestCase
-from core.models import Person, PersonAlias
+from core.models import Person, PersonAlias, PersonIdentifier
 from fdpuser.models import FdpUser
+from supporting.models import PersonIdentifierType
+
+
+class FullTextIndexing(TestCase):
+    def test_repopulate_util_full_text_name(self):
+        # Given there's a Person record
+        person_record = Person.objects.create(name="echinodermal")
+        # Then the full text field should reflect the changes
+        self.assertIn(
+            'echinodermal',
+            Person.objects.last().util_full_text
+        )
+
+# def test_repopulate_util_full_text_name(self):
+#     # Given there's a Person record
+#     person_record = Person.objects.create(name="Test Person")
+#     # When I update the identifiers for the person
+#     PersonIdentifier.objects.create(identifier='echinodermal', person=person_record,
+#                                     person_identifier_type=PersonIdentifierType.objects.create(name='Test Type'))
+#     # Then the full text field should reflect the changes
+#     self.assertIn(
+#         'echinodermal',
+#         Person.objects.last().util_full_text
+#     )
 
 
 class PersonSearchAllFields(TestCase):

@@ -165,9 +165,26 @@ class Person(Confidentiable, Descriptable):
         verbose_name=_('organization access')
     )
 
+    util_full_text = models.TextField(
+        help_text='System generated copy field for concatenating normalized contents '
+                  'of various fields. Intended only for searching against; never visible '
+                  'to end users.',
+        blank=True,
+        null=True
+    )
+
     #: Fields to display in the model form.
     form_fields = \
         ['name', 'birth_date_range_start', 'birth_date_range_end', 'traits'] + Confidentiable.confidentiable_form_fields
+
+    def reindex_search_fields(self, commit=False):
+        """Normalize and concatenate various fields and writes them into the util_full_text field.
+        Does not actually do anything directly with database indexes.
+        """
+
+        self.util_full_text = "hello world"
+        if commit:
+            self.save()
 
     @property
     def get_edit_url(self):
