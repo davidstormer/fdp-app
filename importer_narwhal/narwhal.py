@@ -722,7 +722,7 @@ class CommandViewResource(CommonSearchViewResource):
 usage_logs_model_mapping = {
     'AccessLog': AccessLogResource,
     'OfficerSearch': OfficerSearchResource,
-    'CommandSearch': OfficerSearchResource,
+    'CommandSearch': CommandSearchResource,
     'OfficerView': OfficerViewResource,
     'CommandView': CommandViewResource,
 }
