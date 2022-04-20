@@ -38,9 +38,10 @@ def teaser_person(person: Person) -> str:
 def person_search_ranking_debug(person: Person) -> str:
     template_ = Template("""
     <p>
+    rank: {{ person.search_rank }}
     name: {{ person.search_tgs_name }}
-    identifiers: {{ search_tgs_identifiers }}
-    aliases: {{ search_tgs_aliases }}
+    identifiers: {{ person.search_tgs_identifiers }}
+    aliases: {{ person.search_tgs_aliases }}
     </p>
     """)
 
