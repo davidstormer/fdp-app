@@ -316,7 +316,7 @@ class OfficerSearchResultsListView(SecuredSyncListView):
         return self.__result_list
 
 
-class OfficerSearchRoundupView(TemplateView):
+class OfficerSearchRoundupView(SecuredSyncTemplateView):
     template_name = "officer_search_roundup.html"
 
     # Handle searches via POST so that the query string is kept out of the URL (security)

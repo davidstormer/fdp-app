@@ -8,6 +8,7 @@
     <ul class="results">
         {% for officer in page_obj %}
         <li class="row-{{ forloop.counter }}">
+            {{ officer|teaser_person }}
         <a href="{{ officer.get_profile_url }}" class="profile-link">{{ officer }}</a>
         </li>
         {% endfor %}
