@@ -1,3 +1,4 @@
+{% load teasers %}
 <form method="post">
     {% csrf_token %}
     <input type="text" name="q" value="{{ query }}" size="100">
@@ -9,11 +10,17 @@
         {% for officer in page_obj %}
         <li class="row-{{ forloop.counter }}">
             {{ officer|teaser_person }}
+            <!--
         <a href="{{ officer.get_profile_url }}" class="profile-link">{{ officer }}</a>
+            {% for alias in officer.person_aliases.all %}
+            <p>{{ alias.name }}</p>
+            {% endfor %}
         </li>
+        -->
         {% endfor %}
     </ul>
 
+    <nav aria-label="pagination">
     <div class="pagination-post">
         <span class="step-links">
             {% if page_obj.has_previous %}
@@ -50,4 +57,5 @@
             {% endif %}
         </span>
     </div>
+    </nav>
 {% endif %}
