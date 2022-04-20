@@ -46,11 +46,28 @@ class PersonManager(ConfidentiableManager):
 
         # Do some prefetching of one-to-many relationships,
         # because they're almost always used in search results listings.
-        results_prefetched = results.prefetch_related(
-            'person_aliases',
-            'person_titles',
-            'person_identifiers',
-        )
+
+        def divided_years(model):
+            return [
+                RawSQL(
+                    model.order_by_sql_year.format(t=model.get_db_table(), o=''),
+                    params=[]
+                ).desc(),
+                RawSQL(
+                    model.order_by_sql_month.format(t=model.get_db_table(), o=''),
+                    params=[]
+                ).desc(),
+                RawSQL(
+                    model.order_by_sql_day.format(t=model.get_db_table(), o=''),
+                    params=[]
+                ).desc()
+            ]
+
+        results_prefetched = results \
+            .prefetch_related('person_aliases').order_by('name') \
+            .prefetch_related('person_titles') \
+            .prefetch_related('person_identifiers').order_by(*divided_years(PersonIdentifier)) \
+            .prefetch_related('person_groupings').order_by('name')
 
         return results_prefetched
 

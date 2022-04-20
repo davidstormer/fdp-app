@@ -322,15 +322,16 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
     # Handle searches via POST so that the query string is kept out of the URL (security)
     def post(self, request, *args, **kwargs):
         query_string = request.POST.get('q')
-        content_list = Person.objects.search_all_fields(query_string, request.user)
-        paginator = Paginator(content_list, 50)
+        results = Person.objects.search_all_fields(query_string, request.user)
+
+        paginator = Paginator(results, 50)
 
         page_number = request.POST.get('page')
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
             'query': query_string,
             'page_obj': page_obj,
-            'count': content_list.count()
+            'count': results.count(),
         })
 
 
