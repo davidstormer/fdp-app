@@ -9,7 +9,7 @@ from supporting.models import PersonIdentifierType
 
 class FullTextIndexing(TestCase):
     def test_repopulate_util_full_text_name(self):
-        # Given there's a Person record
+        # When there's a Person record
         person_record = Person.objects.create(name="echinodermal")
         # Then the full text field should reflect the changes
         self.assertIn(
@@ -17,21 +17,132 @@ class FullTextIndexing(TestCase):
             Person.objects.last().util_full_text
         )
 
-# def test_repopulate_util_full_text_name(self):
-#     # Given there's a Person record
-#     person_record = Person.objects.create(name="Test Person")
-#     # When I update the identifiers for the person
-#     PersonIdentifier.objects.create(identifier='echinodermal', person=person_record,
-#                                     person_identifier_type=PersonIdentifierType.objects.create(name='Test Type'))
-#     # Then the full text field should reflect the changes
-#     self.assertIn(
-#         'echinodermal',
-#         Person.objects.last().util_full_text
-#     )
+    def test_repopulate_util_full_text_name_diacritic_folding(self):
+        # When there's a Person record with a diacritic mark in the name
+        person_record = Person.objects.create(name="café")
+        # Then the full text field should have a normalized form with no diacritic mark
+        self.assertIn(
+            'cafe',
+            Person.objects.last().util_full_text
+        )
+
+    def test_repopulate_util_full_text_aliases(self):
+        # Given there's a Person record
+        person_record = Person.objects.create(name="Test Person")
+        # When I update their aliases
+        PersonAlias.objects.create(name='mastiff', person=person_record)
+        PersonAlias.objects.create(name='yielding', person=person_record)
+        PersonAlias.objects.create(name='henchmen', person=person_record)
+        # Then the full text field should reflect the changes
+        self.assertIn(
+            'mastiff',
+            Person.objects.last().util_full_text
+        )
+        self.assertIn(
+            'yielding',
+            Person.objects.last().util_full_text
+        )
+        self.assertIn(
+            'henchmen',
+            Person.objects.last().util_full_text
+        )
+
+    def test_repopulate_util_full_text_aliases_duplicate_names(self):
+        """To prevent skewing search results"""
+        # Given there's a Person record
+        person_record = Person.objects.create(name="Test Person")
+        # When I update their aliases with duplicate names (e.g. first name)
+        PersonAlias.objects.create(name='errant mastiff', person=person_record)
+        PersonAlias.objects.create(name='errant yielding', person=person_record)
+        PersonAlias.objects.create(name='errant henchmen', person=person_record)
+        # Then the full text field should only have ONE instance of "errant" in it
+        self.assertEqual(
+            1,
+            Person.objects.last().util_full_text.count('errant')
+        )
+
+    def test_repopulate_util_full_text_identifiers(self):
+        # Given there's a Person record
+        person_record = Person.objects.create(name="Test Person")
+        # When I update the identifiers for the person
+        id_type = PersonIdentifierType.objects.create(name='Test Type')
+        PersonIdentifier.objects.create(
+            identifier='emphatic', person=person_record,
+            person_identifier_type=id_type)
+        PersonIdentifier.objects.create(
+            identifier='backslashes', person=person_record,
+            person_identifier_type=id_type)
+        PersonIdentifier.objects.create(
+            identifier='profanely', person=person_record,
+            person_identifier_type=id_type)
+        # Then the full text field should reflect the changes
+        self.assertIn(
+            'emphatic',
+            Person.objects.last().util_full_text
+        )
+        self.assertIn(
+            'backslashes',
+            Person.objects.last().util_full_text
+        )
+        self.assertIn(
+            'profanely',
+            Person.objects.last().util_full_text
+        )
 
 
 class PersonSearchAllFields(TestCase):
-    def test_search_all_fields_num_queries(self):
+    def test_just_name(self):
+        # Given there are some Person records in the system marked as law enforcement
+        Person.objects.create(name="Chelsea Webster", is_law_enforcement=True)
+        Person.objects.create(name="Maria E. Garcia", is_law_enforcement=True)
+        Person.objects.create(name="Maria Celeste Ulberg Hansen", is_law_enforcement=True)
+        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True)
+
+        # When I call a query for one of their first names
+        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+        results = Person.objects.search_all_fields('Mohammed', user=admin_user)
+
+        # Then I should only get back the one record containing that name, and not any of the other records
+        self.assertEqual(
+            1,
+            len(results)
+        )
+        self.assertEqual(
+            "Mohammed Alabbadi",
+            results[0].name
+        )
+
+    def test_distinct_results(self):
+        """Ensure that the there aren't duplicative results (typically caused by one-to-many joins & sorts)"""
+        # Given there's one officer record in the system with multiple aliases and identifiers
+        person_record = Person.objects.create(name="soothsayer", is_law_enforcement=True)
+        PersonAlias.objects.create(name=f'forsooth', person=person_record)
+        PersonAlias.objects.create(name=f'say', person=person_record)
+        PersonAlias.objects.create(name=f'tooth', person=person_record)
+        id_type = PersonIdentifierType.objects.create(name='Test Type')
+        PersonIdentifier.objects.create(
+            identifier='forsooth', person=person_record,
+            person_identifier_type=id_type)
+        PersonIdentifier.objects.create(
+            identifier='say', person=person_record,
+            person_identifier_type=id_type)
+        PersonIdentifier.objects.create(
+            identifier='tooth', person=person_record,
+            person_identifier_type=id_type)
+
+        # When I do a search that partially matches on the values of the aliases and identifiers
+        admin_user = FdpUser.objects.create(is_administrator=True)
+        results = Person.objects.search_all_fields('soothsayer', user=admin_user)
+
+        # Then I should only see one result
+        self.assertEqual(
+            1,
+            len(results),
+            msg="More than one result returned for a single match"
+        )
+
+
+    def test_num_queries(self):
         """Ensure that the method doesn't call more queries than intended
         """
         for _ in range(100):
@@ -40,7 +151,7 @@ class PersonSearchAllFields(TestCase):
             PersonAlias.objects.create(name=f'Alias 2 for {person_record}', person=person_record)
 
         admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(5):
             results = Person.objects.search_all_fields('Mohammed', user=admin_user)
             for result in results:
                 list(result.person_aliases.all())

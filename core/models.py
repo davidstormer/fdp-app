@@ -7,6 +7,8 @@ from django.conf import settings
 from django.db.models import Q, Prefetch, Exists
 from django.db.models.expressions import RawSQL, Subquery, OuterRef, F
 from django.apps import apps
+
+from core.common import normalize_search_text
 from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, \
     AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractAtLeastSinceDateBounded, Confidentiable, \
     AbstractFileValidator, AbstractUrlValidator, Linkable, AbstractConfiguration, ConfidentiableManager
@@ -36,19 +38,10 @@ class PersonManager(ConfidentiableManager):
                 .filter(is_law_enforcement=is_law_enforcement)
                 .filter_for_confidential_by_user(user=user)
                 .annotate(
-                    search_tgs_name=TrigramSimilarity('name', query),
-                    search_tgs_identifiers=TrigramSimilarity('person_identifier__identifier', query),
-                    search_tgs_aliases=TrigramSimilarity('person_alias__name', query)
-                )
-                .annotate(
-                    search_rank=
-                    Coalesce(F('search_tgs_name'), 0)
-                    + Coalesce(F('search_tgs_identifiers'), 0)
-                    + Coalesce(F('search_tgs_aliases'), 0)
+                    search_rank=TrigramSimilarity('util_full_text', query)
                 )
                 .filter(search_rank__gt=0.1)
                 .order_by('-search_rank')
-                .distinct()  # https://docs.djangoproject.com/en/3.2/topics/db/queries/#spanning-multi-valued-relationships
             )
 
         # Do some prefetching of one-to-many relationships,
@@ -177,12 +170,36 @@ class Person(Confidentiable, Descriptable):
     form_fields = \
         ['name', 'birth_date_range_start', 'birth_date_range_end', 'traits'] + Confidentiable.confidentiable_form_fields
 
+    def save(self, *args, **kwargs):
+        self.reindex_search_fields()
+        super().save(*args, **kwargs)
+
     def reindex_search_fields(self, commit=False):
-        """Normalize and concatenate various fields and writes them into the util_full_text field.
-        Does not actually do anything directly with database indexes.
+        """Normalize and concatenate various fields and write them into the util_full_text field.
+        Does not actually do anything directly with true database indexes.
         """
 
-        self.util_full_text = "hello world"
+        def get_name():
+            return normalize_search_text(self.name)
+
+        def get_aliases_unique_terms():
+            """To prevent repeated first name from skewing search results"""
+            aliases_unique_terms = set()
+            for alias_record in self.person_aliases.all():
+                for word in alias_record.name.split():  # tokenize on white spaces
+                    aliases_unique_terms.add(word)
+            return ' '.join(aliases_unique_terms) or ''
+
+        def get_identifiers():
+            return [identifier.identifier for identifier in self.person_identifiers.all()] or ''
+
+        self.util_full_text = \
+            f"""{get_name()}
+
+            {get_aliases_unique_terms()}
+
+            {get_identifiers()}
+            """
         if commit:
             self.save()
 
