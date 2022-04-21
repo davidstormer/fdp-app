@@ -39,9 +39,10 @@ def person_search_ranking_debug(person: Person) -> str:
     template_ = Template("""
     <p>
     rank: {{ person.search_rank }}
-    name: {{ person.search_tgs_name }}
-    identifiers: {{ person.search_tgs_identifiers }}
-    aliases: {{ person.search_tgs_aliases }}
+    name: {{ person.search_name_rank }}
+    full text: {{ person.search_full_text_rank }}
+    <br>
+    {{ person.util_full_text }}
     </p>
     """)
 
