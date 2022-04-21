@@ -8,3 +8,6 @@ class CoreAppConfig(AppConfig):
     """
     name = 'core'
     verbose_name = _('Core data')
+
+    def ready(self):
+        from . import signals
