@@ -158,9 +158,7 @@ class PersonSearchAllFields(TestCase):
                 list(result.person_titles.all())
                 list(result.person_identifiers.all())
 
-
-class PersonSearchByName(TestCase):
-    def test_person_search_by_name_discrimination(self):
+    def test_person_search_all_fields_discrimination(self):
         # Given there are some Person records in the system marked as law enforcement
         Person.objects.create(name="Chelsea Webster", is_law_enforcement=True)
         Person.objects.create(name="Maria E. Garcia", is_law_enforcement=True)
@@ -169,7 +167,7 @@ class PersonSearchByName(TestCase):
 
         # When I call a query for one of their first names
         admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-        results = Person.objects.search_by_name('Mohammed', user=admin_user)
+        results = Person.objects.search_all_fields('Mohammed', user=admin_user)
 
         # Then I should only get back the one record containing that name, and not any of the other records
         self.assertEqual(
@@ -189,7 +187,7 @@ class PersonSearchByName(TestCase):
         with self.subTest(msg="admin can see"):
             # When I call a query as an admin
             admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-            admin_results = Person.objects.search_by_name('Mohammed Alabbadi', admin_user)
+            admin_results = Person.objects.search_all_fields('Mohammed Alabbadi', admin_user)
 
             # Then I should see the matching record in the results
             self.assertEqual(
@@ -198,8 +196,8 @@ class PersonSearchByName(TestCase):
             )
 
         # When I call the same query as a non-admin user
-        admin_user = FdpUser.objects.create(email='usertwo@localhost',is_administrator=False)
-        non_admin_results = Person.objects.search_by_name('Mohammed Alabbadi', admin_user)
+        admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False)
+        non_admin_results = Person.objects.search_all_fields('Mohammed Alabbadi', admin_user)
 
         # Then I should NOT see the matching record in the results
         self.assertEqual(
@@ -214,7 +212,7 @@ class PersonSearchByName(TestCase):
         with self.subTest(msg="admin can see"):
             host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True,
                                                      is_host=True)
-            admin_results = Person.objects.search_by_name("Mohammed Alabbadi", host_admin_user)
+            admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", host_admin_user)
 
             self.assertEqual(
                 "Mohammed Alabbadi",
@@ -223,7 +221,7 @@ class PersonSearchByName(TestCase):
 
         guest_admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False,
                                                   is_host=False)
-        guest_admin_results = Person.objects.search_by_name("Mohammed Alabbadi", guest_admin_user)
+        guest_admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", guest_admin_user)
 
         # Then I should NOT see the matching record in the results
         self.assertEqual(
@@ -236,7 +234,7 @@ class PersonSearchByName(TestCase):
 
         with self.subTest(msg="admin can see"):
             host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-            admin_results = Person.objects.search_by_name("Mohammed Alabbadi", host_admin_user)
+            admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", host_admin_user)
 
             self.assertEqual(
                 0,
@@ -244,7 +242,7 @@ class PersonSearchByName(TestCase):
             )
 
         non_admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False)
-        non_admin_results = Person.objects.search_by_name("Mohammed Alabbadi", non_admin_user)
+        non_admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", non_admin_user)
 
         self.assertEqual(
             0,
@@ -269,7 +267,7 @@ class PersonSearchByName(TestCase):
 
         # When I call a query for "Roger Hobbes"
         admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-        results = Person.objects.search_by_name("Roger Hobbes", user=admin_user)
+        results = Person.objects.search_all_fields("Roger Hobbes", user=admin_user)
 
         # Then I should get back both "Roger Hobbes" and "Roger E. Hobbes" as the first two results
         self.assertEqual(
@@ -293,13 +291,20 @@ class PersonSearchByName(TestCase):
             {'source': "Nicholas Agnoletti", 'query': "Agnoletti", 'scenario': "query contains only last name"},
             {'source': "Nicholas Agnoletti", 'query': "Agnoletti Nicholas", 'scenario': "query reverses name order"},
             {'source': 'Jill Braaten', 'query': "Jill Braten", 'scenario': "spelling: missing repeated vowel in query"},
-            {'source': "Joe O'Connell", 'query': "Joe OConnell", 'scenario': "punctuation: apostrophe missing in query"},
-            {'source': "Joe O'Connell", 'query': "Joe OConner", 'scenario': "punctuation: apostrophe missing and misspelled in query"},
-            {'source': "Joe O'Connell", 'query': "Joe O Connell", 'scenario': "punctuation: apostrophe replaced with space in query"},
-            {'source': "Roger E. Hobbes", 'query': "Roger Hobbes", 'scenario': "middle names: middle initial missing from query"},
-            {'source': "Jane Alreyashi-Watson", 'query': "Jane Alreyashi Watson", 'scenario': "punctuation: hyphen replaced with space in query"},
-            {'source': "Jane Alreyashi Watson", 'query': "Jane Alreyashi-Watson", 'scenario': "punctuation: hyphen replaced with space in source"},
-            {'source': "Jane AlreyashiWatson", 'query': "Jane Alreyashi-Watson", 'scenario': 'punctuation: hyphen missing in source'},
+            {'source': "Joe O'Connell", 'query': "Joe OConnell",
+             'scenario': "punctuation: apostrophe missing in query"},
+            {'source': "Joe O'Connell", 'query': "Joe OConner",
+             'scenario': "punctuation: apostrophe missing and misspelled in query"},
+            {'source': "Joe O'Connell", 'query': "Joe O Connell",
+             'scenario': "punctuation: apostrophe replaced with space in query"},
+            {'source': "Roger E. Hobbes", 'query': "Roger Hobbes",
+             'scenario': "middle names: middle initial missing from query"},
+            {'source': "Jane Alreyashi-Watson", 'query': "Jane Alreyashi Watson",
+             'scenario': "punctuation: hyphen replaced with space in query"},
+            {'source': "Jane Alreyashi Watson", 'query': "Jane Alreyashi-Watson",
+             'scenario': "punctuation: hyphen replaced with space in source"},
+            {'source': "Jane AlreyashiWatson", 'query': "Jane Alreyashi-Watson",
+             'scenario': 'punctuation: hyphen missing in source'},
         ]
 
         for thing in things_to_check:
@@ -307,9 +312,9 @@ class PersonSearchByName(TestCase):
                 with transaction.atomic():  # Maintain test isolation
                     # Given there's an officer with the name...
                     Person.objects.create(name=thing['source'], is_law_enforcement=True)
-                    # When I call search_by_name for...
+                    # When I call search_all_fields for...
                     admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-                    results = Person.objects.search_by_name(thing['query'], user=admin_user)
+                    results = Person.objects.search_all_fields(thing['query'], user=admin_user)
                     # Then I should see the record returned
                     self.assertEqual(
                         1,
