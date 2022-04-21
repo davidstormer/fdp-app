@@ -1,11 +1,11 @@
-from django.contrib.postgres.search import TrigramSimilarity
+from django.contrib.postgres.search import TrigramSimilarity, SearchVector, SearchRank
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Length
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
-from django.db.models import Q, Prefetch, Exists
-from django.db.models.expressions import RawSQL, Subquery, OuterRef, F
+from django.db.models import Q, Prefetch, Exists, FloatField
+from django.db.models.expressions import RawSQL, Subquery, OuterRef, F, ExpressionWrapper
 from django.apps import apps
 
 from core.common import normalize_search_text
@@ -37,9 +37,9 @@ class PersonManager(ConfidentiableManager):
                 self.all()
                 .filter(is_law_enforcement=is_law_enforcement)
                 .filter_for_confidential_by_user(user=user)
-                .annotate(
-                    search_rank=TrigramSimilarity('util_full_text', query)
-                )
+                .annotate(search_full_text_rank=SearchRank('util_full_text', query) * 10)
+                .annotate(search_name_rank=TrigramSimilarity('name', query))
+                .annotate(search_rank=F('search_full_text_rank') + F('search_name_rank'))
                 .filter(search_rank__gt=0.1)
                 .order_by('-search_rank')
             )
@@ -64,10 +64,10 @@ class PersonManager(ConfidentiableManager):
             ]
 
         results_prefetched = results \
-            .prefetch_related('person_aliases').order_by('name') \
+            .prefetch_related('person_aliases') \
             .prefetch_related('person_titles') \
-            .prefetch_related('person_identifiers').order_by(*divided_years(PersonIdentifier)) \
-            .prefetch_related('person_groupings').order_by('name')
+            .prefetch_related('person_identifiers') \
+            .prefetch_related('person_groupings')
 
         return results_prefetched
 
@@ -188,10 +188,10 @@ class Person(Confidentiable, Descriptable):
             for alias_record in self.person_aliases.all():
                 for word in alias_record.name.split():  # tokenize on white spaces
                     aliases_unique_terms.add(word)
-            return ' '.join(aliases_unique_terms) or ''
+            return ' '.join(aliases_unique_terms)
 
         def get_identifiers():
-            return [identifier.identifier for identifier in self.person_identifiers.all()] or ''
+            return ' '.join([identifier.identifier for identifier in self.person_identifiers.all()])
 
         self.util_full_text = \
             f"""{get_name()}
