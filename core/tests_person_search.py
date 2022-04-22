@@ -1,10 +1,30 @@
 from unittest import skip
-
+from uuid import uuid4
 from django.db import transaction
 from django.test import TestCase
+from faker import Faker
 from core.models import Person, PersonAlias, PersonIdentifier
 from fdpuser.models import FdpUser
 from supporting.models import PersonIdentifierType
+
+faker = Faker()
+
+
+def make_fake_person_records(number):
+    PersonIdentifierType.objects.create(name=uuid4())
+
+    with transaction.atomic():
+        for i in range(number):
+            person_record = Person.objects.create(name=faker.name(), is_law_enforcement=True)
+            PersonIdentifier.objects.create(
+                identifier=f'{faker.ssn()} 1-{i}', person=person_record,
+                person_identifier_type=PersonIdentifierType.objects.last())
+            PersonIdentifier.objects.create(
+                identifier=f'{faker.ssn()} 2-{i}', person=person_record,
+                person_identifier_type=PersonIdentifierType.objects.last())
+            PersonAlias.objects.create(name=faker.name(), person=person_record)
+            # PersonAlias.objects.create(name=faker.name(), person=person_record)
+            # PersonAlias.objects.create(name=faker.name(), person=person_record)
 
 
 class FullTextIndexing(TestCase):
