@@ -141,6 +141,46 @@ class PersonSearchAllFields(TestCase):
             msg="More than one result returned for a single match"
         )
 
+    def test_identifier_search_exact_match(self):
+        # Given there are identifiers attached to a person record
+        person_record = Person.objects.create(name="Test Person", is_law_enforcement=True)
+        id_type = PersonIdentifierType.objects.create(name='Test Type')
+        PersonIdentifier.objects.create(
+            identifier='emphatic', person=person_record,
+            person_identifier_type=id_type)
+        PersonIdentifier.objects.create(
+            identifier='backslashes', person=person_record,
+            person_identifier_type=id_type)
+        PersonIdentifier.objects.create(
+            identifier='profanely', person=person_record,
+            person_identifier_type=id_type)
+
+        # When I do a search for one of them by exact string
+        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+        results = Person.objects.search_all_fields('backslashes', user=admin_user)
+
+        # Then I should get back the record it is attached to
+        self.assertEqual(
+            person_record,
+            results[0]
+        )
+
+    def test_aliases_search_exact_match(self):
+        # Given there are identifiers attached to a person record
+        person_record = Person.objects.create(name="Test Person", is_law_enforcement=True)
+        id_type = PersonIdentifierType.objects.create(name='Test Type')
+        PersonAlias.objects.create(name=f'taffeta', person=person_record)
+        PersonAlias.objects.create(name=f'maggots', person=person_record)
+
+        # When I do a search for one of them by exact string
+        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+        results = Person.objects.search_all_fields('taffeta', user=admin_user)
+
+        # Then I should get back the record it is attached to
+        self.assertEqual(
+            person_record,
+            results[0]
+        )
 
     def test_num_queries(self):
         """Ensure that the method doesn't call more queries than intended
