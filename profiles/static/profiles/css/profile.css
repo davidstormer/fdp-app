@@ -72,13 +72,15 @@ button.collapsible:before {
 
 /* Custom header text box */
 div#custom-header-text {
+    box-shadow: 5px 5px 5px grey;
     font-size: 16px;
-    background-color: #e2e3e5;
-    border: 1px solid #d6d8db;
+    border: 1px solid #e9e9e9;
     border-radius: 1px;
+    border-left: 4px solid gray;
     padding: 1em 2em;
-    margin-bottom: 1em;
+    margin-bottom: 2em;
     margin-top: -1em;
+    width: 50%;
 }
 a.custom-text-edit-link {
     opacity: 0;
@@ -92,14 +94,15 @@ div#custom-header-text:hover a.custom-text-edit-link {
 
 /* Custom incidents text box */
 div#custom-text-block-incidents {
+    box-shadow: 5px 5px 5px grey;
     font-size: 16px;
-    background-color: #fff3cd;
-    border: 1px solid #ffeeba;
+    border: 1px solid #e9e9e9;
     border-radius: 1px;
     border-left: 4px solid #ffe186;
     padding: 1em 2em;
-    margin-bottom: 1em;
+    margin-bottom: 2em;
     margin-top: -1em;
+    width: 50%;
 }
 div#custom-text-block-incidents:hover a.custom-text-edit-link {
     transition-duration: .2s;

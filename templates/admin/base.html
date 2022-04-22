@@ -116,7 +116,13 @@
           <br class="clear">
         </div>
         <!-- END Content -->
-        {% if custom_text_block_global %}
+
+        {% block footer %}<div id="footer"></div>{% endblock %}
+      </div>
+    </div>
+    <div id="footer-global">
+
+              {% if custom_text_block_global %}
         <div id="custom-text-block-global">
             {% if is_admin %}
             <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
@@ -125,10 +131,8 @@
         </div>
         {% endif %}
 
-        {% block footer %}<div id="footer"></div>{% endblock %}
-      </div>
+      {% if user.is_authenticated %}<div id="release-number">FDP App 5.0.0</div>{% endif %}
     </div>
-    <div id="footer-global">{% if user.is_authenticated %}<span id="release-number">FDP App 5.0.0</span>{% endif %}</div>
     {% if user.has_admin_access %}
     <a href="https://fulldisclosure.zendesk.com/hc/en-us/categories/1500001087701-Administrator-Documentation" class="help-center-button" target="_blank">
     <i class="far fa-question-circle"></i> Help</a>

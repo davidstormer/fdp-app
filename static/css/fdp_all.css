@@ -22,11 +22,14 @@ button.logout:focus, button.logout:hover {
 
 /* Footer & Release number styling */
 div#footer-global {
-  text-align: right;
+    background-color: #f8f8f8;
+    border-top: 1px solid #f4f4f4;
+    padding-top: 1em;
 }
-span#release-number {
+div#release-number {
   color: #aaa;
   font-weight: bold;
+  text-align: right;
 }
 /* Move footer to bottom when on 2fa pages, where body div becomes tiny window */
 body.login div#footer-global {

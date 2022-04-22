@@ -113,6 +113,11 @@ div#custom-text-block-global:hover a.custom-text-edit-link {
     transition-duration: .2s;
     opacity: 100%;
 }
+footer {
+    background-color: #f8f8f8;
+    border-top: 1px solid #f4f4f4;
+    padding-top: 2em;
+}
 div#footer-global {
   text-align: right;
 }
