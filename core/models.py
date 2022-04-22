@@ -1,4 +1,4 @@
-from django.contrib.postgres.search import TrigramSimilarity, SearchVector, SearchRank
+from django.contrib.postgres.search import TrigramSimilarity, SearchVector, SearchRank, SearchVectorField
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Coalesce, Length
@@ -158,13 +158,7 @@ class Person(Confidentiable, Descriptable):
         verbose_name=_('organization access')
     )
 
-    util_full_text = models.TextField(
-        help_text='System generated copy field for concatenating normalized contents '
-                  'of various fields. Intended only for searching against; never visible '
-                  'to end users.',
-        blank=True,
-        null=True
-    )
+    util_full_text = SearchVectorField(null=True)
 
     #: Fields to display in the model form.
     form_fields = \
