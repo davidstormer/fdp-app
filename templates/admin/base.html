@@ -121,15 +121,29 @@
       </div>
     </div>
     <div id="footer-global">
-
-              {% if custom_text_block_global %}
-        <div id="custom-text-block-global">
+      <div class="gridrow gridgroup text-blocks">
+          <div class="gridcol gridcell_1_of_2">
+        {% if custom_text_block_global %}
+        <div id="custom-text-block-global-left">
             {% if is_admin %}
             <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
             {% endif %}
             {{ custom_text_block_global|sanitize_html|safe }}
         </div>
         {% endif %}
+          </div> <!-- div.gridcol.gridcell_1_of_2 -->
+          <div class="gridcol gridcell_1_of_2">
+        {% if custom_text_block_global %}
+        <div id="custom-text-block-global-left">
+            {% if is_admin %}
+            <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            {% endif %}
+            <p>By using this system you consent to information being collected about your searches and page views. This information is used for improving the data and the system. Consult the <a href="#">terms of use policy</a> for more details.</p>
+        </div>
+        {% endif %}
+          </div> <!-- div.gridcol.gridcell_1_of_2 -->
+      </div>
+
 
       {% if user.is_authenticated %}<div id="release-number">FDP App 5.0.0</div>{% endif %}
     </div>
