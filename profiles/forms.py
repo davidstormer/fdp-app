@@ -52,7 +52,7 @@ class SiteSettingsForm(forms.Form):
         required=False
     )
 
-    global_footer = forms.CharField(
+    global_footer_left = forms.CharField(
         widget=forms.Textarea,
         help_text=f"This text will appear at the bottom of every page, including the home page. (Allowed HTML "
                   f"tags: {', '.join(CUSTOM_TEXT_ALLOWED_TAGS)})",
@@ -78,7 +78,7 @@ class SiteSettingsForm(forms.Form):
                 'Custom text blocks',
                 'profile_page_top',
                 'profile_incidents',
-                'global_footer',
+                'global_footer_left',
                 'global_footer_right',
                 FormActions(
                     Submit('save', 'Save'),

@@ -1,4 +1,5 @@
 import pdb
+from time import sleep
 
 from django.db import transaction
 from django.urls import reverse
@@ -45,16 +46,16 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
                 "then_element": 'div#custom-text-block-incidents',
             },
             {
-                "msg": "Global on profile",
-                "given_text_block_input": '#id_global_footer',
+                "msg": "Global footer left on profile",
+                "given_text_block_input": '#id_global_footer_left',
                 "when_path": reverse('profiles:officer', kwargs={'pk': person_record.pk}),
-                "then_element": 'div#custom-text-block-global',
+                "then_element": 'div#custom-text-block-global-left',
             },
             {
-                "msg": "Global bootstrap style guide",
-                "given_text_block_input": '#id_global_footer',
+                "msg": "Global footer left bootstrap style guide",
+                "given_text_block_input": '#id_global_footer_left',
                 "when_path": '/bootstrap-style-guide',
-                "then_element": 'div#custom-text-block-global',
+                "then_element": 'div#custom-text-block-global-left',
             },
             {
                 "msg": "Global footer right bootstrap style guide",
@@ -69,6 +70,7 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
 
         for case in cases:
             with self.subTest(msg=case['msg']):
+                with transaction.atomic():  # Maintain test isolation
                     self.browser.get(self.live_server_url + '/admin/site-settings')
 
                     # When I enter text in the given field and save
@@ -79,15 +81,15 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
                         .submit()
 
                     # Then I should see the text in the given output element
-                    def then_():
-                        self.browser.get(self.live_server_url + case['when_path'])
-                        text_block = wait(self.browser.find_element_by_css_selector, case['then_element'])
-                        self.assertEqual(
-                            f"{case['msg']} rollerskating precisionist",
-                            text_block.text,
-                            msg='Custom text block missing'
-                        )
-                    wait(then_)
+                    sleep(1)  # Couldn't get around this, sorry...
+                    self.browser.get(self.live_server_url + case['when_path'])
+                    text_block = wait(self.browser.find_element_by_css_selector, case['then_element'])
+                    self.assertEqual(
+                        f"{case['msg']} rollerskating precisionist",
+                        text_block.text,
+                        msg='Custom text block missing'
+                    )
+                    transaction.set_rollback(True)  # ... maintain test isolation
 
     def test_global(self):
 
