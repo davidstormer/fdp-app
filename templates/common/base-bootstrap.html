@@ -86,6 +86,14 @@
     {{ custom_text_block_global|sanitize_html|safe }}
 </div>
 {% endif %}
+{% if custom_text_block_global_right %}
+<div id="custom-text-block-global-right">
+    {% if is_admin %}
+    <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+    {% endif %}
+    {{ custom_text_block_global_right|sanitize_html|safe }}
+</div>
+{% endif %}
 </div>
 
 <div id="footer-global">{% if user.is_authenticated %}<span id="release-number">FDP App 5.0.0</span>{% endif %}</div>

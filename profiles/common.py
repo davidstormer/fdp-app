@@ -38,5 +38,6 @@ def global_custom_text_block_context_processor(request) -> dict:
         return {}
     else:
         return {
-            'custom_text_block_global': get_site_setting('custom_text_blocks-global_footer')
+            'custom_text_block_global': get_site_setting('custom_text_blocks-global_footer'),
+            'custom_text_block_global_right': get_site_setting('custom_text_blocks-global_footer_right'),
         }

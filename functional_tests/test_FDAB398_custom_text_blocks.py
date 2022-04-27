@@ -56,6 +56,12 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
                 "when_path": '/bootstrap-style-guide',
                 "then_element": 'div#custom-text-block-global',
             },
+            {
+                "msg": "Global footer right bootstrap style guide",
+                "given_text_block_input": '#id_global_footer_right',
+                "when_path": '/bootstrap-style-guide',
+                "then_element": 'div#custom-text-block-global-right',
+            },
         ]
 
         # Given I'm on the site settings page and there's an officer record
@@ -71,8 +77,8 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
                     text_area.send_keys(f"{case['msg']} rollerskating precisionist")
                     self.browser.find_element_by_css_selector("input[type='submit'][value='Save']") \
                         .submit()
-                    # Then I should see the text in the given output element
 
+                    # Then I should see the text in the given output element
                     def then_():
                         self.browser.get(self.live_server_url + case['when_path'])
                         text_block = wait(self.browser.find_element_by_css_selector, case['then_element'])

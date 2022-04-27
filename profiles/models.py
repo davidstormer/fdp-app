@@ -377,6 +377,7 @@ class SiteSettingKeys:
     CUSTOM_TEXT_BLOCKS__PROFILE_PAGE_TOP = 'custom_text_blocks-profile_page_top'
     CUSTOM_TEXT_BLOCKS__PROFILE_INCIDENTS = 'custom_text_blocks-profile_incidents'
     CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER = 'custom_text_blocks-global_footer'
+    CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER_RIGHT = 'custom_text_blocks-global_footer_right'
 
 
 class SiteSetting(Archivable):

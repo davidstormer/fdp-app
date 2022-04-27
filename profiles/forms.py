@@ -59,6 +59,13 @@ class SiteSettingsForm(forms.Form):
         required=False
     )
 
+    global_footer_right = forms.CharField(
+        widget=forms.Textarea,
+        help_text=f"This text will appear at the bottom of every page, including the home page. (Allowed HTML "
+                  f"tags: {', '.join(CUSTOM_TEXT_ALLOWED_TAGS)})",
+        required=False
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
@@ -72,6 +79,7 @@ class SiteSettingsForm(forms.Form):
                 'profile_page_top',
                 'profile_incidents',
                 'global_footer',
+                'global_footer_right',
                 FormActions(
                     Submit('save', 'Save'),
                 ),
