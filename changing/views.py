@@ -128,7 +128,13 @@ def get_login_analytics(from_date, to_date) -> OrderedDict:
 
     # "group_by" resolution of a day
     # https://stackoverflow.com/questions/629551/how-to-query-as-group-by-in-django
-    results = AccessLog.objects.filter(attempt_time__gt=from_date).values('attempt_time__date').annotate(total=Count('attempt_time__date'))
+    results = (
+        AccessLog.objects
+        .filter(attempt_time__gt=from_date)
+        .extra(where=['username IN (SELECT email FROM fdp_fdp_user WHERE is_administrator=FALSE)'])
+        .values('attempt_time__date')
+        .annotate(total=Count('attempt_time__date'))
+    )
 
     # ...then overlay the swiss cheese on the empty histogram
     for result in results:
@@ -168,6 +174,7 @@ class IndexTemplateView(AdminSyncTemplateView):
                     'x': x,
                     'y': y,
                 },
+                'logins_dict': login_analytics,
             },
         })
         return context
