@@ -76,7 +76,7 @@ a.custom-text-edit-link {
     float: right;
     margin-right: -1em;
 }
-div#custom-header-text:hover a.custom-text-edit-link {
+div#custom-text-block-top:hover a.custom-text-edit-link {
     transition-duration: .2s;
     opacity: 100%;
 }

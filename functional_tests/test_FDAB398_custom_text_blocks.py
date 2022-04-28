@@ -25,7 +25,7 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
                 "msg": "Officer profile page top",
                 "given_text_block_input": "#id_profile_page_top",
                 "when_path": reverse('profiles:officer', kwargs={'pk': person_record.pk}),
-                "then_element": 'div#custom-header-text',
+                "then_element": 'div#custom-text-block-top',
             },
             {
                 "msg": "Officer profile above incidents",
@@ -37,7 +37,7 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
                 "msg": "Command profile page top",
                 "given_text_block_input": "#id_profile_page_top",
                 "when_path": reverse('profiles:command', kwargs={'pk': command_record.pk}),
-                "then_element": 'div#custom-header-text',
+                "then_element": 'div#custom-text-block-top',
             },
             {
                 "msg": "Command profile above incidents",
@@ -169,7 +169,7 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
                 "msg": "Profile page top",
                 "given_text_block_input": "#id_profile_page_top",
                 "when_path": reverse('profiles:officer', kwargs={'pk': person_record.pk}),
-                "then_element": 'div#custom-header-text',
+                "then_element": 'div#custom-text-block-top',
              },
             {
                 "msg": "Profile above incidents",
