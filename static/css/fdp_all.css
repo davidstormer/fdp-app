@@ -21,12 +21,18 @@ button.logout:focus, button.logout:hover {
 #sessiontoexpirytime { font-weight:bold; }
 
 /* Footer & Release number styling */
-div#footer-global {
-  text-align: right;
+div#footer-global * {
+    box-sizing: border-box;
 }
-span#release-number {
+div#footer-global {
+    background-color: #f8f8f8;
+    border-top: 1px solid #f4f4f4;
+    padding-top: 1em;
+}
+div#release-number {
   color: #aaa;
   font-weight: bold;
+  text-align: right;
 }
 /* Move footer to bottom when on 2fa pages, where body div becomes tiny window */
 body.login div#footer-global {
@@ -53,15 +59,41 @@ a.help-center-button .fa-question-circle {
 }
 
 /* Global custom text block footer*/
-div#custom-text-block-global {
-  padding: 20px 40px;
+div.footer-row {
+  display: flex;
+}
+.global-text-box {
+  padding: 2em;
+  width: 50%;
+}
+#custom-text-block-global-left {
+  padding-right: 1em;
+}
+#custom-text-block-global-right {
+  padding-left: 1em;
 }
 a.custom-text-edit-link {
     opacity: 0;
     float: right;
     margin-right: -1em;
 }
-div#custom-text-block-global:hover a.custom-text-edit-link {
+.global-text-box:hover a.custom-text-edit-link {
     transition-duration: .2s;
     opacity: 100%;
+}
+@media only screen and (max-width: 480px) {
+  div.footer-row {
+    flex-direction: column;
+  }
+  .global-text-box {
+    width: 100%;
+  }
+  .global-text-box#custom-text-block-global-left {
+    padding: 2em;
+    padding-bottom: .5em;
+  }
+  .global-text-box#custom-text-block-global-right {
+    padding: 2em;
+    padding-top: .5em;
+  }
 }

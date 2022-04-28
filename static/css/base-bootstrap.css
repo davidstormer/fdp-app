@@ -104,6 +104,10 @@ a.help-center-button .fa-question-circle {
 }
 
 /* Footer & Release number styling */
+footer {
+    background-color: #f8f8f8;
+    border-top: 1px solid #f4f4f4;
+}
 a.custom-text-edit-link {
     opacity: 0;
     float: right;
