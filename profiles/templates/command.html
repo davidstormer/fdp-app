@@ -34,11 +34,14 @@
 
 {% block content %}
     {% if custom_text_block_profile_top %}
-    <div id="custom-header-text">
+    <div id="custom-text-block-top" class="alert-inline">
         {% if is_admin %}
         <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
         {% endif %}
-        {{ custom_text_block_profile_top|sanitize_html|safe }}
+        <div class="alert-inline-icon"><i class="fas fa-info-circle"></i></div>
+        <div class="alert-inline-message">
+            {{ custom_text_block_profile_top|sanitize_html|safe }}
+        </div>
     </div>
     {% endif %}
 
@@ -175,11 +178,14 @@
     <div class="collapsible">
         {% if object.command_misconducts %}
         {% if custom_text_block_incidents %}
-        <div id="custom-text-block-incidents">
+        <div id="custom-text-block-incidents" class="alert-inline">
             {% if is_admin %}
             <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
             {% endif %}
-            {{ custom_text_block_incidents|sanitize_html|safe }}
+            <div class="alert-inline-icon"><i class="fas fa-info-circle"></i></div>
+            <div class="alert-inline-message">
+                {{ custom_text_block_incidents|sanitize_html|safe }}
+            </div>
         </div>
         {% endif %}
         {% for command_misconduct in object.command_misconducts %}
