@@ -1,5 +1,4 @@
-from abc import ABC
-
+import logging
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
@@ -7,6 +6,8 @@ from django.core.validators import validate_ipv46_address
 from inheritable.models import AbstractForeignKeyValidator, AbstractIpAddressValidator, Archivable
 from fdpuser.models import FdpUser
 from core.models import Person, Grouping
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractSearch(models.Model):
@@ -376,7 +377,8 @@ class SiteSettingKeys:
 
     CUSTOM_TEXT_BLOCKS__PROFILE_PAGE_TOP = 'custom_text_blocks-profile_page_top'
     CUSTOM_TEXT_BLOCKS__PROFILE_INCIDENTS = 'custom_text_blocks-profile_incidents'
-    CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER = 'custom_text_blocks-global_footer'
+    CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER_LEFT = 'custom_text_blocks-global_footer_left'
+    CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER_RIGHT = 'custom_text_blocks-global_footer_right'
 
 
 class SiteSetting(Archivable):
@@ -397,6 +399,7 @@ def get_site_setting(setting_name: str) -> str:
     try:
         return SiteSetting.objects.get(key=setting_name).value
     except SiteSetting.DoesNotExist:
+        logger.debug(f"Couldn't find site setting {setting_name}")
         return None
 
 

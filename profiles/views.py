@@ -1168,7 +1168,8 @@ class SiteSettingsPage(AdminSyncFormView):
         data = {}
         data['profile_page_top'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__PROFILE_PAGE_TOP)
         data['profile_incidents'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__PROFILE_INCIDENTS)
-        data['global_footer'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER)
+        data['global_footer_left'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER_LEFT)
+        data['global_footer_right'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER_RIGHT)
         return data
 
     def form_valid(self, form):
@@ -1181,8 +1182,12 @@ class SiteSettingsPage(AdminSyncFormView):
             form.cleaned_data['profile_incidents']
         )
         set_site_setting(
-            'custom_text_blocks-global_footer',
-            form.cleaned_data['global_footer']
+            'custom_text_blocks-global_footer_left',
+            form.cleaned_data['global_footer_left']
+        )
+        set_site_setting(
+            'custom_text_blocks-global_footer_right',
+            form.cleaned_data['global_footer_right']
         )
         messages.add_message(self.request, messages.SUCCESS, 'Site settings saved')
         return super().form_valid(form)

@@ -104,12 +104,16 @@ a.help-center-button .fa-question-circle {
 }
 
 /* Footer & Release number styling */
+footer {
+    background-color: #f8f8f8;
+    border-top: 1px solid #f4f4f4;
+}
 a.custom-text-edit-link {
     opacity: 0;
     float: right;
     margin-right: -1em;
 }
-div#custom-text-block-global:hover a.custom-text-edit-link {
+.global-text-box:hover a.custom-text-edit-link {
     transition-duration: .2s;
     opacity: 100%;
 }
