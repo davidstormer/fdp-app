@@ -1,10 +1,14 @@
+from collections import OrderedDict
+from datetime import timedelta, datetime
+
+from axes.models import AccessLog
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 from django.utils.http import unquote_plus
 from django.urls import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import QueryDict
 from django.forms import formsets
 from inheritable.models import Archivable, AbstractImport, AbstractSql, AbstractUrlValidator, AbstractSearchValidator, \
@@ -12,7 +16,7 @@ from inheritable.models import Archivable, AbstractImport, AbstractSql, Abstract
 from inheritable.forms import DateWithComponentsField
 from inheritable.views import AdminSyncTemplateView, AdminSyncFormView, AdminSyncCreateView, AdminSyncUpdateView, \
     AdminAsyncJsonView, PopupContextMixin
-from fdpuser.models import FdpOrganization
+from fdpuser.models import FdpOrganization, FdpUser
 from sourcing.models import Attachment, Content, ContentIdentifier, ContentPerson, ContentPersonAllegation, \
     ContentPersonPenalty
 from supporting.models import ContentType, County, Location
@@ -80,6 +84,7 @@ def get_next_url(next_path: str, fallback: str) -> str:
     # If all else fails take me to the default success url
     return fallback
 
+
 class AbstractPopupView(PopupContextMixin):
     """ Abstract view from which pages adding and editing models in a popup context inherit.
 
@@ -109,6 +114,33 @@ class AbstractPopupView(PopupContextMixin):
         return not_popup_url
 
 
+def get_login_analytics(from_date, to_date) -> OrderedDict:
+    duration = to_date - from_date
+    # Initialize empty histogram ("dimension table")
+    # Why: because the db query doesn't return rows for days with zero hits
+    histogram = {}
+    start_date = to_date - timedelta(days=duration.days)
+    one_day = timedelta(days=1)
+    for i in range(duration.days):
+        date = start_date + one_day * i
+        date_string = f"{date:%Y-%m-%d}"
+        histogram[date_string] = 0  #
+
+    # "group_by" resolution of a day
+    # https://stackoverflow.com/questions/629551/how-to-query-as-group-by-in-django
+    results = AccessLog.objects.filter(attempt_time__gt=from_date).values('attempt_time__date').annotate(total=Count('attempt_time__date'))
+
+    # ...then overlay the swiss cheese on the empty histogram
+    for result in results:
+        histogram[f"{result['attempt_time__date']:%Y-%m-%d}"] = result['total']
+
+    histogram_sorted = OrderedDict()
+    for key in sorted(histogram.keys()):
+        histogram_sorted[key] = histogram[key]
+
+    return histogram_sorted
+
+
 class IndexTemplateView(AdminSyncTemplateView):
     """ Page that allows users to select the data management tool they wish to use, such as the person wizard,
     advanced admin, etc.
@@ -123,9 +155,20 @@ class IndexTemplateView(AdminSyncTemplateView):
         :return: Context for view, including title, description and user details.
         """
         context = super(IndexTemplateView, self).get_context_data(**kwargs)
+        login_analytics = get_login_analytics(datetime.now() - timedelta(days=30), datetime.now())
+        # Split the login_analytics histogram dictionary into a pair of lists
+        # why: because Chart.js expects a separate array for x and y
+        x = list(login_analytics.keys())
+        y = list(login_analytics.values())
         context.update({
             'title': _('Admin'),
             'description': _('Select the data management tool.'),
+            'analytics': {
+                'logins': {
+                    'x': x,
+                    'y': y,
+                },
+            },
         })
         return context
 

@@ -491,6 +491,7 @@ CSP_SCRIPT_SRC = (
     'https://cdnjs.cloudflare.com/ajax/libs/select2/',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/',
     'https://code.jquery.com/jquery-3.6.0.min.js',
+    'https://cdn.jsdelivr.net/npm/chart.js',
 )
 # Disables <base> URIs, preventing attackers from changing the locations of scripts loaded from relative URLs. If
 # your application uses <base> tags, base-uri 'self' is usually also safe.
@@ -509,6 +510,7 @@ CSP_DEFAULT_SRC = (
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/',
     'https://code.jquery.com/jquery-3.6.0.min.js',
+    'https://cdn.jsdelivr.net/npm/chart.js',
     "'self' data:",
 )
 # Defines valid sources for stylesheets.

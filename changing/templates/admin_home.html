@@ -1,7 +1,9 @@
 {% extends "common/fdp_base_site.html" %}
 {% load i18n admin_urls static compress %}
 
-{% block extrahead %}{{ block.super }}{% endblock %}
+{% block extrahead %}{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
 
 {% block extrastyle %}
     {{ block.super }}
@@ -65,5 +67,35 @@
         <p>{% translate 'Customize the site that your users see.' %}</p>
     </div>
 </div>
+
+<div class="column">
+  <canvas id="myChart"></canvas>
+</div>
+
+{% endblock %}
+
+{% block onready %}
+    {{ block.super }}
+    const labels = {{ analytics.logins.x|safe }};
+
+  const data = {
+    labels: labels,
+    datasets: [{
+      label: 'User Logins',
+      backgroundColor: 'rgb(99s, 99, 132)',
+      borderColor: 'rgb(99, 99, 132)',
+      data: {{ analytics.logins.y|safe }},
+    }]
+  };
+
+  const config = {
+    type: 'line',
+    data: data,
+  };
+
+  const myChart = new Chart(
+    document.getElementById('myChart'),
+    config
+  );
 
 {% endblock %}
