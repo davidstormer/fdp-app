@@ -99,14 +99,14 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
         person_record = Person.objects.create(name='Test officer', is_law_enforcement=True)
 
         # When I enter text in the "Global footer" field and save
-        wait(self.browser.find_element_by_css_selector, '#id_global_footer') \
+        wait(self.browser.find_element_by_css_selector, '#id_global_footer_left') \
             .send_keys('plenteous continuum')
         self.browser.find_element_by_css_selector("input[type='submit'][value='Save']") \
             .submit()
 
         # Then I should see a text box at the bottom of the officer profile page
         self.browser.get(self.live_server_url + reverse('profiles:officer', kwargs={'pk': person_record.pk}))
-        text_block = wait(self.browser.find_element_by_css_selector, 'div#custom-text-block-global')
+        text_block = wait(self.browser.find_element_by_css_selector, 'div#custom-text-block-global-left')
         self.assertEqual(
             'plenteous continuum',
             text_block.text
@@ -114,7 +114,7 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
 
         # And the home page
         self.browser.get(self.live_server_url + '/')
-        text_block = wait(self.browser.find_element_by_css_selector, 'div#custom-text-block-global')
+        text_block = wait(self.browser.find_element_by_css_selector, 'div#custom-text-block-global-left')
         self.assertEqual(
             'plenteous continuum',
             text_block.text
@@ -178,16 +178,28 @@ class CustomTextBlocksSelenium(SeleniumFunctionalTestCase):
                 "then_element": 'div#custom-text-block-incidents',
             },
             {
-                "msg": "Global on profile",
-                "given_text_block_input": '#id_global_footer',
+                "msg": "Global left on profile",
+                "given_text_block_input": '#id_global_footer_left',
                 "when_path": reverse('profiles:officer', kwargs={'pk': person_record.pk}),
-                "then_element": 'div#custom-text-block-global',
+                "then_element": 'div#custom-text-block-global-left',
             },
             {
-                "msg": "Global bootstrap style guide",
-                "given_text_block_input": '#id_global_footer',
+                "msg": "Global left bootstrap style guide",
+                "given_text_block_input": '#id_global_footer_left',
                 "when_path": '/bootstrap-style-guide',
-                "then_element": 'div#custom-text-block-global',
+                "then_element": 'div#custom-text-block-global-left',
+            },
+            {
+                "msg": "Global right on profile",
+                "given_text_block_input": '#id_global_footer_right',
+                "when_path": reverse('profiles:officer', kwargs={'pk': person_record.pk}),
+                "then_element": 'div#custom-text-block-global-right',
+            },
+            {
+                "msg": "Global right bootstrap style guide",
+                "given_text_block_input": '#id_global_footer_right',
+                "when_path": '/bootstrap-style-guide',
+                "then_element": 'div#custom-text-block-global-right',
             },
         ]
 
