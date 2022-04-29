@@ -319,6 +319,19 @@ class OfficerSearchResultsListView(SecuredSyncListView):
 class OfficerSearchRoundupView(SecuredSyncTemplateView):
     template_name = "officer_search_roundup.html"
 
+    def get(self, request, *args, **kwargs):
+        results = Person.objects.search_all_fields('', request.user)
+
+        paginator = Paginator(results, 50)
+
+        page_number = request.POST.get('page')
+        page_obj = paginator.get_page(page_number)
+        return self.render_to_response({
+            'query': '',
+            'page_obj': page_obj,
+            'number_of_results': results.count(),
+        })
+
     # Handle searches via POST so that the query string is kept out of the URL (security)
     def post(self, request, *args, **kwargs):
         query_string = request.POST.get('q')

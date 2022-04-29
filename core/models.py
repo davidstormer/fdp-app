@@ -31,6 +31,7 @@ class PersonManager(ConfidentiableManager):
                 self.all()
                 .filter(is_law_enforcement=is_law_enforcement)
                 .filter_for_confidential_by_user(user=user)
+                .order_by('-pk')
             )
         else:
             results = (
