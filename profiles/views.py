@@ -320,7 +320,8 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
     template_name = "officer_search_roundup.html"
 
     def get(self, request, *args, **kwargs):
-        results = Person.objects.search_all_fields('', request.user)
+
+        results = Person.objects.search_all_fields('', request.user).order_by('name')
 
         paginator = Paginator(results, 50)
 
