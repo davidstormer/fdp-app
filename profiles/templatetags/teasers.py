@@ -25,7 +25,7 @@ def teaser_person(person: Person) -> str:
     })
 
     # TEMPLATING
-    template_ = Template("""<a href="{{profile_url}}">{{name}}</a> 
+    template_ = Template("""<a href="{{profile_url}}" class="profile-link">{{name}}</a>
     {% if aliases %}({{ aliases|join:', ' }}){% endif %}
     {% if identifiers %} &ndash; {{ identifiers|join:', ' }}{% endif %}
     {% if groups %} &ndash; {{ groups|join:', ' }}{% endif %}
