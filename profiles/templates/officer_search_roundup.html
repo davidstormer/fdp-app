@@ -5,6 +5,12 @@
     <input type="submit" value="Search">
 </form>
 
+{% if query %}
+<p><span class="number-of-results">{{ number_of_results }}</span> results found for "{{ query }}"</p>
+{% elif number_of_results %}
+<p><span class="number-of-results">{{ number_of_results }}</span> records</p>
+{% endif %}
+
 {% if page_obj %}
     <ul class="results">
         {% for officer in page_obj %}
@@ -53,4 +59,6 @@
         </span>
     </div>
     </nav>
+{% else %}
+<p>No results found, please try again.</p>
 {% endif %}
