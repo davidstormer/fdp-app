@@ -331,7 +331,7 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
         return self.render_to_response({
             'query': query_string,
             'page_obj': page_obj,
-            'count': results.count(),
+            'number_of_results': results.count(),
         })
 
 

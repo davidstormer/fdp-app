@@ -45,6 +45,26 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
                 wait(self.browser.find_element, By.CSS_SELECTOR, '#content h1').text
             )
 
+    def test_search_results_number_of_results(self):
+        # Given there are 314 records in the system with the same name
+        for _ in range(314):
+            Person.objects.create(name='polyonychia', is_law_enforcement=True)
+
+        # When I search for them
+        self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'input[name="q"]') \
+            .send_keys("polyonychia")
+        self.browser.find_element(By.CSS_SELECTOR, "input[value='Search']") \
+            .click()
+
+        # Then the number of results should say "314"
+        self.assertIn(
+            '314',
+            self.browser.find_element(By.CSS_SELECTOR, "span.number-of-results").text
+        )
+
+
     def test_search_results_rows_aliases(self):
         # Given there is an officer record with aliases
         person_record = Person.objects.create(name="Daniel Wilson", is_law_enforcement=True)
