@@ -100,6 +100,107 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             first_result.text
         )
 
+    def test_search_results_rows_current_rank(self):
+        # Given there is an officer record with ranks, two of which (miasmatical & pompoleon) has
+        # all of the end dates set to zeros (day, month, year).
+        person_record = Person.objects.create(name="Christopher Mills", is_law_enforcement=True)
+        PersonTitle.objects.create(
+            title=Title.objects.create(name='ferulic'),
+            person=person_record,
+            start_day=1,
+            start_month=1,
+            start_year=2001,
+
+            end_day=2,
+            end_month=1,
+            end_year=0,
+
+            at_least_since=True
+        )
+        PersonTitle.objects.create(
+            title=Title.objects.create(name='miasmatical'),
+            person=person_record,
+            start_day=3,
+            start_month=1,
+            start_year=2001,
+
+            end_day=0,
+            end_month=0,
+            end_year=0,
+
+            at_least_since=True
+        )
+        PersonTitle.objects.create(
+            title=Title.objects.create(name='pompoleon'),
+            person=person_record,
+            start_day=3,
+            start_month=1,
+            start_year=2000,
+
+            end_day=0,
+            end_month=0,
+            end_year=0,
+
+            at_least_since=True
+        )
+        PersonTitle.objects.create(
+            title=Title.objects.create(name='thyrsoidal'),
+            person=person_record,
+            start_day=5,
+            start_month=1,
+            start_year=2001,
+
+            end_day=6,
+            end_month=0,
+            end_year=2001,
+
+            at_least_since=True
+        )
+        PersonTitle.objects.create(
+            title=Title.objects.create(name='ungodlily'),
+            person=person_record,
+            start_day=5,
+            start_month=1,
+            start_year=2001,
+
+            end_day=1,
+            end_month=0,
+            end_year=0,
+
+            at_least_since=True
+        )
+
+        # When I do a search for the officer
+        self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'input[name="q"]') \
+            .send_keys("Christopher Mills")
+        self.browser.find_element(By.CSS_SELECTOR, "input[value='Search']") \
+            .click()
+
+        # Then I should see ONLY the titles with end dates set to all zeros
+        first_result = self.browser.find_element(By.CSS_SELECTOR, "ul.results li.row-1")
+        self.assertIn(
+            "miasmatical",
+            first_result.text
+        )
+        self.assertIn(
+            "pompoleon",
+            first_result.text
+        )
+        self.assertNotIn(
+            "thyrsoidal",
+            first_result.text
+        )
+        self.assertNotIn(
+            "ferulic",
+            first_result.text
+        )
+        self.assertNotIn(
+            "ungodlily",
+            first_result.text
+        )
+
     def test_search_results_rows_commands(self):
         # Given there is an officer record with commands
         person_record = Person.objects.create(name="Kayla Ellis", is_law_enforcement=True)
