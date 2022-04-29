@@ -252,3 +252,20 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             "withindoors",
             first_result.text
         )
+
+    def test_blank_search_new_record_listed_first(self):
+        # Given there are a number of officers in the system and I add one more
+        for i in range(100):
+            Person.objects.create(name=faker.name(), is_law_enforcement=True)
+        Person.objects.create(name="microcosmography", is_law_enforcement=True)
+
+        # When I go to the search page (without doing a search)
+        self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+
+        # Then I should see the newly added officer as the first result
+        first_result = self.browser.find_element(By.CSS_SELECTOR, "ul.results li.row-1")
+        self.assertIn(
+            "microcosmography",
+            first_result.text
+        )
