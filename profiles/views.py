@@ -321,7 +321,7 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
 
     def get(self, request, *args, **kwargs):
 
-        results = Person.objects.search_all_fields('', request.user).order_by('name')
+        results = Person.objects.search_all_fields('', request.user)
 
         paginator = Paginator(results, 50)
 
@@ -336,7 +336,13 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
     # Handle searches via POST so that the query string is kept out of the URL (security)
     def post(self, request, *args, **kwargs):
         query_string = request.POST.get('q')
+        sort = request.POST.get('sort')
         results = Person.objects.search_all_fields(query_string, request.user)
+        if sort == 'name':
+            results = results.order_by('name')
+        if sort == 'relevance':
+            # Do nothing, because the results are already ordered by relevance by default
+            pass
 
         paginator = Paginator(results, 50)
 
@@ -344,6 +350,7 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
             'query': query_string,
+            'sort': sort,
             'page_obj': page_obj,
             'number_of_results': results.count(),
         })
