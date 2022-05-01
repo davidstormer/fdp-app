@@ -1362,9 +1362,7 @@ class AnalyticsTests(TestCase):
             access_log_record.save()
 
         # When I call get_login_analytics_by_week()
-        results = get_login_analytics_by_week()
-
-        import pdb; pdb.set_trace()
+        results = get_login_analytics_by_week(datetime(year=2000, month=1, day=1), datetime(year=2000, month=1, day=30))
 
         # Then I should see a dictionary with a key for the first week in iso week date format
         self.assertEqual(
@@ -1374,5 +1372,67 @@ class AnalyticsTests(TestCase):
         # and a key for the next week with 10 and 3 values respectively
         self.assertEqual(
             results['2000W02'],
+            3
+        )
+
+    def test_get_login_analytics_by_week_from_to(self):
+        # Given there are logins before Jan 1 2000 and after Jan 2 2000
+        access_log_record = AccessLog.objects.create()
+        access_log_record.attempt_time = datetime(year=1999, month=12, day=1)
+        access_log_record.save()
+        access_log_record = AccessLog.objects.create()
+        access_log_record.attempt_time = datetime(year=2000, month=2, day=1)
+        access_log_record.save()
+
+        # When I call get_login_analytics_by_week() with a span of Jan 1 to Jan 7 2000
+        results = get_login_analytics_by_week(datetime(year=2000, month=1, day=1), datetime(year=2000, month=1, day=7))
+
+        # Then I should see no hits
+        self.assertEqual({'2000W01': 0}, results)
+
+        # But given there is an additional login on Jan 1 2000
+        access_log_record = AccessLog.objects.create()
+        access_log_record.attempt_time = datetime(year=2000, month=1, day=5)
+        access_log_record.save()
+
+        # Then I should see this record in the results when I call the same range again
+        results = get_login_analytics_by_week(datetime(year=2000, month=1, day=1), datetime(year=2000, month=1, day=7))
+        self.assertEqual(
+            {'2000W01': 1},
+            results
+        )
+
+    def test_get_login_analytics_by_week_zero_hits(self):
+        # Given there were 10 logins the first week, zero in the 2nd, and 3 in the third week in 2000
+        # 1st week
+        for _ in range(10):
+            access_log_record = AccessLog.objects.create()
+            access_log_record.attempt_time = datetime(year=2000, month=1, day=5)
+            access_log_record.save()
+
+        # 2nd week -- nothing
+        pass
+
+        # 3rd week
+        for _ in range(3):
+            access_log_record = AccessLog.objects.create()
+            access_log_record.attempt_time = datetime(year=2000, month=1, day=17)
+            access_log_record.save()
+
+        # When I call get_login_analytics_by_week()
+        results = get_login_analytics_by_week(datetime(year=2000, month=1, day=1), datetime(year=2000, month=1, day=30))
+
+        # Then I should the 2nd week filled in with a value of zero
+        self.assertEqual(
+            results['2000W02'],
+            0
+        )
+        # and a key for the first and third weeks too with 10 and 3 respectively
+        self.assertEqual(
+            results['2000W01'],
+            10
+        )
+        self.assertEqual(
+            results['2000W03'],
             3
         )

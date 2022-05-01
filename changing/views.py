@@ -1,3 +1,4 @@
+import math
 from collections import OrderedDict
 from datetime import timedelta, datetime
 
@@ -128,13 +129,27 @@ def get_login_analytics_by_year():
     return histogram
 
 
-def get_login_analytics_by_week():
-    histogram = {}
+def get_login_analytics_by_week(from_date, to_date):
+
+    def make_empty_histogram():
+        histogram = {}
+        duration = to_date - from_date
+        num_weeks = math.ceil(duration / timedelta(weeks=1))
+        for i in range(num_weeks):
+            date = from_date + (timedelta(weeks=1) * (i + 1))
+            histogram[f"{date:%YW%W}"] = 0  #
+        return histogram
+
     results = (
         AccessLog.objects
+        .filter(attempt_time__gt=from_date)
+        .filter(attempt_time__lt=to_date)
         .annotate(attempt_time_week=TruncWeek('attempt_time')).values('attempt_time_week')
         .annotate(total=Count('attempt_time_week'))
     )
+
+    histogram = make_empty_histogram()
+
     for result in results:
         histogram[f"{result['attempt_time_week']:%YW%W}"] = result['total']
 
@@ -142,16 +157,13 @@ def get_login_analytics_by_week():
 
 
 def get_login_analytics(from_date, to_date) -> OrderedDict:
-    duration = to_date - from_date
     # Initialize empty histogram ("dimension table")
     # Why: because the db query doesn't return rows for days with zero hits
     histogram = {}
-    start_date = to_date - timedelta(days=duration.days)
-    one_day = timedelta(days=1)
+    duration = to_date - from_date
     for i in range(duration.days):
-        date = start_date + one_day * i
-        date_string = f"{date:%Y-%m-%d}"
-        histogram[date_string] = 0  #
+        date = from_date + (timedelta(days=1) * i)
+        histogram[f"{date:%Y-%m-%d}"] = 0  #
 
     # "group_by" resolution of a day
     # https://stackoverflow.com/questions/629551/how-to-query-as-group-by-in-django
