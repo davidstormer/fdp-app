@@ -68,9 +68,18 @@
     </div>
 </div>
 
-<div class="column">
+<div class="">
   <canvas id="myChart"></canvas>
 </div>
+
+<p>User logins</p>
+<table>
+  {% for date, total in analytics.logins_dict.items %}
+  <tr>
+    <td>{{ date }}</td><td>{{ total }}</td>
+  </tr>
+  {% endfor %}
+</table>
 
 {% endblock %}
 

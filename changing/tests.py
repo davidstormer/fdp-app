@@ -1,3 +1,7 @@
+from datetime import datetime
+
+from axes.models import AccessLog
+from django.test import TestCase
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
 from inheritable.tests import AbstractTestCase, local_test_settings_required
@@ -7,6 +11,8 @@ from sourcing.models import Content, ContentPerson, Attachment, ContentIdentifie
 from supporting.models import PersonRelationshipType, ContentIdentifierType, Allegation
 from .forms import WizardSearchForm
 import logging
+
+from .views import get_login_analytics_by_week
 
 logger = logging.getLogger(__name__)
 
@@ -1340,3 +1346,33 @@ class ChangingTestCase(AbstractTestCase):
         self.__test_attachment_changing_async_view(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         logger.debug(_('\nSuccessfully finished test for asynchronous Changing views for all permutations of user roles, '
                 'confidentiality levels and relevant models\n\n'))
+
+
+class AnalyticsTests(TestCase):
+
+    def test_get_login_analytics_by_week(self):
+        # Given there were 10 logins the first week and 3 logins the next week in 2000
+        for _ in range(10):
+            access_log_record = AccessLog.objects.create()
+            access_log_record.attempt_time = datetime(year=2000, month=1, day=5)
+            access_log_record.save()
+        for _ in range(3):
+            access_log_record = AccessLog.objects.create()
+            access_log_record.attempt_time = datetime(year=2000, month=1, day=10)
+            access_log_record.save()
+
+        # When I call get_login_analytics_by_week()
+        results = get_login_analytics_by_week()
+
+        import pdb; pdb.set_trace()
+
+        # Then I should see a dictionary with a key for the first week in iso week date format
+        self.assertEqual(
+            results['2000W01'],
+            10
+        )
+        # and a key for the next week with 10 and 3 values respectively
+        self.assertEqual(
+            results['2000W02'],
+            3
+        )

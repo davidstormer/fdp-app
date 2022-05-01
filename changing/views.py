@@ -114,6 +114,32 @@ class AbstractPopupView(PopupContextMixin):
         return not_popup_url
 
 
+def get_login_analytics_by_year():
+    histogram = {}
+    results = (
+        AccessLog.objects
+        .values('attempt_time__year')
+        .annotate(total=Count('attempt_time__year'))
+    )
+    for result in results:
+        histogram[result['attempt_time__year']] = result['total']
+
+    return histogram
+
+
+def get_login_analytics_by_week():
+    histogram = {}
+    results = (
+        AccessLog.objects
+        .values('attempt_time__week')
+        .annotate(total=Count('attempt_time__week'))
+    )
+    for result in results:
+        histogram[result['attempt_time__week']] = result['total']
+
+    return histogram
+
+
 def get_login_analytics(from_date, to_date) -> OrderedDict:
     duration = to_date - from_date
     # Initialize empty histogram ("dimension table")
