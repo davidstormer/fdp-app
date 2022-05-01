@@ -3,12 +3,13 @@ from datetime import timedelta, datetime
 
 from axes.models import AccessLog
 from django.core.exceptions import ValidationError
+from django.db.models.functions import TruncWeek
 from django.utils.translation import gettext as _
 from django.utils.http import unquote_plus
 from django.urls import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F
 from django.http import QueryDict
 from django.forms import formsets
 from inheritable.models import Archivable, AbstractImport, AbstractSql, AbstractUrlValidator, AbstractSearchValidator, \
@@ -131,11 +132,11 @@ def get_login_analytics_by_week():
     histogram = {}
     results = (
         AccessLog.objects
-        .values('attempt_time__week')
-        .annotate(total=Count('attempt_time__week'))
+        .annotate(attempt_time_week=TruncWeek('attempt_time')).values('attempt_time_week')
+        .annotate(total=Count('attempt_time_week'))
     )
     for result in results:
-        histogram[result['attempt_time__week']] = result['total']
+        histogram[f"{result['attempt_time_week']:%YW%W}"] = result['total']
 
     return histogram
 
