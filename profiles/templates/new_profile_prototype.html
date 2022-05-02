@@ -10,22 +10,23 @@
 <div class="row">
 <nav class="col-md-3 pt-3 bg-light sidebar">
   <h1>{{ officer.name }}</h1>
-  <ul class="nav flex-column">
+  <ul class="nav nav-pils flex-column" id="toc">
   {% for person_incident in officer.person_incidents.all %}
     <li class="nav-item">
-      <a href="#" class="nav-link py-3 border-bottom">{{ person_incident.incident.exact_bounding_dates|capfirst }}
+      <a href="#incident-{{person_incident.incident.pk}}" class="nav-link py-3 border-bottom">
+        Incident {{ person_incident.incident.exact_bounding_dates }}
         <p class="text-muted"><small>{{ person_incident.incident.location|default:'' }}</small></p>
       </a>
     </li>
   {% endfor %}
   </ul>
 </nav>
-<div class="main-column col-md-9">
+<div class="main-column col-md-9" data-bs-spy="scroll" data-bs-target="#toc" data-bs-offset="0" >
 <h2>Incidents</h2>
 {% for person_incident in officer.person_incidents.all %}
-  <article class="card mb-4">
+  <article class="card mb-4" id="incident-{{person_incident.incident.pk}}">
     <div class="card-body">
-    <h4 class="card-title">{{ person_incident.incident.exact_bounding_dates|capfirst }}</h4>
+    <h4 class="card-title">Incident {{ person_incident.incident.exact_bounding_dates }}</h4>
     <h6 class="card-subtitle text-muted">{{ person_incident.incident.location|default:'' }}</h6>
     <p class="card-text mt-3">{{ person_incident.incident.description }}</p>
     <h7>Related Cases & Documents</h7>
