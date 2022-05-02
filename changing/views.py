@@ -1,6 +1,6 @@
 import math
 from collections import OrderedDict
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 
 from axes.models import AccessLog
 from django.core.exceptions import ValidationError
@@ -130,14 +130,17 @@ def get_login_analytics_by_year():
 
 
 def get_login_analytics_by_week(from_date, to_date):
+    # Round to earliest monday
+    from_date = from_date - timedelta(days=from_date.weekday())
+    to_date = to_date - timedelta(days=to_date.weekday())
 
     def make_empty_histogram():
         histogram = {}
         duration = to_date - from_date
-        num_weeks = math.ceil(duration / timedelta(weeks=1))
+        num_weeks = math.floor(duration / timedelta(weeks=1))
         for i in range(num_weeks):
             date = from_date + (timedelta(weeks=1) * (i + 1))
-            histogram[f"{date:%YW%W}"] = 0  #
+            histogram[f"{date:%Y-%m-%d} to {date + timedelta(weeks=1):%Y-%m-%d }"] = 0  #
         return histogram
 
     results = (
@@ -151,9 +154,13 @@ def get_login_analytics_by_week(from_date, to_date):
     histogram = make_empty_histogram()
 
     for result in results:
-        histogram[f"{result['attempt_time_week']:%YW%W}"] = result['total']
+        histogram[f"{result['attempt_time_week']:%Y-%m-%d} to {result['attempt_time_week'] + timedelta(weeks=1):%Y-%m-%d }"] = result['total']
 
-    return histogram
+    histogram_sorted = OrderedDict()
+    for key in sorted(histogram.keys()):
+        histogram_sorted[key] = histogram[key]
+
+    return histogram_sorted
 
 
 def get_login_analytics(from_date, to_date) -> OrderedDict:
@@ -200,7 +207,7 @@ class IndexTemplateView(AdminSyncTemplateView):
         :return: Context for view, including title, description and user details.
         """
         context = super(IndexTemplateView, self).get_context_data(**kwargs)
-        login_analytics = get_login_analytics(datetime.now() - timedelta(days=30), datetime.now())
+        login_analytics = get_login_analytics_by_week(datetime.now() - timedelta(days=90), datetime.now())
         # Split the login_analytics histogram dictionary into a pair of lists
         # why: because Chart.js expects a separate array for x and y
         x = list(login_analytics.keys())
