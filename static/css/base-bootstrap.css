@@ -142,7 +142,9 @@ nav.sidebar {
   position: fixed;
   top: 129px;
 }
-
+nav.sidebar a {
+  font-weight: bold;
+}
 div.main-column {
   margin-left: 400px;
 }
