@@ -9,22 +9,43 @@
 {% block content %}
 <div class="row">
 <nav class="col-md-3 pt-3 bg-light sidebar">
-  <h1>{{ officer.name }}</h1>
+  <h1 class="text-center">{{ officer.name }}</h1>
   <ul class="nav nav-pills flex-column" id="toc">
-  {% for person_incident in officer.person_incidents.all %}
+  <li class="nav-item">
+    <a class="nav-link">Incidents</a>
+    <ul class="nav nav-pills">
+    {% for person_incident in officer.person_incidents.all %}
     <li class="nav-item">
-      <a href="#incident-{{person_incident.incident.pk}}" class="nav-link py-3 border-bottom">
+      <a href="#incident-{{person_incident.pk}}" class="nav-link ms-3 my-1 border-bottom">
         Incident {{ person_incident.incident.exact_bounding_dates }}
         <p class="text-muted"><small>{{ person_incident.incident.location|default:'' }}</small></p>
       </a>
     </li>
-  {% endfor %}
+    {% endfor %}
+    </ul>
+  </li>
+
+  <li class="nav-item">
+  <a class="nav-link">Cases</a>
+  <ul class="nav nav-pills">
+  {% for content_person in officer.content_persons.all %}
+    <li class="nav-item">
+      <a href="#content-{{content_person.pk}}" class="nav-link ms-3 my-1 border-bottom">
+        Case {{ content_person.content.name }}
+        <p class="text-muted"><small>{{ person_incident.incident.location|default:'' }}</small></p>
+      </a>
+    </li>
+    {% endfor %}
   </ul>
+  </li>
 </nav>
+
 <div class="main-column col-md-9" data-bs-target="#toc" data-bs-offset="0" >
-<h2>Incidents</h2>
+
+  <!-- INCIDENTS -->
+<h2 class="mb-4 display-4">Incidents</h2>
 {% for person_incident in officer.person_incidents.all %}
-  <article class="card mb-4" id="incident-{{person_incident.incident.pk}}">
+  <article class="card mb-4" id="incident-{{person_incident.pk}}">
     <div class="card-body">
     <h4 class="card-title">Incident {{ person_incident.incident.exact_bounding_dates }}</h4>
     <h6 class="card-subtitle text-muted">{{ person_incident.incident.location|default:'' }}</h6>
@@ -45,7 +66,25 @@
   </article>
 {% endfor %}
 
-<h3>Cases & Documents</h3>
+  <!-- CONTENT -->
+<h3 class="mb-4 display-4">Cases & Documents</h3>
+{% for content_person in officer.content_persons.all %}
+  <article class="card mb-4" id="content-{{content_person.pk}}">
+    <div class="card-body">
+    <h4 class="card-title">{{ content_person.content.name }}</h4>
+    <h6 class="card-subtitle text-muted">{{ content_person.content.identifiers|default:'' }}</h6>
+    <p class="card-text mt-3">{{ person_incident.incident.description }}</p>
+    <h7>Related Incidents</h7>
+    <ul>
+    {% for incident in content_person.content.incidents.all %}
+      <li><a href="#">{{ incident|truncatechars:100 }}</a>
+      </li>
+    {% endfor %}
+    </ul>
+  </div>
+  </article>
+
+{% endfor %}
 </div>
 </div>
 {% endblock %}
