@@ -1,0 +1,50 @@
+{% extends "common/base-bootstrap.html" %}
+{% load i18n admin_urls static compress crispy_forms_tags %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a></li>
+<li>{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+<nav class="col-md-3 pt-3 bg-light sidebar">
+  <h1>{{ officer.name }}</h1>
+  <ul class="nav flex-column">
+  {% for person_incident in officer.person_incidents.all %}
+    <li class="nav-item">
+      <a href="#" class="nav-link py-3 border-bottom">{{ person_incident.incident.exact_bounding_dates|capfirst }}
+        <p class="text-muted"><small>{{ person_incident.incident.location|default:'' }}</small></p>
+      </a>
+    </li>
+  {% endfor %}
+  </ul>
+</nav>
+<div class="main-column col-md-9">
+<h2>Incidents</h2>
+{% for person_incident in officer.person_incidents.all %}
+  <article class="card mb-4">
+    <div class="card-body">
+    <h4 class="card-title">{{ person_incident.incident.exact_bounding_dates|capfirst }}</h4>
+    <h6 class="card-subtitle text-muted">{{ person_incident.incident.location|default:'' }}</h6>
+    <p class="card-text mt-3">{{ person_incident.incident.description }}</p>
+    <h7>Related Cases & Documents</h7>
+    <ul>
+    {% for content in person_incident.incident.contents.all %}
+      <li><a href="#">{{ content }}</a>
+        <ul>
+          {% for attachment in content.attachments.all %}
+          <li>Attachment: {{ attachment }}</li>
+          {% endfor %}
+        </ul>
+      </li>
+    {% endfor %}
+    </ul>
+  </div>
+  </article>
+{% endfor %}
+
+<h3>Cases & Documents</h3>
+</div>
+</div>
+{% endblock %}

@@ -1,7 +1,7 @@
 from django.urls import path
 from inheritable.models import AbstractUrlValidator
 from . import views
-from .views import SiteSettingsPage
+from .views import SiteSettingsPage, NewProfilePrototype
 
 app_name = 'profiles'
 
@@ -32,5 +32,6 @@ urlpatterns = [
         views.CommandDownloadAllFilesView.as_view(),
         name='command_download_all_files'
     ),
-    path('admin/site-settings', SiteSettingsPage.as_view(), name='site_settings')
+    path('admin/site-settings', SiteSettingsPage.as_view(), name='site_settings'),
+    path('new-profile-prototype', NewProfilePrototype.as_view(), name='new_profile_prototype'),
 ]

@@ -135,3 +135,14 @@ span#release-number {
 legend {
     color: #417690;
 }
+
+/* SPIKE new officer layout demo */
+
+nav.sidebar {
+  position: fixed;
+  top: 129px;
+}
+
+div.main-column {
+  margin-left: 400px;
+}

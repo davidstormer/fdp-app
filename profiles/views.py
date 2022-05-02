@@ -13,7 +13,7 @@ from .models import OfficerSearch, OfficerView, CommandSearch, CommandView, Site
     set_site_setting, SiteSettingKeys
 from .forms import OfficerSearchForm, CommandSearchForm, SiteSettingsForm
 from inheritable.models import Archivable, AbstractSql, AbstractImport
-from core.models import Person, PersonIdentifier, PersonGrouping, Grouping, GroupingAlias
+from core.models import Person, PersonIdentifier, PersonGrouping, Grouping, GroupingAlias, PersonIncident, Incident
 from sourcing.models import Content, ContentPerson, ContentPersonAllegation
 from supporting.models import Allegation
 # Load a customized algorithm for person searches
@@ -30,6 +30,19 @@ GroupingProfileSearch = AbstractImport.load_profile_search(
     file_default='def_grouping',
     class_default='GroupingProfileSearch'
 )
+
+
+class NewProfilePrototype(SecuredSyncTemplateView):
+
+    template_name = "new_profile_prototype.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(NewProfilePrototype, self).get_context_data(**kwargs)
+        officer_record = Person.objects.get(pk=3)
+        context.update({
+            'officer': officer_record,
+        })
+        return context
 
 
 class IndexTemplateView(SecuredSyncTemplateView):
