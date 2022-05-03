@@ -6,7 +6,7 @@
 </form>
 
 {% if query %}
-<p><span class="number-of-results">{{ number_of_results }}</span> results found for "{{ query }}"</p>
+<p><span class="number-of-results">{{ number_of_results }}</span> results found for "{{ query }}" sorted by {{ sort }}</p>
 {% elif number_of_results %}
 <p><span class="number-of-results">{{ number_of_results }}</span> records</p>
 {% endif %}
