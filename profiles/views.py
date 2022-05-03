@@ -329,15 +329,28 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
             'query': '',
+            'sort': 'relevance',
             'page_obj': page_obj,
             'number_of_results': results.count(),
+            'groups': Grouping.objects.filter(is_law_enforcement=True).order_by('name'),
         })
 
     # Handle searches via POST so that the query string is kept out of the URL (security)
     def post(self, request, *args, **kwargs):
         query_string = request.POST.get('q')
         sort = request.POST.get('sort') or 'relevance'
+        try:
+            group = Grouping.objects.get(pk=request.POST.get('group'))
+        except Grouping.DoesNotExist:
+            group = None
+        except ValueError:
+            group = None
+
         results = Person.objects.search_all_fields(query_string, request.user)
+
+        if group:
+            results = results.filter(person_grouping__grouping=group).distinct()
+
         if sort == 'name':
             results = results.order_by('name')
         elif sort == 'relevance':
@@ -350,9 +363,11 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
             'query': query_string,
+            'within_group': group,
             'sort': sort,
             'page_obj': page_obj,
             'number_of_results': results.count(),
+            'groups': Grouping.objects.filter(is_law_enforcement=True).order_by('name'),
         })
 
 
