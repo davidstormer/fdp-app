@@ -336,11 +336,11 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
     # Handle searches via POST so that the query string is kept out of the URL (security)
     def post(self, request, *args, **kwargs):
         query_string = request.POST.get('q')
-        sort = request.POST.get('sort')
+        sort = request.POST.get('sort') or 'relevance'
         results = Person.objects.search_all_fields(query_string, request.user)
         if sort == 'name':
             results = results.order_by('name')
-        if sort == 'relevance':
+        elif sort == 'relevance':
             # Do nothing, because the results are already ordered by relevance by default
             pass
 
