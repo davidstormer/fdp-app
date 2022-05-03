@@ -28,12 +28,14 @@
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="q" value="{{ query }}">
+                    <input type="hidden" name="sort" value={{ sort }}>
                     <input type="submit" value="&laquo; first">
                 </form>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="q" value="{{ query }}">
                     <input type="hidden" name="page" value="{{ page_obj.previous_page_number }}">
+                    <input type="hidden" name="sort" value={{ sort }}>
                     <input type="submit" value="previous">
                 </form>
             {% endif %}
@@ -47,12 +49,14 @@
                     {% csrf_token %}
                     <input type="hidden" name="q" value="{{ query }}">
                     <input type="hidden" name="page" value="{{ page_obj.next_page_number }}">
+                    <input type="hidden" name="sort" value={{ sort }}>
                     <input type="submit" value="next">
                 </form>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="q" value="{{ query }}">
                     <input type="hidden" name="page" value="{{ page_obj.paginator.num_pages }}">
+                    <input type="hidden" name="sort" value={{ sort }}>
                     <input type="submit" value="last &raquo;">
                 </form>
             {% endif %}
