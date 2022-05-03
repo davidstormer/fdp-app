@@ -41,7 +41,7 @@ class PersonManager(ConfidentiableManager):
                 .annotate(search_full_text_rank=SearchRank('util_full_text', query) * 10)
                 .annotate(search_name_rank=TrigramSimilarity('name', query))
                 .annotate(search_rank=F('search_full_text_rank') + F('search_name_rank'))
-                .filter(search_rank__gt=0.1)
+                .filter(search_rank__gt=0.15)
                 .order_by('-search_rank')
             )
 
