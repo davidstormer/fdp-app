@@ -344,6 +344,49 @@ class PersonSearchAllFields(TestCase):
             len(results)
         )
 
+    def test_subsorting(self):
+        """Ensure that results with the same search rank are sorted logically"""
+        # Given there are several officers with the same first name and same alias
+        Person.objects.create(name="Andrew Y", is_law_enforcement=True)
+        Person.objects.create(name="Andrew V", is_law_enforcement=True)
+        Person.objects.create(name="Andrew U", is_law_enforcement=True)
+        Person.objects.create(name="Andrew Z", is_law_enforcement=True)
+        Person.objects.create(name="Andrew X", is_law_enforcement=True)
+        Person.objects.create(name="Andrew Same", is_law_enforcement=True)
+        Person.objects.create(name="Andrew Same", is_law_enforcement=True)
+        Person.objects.create(name="Andrew Same", is_law_enforcement=True)
+        Person.objects.create(name="Andrew Same", is_law_enforcement=True)
+        Person.objects.create(name="Andrew Same", is_law_enforcement=True)
+        for person_record in Person.objects.all():
+            PersonAlias.objects.create(name='Same', person=person_record)
+            person_record.save()
+
+        # When I do a search just on the first name,
+        # When I call a query for "Roger Hobbes"
+        # with a query that doesn't match at all on any of the last names
+        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+        results_A = Person.objects.search_all_fields("Andrew same", user=admin_user)
+
+        # And I perform the same search again
+        results_B = Person.objects.search_all_fields("Andrew same", user=admin_user)
+        results_C = Person.objects.search_all_fields("Andrew same", user=admin_user)
+        results_D = Person.objects.search_all_fields("Andrew same", user=admin_user)
+
+        # Then the results of the queries should be in the same order
+        for i, person in enumerate(results_A):
+            self.assertEqual(
+                person.pk,
+                results_C[i].pk
+            )
+            self.assertEqual(
+                person.pk,
+                results_B[i].pk
+            )
+            self.assertEqual(
+                person.pk,
+                results_D[i].pk
+            )
+
     def test_check_variation_matches(self):
         things_to_check = [
             # {'source': "", 'query': "", 'scenario': ""},
