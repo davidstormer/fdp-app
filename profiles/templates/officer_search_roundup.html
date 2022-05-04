@@ -11,11 +11,19 @@
 {% endblock %}
 
 {% block content %}
+<div class="col-lg-6">
 <form method="post" class="mb-5">
     {% csrf_token %}
-    <input type="text" name="q" value="{{ query }}" size="100">
-    <input type="submit" value="Search">
+    <label for="officer-search" class="form-label">Officer search</label>
+    <div class="input-group input-group-lg mb-3">
+    <input type="text" name="q" value="{{ query }}" size="100" id="officer-search" class="form-control" aria-describedby="officer-search-help">
+    <input type="submit" value="Search" class="btn btn-primary">
+    </div>
+    <div id="officer-search-help" class="form-text">
+      Search by names and identifiers
+    </div>
 </form>
+</div>
 
 <div class="row row-details-sorting">
     <div class="col-md-8 search-query-details">
