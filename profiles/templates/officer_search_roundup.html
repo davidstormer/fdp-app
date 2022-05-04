@@ -85,49 +85,47 @@
     </ul>
 
     <nav aria-label="pagination">
-    <div class="pagination-post">
-        <span class="step-links">
-            {% if page_obj.has_previous %}
-                <form method="post" class="d-inline-block">
-                    {% csrf_token %}
-                    <input type="hidden" name="q" value="{{ query }}">
-                    <input type="hidden" name="sort" value={{ sort }}>
-                    <input type="submit" value="&laquo; first" class="btn btn-link">
-                </form>
-                <form method="post" class="d-inline-block">
-                    {% csrf_token %}
-                    <input type="hidden" name="q" value="{{ query }}">
-                    <input type="hidden" name="page" value="{{ page_obj.previous_page_number }}">
-                    <input type="hidden" name="sort" value={{ sort }}>
-                    <input type="submit" value="previous" class="btn btn-link">
-                </form>
-            {% else %}
-            <button class="btn btn-link" disabled>&laquo; first</button> <button class="btn btn-link" disabled>previous</button>
-            {% endif %}
+    <div class="search-pagination text-center mb-5">
+        {% if page_obj.has_previous %}
+            <form method="post" class="d-inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="sort" value={{ sort }}>
+                <input type="submit" value="&laquo; first" class="btn btn-link">
+            </form>
+            <form method="post" class="d-inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="page" value="{{ page_obj.previous_page_number }}">
+                <input type="hidden" name="sort" value={{ sort }}>
+                <input type="submit" value="previous" class="btn btn-link">
+            </form>
+        {% else %}
+        <button class="btn btn-link" disabled>&laquo; first</button> <button class="btn btn-link" disabled>previous</button>
+        {% endif %}
 
-            <span class="current">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-            </span>
-
-            {% if page_obj.has_next %}
-                <form method="post" class="d-inline-block">
-                    {% csrf_token %}
-                    <input type="hidden" name="q" value="{{ query }}">
-                    <input type="hidden" name="page" value="{{ page_obj.next_page_number }}">
-                    <input type="hidden" name="sort" value={{ sort }}>
-                    <input type="submit" value="next" class="btn btn-link">
-                </form>
-                <form method="post" class="d-inline-block">
-                    {% csrf_token %}
-                    <input type="hidden" name="q" value="{{ query }}">
-                    <input type="hidden" name="page" value="{{ page_obj.paginator.num_pages }}">
-                    <input type="hidden" name="sort" value={{ sort }}>
-                    <input type="submit" value="last &raquo;" class="btn btn-link">
-                </form>
-            {% else %}
-            <button class="btn btn-link" disabled>next</button> <button class="btn btn-link" disabled>last &raquo;</button>
-            {% endif %}
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
         </span>
+
+        {% if page_obj.has_next %}
+            <form method="post" class="d-inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="page" value="{{ page_obj.next_page_number }}">
+                <input type="hidden" name="sort" value={{ sort }}>
+                <input type="submit" value="next" class="btn btn-link">
+            </form>
+            <form method="post" class="d-inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="page" value="{{ page_obj.paginator.num_pages }}">
+                <input type="hidden" name="sort" value={{ sort }}>
+                <input type="submit" value="last &raquo;" class="btn btn-link">
+            </form>
+        {% else %}
+        <button class="btn btn-link" disabled>next</button> <button class="btn btn-link" disabled>last &raquo;</button>
+        {% endif %}
     </div>
     </nav>
 {% else %}
