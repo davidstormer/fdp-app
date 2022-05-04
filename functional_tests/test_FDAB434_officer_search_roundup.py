@@ -29,7 +29,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
 
         # Then the page should return a list of results
         # and the record "Miesha Britton" should be the first in the list
-        first_result = self.browser.find_element(By.CSS_SELECTOR, "ul.results li.row-1")
+        first_result = self.browser.find_element(By.CSS_SELECTOR, "div.search-results li.row-1")
         self.assertIn(
             "Miesha Britton",
             first_result.text
@@ -80,7 +80,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             .click()
 
         # Then I should see their aliases printed in their search result row
-        first_result = self.browser.find_element(By.CSS_SELECTOR, "ul.results li.row-1")
+        first_result = self.browser.find_element(By.CSS_SELECTOR, "div.search-results li.row-1")
         self.assertIn(
             "contortioned",
             first_result.text
@@ -110,7 +110,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             .click()
 
         # Then I should see their identifiers printed in their search result row
-        first_result = self.browser.find_element(By.CSS_SELECTOR, "ul.results li.row-1")
+        first_result = self.browser.find_element(By.CSS_SELECTOR, "div.search-results li.row-1")
         self.assertIn(
             "bathmic",
             first_result.text
@@ -199,7 +199,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             .click()
 
         # Then I should see ONLY the titles with end dates set to all zeros
-        first_result = self.browser.find_element(By.CSS_SELECTOR, "ul.results li.row-1")
+        first_result = self.browser.find_element(By.CSS_SELECTOR, "div.search-results li.row-1")
         self.assertIn(
             "miasmatical",
             first_result.text
@@ -243,7 +243,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             .click()
 
         # Then I should see their commands printed in their search result row
-        first_result = self.browser.find_element(By.CSS_SELECTOR, "ul.results li.row-1")
+        first_result = self.browser.find_element(By.CSS_SELECTOR, "div.search-results li.row-1")
         self.assertIn(
             "subcommissaryship",
             first_result.text
@@ -264,7 +264,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
         self.browser.get(self.live_server_url + '/officer/search-roundup')
 
         # Then I should see the newly added officer as the first result
-        first_result = self.browser.find_element(By.CSS_SELECTOR, "ul.results li.row-1")
+        first_result = self.browser.find_element(By.CSS_SELECTOR, "div.search-results li.row-1")
         self.assertIn(
             "microcosmography",
             first_result.text

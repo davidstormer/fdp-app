@@ -74,8 +74,8 @@
 </div>
 
     <div class="search-results col-md-9">
-{% if page_obj %}
-    <ul class="results">
+    {% if page_obj %}
+    <ul>
         {% for officer in page_obj %}
         <li class="row-{{ forloop.counter }}">
             {{ officer|teaser_person }}
