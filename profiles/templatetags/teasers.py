@@ -1,5 +1,6 @@
 from django import template
 from django.template import Template, Context
+from django.template.loader import render_to_string
 
 from core.models import Person
 
@@ -12,31 +13,22 @@ def teaser_person(person: Person) -> str:
     # Aliases
     aliases = [alias.name for alias in person.person_aliases.all()]
     # Identifiers
-    identifiers = [identifier.identifier for identifier in person.person_identifiers.all()]
+    identifiers = [identifier for identifier in person.person_identifiers.all()]
     # Ranks
-    titles = [title.title.name for title in person.person_titles.filter(end_year=0, end_month=0, end_day=0)]
+    current_titles = [title.title.name for title in person.person_titles.filter(end_year=0, end_month=0, end_day=0)]
     # Commands
     groups = [person_grouping.grouping.name for person_grouping in person.person_groupings.all()]
 
-    context = Context({
+    context = {
         'profile_url': person.get_profile_url,
         'name': person.name,
         'aliases': aliases,
         'identifiers': identifiers,
-        'titles': titles,
+        'current_titles': current_titles,
         'groups': groups,
-    })
+    }
 
-    # TEMPLATING
-    template_ = Template("""<a href="{{profile_url}}" class="profile-link">{{name}}</a>
-    {% if aliases %}({{ aliases|join:', ' }}){% endif %}
-    {% if identifiers %} &ndash; {{ identifiers|join:', ' }}{% endif %}
-    {% if titles %} &ndash; {{ titles|join:', ' }}{% endif %}
-    {% if groups %} &ndash; {{ groups|join:', ' }}{% endif %}
-    """)
-
-    return template_.render(context)
-
+    return render_to_string('teaser_officer.html', context=context)
 
 @register.filter
 def person_search_ranking_debug(person: Person) -> str:

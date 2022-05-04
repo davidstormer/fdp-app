@@ -1,0 +1,14 @@
+div.search-results li {
+    list-style: none;
+}
+div.search-results ul {
+  padding-left: 0;
+}
+a.profile-link {
+  text-decoration: none;
+  color: rgb(33, 37, 41); /* var(--bs-body-color) */
+}
+.fdp-card-footer {
+  padding: .5rem;
+  padding-left: 1rem;
+}

@@ -1,0 +1,22 @@
+<div class="card mb-3">
+  <a class="card-body profile-link" href="{{profile_url}}">
+    <h5 class="card-title">{{name}}</h5>
+    {% if aliases %}<h6 class="card-subtitle mb-2 text-muted">a.k.a. {{ aliases|join:', ' }}</h6>{% endif %}
+    {% if current_titles %}<p class="card-text"></p>{% endif %}
+    {% if groups %}<p class="card-text">{{ groups|join:', ' }}</p>{% endif %}
+  </a>
+  {% if current_titles or identifiers %}
+  <div class="fdp-card-footer border-top text-secondary">
+    <div class="row">
+    <div class="current-titles col-md-6">
+    {{ current_titles|join:', ' }}
+    </div>
+    <div class="identifiers col-md-6 text-end">
+    {% for identifier in identifiers %}
+    <span class="badge rounded-pill border text-secondary" title="{{identifier.person_identifier_type}}">{{ identifier.identifier }}</span>
+    {% endfor %}
+    </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
