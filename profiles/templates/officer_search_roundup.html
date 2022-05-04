@@ -7,7 +7,7 @@
 
 
 {% block breadcrumbs %}
-<li class="breadcrumb-item active" aria-current="page">Bootstrap style guide</li>
+<li class="breadcrumb-item active" aria-current="page">Officer Search</li>
 {% endblock %}
 
 {% block content %}
@@ -17,14 +17,15 @@
     <input type="submit" value="Search">
 </form>
 
-{% spaceless %}
-<p><span class="number-of-results">{{ number_of_results }} </span> <span>results found for "{{ query }}"</span>
-    {% if within_group %}<span>, within command "{{ within_group.name }}"</span>{% endif %}
-    <span>, sorted by {{ sort }}</span></p>
-{% endspaceless %}
-
-<a href="/officer/search-roundup/">X Start over</a>
-
+<div class="row row-details-sorting">
+    <div class="col-md-8 search-query-details">
+    {% spaceless %}
+    <p><span class="number-of-results">{{ number_of_results }} </span> <span>results found for "{{ query }}"</span>
+        {% if within_group %}<span>, within command "{{ within_group.name }}"</span>{% endif %}
+        <span>, sorted by {{ sort }} </span><a href="/officer/search-roundup/"><i class="far fa-times-circle"></i> Start over</a></p>
+    {% endspaceless %}
+    </div>
+    <div class="col-md-4 search-sorting-options text-end">
         <span>Order by: </span>
     <form method="post" class="d-inline-block">
         {% csrf_token %}
@@ -34,18 +35,20 @@
         <input type="hidden" name="group" value="{{ within_group.pk }}">
         <input type="submit" value="name" class="btn btn-link">
     </form>
-    <form method="post" class="d-inline-block">
+        <form method="post" class="d-inline-block">
         {% csrf_token %}
         <input type="hidden" name="sort" value="relevance">
         <input type="hidden" name="q" value="{{ query }}">
         <input type="hidden" name="group" value="{{ within_group.pk }}">
         <input type="hidden" name="page" value="{{ page_obj.number }}">
         <input type="submit" value="relevance" class="btn btn-link">
-    </form>
+        </form>
+</div>
+</div>
 
-<div class="row">
+<div class="row row-filters-results">
 
-    <div class="search-filter-bar sidebar col-md-3">
+    <div class="search-filter-bar sidebar col-md-3 mb-5">
 
     <div class="search-facet-box bg-light p-3">
     <p class="border-bottom">Commands</p>
