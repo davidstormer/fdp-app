@@ -1,14 +1,17 @@
+from django.contrib import messages
+
 from inheritable.models import AbstractUrlValidator, AbstractSearchValidator, \
     AbstractFileValidator
 from inheritable.views import SecuredSyncFormView, SecuredSyncListView, SecuredSyncDetailView, SecuredSyncView, \
-    SecuredSyncTemplateView
+    SecuredSyncTemplateView, AdminSyncFormView
 from django.conf import settings
 from django.utils.translation import gettext as _
 from django.utils.http import urlquote, urlunquote
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.http import QueryDict, HttpResponse
-from .models import OfficerSearch, OfficerView, CommandSearch, CommandView
-from .forms import OfficerSearchForm, CommandSearchForm
+from .models import OfficerSearch, OfficerView, CommandSearch, CommandView, SiteSetting, get_site_setting, \
+    set_site_setting, SiteSettingKeys
+from .forms import OfficerSearchForm, CommandSearchForm, SiteSettingsForm
 from inheritable.models import Archivable, AbstractSql, AbstractImport
 from core.models import Person, PersonIdentifier, PersonGrouping, Grouping, GroupingAlias
 from sourcing.models import Content, ContentPerson, ContentPersonAllegation
@@ -357,6 +360,9 @@ class OfficerDetailView(SecuredSyncDetailView):
             'attachments_key': self.__attachments_key,
             'strings_key': self.__strings_key,
             'links_key': self.__links_key,
+            'custom_text_block_profile_top': get_site_setting('custom_text_blocks-profile_page_top'),
+            'custom_text_block_incidents': get_site_setting('custom_text_blocks-profile_incidents'),
+
         })
         return context
 
@@ -912,7 +918,9 @@ class CommandDetailView(SecuredSyncDetailView):
             'max_person_groupings': Grouping.max_person_groupings,
             'attachments_key': self.__attachments_key,
             'strings_key': self.__strings_key,
-            'links_key': self.__links_key
+            'links_key': self.__links_key,
+            'custom_text_block_profile_top': get_site_setting('custom_text_blocks-profile_page_top'),
+            'custom_text_block_incidents': get_site_setting('custom_text_blocks-profile_incidents'),
         })
         return context
 
@@ -1142,3 +1150,44 @@ class CommandDownloadAllFilesView(SecuredSyncView):
         :return: ZIP archive of all attachments.
         """
         return self.__get(request=request, pk=pk)
+
+
+class SiteSettingsPage(AdminSyncFormView):
+    template_name = 'site_settings.html'
+    form_class = SiteSettingsForm
+    success_url = reverse_lazy('profiles:site_settings')
+    # custom_text_blocks-profile_incidents
+    def get_context_data(self, **kwargs):
+        context = super(SiteSettingsPage, self).get_context_data(**kwargs)
+        context.update({
+            'title': _('Site settings'),
+        })
+        return context
+
+    def get_initial(self):
+        data = {}
+        data['profile_page_top'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__PROFILE_PAGE_TOP)
+        data['profile_incidents'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__PROFILE_INCIDENTS)
+        data['global_footer_left'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER_LEFT)
+        data['global_footer_right'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER_RIGHT)
+        return data
+
+    def form_valid(self, form):
+        set_site_setting(
+            'custom_text_blocks-profile_page_top',
+            form.cleaned_data['profile_page_top']
+        )
+        set_site_setting(
+            'custom_text_blocks-profile_incidents',
+            form.cleaned_data['profile_incidents']
+        )
+        set_site_setting(
+            'custom_text_blocks-global_footer_left',
+            form.cleaned_data['global_footer_left']
+        )
+        set_site_setting(
+            'custom_text_blocks-global_footer_right',
+            form.cleaned_data['global_footer_right']
+        )
+        messages.add_message(self.request, messages.SUCCESS, 'Site settings saved')
+        return super().form_valid(form)

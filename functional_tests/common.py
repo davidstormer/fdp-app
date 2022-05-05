@@ -47,7 +47,7 @@ def setup_user(is_host: bool = True,
 
 def wait(fn, *args, **kwargs):
     """Call a given function repeatedly until it doesn't raise AssertionError or WebDriverException.
-    Gives up after max_wait in seconds.
+    Gives up after five seconds.
     """
     max_wait = 5
     start_time = time.time()
@@ -123,13 +123,13 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         # slightly obscure but couldn't find a better way!
         return any(error for (method, error) in self._outcome.errors)
 
-    def take_screenshot_and_dump_html(self):
+    def take_screenshot_and_dump_html(self, msg=''):
         if not os.path.exists(SCREEN_DUMP_LOCATION):
             os.makedirs(SCREEN_DUMP_LOCATION)
         for ix, handle in enumerate(self.browser.window_handles):
             self._windowid = ix
             self.browser.switch_to.window(handle)
-            filename = self._get_filename() + '.png'
+            filename = self._get_filename() + msg + '.png'
             print('screenshotting to', filename)
             self.browser.get_screenshot_as_file(filename)
             filename = self._get_filename() + '.html'
