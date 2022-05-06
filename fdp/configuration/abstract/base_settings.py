@@ -364,6 +364,10 @@ STATICFILES_FINDERS = [
     'compressor.finders.CompressorFinder'
 ]
 
+# For bootstrap SASS compilation
+COMPRESS_PRECOMPILERS = (
+    ('text/x-scss', 'django_libsass.SassCompiler'),
+)
 
 # Protection against Denial-of-service (DoS) Attacks
 # Maximum size in bytes of request body
