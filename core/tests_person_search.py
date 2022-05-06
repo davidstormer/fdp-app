@@ -28,25 +28,25 @@ def make_fake_person_records(number):
 
 
 class FullTextIndexing(TestCase):
-    def test_repopulate_util_full_text_name(self):
+    def test_repopulate_search_full_text_name(self):
         # When there's a Person record
         person_record = Person.objects.create(name="echinodermal")
         # Then the full text field should reflect the changes
         self.assertIn(
             'echinodermal',
-            Person.objects.last().util_full_text
+            Person.objects.last().search_full_text
         )
 
-    def test_repopulate_util_full_text_name_diacritic_folding(self):
+    def test_repopulate_search_full_text_name_diacritic_folding(self):
         # When there's a Person record with a diacritic mark in the name
         person_record = Person.objects.create(name="café")
         # Then the full text field should have a normalized form with no diacritic mark
         self.assertIn(
             'cafe',
-            Person.objects.last().util_full_text
+            Person.objects.last().search_full_text
         )
 
-    def test_repopulate_util_full_text_aliases(self):
+    def test_repopulate_search_full_text_aliases(self):
         # Given there's a Person record
         person_record = Person.objects.create(name="Test Person")
         # When I update their aliases
@@ -56,18 +56,18 @@ class FullTextIndexing(TestCase):
         # Then the full text field should reflect the changes
         self.assertIn(
             'mastiff',
-            Person.objects.last().util_full_text
+            Person.objects.last().search_full_text
         )
         self.assertIn(
             'yielding',
-            Person.objects.last().util_full_text
+            Person.objects.last().search_full_text
         )
         self.assertIn(
             'henchmen',
-            Person.objects.last().util_full_text
+            Person.objects.last().search_full_text
         )
 
-    def test_repopulate_util_full_text_aliases_duplicate_names(self):
+    def test_repopulate_search_full_text_aliases_duplicate_names(self):
         """To prevent skewing search results"""
         # Given there's a Person record
         person_record = Person.objects.create(name="Test Person")
@@ -78,10 +78,10 @@ class FullTextIndexing(TestCase):
         # Then the full text field should only have ONE instance of "errant" in it
         self.assertEqual(
             1,
-            Person.objects.last().util_full_text.count('errant')
+            Person.objects.last().search_full_text.count('errant')
         )
 
-    def test_repopulate_util_full_text_identifiers(self):
+    def test_repopulate_search_full_text_identifiers(self):
         # Given there's a Person record
         person_record = Person.objects.create(name="Test Person")
         # When I update the identifiers for the person
@@ -98,15 +98,15 @@ class FullTextIndexing(TestCase):
         # Then the full text field should reflect the changes
         self.assertIn(
             'emphatic',
-            Person.objects.last().util_full_text
+            Person.objects.last().search_full_text
         )
         self.assertIn(
             'backslashes',
-            Person.objects.last().util_full_text
+            Person.objects.last().search_full_text
         )
         self.assertIn(
             'profanely',
-            Person.objects.last().util_full_text
+            Person.objects.last().search_full_text
         )
 
 

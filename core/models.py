@@ -38,7 +38,7 @@ class PersonManager(ConfidentiableManager):
                 self.all()
                 .filter(is_law_enforcement=is_law_enforcement)
                 .filter_for_confidential_by_user(user=user)
-                .annotate(search_full_text_rank=SearchRank('util_full_text', query) * 10)
+                .annotate(search_full_text_rank=SearchRank('search_full_text', query) * 10)
                 .annotate(search_name_rank=TrigramSimilarity('name', query))
                 .annotate(search_rank=F('search_full_text_rank') + F('search_name_rank'))
                 .filter(search_rank__gt=0.15)
@@ -160,7 +160,7 @@ class Person(Confidentiable, Descriptable):
         verbose_name=_('organization access')
     )
 
-    util_full_text = SearchVectorField(null=True)
+    search_full_text = SearchVectorField(null=True)
 
     #: Fields to display in the model form.
     form_fields = \
@@ -171,7 +171,7 @@ class Person(Confidentiable, Descriptable):
         super().save(*args, **kwargs)
 
     def reindex_search_fields(self, commit=False):
-        """Normalize and concatenate various fields and write them into the util_full_text field.
+        """Normalize and concatenate various fields and write them into the search_full_text field.
         Does not actually do anything directly with true database indexes.
         """
 
@@ -189,7 +189,7 @@ class Person(Confidentiable, Descriptable):
         def get_identifiers():
             return ' '.join([identifier.identifier for identifier in self.person_identifiers.all()])
 
-        self.util_full_text = \
+        self.search_full_text = \
             f"""{get_name()}
 
             {get_aliases_unique_terms()}
