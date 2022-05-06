@@ -328,6 +328,7 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
         page_number = request.POST.get('page')
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
+            'title': 'Officer Search',
             'query': '',
             'sort': 'relevance',
             'page_obj': page_obj,
@@ -362,6 +363,7 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
         page_number = request.POST.get('page')
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
+            'title': 'Officer Search',
             'query': query_string,
             'within_group': group,
             'sort': sort,
