@@ -1,4 +1,6 @@
 from django.contrib import messages
+from django.core.paginator import Paginator
+from django.views.generic import TemplateView
 
 from inheritable.models import AbstractUrlValidator, AbstractSearchValidator, \
     AbstractFileValidator
@@ -312,6 +314,63 @@ class OfficerSearchResultsListView(SecuredSyncListView):
         """
         self.__get_officer_results()
         return self.__result_list
+
+
+class OfficerSearchRoundupView(SecuredSyncTemplateView):
+    template_name = "officer_search_roundup.html"
+
+    def get(self, request, *args, **kwargs):
+
+        results = Person.objects.search_all_fields('', request.user)
+
+        paginator = Paginator(results, 50)
+
+        page_number = request.POST.get('page')
+        page_obj = paginator.get_page(page_number)
+        return self.render_to_response({
+            'title': 'Officer Search',
+            'query': '',
+            'sort': 'relevance',
+            'page_obj': page_obj,
+            'number_of_results': results.count(),
+            'groups': Grouping.objects.filter(is_law_enforcement=True).order_by('name'),
+        })
+
+    # Handle searches via POST so that the query string is kept out of the URL (security)
+    def post(self, request, *args, **kwargs):
+        query_string = request.POST.get('q')
+        sort = request.POST.get('sort') or 'relevance'
+        try:
+            group = Grouping.objects.get(pk=request.POST.get('group'))
+        except Grouping.DoesNotExist:
+            group = None
+        except ValueError:
+            group = None
+
+        results = Person.objects.search_all_fields(query_string, request.user)
+
+        if group:
+            results = results.filter(person_grouping__grouping=group).distinct()
+
+        if sort == 'name':
+            results = results.order_by('name')
+        elif sort == 'relevance':
+            # Do nothing, because the results are already ordered by relevance by default
+            pass
+
+        paginator = Paginator(results, 50)
+
+        page_number = request.POST.get('page')
+        page_obj = paginator.get_page(page_number)
+        return self.render_to_response({
+            'title': 'Officer Search',
+            'query': query_string,
+            'within_group': group,
+            'sort': sort,
+            'page_obj': page_obj,
+            'number_of_results': results.count(),
+            'groups': Grouping.objects.filter(is_law_enforcement=True).order_by('name'),
+        })
 
 
 class OfficerDetailView(SecuredSyncDetailView):

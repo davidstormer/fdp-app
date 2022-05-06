@@ -1,0 +1,31 @@
+div.search-results li {
+    list-style: none;
+}
+div.search-results ul {
+  padding-left: 0;
+}
+a.profile-link {
+  text-decoration: none;
+  color: rgb(33, 37, 41); /* var(--bs-body-color) */
+}
+.fdp-card-footer {
+  padding: .5rem;
+  padding-left: 1rem;
+}
+.search-filter-bar .btn-link {
+  color: rgb(33, 37, 41) !important; /* var(--bs-body-color) */
+  text-decoration: none;
+}
+.search-facet-option {
+  margin-left: 1.2rem;
+  padding-left: 0;
+}
+.search-facet-option input {
+  padding-left: .1rem;
+  white-space: normal;
+  text-align: left;
+}
+.search-facet-status-indicator {
+  margin-left: -1.2rem;
+  vertical-align: -10%;
+}

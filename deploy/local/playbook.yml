@@ -11,7 +11,9 @@
       - name: "Initialize database"
         become: yes
         become_user: postgres
-        shell: psql < /vagrant/deploy/local/init_db.sql
+        shell: |
+          psql < /vagrant/deploy/local/init_db.sql
+          psql -d template1 -c 'CREATE EXTENSION pg_trgm;' # Enable trigram similarity extension in test databases
 
       - name: "Start app config file"
         copy:

@@ -1,0 +1,150 @@
+{% extends 'common/base-bootstrap.html' %}
+{% load teasers static %}
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="{% static 'profiles/css/officer_search_roundup.css' %}">
+{% endblock %}
+
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active" aria-current="page">Officer Search</li>
+{% endblock %}
+
+{% block content %}
+<div class="col-lg-6">
+<form method="post" class="mb-5">
+    {% csrf_token %}
+    <label for="officer-search" class="form-label">Terms</label>
+    <div class="input-group input-group-lg mb-3">
+    <input type="text" name="q" value="{{ query }}" size="100" id="officer-search" class="form-control" aria-describedby="officer-search-help">
+    <input type="submit" value="Search" class="btn btn-primary">
+    </div>
+    <div id="officer-search-help" class="form-text">
+      Search by names and identifiers
+    </div>
+</form>
+</div>
+
+<div class="row row-details-sorting">
+    <div class="col-md-8 search-query-details">
+    {% spaceless %}
+    <p><span class="number-of-results">{{ number_of_results }} </span> <span>results found for "{{ query }}"</span>
+        {% if within_group %}<span>, within command "{{ within_group.name }}"</span>{% endif %}
+        <span>, sorted by {{ sort }} </span><a href="/officer/search-roundup/"><i class="far fa-times-circle"></i> Start over</a></p>
+    {% endspaceless %}
+    </div>
+    <div class="col-md-4 search-sorting-options text-end">
+        <span>Order by: </span>
+    <form method="post" class="d-inline-block">
+        {% csrf_token %}
+        <input type="hidden" name="sort" value="name">
+        <input type="hidden" name="q" value="{{ query }}">
+        <input type="hidden" name="page" value="{{ page_obj.number }}">
+        <input type="hidden" name="group" value="{{ within_group.pk }}">
+        <input type="submit" value="name" class="btn btn-link">
+    </form>
+        <form method="post" class="d-inline-block">
+        {% csrf_token %}
+        <input type="hidden" name="sort" value="relevance">
+        <input type="hidden" name="q" value="{{ query }}">
+        <input type="hidden" name="group" value="{{ within_group.pk }}">
+        <input type="hidden" name="page" value="{{ page_obj.number }}">
+        <input type="submit" value="relevance" class="btn btn-link">
+        </form>
+</div>
+</div>
+
+<div class="row row-filters-results">
+
+    <div class="search-filter-bar sidebar col-md-3 mb-5">
+
+    <div class="search-facet-box border p-3">
+    <p class="border-bottom">Commands</p>
+    <form method="post" class="search-facet-option">
+        {% csrf_token %}
+        <input type="hidden" name="q" value="{{ query }}">
+        <input type="hidden" name="sort" value={{ sort }}>
+        <input type="hidden" name="group" value="">
+        <input type="submit" value="All" class="btn btn-link">
+    </form>
+
+    {% for group in groups %}
+    <form method="post" class="search-facet-option">
+        {% csrf_token %}
+        <input type="hidden" name="q" value="{{ query }}">
+        <input type="hidden" name="sort" value={{ sort }}>
+        <input type="hidden" name="group" value="{{ group.pk }}">
+        {% if within_group.pk == group.pk %}
+        <i class="fas fa-check-square search-facet-status-indicator"></i>
+        <span class="sr-only">active</span>
+        {% endif %}
+        <input type="submit" value="{{ group.name }}"
+               class="btn btn-link" id="group-{{ group.pk }}">
+    </form>
+    {% endfor %}
+    </div>
+
+</div>
+
+    <div class="search-results col-md-9">
+    {% if page_obj %}
+    <ul>
+        {% for officer in page_obj %}
+        <li class="row-{{ forloop.counter }}">
+            {{ officer|teaser_person }}
+            <!-- {{ officer|person_search_ranking_debug }} -->
+        </li>
+        {% endfor %}
+    </ul>
+
+    <nav aria-label="pagination">
+    <div class="search-pagination text-center mb-5">
+        {% if page_obj.has_previous %}
+            <form method="post" class="d-inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="sort" value={{ sort }}>
+                <input type="submit" value="&laquo; first" class="btn btn-link">
+            </form>
+            <form method="post" class="d-inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="page" value="{{ page_obj.previous_page_number }}">
+                <input type="hidden" name="sort" value={{ sort }}>
+                <input type="submit" value="previous" class="btn btn-link">
+            </form>
+        {% else %}
+        <button class="btn btn-link" disabled>&laquo; first</button> <button class="btn btn-link" disabled>previous</button>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <form method="post" class="d-inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="page" value="{{ page_obj.next_page_number }}">
+                <input type="hidden" name="sort" value={{ sort }}>
+                <input type="submit" value="next" class="btn btn-link">
+            </form>
+            <form method="post" class="d-inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="page" value="{{ page_obj.paginator.num_pages }}">
+                <input type="hidden" name="sort" value={{ sort }}>
+                <input type="submit" value="last &raquo;" class="btn btn-link">
+            </form>
+        {% else %}
+        <button class="btn btn-link" disabled>next</button> <button class="btn btn-link" disabled>last &raquo;</button>
+        {% endif %}
+    </div>
+    </nav>
+{% else %}
+<p>No results found, please try again.</p>
+{% endif %}
+</div>
+
+</div>
+{% endblock %}

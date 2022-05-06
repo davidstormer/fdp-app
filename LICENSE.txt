@@ -1,6 +1,6 @@
 BSD 3-Clause License
 
-Copyright 2020-2021 National Association of Criminal Defense Lawyers
+Copyright 2020-2022 National Association of Criminal Defense Lawyers
 Copyright 2015–2020 The Legal Aid Society
 
 Redistribution and use in source and binary forms, with or without
