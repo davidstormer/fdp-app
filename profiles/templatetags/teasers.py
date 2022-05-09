@@ -38,7 +38,7 @@ def person_search_ranking_debug(person: Person) -> str:
     name: {{ person.search_name_rank }}
     full text: {{ person.search_full_text_rank }}
     <br>
-    {{ person.util_full_text }}
+    {{ person.search_full_text }}
     </p>
     """)
 
