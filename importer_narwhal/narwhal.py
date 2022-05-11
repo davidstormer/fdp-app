@@ -11,6 +11,7 @@ from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 
 from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
+from core.models import PersonAlias, Person
 from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
 from importer_narwhal.widgets import BooleanWidgetValidated
 from wholesale.models import ModelHelper
@@ -167,8 +168,32 @@ def import_external_id(resource_class, row, row_result, row_number, **kwargs):
             )
 
 
+def autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs):
+    """Import PersonAliases if provided in Person sheet
+    """
+    if resource_class.Meta.model == Person:
+        person_aliases = row.get('person_aliases', None)
+        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+            person = Person.objects.get(pk=row_result.object_id)
+            if person_aliases:
+                for person_alias_value in person_aliases.split(','):
+                    person_alias_value = person_alias_value.strip()
+                    PersonAlias.objects.create(person=person, name=person_alias_value)
+        if row_result.import_type == row_result.IMPORT_TYPE_SKIP or \
+                row_result.import_type == row_result.IMPORT_TYPE_UPDATE:  # when only aliases are different
+            person = Person.objects.get(pk=row['id'])
+            if person_aliases:
+                for person_alias_value in person_aliases.split(','):
+                    person_alias_value = person_alias_value.strip()
+                    try:
+                        PersonAlias.objects.get(person=person, name=person_alias_value)
+                    except PersonAlias.DoesNotExist:
+                        PersonAlias.objects.create(person=person, name=person_alias_value)
+
+
 def after_import_row(resource_class, row, row_result, row_number=None, **kwargs):
     import_external_id(resource_class, row, row_result, row_number, **kwargs)
+    autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs)
 
 
 # Amend the resources in the map by applying the above pre and post import customizations
