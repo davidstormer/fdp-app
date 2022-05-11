@@ -830,7 +830,6 @@ class NarwhalImportCommand(TestCase):
             # WHEN I run the command on the sheet
             command_output = StringIO()
             call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
-            print(command_output.getvalue())
 
         # Then I should see a new GroupingRelationship with type "Reports to" linking the existing grouping and the
         # newly imported one
@@ -839,6 +838,41 @@ class NarwhalImportCommand(TestCase):
             GroupingRelationship.objects.count()
         )
 
+    def test_grouping_sheet_add_relationships_by_external_id(self):
+        # Given there's a grouping import sheet with relationships in a field patterned
+        # "grouping_relationship__external_id__[NAME]"
+        # where [NAME] is a case insensitive string with hyphens instead of spaces. E.g.
+        # "grouping_relationship__external_id__reports-to"
+        # and where [NAME] is an existing relationship type.
+        # and where the related grouping already exists
+        GroupingRelationshipType.objects.create(name="Exists in")
+        existing_grouping_external_id = \
+            import_record_with_extid(Grouping, {"name": 'indulgentially'}, external_id='postembryonic')['external_id']
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__external_id__exists-in'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = 'New Command'
+                row['grouping_relationship__external_id__exists-in'] = existing_grouping_external_id
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+            print(command_output.getvalue())
+
+        # Then I should see a new GroupingRelationship with type "Reports to" linking the existing grouping and the
+        # newly imported one
+        self.assertEqual(
+            1,
+            GroupingRelationship.objects.count()
+        )
 
     def test_generate_new_types_person_grouping_type(self):
         """Test that importer can add new "types" when they don't exist in the system yet

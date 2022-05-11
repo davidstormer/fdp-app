@@ -223,15 +223,31 @@ def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_resu
         if row_result.import_type == row_result.IMPORT_TYPE_NEW:
             grouping = Grouping.objects.get(pk=row_result.object_id)
             for field_name in row.keys():
-                if re.match(r'grouping_relationship__[a-z\-]+', field_name):
+                # Does it look like this: 'grouping_relationship__exists-in'?
+                if re.match(r'grouping_relationship__[a-z\-]+$', field_name):
                     relationship_type_name = field_name.replace('grouping_relationship__', '').replace('-', ' ')
-                    type = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
-                    for relationship_value in row[field_name].split(','):
-                        relationship_value = relationship_value.strip()
+                    type_ = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
+                    for relationship_pk in row[field_name].split(','):
+                        relationship_pk = relationship_pk.strip()
                         GroupingRelationship.objects.create(
                             subject_grouping=grouping,
-                            object_grouping=Grouping.objects.get(pk=relationship_value),
-                            type=type
+                            object_grouping=Grouping.objects.get(pk=relationship_pk),
+                            type=type_
+                        )
+                # Does it look like this: 'grouping_relationship__external_id__exists-in'?
+                if re.match(r'grouping_relationship__external_id__[a-z\-]+$', field_name):
+                    relationship_type_name = field_name.replace('grouping_relationship__external_id__', '').replace('-', ' ')
+                    type_ = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
+                    for relationship_external_id in row[field_name].split(','):
+                        relationship_external_id = relationship_external_id.strip()
+                        bulk_import = BulkImport.objects.get(
+                            table_imported_to=Grouping.get_db_table(),
+                            pk_imported_from=relationship_external_id
+                        )
+                        GroupingRelationship.objects.create(
+                            subject_grouping=grouping,
+                            object_grouping=Grouping.objects.get(pk=bulk_import.pk_imported_to),
+                            type=type_
                         )
 
 
