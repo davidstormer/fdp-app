@@ -704,6 +704,83 @@ class NarwhalImportCommand(TestCase):
             PersonTitle.objects.first().title.name
         )
 
+    def test_generate_new_person_aliases_for_new_person(self):
+        # Given there's a Person import sheet that has Aliases as comma separated values in it
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there is a csv describing a new Person record
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'person_aliases'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['person_aliases'] = 'rallier, medisect'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+        # Then I should see the new PersonAliases created, and linked to the new Person record
+        self.assertEqual(
+            2,
+            PersonAlias.objects.count()
+        )
+
+    def test_update_person_aliases_for_existing_person_no_other_changes(self):
+        # Given there's an import sheet that updates aliases (and only aliases) for an existing Person record
+        person_record = Person.objects.create(name='test person')
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'person_aliases'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['id'] = person_record.pk
+                row['name'] = f'test person'  # <- Same value
+                row['person_aliases'] = 'rallier, NEW ALIAS misconstructive, medisect'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+        # Then I should see a new PersonAliase created, and linked to the new Person record
+        self.assertEqual(
+            3,
+            PersonAlias.objects.count()
+        )
+
+    def test_update_person_aliases_for_existing_person_with_other_changes(self):
+        # Given there's an import sheet that updates aliases _and_ name for an existing Person record
+        person_record = Person.objects.create(name='test person')
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'person_aliases'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['id'] = person_record.pk
+                row['name'] = f'test person UPDATED'  # <- Different value
+                row['person_aliases'] = 'rallier, NEW ALIAS misconstructive, medisect'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+        # Then I should see a new PersonAliase created, and linked to the new Person record
+        self.assertEqual(
+            3,
+            PersonAlias.objects.count()
+        )
+
     def test_generate_new_types_person_grouping_type(self):
         """Test that importer can add new "types" when they don't exist in the system yet
         Uses PersonGrouping Type
