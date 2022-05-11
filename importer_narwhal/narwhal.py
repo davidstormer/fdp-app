@@ -11,7 +11,7 @@ from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 
 from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
-from core.models import PersonAlias, Person
+from core.models import PersonAlias, Person, Grouping, GroupingAlias
 from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
 from importer_narwhal.widgets import BooleanWidgetValidated
 from wholesale.models import ModelHelper
@@ -191,9 +191,33 @@ def autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs
                         PersonAlias.objects.create(person=person, name=person_alias_value)
 
 
+def autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwargs):
+    """Import PersonAliases if provided in Person sheet
+    """
+    if resource_class.Meta.model == Grouping:
+        grouping_aliases = row.get('grouping_aliases', None)
+        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+            grouping = Grouping.objects.get(pk=row_result.object_id)
+            if grouping_aliases:
+                for grouping_alias_value in grouping_aliases.split(','):
+                    grouping_alias_value = grouping_alias_value.strip()
+                    GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
+        if row_result.import_type == row_result.IMPORT_TYPE_SKIP or \
+                row_result.import_type == row_result.IMPORT_TYPE_UPDATE:  # when only aliases are different
+            grouping = Grouping.objects.get(pk=row['id'])
+            if grouping_aliases:
+                for grouping_alias_value in grouping_aliases.split(','):
+                    grouping_alias_value = grouping_alias_value.strip()
+                    try:
+                        GroupingAlias.objects.get(grouping=grouping, name=grouping_alias_value)
+                    except GroupingAlias.DoesNotExist:
+                        GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
+
+
 def after_import_row(resource_class, row, row_result, row_number=None, **kwargs):
     import_external_id(resource_class, row, row_result, row_number, **kwargs)
     autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs)
+    autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwargs)
 
 
 # Amend the resources in the map by applying the above pre and post import customizations

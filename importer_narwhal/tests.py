@@ -13,7 +13,7 @@ from supporting.models import PersonIdentifierType, PersonRelationshipType, Situ
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
-    PersonGrouping
+    PersonGrouping, GroupingAlias
 from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
 from io import StringIO
@@ -779,6 +779,31 @@ class NarwhalImportCommand(TestCase):
         self.assertEqual(
             3,
             PersonAlias.objects.count()
+        )
+
+    def test_generate_new_grouping_aliases_for_new_grouping(self):
+        # Given there's a Grouping import sheet that has Aliases as comma separated values in it
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there is a csv describing a new Grouping record
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_aliases'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = f'Test Grouping {uuid4()}'
+                row['grouping_aliases'] = 'readmittance, journeycake'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the grouping with the target model and CSV file as positional arguments
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+        # Then I should see the new GroupingAlias created, and linked to the new Person record
+        self.assertEqual(
+            2,
+            GroupingAlias.objects.count()
         )
 
     def test_generate_new_types_person_grouping_type(self):
