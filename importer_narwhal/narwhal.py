@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 import tablib
 from django.utils import timezone
@@ -11,9 +12,10 @@ from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 
 from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
-from core.models import PersonAlias, Person, Grouping, GroupingAlias
+from core.models import PersonAlias, Person, Grouping, GroupingAlias, GroupingRelationship
 from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
 from importer_narwhal.widgets import BooleanWidgetValidated
+from supporting.models import GroupingRelationshipType
 from wholesale.models import ModelHelper
 
 # The mother list of models to be able to import to.
@@ -214,11 +216,30 @@ def autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwar
                         GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
 
 
+def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs):
+    """Import PersonAliases if provided in Person sheet
+    """
+    if resource_class.Meta.model == Grouping:
+        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+            grouping = Grouping.objects.get(pk=row_result.object_id)
+            for field_name in row.keys():
+                if re.match(r'grouping_relationship__[a-z\-]+', field_name):
+                    relationship_type_name = field_name.replace('grouping_relationship__', '').replace('-', ' ')
+                    type = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
+                    for relationship_value in row[field_name].split(','):
+                        relationship_value = relationship_value.strip()
+                        GroupingRelationship.objects.create(
+                            subject_grouping=grouping,
+                            object_grouping=Grouping.objects.get(pk=relationship_value),
+                            type=type
+                        )
+
+
 def after_import_row(resource_class, row, row_result, row_number=None, **kwargs):
     import_external_id(resource_class, row, row_result, row_number, **kwargs)
     autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs)
     autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwargs)
-
+    add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs)
 
 # Amend the resources in the map by applying the above pre and post import customizations
 for resource in resource_model_mapping.keys():
