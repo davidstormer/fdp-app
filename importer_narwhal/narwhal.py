@@ -203,7 +203,7 @@ def autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs
 
 
 def autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwargs):
-    """Import PersonAliases if provided in Person sheet
+    """Import GroupingAlias if provided in Grouping sheet
     """
     if resource_class.Meta.model == Grouping:
         grouping_aliases = row.get('grouping_aliases', None)
@@ -226,7 +226,7 @@ def autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwar
 
 
 def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs):
-    """Import PersonAliases if provided in Person sheet
+    """Import GroupingRelationships if provided in Grouping sheet
     """
     if resource_class.Meta.model == Grouping:
         if row_result.import_type == row_result.IMPORT_TYPE_NEW:
