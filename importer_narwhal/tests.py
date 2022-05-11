@@ -9,11 +9,11 @@ from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
-    Trait, Title, County, LeaveStatus, State, PersonGroupingType, AttachmentType
+    Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
-    PersonGrouping, GroupingAlias
+    PersonGrouping, GroupingAlias, GroupingRelationship
 from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
 from io import StringIO
@@ -805,6 +805,40 @@ class NarwhalImportCommand(TestCase):
             2,
             GroupingAlias.objects.count()
         )
+
+    def test_grouping_sheet_add_relationships(self):
+        # Given there's a grouping import sheet with relationships in a field patterned "grouping_relationship__[NAME]"
+        # where [NAME] is a case insensitive string with hyphens instead of spaces. E.g. "grouping_relationship__reports-to"
+        # and where [NAME] is an existing relationship type.
+        # and where the related grouping already exists
+        GroupingRelationshipType.objects.create(name="Exists in")
+        existing_grouping = Grouping.objects.create(name="indulgentially")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__exists-in'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = 'New Command'
+                row['grouping_relationship__exists-in'] = existing_grouping.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+            print(command_output.getvalue())
+
+        # Then I should see a new GroupingRelationship with type "Reports to" linking the existing grouping and the
+        # newly imported one
+        self.assertEqual(
+            1,
+            GroupingRelationship.objects.count()
+        )
+
 
     def test_generate_new_types_person_grouping_type(self):
         """Test that importer can add new "types" when they don't exist in the system yet
