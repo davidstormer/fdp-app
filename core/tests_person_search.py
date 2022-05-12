@@ -344,6 +344,94 @@ class PersonSearchAllFields(TestCase):
                 admin_results.count()
             )
 
+    def test_access_controls_for_admin_only_blank_search(self):
+        # Given there is a record marked "admin only" in the system
+        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True,
+                              for_admin_only=True)
+
+        with self.subTest(msg="admin can see"):
+            # When I call a query as an admin
+            admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+            admin_results = Person.objects.search_all_fields('', admin_user)
+
+            # Then I should see the matching record in the results
+            self.assertEqual(
+                "Mohammed Alabbadi",
+                admin_results[0].name
+            )
+
+        # When I call the same query as a non-admin user
+        admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False)
+        non_admin_results = Person.objects.search_all_fields('', admin_user)
+
+        # Then I should NOT see the matching record in the results
+        self.assertEqual(
+            0,
+            len(non_admin_results)
+        )
+
+    def test_access_controls_for_host_only_blank_search(self):
+        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True,
+                              for_host_only=True)
+
+        with self.subTest(msg="admin can see"):
+            host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True,
+                                                     is_host=True)
+            admin_results = Person.objects.search_all_fields("", host_admin_user)
+
+            self.assertEqual(
+                "Mohammed Alabbadi",
+                admin_results[0].name
+            )
+
+        guest_admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False,
+                                                  is_host=False)
+        guest_admin_results = Person.objects.search_all_fields("", guest_admin_user)
+
+        # Then I should NOT see the matching record in the results
+        self.assertEqual(
+            0,
+            len(guest_admin_results)
+        )
+
+    def test_access_controls_organization_only_blank_search(self):
+        organization = FdpOrganization.objects.create(name="unprophesiable")
+
+        person_record = Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True)
+        person_record.fdp_organizations.add(organization)
+
+        with self.subTest(msg="host end user can't see"):
+            host_admin_user = FdpUser.objects.create(email='usertwo@localhost',
+                                                     is_host=True)
+            admin_results = Person.objects.search_all_fields("", host_admin_user)
+            self.assertEqual(
+                0,
+                admin_results.count()
+            )
+
+        with self.subTest(msg="org user can see"):
+            org_admin_user = FdpUser.objects.create(email='userthree@localhost',
+                                                    is_administrator=False,
+                                                    fdp_organization=organization,
+                                                    is_host=False)
+            org_admin_results = Person.objects.search_all_fields("", org_admin_user)
+
+            # Then I should NOT see the matching record in the results
+            self.assertEqual(
+                1,
+                len(org_admin_results)
+            )
+
+        # BTW
+        with self.subTest(msg="host admin CAN see"):  # Too bad...
+            host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True,
+                                                     is_host=True)
+            admin_results = Person.objects.search_all_fields("", host_admin_user)
+            self.assertEqual(
+                1,
+                admin_results.count()
+            )
+
     def test_access_is_law_enforcement(self):
         Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=False)
 
