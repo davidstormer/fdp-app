@@ -6,7 +6,9 @@ div.search-results ul {
 }
 a.profile-link {
   text-decoration: none;
-  color: rgb(33, 37, 41); /* var(--bs-body-color) */
+}
+a.profile-link:hover {
+  text-decoration: underline;
 }
 .fdp-card-footer {
   padding: .5rem;
