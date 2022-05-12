@@ -4,7 +4,7 @@ from django.db import transaction
 from django.test import TestCase
 from faker import Faker
 from core.models import Person, PersonAlias, PersonIdentifier
-from fdpuser.models import FdpUser
+from fdpuser.models import FdpUser, FdpOrganization
 from profiles.models import OfficerSearch
 from supporting.models import PersonIdentifierType
 
@@ -305,6 +305,44 @@ class PersonSearchAllFields(TestCase):
             0,
             len(guest_admin_results)
         )
+
+    def test_access_controls_organization_only(self):
+        organization = FdpOrganization.objects.create(name="unprophesiable")
+
+        person_record = Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True)
+        person_record.fdp_organizations.add(organization)
+
+        with self.subTest(msg="host end user can't see"):
+            host_admin_user = FdpUser.objects.create(email='usertwo@localhost',
+                                                     is_host=True)
+            admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", host_admin_user)
+            self.assertEqual(
+                0,
+                admin_results.count()
+            )
+
+        with self.subTest(msg="org user can see"):
+            org_admin_user = FdpUser.objects.create(email='userthree@localhost',
+                                                    is_administrator=False,
+                                                    fdp_organization=organization,
+                                                    is_host=False)
+            org_admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", org_admin_user)
+
+            # Then I should NOT see the matching record in the results
+            self.assertEqual(
+                1,
+                len(org_admin_results)
+            )
+
+        # BTW
+        with self.subTest(msg="host admin CAN see"):  # Too bad...
+            host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True,
+                                                     is_host=True)
+            admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", host_admin_user)
+            self.assertEqual(
+                1,
+                admin_results.count()
+            )
 
     def test_access_is_law_enforcement(self):
         Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=False)
