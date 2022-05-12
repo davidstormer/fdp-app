@@ -3,9 +3,11 @@ from unittest import skip
 from selenium.webdriver.common.by import By
 
 from core.models import Person, PersonAlias, PersonIdentifier, Grouping, PersonGrouping, PersonTitle
+from fdpuser.models import FdpUser
 from functional_tests.common import wait, SeleniumFunctionalTestCase
 from faker import Faker
 
+from profiles.models import OfficerSearch
 from supporting.models import PersonIdentifierType, PersonGroupingType, Title
 
 faker = Faker()
@@ -268,4 +270,32 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
         self.assertIn(
             "microcosmography",
             first_result.text
+        )
+
+    def test_query_logging(self):
+        """Ensure that logs are recorded of user's searches
+        """
+        # Given I'm logged in as a user
+        self.log_in(is_administrator=False)
+        # When I perform a search
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'input[name="q"]') \
+            .send_keys("zephyry")
+        self.browser.find_element(By.CSS_SELECTOR, "input[value='Search']") \
+            .click()
+
+        # Then I should see a new OfficerSearch record created
+        self.assertEqual(
+            1,
+            OfficerSearch.objects.count()
+        )
+        # Then it should contain my search query
+        self.assertIn(
+            'zephyry',
+            OfficerSearch.objects.last().parsed_search_criteria
+        )
+        # Then it should contain my user id
+        self.assertEqual(
+            FdpUser.objects.last(),
+            OfficerSearch.objects.last().fdp_user
         )

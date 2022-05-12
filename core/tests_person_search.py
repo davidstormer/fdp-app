@@ -5,6 +5,7 @@ from django.test import TestCase
 from faker import Faker
 from core.models import Person, PersonAlias, PersonIdentifier
 from fdpuser.models import FdpUser
+from profiles.models import OfficerSearch
 from supporting.models import PersonIdentifierType
 
 faker = Faker()

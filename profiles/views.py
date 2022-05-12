@@ -1,3 +1,5 @@
+import json
+
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.views.generic import TemplateView
@@ -340,6 +342,8 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
     def post(self, request, *args, **kwargs):
         query_string = request.POST.get('q')
         sort = request.POST.get('sort') or 'relevance'
+        page_number = request.POST.get('page')
+
         try:
             group = Grouping.objects.get(pk=request.POST.get('group'))
         except Grouping.DoesNotExist:
@@ -358,9 +362,21 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
             # Do nothing, because the results are already ordered by relevance by default
             pass
 
+
+        # Log this query to the OfficerSearch log
+        OfficerSearch.objects.create_officer_search(
+            num_of_results=results.count(),
+            parsed_search_criteria=json.dumps({
+                'query_string': query_string,
+                'sort': sort,
+                'group': group.name if group else '',
+            }),
+            fdp_user=request.user,
+            request=request
+        )
+
         paginator = Paginator(results, 50)
 
-        page_number = request.POST.get('page')
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
             'title': 'Officer Search',
