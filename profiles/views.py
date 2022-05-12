@@ -324,7 +324,12 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
     def get(self, request, *args, **kwargs):
 
         results = Person.objects.search_all_fields('', request.user)
-
+        related_groups = (
+            Grouping.objects.filter(is_law_enforcement=True)
+            .filter(person_grouping__person__in=results)
+            .order_by('name')
+            .distinct()
+        )
         paginator = Paginator(results, 50)
 
         page_number = request.POST.get('page')
@@ -335,7 +340,7 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
             'sort': 'relevance',
             'page_obj': page_obj,
             'number_of_results': results.count(),
-            'groups': Grouping.objects.filter(is_law_enforcement=True).order_by('name'),
+            'groups': related_groups,
         })
 
     # Handle searches via POST so that the query string is kept out of the URL (security)
@@ -377,6 +382,11 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
 
         paginator = Paginator(results, 50)
 
+        related_groups = (
+            Grouping.objects.filter(is_law_enforcement=True)
+            .filter(person_grouping__person__in=results)
+            .order_by('name')
+        )
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
             'title': 'Officer Search',
@@ -385,7 +395,7 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
             'sort': sort,
             'page_obj': page_obj,
             'number_of_results': results.count(),
-            'groups': Grouping.objects.filter(is_law_enforcement=True).order_by('name'),
+            'groups': related_groups,
         })
 
 
