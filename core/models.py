@@ -34,6 +34,8 @@ class PersonManager(ConfidentiableManager):
                 .order_by('-pk')
             )
         else:
+            # Normalize query -- strip out diacritic marks
+            query = normalize_search_text(query)
             results = (
                 self.all()
                 .filter(is_law_enforcement=is_law_enforcement)

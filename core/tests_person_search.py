@@ -240,6 +240,22 @@ class PersonSearchAllFields(TestCase):
             results[0].name
         )
 
+    def test_query_diacritic_folding(self):
+        """Ensure that diacritic folding is happening to search query before search is performed
+        """
+        # Given there's a person record 'cafe' WITHOUT a diacritic mark in the name
+        # and another record with a similar spelling off by one but EARLIER in alphabetical order
+        person_record_match = Person.objects.create(name="cafe", is_law_enforcement=True)
+        person_record_mismatch = Person.objects.create(name="cafa", is_law_enforcement=True)
+        # When I do a search WITH a diacritic mark
+        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+        results = Person.objects.search_all_fields('café', user=admin_user)
+        # Then the record named "cafe" should be first, not "cafa"
+        self.assertEqual(
+            "cafe",
+            results[0].name
+        )
+
     def test_access_controls_for_admin_only(self):
         # Given there is a record marked "admin only" in the system
         Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True,
