@@ -352,18 +352,18 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
             # Do nothing, because the results are already ordered by relevance by default
             pass
 
-
         # Log this query to the OfficerSearch log
-        OfficerSearch.objects.create_officer_search(
-            num_of_results=results.count(),
-            parsed_search_criteria=json.dumps({
-                'query_string': query_string,
-                'sort': sort,
-                'group': group.name if group else '',
-            }),
-            fdp_user=request.user,
-            request=request
-        )
+        if query_string:
+            OfficerSearch.objects.create_officer_search(
+                num_of_results=results.count(),
+                parsed_search_criteria=json.dumps({
+                    'query_string': query_string,
+                    'sort': sort,
+                    'group': group.name if group else '',
+                }),
+                fdp_user=request.user,
+                request=request
+            )
 
         paginator = Paginator(results, 50)
 
