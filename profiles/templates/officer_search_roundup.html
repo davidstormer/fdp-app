@@ -16,7 +16,7 @@
     {% csrf_token %}
     <label for="officer-search" class="form-label">Terms</label>
     <div class="input-group input-group-lg mb-3">
-    <input type="text" name="q" value="{{ query }}" size="100" id="officer-search" class="form-control" aria-describedby="officer-search-help">
+    <input type="text" name="q" value="{{ query }}" size="100" id="officer-search" class="form-control" aria-describedby="officer-search-help" autofocus>
     <input type="submit" value="Search" class="btn btn-primary">
     </div>
     <div id="officer-search-help" class="form-text">
