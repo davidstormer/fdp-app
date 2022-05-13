@@ -322,30 +322,15 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
     template_name = "officer_search_roundup.html"
 
     def get(self, request, *args, **kwargs):
-
-        results = Person.objects.search_all_fields('', request.user)
-        related_groups = (
-            Grouping.objects.filter(is_law_enforcement=True)
-            .filter(person_grouping__person__in=results)
-            .order_by('name')
-            .distinct()
-        )
-        paginator = Paginator(results, 50)
-
-        page_number = request.POST.get('page')
-        page_obj = paginator.get_page(page_number)
-        return self.render_to_response({
-            'title': 'Officer Search',
-            'query': '',
-            'sort': 'relevance',
-            'page_obj': page_obj,
-            'number_of_results': results.count(),
-            'groups': related_groups,
-        })
+        # when the user first navigates to the page it will be a get request
+        # but all of our logic is in the post function. So just trick the view into
+        # handling the GET request as if it was a POST.
+        # So that we don't have to maintain logic in two places, it was causing bugs! now DRY
+        return self.post(request)
 
     # Handle searches via POST so that the query string is kept out of the URL (security)
     def post(self, request, *args, **kwargs):
-        query_string = request.POST.get('q')
+        query_string = request.POST.get('q') or ''
         sort = request.POST.get('sort') or 'relevance'
         page_number = request.POST.get('page')
 
