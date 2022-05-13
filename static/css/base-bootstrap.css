@@ -80,11 +80,6 @@ ol.breadcrumb {
   margin-bottom: 0;
 }
 
-nav.breadcrumbs li:after {
-    content: '›';
-    margin: 0 0.25em;
-}
-
 nav.breadcrumbs li:last-child:after {
     content: '';
 }
