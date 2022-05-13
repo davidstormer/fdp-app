@@ -386,6 +386,7 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
             Grouping.objects.filter(is_law_enforcement=True)
             .filter(person_grouping__person__in=results)
             .order_by('name')
+            .distinct()
         )
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
