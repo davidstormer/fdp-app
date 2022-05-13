@@ -75,7 +75,7 @@
         <input type="hidden" name="sort" value={{ sort }}>
         <input type="hidden" name="group" value="{{ group.pk }}">
         {% if within_group.pk == group.pk %}
-        <i class="fas fa-check-square search-facet-status-indicator"></i>
+        <i class="fas fa-check-square search-facet-status-indicator text-primary"></i>
         <span class="sr-only">active</span>
         {% endif %}
         <input type="submit" value="{{ group.name }}"
