@@ -1,10 +1,11 @@
 from unittest import skip
+from uuid import uuid4
 
 from selenium.webdriver.common.by import By
 
 from core.models import Person, PersonAlias, PersonIdentifier, Grouping, PersonGrouping, PersonTitle
 from fdpuser.models import FdpUser
-from functional_tests.common import wait, SeleniumFunctionalTestCase
+from functional_tests.common import wait, SeleniumFunctionalTestCase, FunctionalTestCase
 from faker import Faker
 
 from profiles.models import OfficerSearch
@@ -323,3 +324,92 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             FdpUser.objects.last(),
             OfficerSearch.objects.last().fdp_user
         )
+
+
+class SearchPageTestCaseRoundup(FunctionalTestCase):
+    @staticmethod
+    def make_records():
+        person_record = Person.objects.create(name=f"Daniel Wilson" + str(uuid4()), is_law_enforcement=True)
+        PersonAlias.objects.create(name=f"contortioned" + str(uuid4()), person=person_record)
+        PersonAlias.objects.create(name=f"pompoleon" + str(uuid4()), person=person_record)
+        PersonTitle.objects.create(
+            title=Title.objects.create(name=f'ferulic' + str(uuid4())),
+            person=person_record,
+            start_day=1,
+            start_month=1,
+            start_year=2001,
+
+            end_day=2,
+            end_month=1,
+            end_year=0,
+
+            at_least_since=True
+        )
+        PersonTitle.objects.create(
+            title=Title.objects.create(name=f'miasmatical' + str(uuid4())),
+            person=person_record,
+            start_day=3,
+            start_month=1,
+            start_year=2001,
+
+            end_day=0,
+            end_month=0,
+            end_year=0,
+
+            at_least_since=True
+        )
+        PersonTitle.objects.create(
+            title=Title.objects.create(name=f'pompoleon' + str(uuid4())),
+            person=person_record,
+            start_day=3,
+            start_month=1,
+            start_year=2000,
+
+            end_day=0,
+            end_month=0,
+            end_year=0,
+
+            at_least_since=True
+        )
+        id_type = PersonIdentifierType.objects.create(name=f'Test Type' + str(uuid4()))
+        PersonIdentifier.objects.create(
+            identifier=f'bathmic' + str(uuid4()), person=person_record,
+            person_identifier_type=id_type)
+        PersonIdentifier.objects.create(
+            identifier=f'intertarsal' + str(uuid4()), person=person_record,
+            person_identifier_type=id_type)
+        person_grouping_type = PersonGroupingType.objects.create(name=f"pgtype" + str(uuid4()))
+        PersonGrouping.objects.create(
+            type=person_grouping_type,
+            person=person_record,
+            grouping=Grouping.objects.create(name=f"subcommissaryship" + str(uuid4()), is_law_enforcement=True))
+        PersonGrouping.objects.create(
+            type=person_grouping_type,
+            person=person_record,
+            grouping=Grouping.objects.create(name=f"withindoors" + str(uuid4()), is_law_enforcement=True))
+
+    def test_search_view_num_queries(self):
+        # Given there are officers with related aliases, titles, identifiers, and groupings
+        self.make_records()
+        # When I do a search
+        # Then five queries should be performed (heh let's see...)
+        admin_client = self.log_in(is_administrator=True)
+        with self.assertNumQueries(23):
+            # response = admin_client.get('/')
+            response = admin_client.post('/officer/search-roundup', follow=True, data={
+                'q': 'Daniel'
+            })
+
+    def test_search_view_num_queries_invariant(self):
+        # Given there are officers with related aliases, titles, identifiers, and groupings
+        for _ in range(100):
+            self.make_records()
+
+        # When I do a search
+        # Then five queries should be performed (heh let's see...)
+        admin_client = self.log_in(is_administrator=True)
+        with self.assertNumQueries(23):
+            # response = admin_client.get('/')
+            response = admin_client.post('/officer/search-roundup', follow=True, data={
+                'q': 'Daniel'
+            })

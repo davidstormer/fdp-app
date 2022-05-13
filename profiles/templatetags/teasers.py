@@ -13,12 +13,11 @@ def teaser_person(person: Person) -> str:
     # Aliases
     aliases = [alias.name for alias in person.person_aliases.all()]
     # Identifiers
-    identifiers = [identifier for identifier in person.person_identifiers.all()]
+    identifiers = person.person_identifiers.all()
     # Ranks
-    current_titles = [title.title.name for title in person.person_titles.filter(end_year=0, end_month=0, end_day=0)]
+    current_titles = [title.title.name for title in person.current_titles]
     # Commands
-    groups = [person_grouping.grouping.name for person_grouping in person.person_groupings.filter(
-        grouping__is_law_enforcement=True)]
+    groups = [person_grouping.grouping.name for person_grouping in person.groups_law_enforcement]
 
     context = {
         'profile_url': person.get_profile_url,

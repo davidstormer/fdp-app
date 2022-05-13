@@ -48,30 +48,30 @@ class PersonManager(ConfidentiableManager):
                           'name', '-pk')  # <- for consistent order when ranks match
             )
 
-        # Do some prefetching of one-to-many relationships,
-        # because they're almost always used in search results listings.
-
-        def divided_years(model):
-            return [
-                RawSQL(
-                    model.order_by_sql_year.format(t=model.get_db_table(), o=''),
-                    params=[]
-                ).desc(),
-                RawSQL(
-                    model.order_by_sql_month.format(t=model.get_db_table(), o=''),
-                    params=[]
-                ).desc(),
-                RawSQL(
-                    model.order_by_sql_day.format(t=model.get_db_table(), o=''),
-                    params=[]
-                ).desc()
-            ]
-
+        # PERFORMANCE
+        # Do some prefetching of one-to-many relationships for performance,
+        # because they're almost always used in search results listings
+        # e.g. https://hakibenita.com/all-you-need-to-know-about-prefetching-in-django
         results_prefetched = results \
             .prefetch_related('person_aliases') \
             .prefetch_related('person_titles') \
+            .prefetch_related(
+                Prefetch(
+                    'person_titles',
+                    queryset=PersonTitle.objects.filter(end_year=0, end_month=0, end_day=0).select_related('title'),
+                    to_attr='current_titles'
+                )
+            ) \
             .prefetch_related('person_identifiers') \
-            .prefetch_related('person_groupings')
+            .prefetch_related('person_identifiers__person_identifier_type') \
+            .prefetch_related(
+                Prefetch(
+                    'person_groupings',
+                    queryset=PersonGrouping.objects.filter(grouping__is_law_enforcement=True).select_related(
+                        'grouping'),
+                    to_attr='groups_law_enforcement'
+                )
+            )
 
         return results_prefetched
 

@@ -212,7 +212,7 @@ class PersonSearchAllFields(TestCase):
             PersonAlias.objects.create(name=f'Alias 2 for {person_record}', person=person_record)
 
         admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             results = Person.objects.search_all_fields('Mohammed', user=admin_user)
             for result in results:
                 list(result.person_aliases.all())

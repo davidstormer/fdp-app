@@ -9,7 +9,7 @@
       <div class="card-main-right col-md-4 text-end">
         <p class="card-text">
           {% for identifier in identifiers %}
-            <span class="text-secondary">{{identifier.person_identifier_type}}:</span>
+            <span class="text-secondary">{{ identifier.person_identifier_type }}:</span>
             <span class="text-identifier">{{ identifier.identifier }}</span><br>
           {% endfor %}
         </p>
