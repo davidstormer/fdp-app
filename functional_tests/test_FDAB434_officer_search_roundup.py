@@ -66,7 +66,6 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             self.browser.find_element(By.CSS_SELECTOR, "span.number-of-results").text
         )
 
-
     def test_search_results_rows_aliases(self):
         # Given there is an officer record with aliases
         person_record = Person.objects.create(name="Daniel Wilson", is_law_enforcement=True)
@@ -230,11 +229,11 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
         PersonGrouping.objects.create(
             type=person_grouping_type,
             person=person_record,
-            grouping=Grouping.objects.create(name=f"subcommissaryship"))
+            grouping=Grouping.objects.create(name=f"subcommissaryship", is_law_enforcement=True))
         PersonGrouping.objects.create(
             type=person_grouping_type,
             person=person_record,
-            grouping=Grouping.objects.create(name=f"withindoors"))
+            grouping=Grouping.objects.create(name=f"withindoors", is_law_enforcement=True))
 
         # When I do a search for the officer
         self.log_in(is_administrator=False)
@@ -252,6 +251,31 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
         )
         self.assertIn(
             "withindoors",
+            first_result.text
+        )
+
+    def test_search_results_rows_commands_law_enforcement_only(self):
+        # Given there is an officer record with a command that isn't marked is law enforcement True
+        person_record = Person.objects.create(name="Kayla Ellis", is_law_enforcement=True)
+        person_grouping_type = PersonGroupingType.objects.create(name="pgtype")
+        PersonGrouping.objects.create(
+            type=person_grouping_type,
+            person=person_record,
+            grouping=Grouping.objects.create(name=f"extracolumella",
+                                             is_law_enforcement=False))  # <- this
+
+        # When I do a search for the officer
+        self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'input[name="q"]') \
+            .send_keys("Kayla Ellis")
+        self.browser.find_element(By.CSS_SELECTOR, "input[value='Search']") \
+            .click()
+
+        # Then I should NOT see the civilian command printed in their search result row
+        first_result = self.browser.find_element(By.CSS_SELECTOR, "div.search-results li.row-1")
+        self.assertNotIn(
+            "extracolumella",
             first_result.text
         )
 

@@ -17,7 +17,8 @@ def teaser_person(person: Person) -> str:
     # Ranks
     current_titles = [title.title.name for title in person.person_titles.filter(end_year=0, end_month=0, end_day=0)]
     # Commands
-    groups = [person_grouping.grouping.name for person_grouping in person.person_groupings.all()]
+    groups = [person_grouping.grouping.name for person_grouping in person.person_groupings.filter(
+        grouping__is_law_enforcement=True)]
 
     context = {
         'profile_url': person.get_profile_url,
