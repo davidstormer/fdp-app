@@ -113,37 +113,12 @@ resource_model_mapping = _compile_resources()
 #
 # On import, locate relationship columns in external id form, and resolve the respective pk
 def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
-    nonstandard_external_id_fields_mapping = {
-        'subject_person': 'Person',
-        'object_person': 'Person',
-    }
-    for model_name in MODEL_ALLOW_LIST:
-        # Look for any fields that follow the pattern '[model name]__external' and dereference them to their pks
-        try:
-            external_id = row[f'{model_name.lower()}__external']
-            model_class = get_data_model_from_name(model_name)
-            referenced_record = get_record_from_external_id(model_class, external_id)
-            row[model_name.lower()] = referenced_record.pk
-        except KeyError:
-            pass
-        # Look for any fields that follow the pattern '[model name]s__external' (plural) and dereference them to their
-        # pks
-        try:
-            external_id = row[f'{model_name.lower()}s__external']
-            model_class = get_data_model_from_name(model_name)
-            referenced_record = get_record_from_external_id(model_class, external_id)
-            row[model_name.lower() + 's'] = referenced_record.pk
-        except KeyError:
-            pass
-    for field_name in nonstandard_external_id_fields_mapping.keys():
-        # Look for any fields from the other external id fields above and dereference them to their pks
-        try:
-            external_id = row[f'{field_name}__external']
-            model_class = get_data_model_from_name(nonstandard_external_id_fields_mapping[field_name])
-            referenced_record = get_record_from_external_id(model_class, external_id)
-            row[field_name] = referenced_record.pk
-        except KeyError:
-            pass
+    for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
+        if import_field_name.endswith('__external'):
+            destination_field_name = import_field_name[:-10]
+            model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
+            referenced_record = get_record_from_external_id(model_class, row[import_field_name])
+            row[destination_field_name] = referenced_record.pk
 
 
 # Modify the before_import_row hook with our custom transformations
