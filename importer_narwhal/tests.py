@@ -865,13 +865,41 @@ class NarwhalImportCommand(TestCase):
             # WHEN I run the command on the sheet
             command_output = StringIO()
             call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
-            print(command_output.getvalue())
 
         # Then I should see a new GroupingRelationship with type "Reports to" linking the existing grouping and the
         # newly imported one
         self.assertEqual(
             1,
             GroupingRelationship.objects.count()
+        )
+
+    def test_grouping_belongs_to_grouping_with_external_id(self):
+        # Given there's an import sheet with a column named `belongs_to_grouping__external` that references an
+        # exiting grouping by external id.
+        existing_grouping_external_id = \
+            import_record_with_extid(Grouping, {"name": 'Existing Command'}, external_id='postembryonic')['external_id']
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'belongs_to_grouping__external'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = 'New Command'
+                row['belongs_to_grouping__external'] = existing_grouping_external_id
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # When I do an import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+        # Then the newly added grouping's belongs_to_grouping field should point to the existing record
+        self.assertEqual(
+            Grouping.objects.last().belongs_to_grouping,
+            Grouping.objects.first()
         )
 
     def test_generate_new_types_person_grouping_type(self):
