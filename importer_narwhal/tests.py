@@ -7,7 +7,7 @@ from django.db import models
 
 from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
-from sourcing.models import Content, ContentPerson
+from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
     Trait, Title, County, LeaveStatus, State, PersonGroupingType
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
@@ -889,4 +889,38 @@ class NarwhalImportCommand(TestCase):
             self.assertEqual(
                 person_import_result['imported_records'][i]['name'],
                 person_alias.person.name
+            )
+
+    def test_attachment_content_relationships(self):
+        # Given there's an Attachments import sheet with a row pointing to an existing Content record that has an
+        # external id.
+        existing_content_record = import_record_with_extid(
+            Content,
+            {
+                "name": 'Existing Content',
+                "type": ContentType.objects.create(name='Test Content Type')
+            },
+            external_id='overprocrastination'
+        )
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'content__external'])
+            csv_writer.writeheader()
+            row = {}
+            row['name'] = f"Test Attachment"
+            row['content__external'] = 'overprocrastination'
+            imported_records.append(row)
+
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # When I run the import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Attachment', csv_fd.name, stdout=command_output)
+
+            # Then I should see the new attachment and it should be connected to the existing Content record
+            self.assertEqual(
+                Content.objects.first(),
+                Attachment.objects.last().contents.last()
             )
