@@ -405,4 +405,12 @@ def delete_batch(batch_number: str or int) -> list:
             record.delete()
         except model.DoesNotExist:
             not_found.append(f"{model}:{row.pk}")
+        try:
+            bi_record = BulkImport.objects.get(
+                table_imported_to=model.get_db_table(),
+                pk_imported_to=row.imported_record_pk
+            )
+            bi_record.delete()
+        except Exception as e:
+            not_found.append(f"{model}:{row.pk} {e}")
     return not_found

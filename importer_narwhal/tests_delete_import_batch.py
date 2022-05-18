@@ -87,3 +87,31 @@ class NarwhalDeleteImportBatch(TestCase):
         )
 
     # TODO: handle missing records
+    def test_delete_bulkimport_external_ids(self):
+        command_output = StringIO()
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN an import has been run
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(10):
+                row = {}
+                row['external_id'] = f'test_external_id-{i}'
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'checked'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+            # WHEN I run the delete_import_batch command on it and type in the batch number
+            batch_number = ImportBatch.objects.last().pk
+            with patch('builtins.input', lambda *args: batch_number):
+                call_command('narwhal_delete_import_batch', batch_number, stdout=command_output)
+
+            # THEN the records should be removed from the system
+            self.assertEqual(
+                0,
+                BulkImport.objects.count()
+            )
