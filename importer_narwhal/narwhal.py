@@ -182,6 +182,7 @@ for resource in resource_model_mapping.keys():
 #
 foreign_key_fields_get_or_create = \
     {
+        'Attachment': ['type', ],
         'PersonIdentifier': ['person_identifier_type', ],
         'PersonRelationship': ['type', ],
         'Content': ['type', ],
