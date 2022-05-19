@@ -891,7 +891,7 @@ class NarwhalImportCommand(TestCase):
                 person_alias.person.name
             )
 
-    def test_attachment_content_relationships(self):
+    def test_m2m_attachment_content_relationships_by_external_id(self):
         # Given there's an Attachments import sheet with a row pointing to an existing Content record that has an
         # external id.
         existing_content_record = import_record_with_extid(
@@ -909,6 +909,36 @@ class NarwhalImportCommand(TestCase):
             row = {}
             row['name'] = f"Test Attachment"
             row['content__external'] = 'overprocrastination'
+            imported_records.append(row)
+
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # When I run the import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Attachment', csv_fd.name, stdout=command_output)
+
+            # Then I should see the new attachment and it should be connected to the existing Content record
+            self.assertEqual(
+                Content.objects.first(),
+                Attachment.objects.last().contents.last()
+            )
+
+    def test_m2m_attachment_content_relationships_by_pk(self):
+        # Given there's an Attachments import sheet with a row pointing to an existing Content record
+        content_record = Content.objects.create(
+            name='Existing Content',
+            type=ContentType.objects.create(name='Test Content Type')
+        )
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'content'])
+            csv_writer.writeheader()
+            row = {}
+            row['name'] = f"Test Attachment"
+            row['content'] = content_record.pk
             imported_records.append(row)
 
             for row in imported_records:
