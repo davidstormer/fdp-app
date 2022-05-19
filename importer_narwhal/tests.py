@@ -9,7 +9,7 @@ from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
-    Trait, Title, County, LeaveStatus, State, PersonGroupingType
+    Trait, Title, County, LeaveStatus, State, PersonGroupingType, AttachmentType
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
@@ -891,24 +891,55 @@ class NarwhalImportCommand(TestCase):
                 person_alias.person.name
             )
 
+    def test_m2m_attachment_content_relationships_by_pk(self):
+        # Given there's an Content import sheet with a row pointing to an existing Attachment record
+        attachment_record = Attachment.objects.create(
+            name='Existing Attachment',
+            type=AttachmentType.objects.create(name='Test Attachment Type')
+        )
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'attachments'])
+            csv_writer.writeheader()
+            row = {}
+            row['name'] = f"Test Content"
+            row['attachments'] = attachment_record.pk
+            imported_records.append(row)
+
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # When I run the import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Content', csv_fd.name, stdout=command_output)
+
+            # Then I should see the new attachment and it should be connected to the existing Content record
+            self.assertEqual(
+                Attachment.objects.first(),
+                Content.objects.last().attachments.last()
+            )
+
     def test_m2m_attachment_content_relationships_by_external_id(self):
-        # Given there's an Attachments import sheet with a row pointing to an existing Content record that has an
-        # external id.
-        existing_content_record = import_record_with_extid(
-            Content,
+        # Given there's an Content import sheet with a row pointing to an existing Attachment record
+
+        attachment_record = import_record_with_extid(
+            Attachment,
             {
-                "name": 'Existing Content',
-                "type": ContentType.objects.create(name='Test Content Type')
+                "name": 'Existing Attachment',
+                "type": AttachmentType.objects.create(name='Test Attachment Type')
             },
             external_id='overprocrastination'
         )
+
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'content__external'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'attachments__external'])
             csv_writer.writeheader()
             row = {}
-            row['name'] = f"Test Attachment"
-            row['content__external'] = 'overprocrastination'
+            row['name'] = f"Test Content"
+            row['attachments__external'] = attachment_record['external_id']
             imported_records.append(row)
 
             for row in imported_records:
@@ -917,40 +948,40 @@ class NarwhalImportCommand(TestCase):
 
             # When I run the import
             command_output = StringIO()
-            call_command('narwhal_import', 'Attachment', csv_fd.name, stdout=command_output)
+            call_command('narwhal_import', 'Content', csv_fd.name, stdout=command_output)
 
             # Then I should see the new attachment and it should be connected to the existing Content record
             self.assertEqual(
-                Content.objects.first(),
-                Attachment.objects.last().contents.last()
+                Attachment.objects.first(),
+                Content.objects.last().attachments.last()
             )
 
-    def test_m2m_attachment_content_relationships_by_pk(self):
-        # Given there's an Attachments import sheet with a row pointing to an existing Content record
-        content_record = Content.objects.create(
-            name='Existing Content',
-            type=ContentType.objects.create(name='Test Content Type')
-        )
+    def test_m2m_directionality(self):
+        """Test which fields show up on which model for m2m relationships
+        """
 
-        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
-            imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'content'])
-            csv_writer.writeheader()
-            row = {}
-            row['name'] = f"Test Attachment"
-            row['content'] = content_record.pk
-            imported_records.append(row)
+        from import_export import resources
 
-            for row in imported_records:
-                csv_writer.writerow(row)
-            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+        with self.subTest(msg='From Attachment sheet'):
+            from sourcing.models import Attachment
 
-            # When I run the import
-            command_output = StringIO()
-            call_command('narwhal_import', 'Attachment', csv_fd.name, stdout=command_output)
+            class AttachmentResource(resources.ModelResource):
+                class Meta:
+                    model = Attachment
 
-            # Then I should see the new attachment and it should be connected to the existing Content record
-            self.assertEqual(
-                Content.objects.first(),
-                Attachment.objects.last().contents.last()
+            self.assertNotIn(
+                'contents',
+                AttachmentResource().fields.keys()
+            )
+
+        with self.subTest(msg='From Content sheet'):
+            from sourcing.models import Content
+
+            class ContentResource(resources.ModelResource):
+                class Meta:
+                    model = Content
+
+            self.assertIn(
+                'attachments',
+                ContentResource().fields.keys()
             )

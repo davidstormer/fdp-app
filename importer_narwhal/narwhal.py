@@ -123,6 +123,15 @@ def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
             row[model_name.lower()] = referenced_record.pk
         except KeyError:
             pass
+        # Look for any fields that follow the pattern '[model name]s__external' (plural) and dereference them to their
+        # pks
+        try:
+            external_id = row[f'{model_name.lower()}s__external']
+            model_class = get_data_model_from_name(model_name)
+            referenced_record = get_record_from_external_id(model_class, external_id)
+            row[model_name.lower() + 's'] = referenced_record.pk
+        except KeyError:
+            pass
     for field_name in nonstandard_external_id_fields_mapping.keys():
         # Look for any fields from the other external id fields above and dereference them to their pks
         try:
