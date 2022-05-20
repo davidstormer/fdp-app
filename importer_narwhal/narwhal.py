@@ -115,10 +115,11 @@ resource_model_mapping = _compile_resources()
 def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
     for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
         if import_field_name.endswith('__external'):
-            destination_field_name = import_field_name[:-10]
-            model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
-            referenced_record = get_record_from_external_id(model_class, row[import_field_name])
-            row[destination_field_name] = referenced_record.pk
+            if row[import_field_name]:
+                destination_field_name = import_field_name[:-10]
+                model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
+                referenced_record = get_record_from_external_id(model_class, row[import_field_name])
+                row[destination_field_name] = referenced_record.pk
 
 
 # Modify the before_import_row hook with our custom transformations
