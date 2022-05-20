@@ -524,6 +524,81 @@ class NarwhalImportCommand(TestCase):
             PersonIdentifier.objects.first().person.pk
         )
 
+    def test_external_ids_on_natural_key_field(self):
+        # Given there's an import sheet with an '__external' field on a natural key lookup field (e.g.
+        # person_identifier_type)
+        person_identifier_type_import = \
+            import_record_with_extid(PersonIdentifierType, {"name": 'person-identifier-type-marteline'},
+                                     external_id='external-id-sinusoidal')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'identifier', 'person_identifier_type__external'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['person_identifier_type__external'] = 'external-id-sinusoidal'
+                row['identifier'] = f"identifier-{uuid4()}"
+                row['person'] = Person.objects.create(name=f"person-{uuid4()}").pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the import
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonIdentifier', csv_fd.name, stdout=command_output)
+
+        # Then I should see the new record linked to the existing record referenced by external id
+        self.assertEqual(
+            PersonIdentifier.objects.last().person_identifier_type,
+            person_identifier_type_import['record']
+        )
+
+    def test_external_ids_on_natural_key_field_counties(self):
+        # Given there's an import sheet with an '__external' field on a natural key lookup field (e.g.
+        # person_identifier_type)
+        county_import = import_record_with_extid(
+            County,
+            {
+                "name": 'person-identifier-type-marteline',
+                "state": State.objects.create(name='Washington')
+            },
+            external_id='external-id-sinusoidal'
+        )
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'counties__external'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['counties__external'] = 'external-id-sinusoidal'
+                row['name'] = f"name-{uuid4()}"
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+        # Then I should see the new record linked to the existing record referenced by external id
+        self.assertNotIn(
+            'County matching query does not exist',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "Direct assignment to the forward side of a many-to-many set is prohibited",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            Grouping.objects.last().counties.all()[0],
+            county_import['record']
+        )
+
+
     def test_generate_new_types_person_identifier_types(self):
         """Test that importer can add new "types" when they don't exist in the system yet
         Uses PersonIdentifier records to test this

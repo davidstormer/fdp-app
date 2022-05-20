@@ -119,7 +119,11 @@ def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
                 destination_field_name = import_field_name[:-10]
                 model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
                 referenced_record = get_record_from_external_id(model_class, row[import_field_name])
-                row[destination_field_name] = referenced_record.pk
+                if resource_class.fields[destination_field_name].widget.field == 'name':
+                    # Field expects a natural key value, not a pk:
+                    row[destination_field_name] = referenced_record.name
+                else:
+                    row[destination_field_name] = referenced_record.pk
 
 
 # Modify the before_import_row hook with our custom transformations
@@ -273,6 +277,7 @@ foreign_key_fields_get_only = \
 many_to_many_fields_get_only = \
     {
         'Person': ['traits', ],
+        'Grouping': ['counties', ],
     }
 
 
