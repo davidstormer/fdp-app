@@ -74,7 +74,7 @@ class NarwhalTestCase(TestCase):
     def test_resources(self):
         ResourceClass = resource_model_mapping['Person']
         resource = ResourceClass()
-        dataset = tablib.Dataset(['person quasicontinuous'], headers=['name'])
+        dataset = tablib.Dataset(['person quasicontinuous', 'TRUE'], headers=['name', 'is_law_enforcement'])
         result = resource.import_data(dataset, dry_run=False)
         self.assertEqual(
             1,
@@ -181,11 +181,12 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['person', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(10):
                 row = {}
                 row['person'] = person_record.pk
+                row['is_law_enforcement'] = 'checked'
                 row['name'] = f"alias-{uuid4()}"
                 imported_records.append(row)
             imported_records[7]['name'] = 'Joe'  # <- Dupe
@@ -277,11 +278,12 @@ class NarwhalImportCommand(TestCase):
         # which specifies that a new external id should be created when the record is imported.
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_rows = []
-            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(3):
                 row = {}
                 row['external_id'] = f'external-id-{uuid4()}'
+                row['is_law_enforcement'] = 'checked'
                 row['name'] = f'Test Person {uuid4()}'
                 csv_writer.writerow(row)
                 imported_rows.append(row)
@@ -311,16 +313,18 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_rows = []
-            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(3):
                 row = {}
                 row['external_id'] = f'external-id-{uuid4()}'
+                row['is_law_enforcement'] = 'checked'
                 row['name'] = f'Test Person {uuid4()}'
                 csv_writer.writerow(row)
                 imported_rows.append(row)
             row = {}
             row['external_id'] = duplicate_external_id  # <-- this
+            row['is_law_enforcement'] = 'checked'
             row['name'] = f'Test Person {uuid4()}'
             csv_writer.writerow(row)
             imported_rows.append(row)
@@ -349,17 +353,19 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_rows = []
-            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(3):
                 row = {}
                 row['external_id'] = f'external-id-{uuid4()}'
+                row['is_law_enforcement'] = 'checked'
                 row['name'] = f'Test Person {uuid4()}'
                 csv_writer.writerow(row)
                 imported_rows.append(row)
             for i in range(2):                                # <-- this
                 row = {}
                 row['external_id'] = duplicate_external_id
+                row['is_law_enforcement'] = 'checked'
                 row['name'] = f'Test Person {uuid4()}'
                 csv_writer.writerow(row)
                 imported_rows.append(row)
@@ -569,12 +575,13 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'counties__external'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'counties__external', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['counties__external'] = 'external-id-sinusoidal'
                 row['name'] = f"name-{uuid4()}"
+                row['is_law_enforcement'] = 'checked'
                 imported_records.append(row)
             for row in imported_records:
                 csv_writer.writerow(row)
@@ -784,11 +791,12 @@ class NarwhalImportCommand(TestCase):
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             # GIVEN there is a csv describing a new Person record
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'person_aliases'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'person_aliases', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'checked'
                 row['person_aliases'] = 'rallier, medisect'
                 csv_writer.writerow(row)
                 imported_records.append(row)
@@ -809,13 +817,14 @@ class NarwhalImportCommand(TestCase):
         person_record = Person.objects.create(name='test person')
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'person_aliases'])
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'person_aliases', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['id'] = person_record.pk
                 row['name'] = f'test person'  # <- Same value
                 row['person_aliases'] = 'rallier, NEW ALIAS misconstructive, medisect'
+                row['is_law_enforcement'] = 'checked'
                 csv_writer.writerow(row)
                 imported_records.append(row)
             csv_fd.flush()  # Make sure it's actually written to the filesystem!
@@ -835,13 +844,14 @@ class NarwhalImportCommand(TestCase):
         person_record = Person.objects.create(name='test person')
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'person_aliases'])
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'person_aliases', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['id'] = person_record.pk
                 row['name'] = f'test person UPDATED'  # <- Different value
                 row['person_aliases'] = 'rallier, NEW ALIAS misconstructive, medisect'
+                row['is_law_enforcement'] = 'checked'
                 csv_writer.writerow(row)
                 imported_records.append(row)
             csv_fd.flush()  # Make sure it's actually written to the filesystem!
@@ -861,12 +871,13 @@ class NarwhalImportCommand(TestCase):
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             # GIVEN there is a csv describing a new Grouping record
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_aliases'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_aliases', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['name'] = f'Test Grouping {uuid4()}'
                 row['grouping_aliases'] = 'readmittance, journeycake'
+                row['is_law_enforcement'] = 'checked'
                 csv_writer.writerow(row)
                 imported_records.append(row)
             csv_fd.flush()  # Make sure it's actually written to the filesystem!
@@ -891,12 +902,13 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__exists-in'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__exists-in', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['name'] = 'New Command'
                 row['grouping_relationship__exists-in'] = existing_grouping.pk
+                row['is_law_enforcement'] = 'checked'
                 imported_records.append(row)
             for row in imported_records:
                 csv_writer.writerow(row)
@@ -926,12 +938,13 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__external_id__exists-in'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__external_id__exists-in', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['name'] = 'New Command'
                 row['grouping_relationship__external_id__exists-in'] = existing_grouping_external_id
+                row['is_law_enforcement'] = 'checked'
                 imported_records.append(row)
             for row in imported_records:
                 csv_writer.writerow(row)
@@ -961,15 +974,17 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__external_id__exists-in'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__external_id__exists-in', 'is_law_enforcement'])
             csv_writer.writeheader()
             row = {}
             row['name'] = 'New Command 1'
             row['grouping_relationship__external_id__exists-in'] = ''  # <- THIS
+            row['is_law_enforcement'] = 'checked'
             imported_records.append(row)
             row = {}
             row['name'] = 'New Command 2'
             row['grouping_relationship__external_id__exists-in'] = existing_grouping_external_id
+            row['is_law_enforcement'] = 'checked'
             imported_records.append(row)
             for row in imported_records:
                 csv_writer.writerow(row)
@@ -999,12 +1014,13 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'belongs_to_grouping__external'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'belongs_to_grouping__external', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['name'] = 'New Command'
                 row['belongs_to_grouping__external'] = existing_grouping_external_id
+                row['is_law_enforcement'] = 'checked'
                 imported_records.append(row)
             for row in imported_records:
                 csv_writer.writerow(row)
@@ -1117,12 +1133,13 @@ class NarwhalImportCommand(TestCase):
             existing_records.append(Person.objects.create(name='Old Name'))
         # and Given there's an import sheet that references them by pk
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
-            csv_writer = csv.DictWriter(csv_fd, ['id', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for existing_record in existing_records:
                 row = {}
                 row['id'] = existing_record.pk
                 row['name'] = 'NEW Name'
+                row['is_law_enforcement'] = 'checked'
                 csv_writer.writerow(row)
             csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
 
@@ -1151,12 +1168,13 @@ class NarwhalImportCommand(TestCase):
         def import_person_records() -> dict:
             with tempfile.NamedTemporaryFile(mode='w') as person_csv_fd:
                 imported_person_records = []
-                person_csv_writer = csv.DictWriter(person_csv_fd, ['external_id', 'name'])
+                person_csv_writer = csv.DictWriter(person_csv_fd, ['external_id', 'name', 'is_law_enforcement'])
                 person_csv_writer.writeheader()
                 for i in range(3):
                     row = {}
                     row['external_id'] = f'person-extid-{uuid4()}'
                     row['name'] = f"person-name-{uuid4()}"
+                    row['is_law_enforcement'] = 'checked'
                     imported_person_records.append(row)
 
                 for row in imported_person_records:
@@ -1300,4 +1318,62 @@ class NarwhalImportCommand(TestCase):
             self.assertIn(
                 'attachments',
                 ContentResource().fields.keys()
+            )
+
+    def test_person_require_is_law_enforcement(self):
+        # Given there's a Person import sheet with no is_law_enforcement column
+        # TODO: column exists, but cell is blank
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name'])
+            csv_writer.writeheader()
+            for i in range(10):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # When I do an import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+            # Then no records should be imported
+            self.assertEqual(
+                0,
+                Person.objects.all().count()
+            )
+            # Then I should get an error
+            self.assertIn(
+                '"is_law_enforcement" is missing but required',
+                command_output.getvalue()
+            )
+
+    def test_grouping_require_is_law_enforcement(self):
+        # Given there's a Person import sheet with no is_law_enforcement column
+        # TODO: column exists, but cell is blank
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name'])
+            csv_writer.writeheader()
+            for i in range(10):
+                row = {}
+                row['name'] = f'Test Grouping {uuid4()}'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # When I do an import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+            # Then I should get an error
+            self.assertIn(
+                '"is_law_enforcement" is missing but required',
+                command_output.getvalue()
+            )
+            # And no records should be imported
+            self.assertEqual(
+                0,
+                Grouping.objects.all().count()
             )

@@ -54,7 +54,7 @@ class NarwhalDeleteImportBatch(TestCase):
         for i in range(10):
             existing_records.append(Person.objects.create(name='Old Name'))
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
-            csv_writer = csv.DictWriter(csv_fd, ['id', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for existing_record in existing_records:
                 row = {}

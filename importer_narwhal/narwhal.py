@@ -129,7 +129,11 @@ def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
 # Modify the before_import_row hook with our custom transformations
 def before_import_row(resource_class, row, row_number=None, **kwargs):
     dereference_external_ids(resource_class, row, row_number, **kwargs)
-
+    # Make "is_law_enforcement" required for Person and Group resources
+    if resource_class.Meta.model == Person or \
+            resource_class.Meta.model == Grouping:
+            if 'is_law_enforcement' not in row:
+                raise Exception('"is_law_enforcement" is missing but required')
 
 # After import
 #
@@ -325,6 +329,7 @@ apply_custom_widgets(foreign_key_fields_get_only, ForeignKeyWidget)
 
 # Set up "tag" fields (m2m) -- for now not 'get or create' just get
 apply_custom_widgets(many_to_many_fields_get_only, ManyToManyWidget)
+
 
 # Nice error reports
 #
