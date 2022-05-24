@@ -229,15 +229,16 @@ def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_resu
                     type_ = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
                     for relationship_external_id in row[field_name].split(','):
                         relationship_external_id = relationship_external_id.strip()
-                        bulk_import = BulkImport.objects.get(
-                            table_imported_to=Grouping.get_db_table(),
-                            pk_imported_from=relationship_external_id
-                        )
-                        GroupingRelationship.objects.create(
-                            subject_grouping=grouping,
-                            object_grouping=Grouping.objects.get(pk=bulk_import.pk_imported_to),
-                            type=type_
-                        )
+                        if relationship_external_id:
+                            bulk_import = BulkImport.objects.get(
+                                table_imported_to=Grouping.get_db_table(),
+                                pk_imported_from=relationship_external_id
+                            )
+                            GroupingRelationship.objects.create(
+                                subject_grouping=grouping,
+                                object_grouping=Grouping.objects.get(pk=bulk_import.pk_imported_to),
+                                type=type_
+                            )
 
 
 def after_import_row(resource_class, row, row_result, row_number=None, **kwargs):
