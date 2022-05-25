@@ -2,10 +2,16 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
-from django.views.generic import DetailView, CreateView
+from django.views.generic import DetailView, CreateView, ListView
 
 from importer_narwhal.models import ImportBatch
 from importer_narwhal.narwhal import do_dry_run, run_import_batch
+
+
+class BatchListingLandingView(ListView):
+    model = ImportBatch
+    paginate_by = 25
+    queryset = ImportBatch.objects.all().order_by('-pk')
 
 
 class ImportBatchCreateView(CreateView):
