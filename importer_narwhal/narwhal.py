@@ -302,9 +302,38 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
             return None
 
     def get_help_html(self):
-        return f"""Accepts { self.model.__name__ } { self.field }s rather than PKs by default.
+        return f"""Accepts <code>{ self.model.__name__ }</code> { self.field }s rather than PKs by default.
         Accepts external ids using <code>__external</code> extension.
         """
+
+import import_export
+
+
+def foreign_key_widget_help_html(self):
+    if self.field == 'pk':
+        return f"""References <code>{self.model.__name__}</code> by pk. Accepts external ids using 
+        <code>__external</code> extension."""
+    elif self.field == 'name':
+        return f"""Accepts <code>{ self.model.__name__ }</code> { self.field }s rather than PKs by default.
+        Accepts external ids using <code>__external</code> extension.
+        """
+
+
+import_export.widgets.ForeignKeyWidget.get_help_html = foreign_key_widget_help_html
+
+
+def many_to_many_widget_help_html(self):
+    if self.field == 'pk':
+        return f"""References <code>{self.model.__name__}</code> by pk. Accepts external ids using 
+        <code>__external</code> extension."""
+    elif self.field == 'name':
+        return f"""Accepts <code>{ self.model.__name__ }</code> { self.field }s rather than PKs by default.
+        Accepts external ids using <code>__external</code> extension.
+        """
+
+
+import_export.widgets.ManyToManyWidget.get_help_html = many_to_many_widget_help_html
+
 
 # Customize the 'type' fields to use the new ForeignKeyWidgetGetOrCreate widget
 def apply_custom_widgets(target_fields, widget):
