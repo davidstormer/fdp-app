@@ -303,7 +303,7 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
 
     def get_help_html(self):
         return f"""Accepts { self.model.__name__ } { self.field }s rather than PKs by default.
-        Accepts external ids using '__external' extension.
+        Accepts external ids using <code>__external</code> extension.
         """
 
 # Customize the 'type' fields to use the new ForeignKeyWidgetGetOrCreate widget
