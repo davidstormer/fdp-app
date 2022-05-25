@@ -1,0 +1,48 @@
+{% extends 'common/base-bootstrap.html' %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item">Admin</li>
+<li class="breadcrumb-item active" aria-current="page">Importer</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="column import">
+        <a href="{%url 'wholesale:create_import' %}"><i class="fas fa-upload"></i></a>
+        <h3><a href="{%url 'wholesale:create_import' %}">Import</a></h3>
+    </div>
+    <div class="column template">
+        <a href="{%url 'wholesale:template' %}"><i class="fas fa-columns"></i></a>
+        <h3><a href="{%url 'wholesale:template' %}">Mapping documentation</a></h3>
+    </div>
+</div>
+
+<h2>Import History</h2>
+<table>
+{% for batch in object_list %}
+    <tr>
+    <td class="row-{{ forloop.counter }}"><a href="{{ batch.get_absolute_url }}">{{ batch }}</a></td>
+    </tr>
+{% empty %}
+    <p>No import batches yet.</p>
+{% endfor %}
+</table>
+
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+{% endblock %}

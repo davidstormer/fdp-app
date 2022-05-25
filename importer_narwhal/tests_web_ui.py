@@ -69,3 +69,52 @@ class TestWebUI(SeleniumFunctionalTestCase):
                 100,
                 self.browser.page_source.count("Enter a valid boolean value")
             )
+
+    def test_batch_listing(self):
+        # GIVEN an import has been run
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(42):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'checked'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+            report = do_import_from_disk('Person', csv_fd.name)
+
+            # WHEN I go to the batch listing page
+            self.log_in(is_administrator=True)
+            self.browser.get(self.live_server_url + f'/changing/importer')
+
+            # Then I should see the batch in the listing
+            self.assertIn('Person', self.browser.page_source)
+            self.assertIn('42', self.browser.page_source)
+            self.assertIn(os.path.basename(csv_fd.name), self.browser.page_source)
+
+    def test_batch_listing_links_to_detail_page(self):
+        # GIVEN an import has been run
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(42):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'checked'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+            report = do_import_from_disk('Person', csv_fd.name)
+
+            # WHEN I click one of the batches on the batch listing page
+            self.log_in(is_administrator=True)
+            self.browser.get(self.live_server_url + f'/changing/importer')
+            self.browser.find_element(By.CSS_SELECTOR, '.row-1 a').click()
+
+            # Then I should see the batch detail page
+            self.assertIn('Person', self.browser.page_source)
+            self.assertIn('42', self.browser.page_source)
+            self.assertIn(os.path.basename(csv_fd.name), self.browser.page_source)
