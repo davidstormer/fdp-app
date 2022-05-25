@@ -1,0 +1,31 @@
+{% extends 'common/base-bootstrap.html' %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">Bootstrap style guide</li>
+{% endblock %}
+
+{% block content %}
+{% for mapping_name, mapping in mappings.items %}
+  <div class="card mt-4">
+    <div class="card-body">
+  <h2 class="cart-title">{{ mapping_name }}</h2>
+  <table class="table mapping-template">
+    <tr>
+      {% for field in mapping.fields %}
+      <td><code>{{ field }}</code></td>
+      {% endfor %}
+    </tr>
+  </table>
+  <button class="btn btn-link" type="button" data-bs-toggle="collapse"
+          data-bs-target="#collapse-{{ mapping_name }}" aria-expanded="false"
+          aria-controls="multiCollapse{{ mapping_name }}">details</button>
+  <div class="collapse" id="collapse-{{ mapping_name }}">
+  {% for field_name, field_object in mapping.fields.items %}
+  <h3>{{ field_name }}</h3>
+  <p>{{ field_object.widget.get_help_html|safe }}</p>
+  {% endfor %}
+  </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock%}

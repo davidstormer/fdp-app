@@ -5,7 +5,21 @@ from django.views import View
 from django.views.generic import DetailView, CreateView, ListView
 
 from importer_narwhal.models import ImportBatch
-from importer_narwhal.narwhal import do_dry_run, run_import_batch
+from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping
+
+from inheritable.views import HostAdminSyncTemplateView
+
+
+class MappingsView(HostAdminSyncTemplateView):
+    template_name = 'importer_narwhal/mappings.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(MappingsView, self).get_context_data(**kwargs)
+        context.update({
+            'title': 'Importer Mappings',
+            'mappings': resource_model_mapping,
+        })
+        return context
 
 
 class BatchListingLandingView(ListView):
