@@ -43,7 +43,7 @@ phonenumberslite==8.12.29
 portalocker==1.7.1
 psycopg2==2.8.6
 pycparser==2.20
-PyJWT==2.1.0
+PyJWT==2.4.0
 python-dateutil==2.8.2
 python3-openid==3.2.0
 pytz==2021.1
