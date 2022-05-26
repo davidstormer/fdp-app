@@ -59,6 +59,19 @@ MODEL_ALLOW_LIST = [
 
 class ExternalIdField(fields.Field):
 
+    def before_import_row(self, resource_class, row, row_number, **kwargs):
+        for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
+            if import_field_name.endswith('__external'):
+                if row[import_field_name]:
+                    destination_field_name = import_field_name[:-10]
+                    model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
+                    referenced_record = get_record_from_external_id(model_class, row[import_field_name])
+                    if resource_class.fields[destination_field_name].widget.field == 'name':
+                        # Field expects a natural key value, not a pk:
+                        row[destination_field_name] = referenced_record.name
+                    else:
+                        row[destination_field_name] = referenced_record.pk
+
     def after_import_row(self, resource_class, row, row_result, row_number, **kwargs):
         # TODO: I think this should maybe be a 'get or create' logic, rather than just always create...?
         # If so, if there's a pk in the sheet too it should probably compare to the one in the BulkImport record,
@@ -226,23 +239,13 @@ resource_model_mapping['Grouping'].fields['grouping_relationship'] = GroupingRel
 #
 #
 # On import, locate relationship columns in external id form, and resolve the respective pk
-def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
-    for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
-        if import_field_name.endswith('__external'):
-            if row[import_field_name]:
-                destination_field_name = import_field_name[:-10]
-                model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
-                referenced_record = get_record_from_external_id(model_class, row[import_field_name])
-                if resource_class.fields[destination_field_name].widget.field == 'name':
-                    # Field expects a natural key value, not a pk:
-                    row[destination_field_name] = referenced_record.name
-                else:
-                    row[destination_field_name] = referenced_record.pk
-
-
 # Modify the before_import_row hook with our custom transformations
 def before_import_row(resource_class, row, row_number=None, **kwargs):
-    dereference_external_ids(resource_class, row, row_number, **kwargs)
+    for _, field in resource_class.fields.items():
+        try:
+            field.before_import_row(resource_class, row, row_number, **kwargs)
+        except AttributeError:
+            pass
     # Make "is_law_enforcement" required for Person and Group resources
     if resource_class.Meta.model == Person or \
             resource_class.Meta.model == Grouping:
