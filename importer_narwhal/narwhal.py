@@ -23,14 +23,6 @@ from wholesale.models import ModelHelper
 # The mother list of models to be able to import to.
 # The options in the interface are based on this.
 MODEL_ALLOW_LIST = [
-    # From the 'sourcing' app
-    'Attachment',
-    'Content',
-    'ContentIdentifier',
-    'ContentCase',
-    'ContentPerson',
-    'ContentPersonAllegation',
-    'ContentPersonPenalty',
     # From the 'core' app
     'Person',
     'PersonContact',
@@ -47,6 +39,14 @@ MODEL_ALLOW_LIST = [
     'Incident',
     'PersonIncident',
     'GroupingIncident',
+    # From the 'sourcing' app
+    'Attachment',
+    'Content',
+    'ContentIdentifier',
+    'ContentCase',
+    'ContentPerson',
+    'ContentPersonAllegation',
+    'ContentPersonPenalty',
     # From the 'supporting' app
     'State',
     'County',
