@@ -12,8 +12,20 @@
 {% endblock %}
 
 {% block content %}
+<div class="row">
+<nav class="col-md-3 pt-3 sidebar">
+  <ul class="nav nav-pills flex-column" id="toc">
+  {% for mapping_name in mappings %}
+  <li class="nav-item">
+    <a href="#mapping-{{mapping_name}}" class="nav-link">{{ mapping_name }}</a>
+  </li>
+  {% endfor %}
+  </ul>
+</nav>
+
+<div class="main-column col-md-9">
 {% for mapping_name, mapping in mappings.items %}
-  <div class="card mt-4">
+  <article class="card mb-4" id="mapping-{{mapping_name}}">
     <div class="card-body">
   <h2 class="card-title model-name">{{ mapping_name }}</h2>
   <table class="table mapping-template">
@@ -23,16 +35,15 @@
       {% endfor %}
     </tr>
   </table>
-  <button class="btn btn-link" type="button" data-bs-toggle="collapse"
-          data-bs-target="#collapse-{{ mapping_name }}" aria-expanded="false"
-          aria-controls="multiCollapse{{ mapping_name }}">details</button>
-  <div class="collapse" id="collapse-{{ mapping_name }}">
+  <div class="m-3">
   {% for field_name, field_object in mapping.fields.items %}
-  <h3 class="heading-field-name">{{ field_name }}</h3>
+  <h3 class="heading-field-name mt-4">{{ field_name }}</h3>
   <p>{{ field_object.widget.get_help_html|safe }}</p>
   {% endfor %}
   </div>
   </div>
-</div>
+  </article>
 {% endfor %}
+</div>
+</div>
 {% endblock%}
