@@ -235,6 +235,18 @@ resource_model_mapping['Grouping'].fields['grouping_aliases'] = GroupingAliasesF
 resource_model_mapping['Grouping'].fields['grouping_relationship'] = GroupingRelationshipField()
 
 
+def is_law_enforcement_required_before_import_row(resource_class, row, row_number, **kwargs):
+    # Make "is_law_enforcement" required
+    if 'is_law_enforcement' not in row:
+        raise Exception('"is_law_enforcement" is missing but required')
+
+
+setattr(resource_model_mapping['Grouping'].fields['is_law_enforcement'], 'before_import_row',
+    is_law_enforcement_required_before_import_row)
+
+setattr(resource_model_mapping['Person'].fields['is_law_enforcement'], 'before_import_row',
+    is_law_enforcement_required_before_import_row)
+
 # Before import
 #
 #
@@ -246,11 +258,7 @@ def before_import_row(resource_class, row, row_number=None, **kwargs):
             field.before_import_row(resource_class, row, row_number, **kwargs)
         except AttributeError:
             pass
-    # Make "is_law_enforcement" required for Person and Group resources
-    if resource_class.Meta.model == Person or \
-            resource_class.Meta.model == Grouping:
-            if 'is_law_enforcement' not in row:
-                raise Exception('"is_law_enforcement" is missing but required')
+
 
 
 # After import
