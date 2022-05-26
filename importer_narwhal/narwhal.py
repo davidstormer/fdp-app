@@ -57,10 +57,36 @@ MODEL_ALLOW_LIST = [
 ]
 
 
+class ExternalIdField(fields.Field):
+
+    def after_import_row(self, resource_class, row, row_result, row_number, **kwargs):
+        # TODO: I think this should maybe be a 'get or create' logic, rather than just always create...?
+        # If so, if there's a pk in the sheet too it should probably compare to the one in the BulkImport record,
+        # and balk if there's an inconsistency?
+        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+            external_id = row.get('external_id', None)
+            if external_id:
+                model = resource_class.Meta.model
+                # Check to see if external id already exists, raise an error if so
+                found = BulkImport.objects.filter(
+                    table_imported_to=model.get_db_table(),
+                    pk_imported_from=external_id
+                )
+                if len(found) > 0:
+                    raise Exception(f"External ID already exists: {model}:{external_id}")
+                # If doesn't exist go ahead and create it
+                BulkImport.objects.create(
+                    table_imported_to=model.get_db_table(),
+                    pk_imported_to=row_result.object_id,
+                    pk_imported_from=external_id,
+                    data_imported=json.dumps(dict(row))
+                )
+
+
 class FdpModelResource(ModelResource):
     """Customized django-import-export ModelResource
     """
-    external_id = Field()
+    external_id = ExternalIdField()
 
     # On export retrieve external id of record and fill it into the 'external_id' column
     def dehydrate_external_id(self, record):
@@ -157,70 +183,9 @@ class GroupingAliasesField(fields.Field):
                         GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
 
 
-resource_model_mapping['Grouping'].fields['grouping_aliases'] = GroupingAliasesField()
+class GroupingRelationshipField(fields.Field):
 
-
-# Before import
-#
-#
-# On import, locate relationship columns in external id form, and resolve the respective pk
-def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
-    for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
-        if import_field_name.endswith('__external'):
-            if row[import_field_name]:
-                destination_field_name = import_field_name[:-10]
-                model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
-                referenced_record = get_record_from_external_id(model_class, row[import_field_name])
-                if resource_class.fields[destination_field_name].widget.field == 'name':
-                    # Field expects a natural key value, not a pk:
-                    row[destination_field_name] = referenced_record.name
-                else:
-                    row[destination_field_name] = referenced_record.pk
-
-
-# Modify the before_import_row hook with our custom transformations
-def before_import_row(resource_class, row, row_number=None, **kwargs):
-    dereference_external_ids(resource_class, row, row_number, **kwargs)
-    # Make "is_law_enforcement" required for Person and Group resources
-    if resource_class.Meta.model == Person or \
-            resource_class.Meta.model == Grouping:
-            if 'is_law_enforcement' not in row:
-                raise Exception('"is_law_enforcement" is missing but required')
-
-# After import
-#
-#
-# After import, generate the external id in the 'external_id' column
-def import_external_id(resource_class, row, row_result, row_number, **kwargs):
-    # TODO: I think this should maybe be a 'get or create' logic, rather than just always create...?
-    # If so, if there's a pk in the sheet too it should probably compare to the one in the BulkImport record,
-    # and balk if there's an inconsistency?
-    if row_result.import_type == row_result.IMPORT_TYPE_NEW:
-        external_id = row.get('external_id', None)
-        if external_id:
-            model = resource_class.Meta.model
-            # Check to see if external id already exists, raise an error if so
-            found = BulkImport.objects.filter(
-                table_imported_to=model.get_db_table(),
-                pk_imported_from=external_id
-            )
-            if len(found) > 0:
-                raise Exception(f"External ID already exists: {model}:{external_id}")
-            # If doesn't exist go ahead and create it
-            BulkImport.objects.create(
-                table_imported_to=model.get_db_table(),
-                pk_imported_to=row_result.object_id,
-                pk_imported_from=external_id,
-                data_imported=json.dumps(dict(row))
-            )
-
-
-
-
-def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs):
-    """Import GroupingRelationships if provided in Grouping sheet
-    """
-    if resource_class.Meta.model == Grouping:
+    def after_import_row(self, resource_class, row, row_result, row_number, **kwargs):
         if row_result.import_type == row_result.IMPORT_TYPE_NEW:
             grouping = Grouping.objects.get(pk=row_result.object_id)
             for field_name in row.keys():
@@ -253,14 +218,48 @@ def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_resu
                             )
 
 
+resource_model_mapping['Grouping'].fields['grouping_aliases'] = GroupingAliasesField()
+resource_model_mapping['Grouping'].fields['grouping_relationship'] = GroupingRelationshipField()
+
+
+# Before import
+#
+#
+# On import, locate relationship columns in external id form, and resolve the respective pk
+def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
+    for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
+        if import_field_name.endswith('__external'):
+            if row[import_field_name]:
+                destination_field_name = import_field_name[:-10]
+                model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
+                referenced_record = get_record_from_external_id(model_class, row[import_field_name])
+                if resource_class.fields[destination_field_name].widget.field == 'name':
+                    # Field expects a natural key value, not a pk:
+                    row[destination_field_name] = referenced_record.name
+                else:
+                    row[destination_field_name] = referenced_record.pk
+
+
+# Modify the before_import_row hook with our custom transformations
+def before_import_row(resource_class, row, row_number=None, **kwargs):
+    dereference_external_ids(resource_class, row, row_number, **kwargs)
+    # Make "is_law_enforcement" required for Person and Group resources
+    if resource_class.Meta.model == Person or \
+            resource_class.Meta.model == Grouping:
+            if 'is_law_enforcement' not in row:
+                raise Exception('"is_law_enforcement" is missing but required')
+
+
+# After import
+#
+#
 def after_import_row(resource_class, row, row_result, row_number=None, **kwargs):
-    import_external_id(resource_class, row, row_result, row_number, **kwargs)
-    add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs)
     for _, field in resource_class.fields.items():
         try:
             field.after_import_row(resource_class, row, row_result, row_number, **kwargs)
         except AttributeError:
             pass
+
 
 # Amend the resources in the map by applying the above pre and post import customizations
 for resource in resource_model_mapping.keys():
