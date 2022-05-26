@@ -110,6 +110,56 @@ def _compile_resources():
 resource_model_mapping = _compile_resources()
 
 
+class PersonAliasesField(fields.Field):
+
+    def after_import_row(self, resource_class, row, row_result, row_number, **kwargs):
+        person_aliases = row.get('person_aliases', None)
+        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+            person = Person.objects.get(pk=row_result.object_id)
+            if person_aliases:
+                for person_alias_value in person_aliases.split(','):
+                    person_alias_value = person_alias_value.strip()
+                    PersonAlias.objects.create(person=person, name=person_alias_value)
+        if row_result.import_type == row_result.IMPORT_TYPE_SKIP or \
+                row_result.import_type == row_result.IMPORT_TYPE_UPDATE:  # when only aliases are different
+            person = Person.objects.get(pk=row['id'])
+            if person_aliases:
+                for person_alias_value in person_aliases.split(','):
+                    person_alias_value = person_alias_value.strip()
+                    try:
+                        PersonAlias.objects.get(person=person, name=person_alias_value)
+                    except PersonAlias.DoesNotExist:
+                        PersonAlias.objects.create(person=person, name=person_alias_value)
+
+
+resource_model_mapping['Person'].fields['person_aliases'] = PersonAliasesField()
+
+
+class GroupingAliasesField(fields.Field):
+
+    def after_import_row(self, resource_class, row, row_result, row_number, **kwargs):
+        grouping_aliases = row.get('grouping_aliases', None)
+        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+            grouping = Grouping.objects.get(pk=row_result.object_id)
+            if grouping_aliases:
+                for grouping_alias_value in grouping_aliases.split(','):
+                    grouping_alias_value = grouping_alias_value.strip()
+                    GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
+        if row_result.import_type == row_result.IMPORT_TYPE_SKIP or \
+                row_result.import_type == row_result.IMPORT_TYPE_UPDATE:  # when only aliases are different
+            grouping = Grouping.objects.get(pk=row['id'])
+            if grouping_aliases:
+                for grouping_alias_value in grouping_aliases.split(','):
+                    grouping_alias_value = grouping_alias_value.strip()
+                    try:
+                        GroupingAlias.objects.get(grouping=grouping, name=grouping_alias_value)
+                    except GroupingAlias.DoesNotExist:
+                        GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
+
+
+resource_model_mapping['Grouping'].fields['grouping_aliases'] = GroupingAliasesField()
+
+
 # Before import
 #
 #
@@ -165,50 +215,6 @@ def import_external_id(resource_class, row, row_result, row_number, **kwargs):
             )
 
 
-def autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs):
-    """Import PersonAliases if provided in Person sheet
-    """
-    if resource_class.Meta.model == Person:
-        person_aliases = row.get('person_aliases', None)
-        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
-            person = Person.objects.get(pk=row_result.object_id)
-            if person_aliases:
-                for person_alias_value in person_aliases.split(','):
-                    person_alias_value = person_alias_value.strip()
-                    PersonAlias.objects.create(person=person, name=person_alias_value)
-        if row_result.import_type == row_result.IMPORT_TYPE_SKIP or \
-                row_result.import_type == row_result.IMPORT_TYPE_UPDATE:  # when only aliases are different
-            person = Person.objects.get(pk=row['id'])
-            if person_aliases:
-                for person_alias_value in person_aliases.split(','):
-                    person_alias_value = person_alias_value.strip()
-                    try:
-                        PersonAlias.objects.get(person=person, name=person_alias_value)
-                    except PersonAlias.DoesNotExist:
-                        PersonAlias.objects.create(person=person, name=person_alias_value)
-
-
-def autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwargs):
-    """Import GroupingAlias if provided in Grouping sheet
-    """
-    if resource_class.Meta.model == Grouping:
-        grouping_aliases = row.get('grouping_aliases', None)
-        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
-            grouping = Grouping.objects.get(pk=row_result.object_id)
-            if grouping_aliases:
-                for grouping_alias_value in grouping_aliases.split(','):
-                    grouping_alias_value = grouping_alias_value.strip()
-                    GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
-        if row_result.import_type == row_result.IMPORT_TYPE_SKIP or \
-                row_result.import_type == row_result.IMPORT_TYPE_UPDATE:  # when only aliases are different
-            grouping = Grouping.objects.get(pk=row['id'])
-            if grouping_aliases:
-                for grouping_alias_value in grouping_aliases.split(','):
-                    grouping_alias_value = grouping_alias_value.strip()
-                    try:
-                        GroupingAlias.objects.get(grouping=grouping, name=grouping_alias_value)
-                    except GroupingAlias.DoesNotExist:
-                        GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
 
 
 def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs):
@@ -249,9 +255,12 @@ def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_resu
 
 def after_import_row(resource_class, row, row_result, row_number=None, **kwargs):
     import_external_id(resource_class, row, row_result, row_number, **kwargs)
-    autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs)
-    autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwargs)
     add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs)
+    for _, field in resource_class.fields.items():
+        try:
+            field.after_import_row(resource_class, row, row_result, row_number, **kwargs)
+        except AttributeError:
+            pass
 
 # Amend the resources in the map by applying the above pre and post import customizations
 for resource in resource_model_mapping.keys():
