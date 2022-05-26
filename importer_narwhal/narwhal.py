@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 import tablib
 from django.utils import timezone
@@ -11,8 +12,10 @@ from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 
 from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
+from core.models import PersonAlias, Person, Grouping, GroupingAlias, GroupingRelationship
 from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
 from importer_narwhal.widgets import BooleanWidgetValidated
+from supporting.models import GroupingRelationshipType
 from wholesale.models import ModelHelper
 
 # The mother list of models to be able to import to.
@@ -110,43 +113,27 @@ resource_model_mapping = _compile_resources()
 #
 # On import, locate relationship columns in external id form, and resolve the respective pk
 def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
-    nonstandard_external_id_fields_mapping = {
-        'subject_person': 'Person',
-        'object_person': 'Person',
-    }
-    for model_name in MODEL_ALLOW_LIST:
-        # Look for any fields that follow the pattern '[model name]__external' and dereference them to their pks
-        try:
-            external_id = row[f'{model_name.lower()}__external']
-            model_class = get_data_model_from_name(model_name)
-            referenced_record = get_record_from_external_id(model_class, external_id)
-            row[model_name.lower()] = referenced_record.pk
-        except KeyError:
-            pass
-        # Look for any fields that follow the pattern '[model name]s__external' (plural) and dereference them to their
-        # pks
-        try:
-            external_id = row[f'{model_name.lower()}s__external']
-            model_class = get_data_model_from_name(model_name)
-            referenced_record = get_record_from_external_id(model_class, external_id)
-            row[model_name.lower() + 's'] = referenced_record.pk
-        except KeyError:
-            pass
-    for field_name in nonstandard_external_id_fields_mapping.keys():
-        # Look for any fields from the other external id fields above and dereference them to their pks
-        try:
-            external_id = row[f'{field_name}__external']
-            model_class = get_data_model_from_name(nonstandard_external_id_fields_mapping[field_name])
-            referenced_record = get_record_from_external_id(model_class, external_id)
-            row[field_name] = referenced_record.pk
-        except KeyError:
-            pass
+    for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
+        if import_field_name.endswith('__external'):
+            if row[import_field_name]:
+                destination_field_name = import_field_name[:-10]
+                model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
+                referenced_record = get_record_from_external_id(model_class, row[import_field_name])
+                if resource_class.fields[destination_field_name].widget.field == 'name':
+                    # Field expects a natural key value, not a pk:
+                    row[destination_field_name] = referenced_record.name
+                else:
+                    row[destination_field_name] = referenced_record.pk
 
 
 # Modify the before_import_row hook with our custom transformations
 def before_import_row(resource_class, row, row_number=None, **kwargs):
     dereference_external_ids(resource_class, row, row_number, **kwargs)
-
+    # Make "is_law_enforcement" required for Person and Group resources
+    if resource_class.Meta.model == Person or \
+            resource_class.Meta.model == Grouping:
+            if 'is_law_enforcement' not in row:
+                raise Exception('"is_law_enforcement" is missing but required')
 
 # After import
 #
@@ -176,9 +163,93 @@ def import_external_id(resource_class, row, row_result, row_number, **kwargs):
             )
 
 
+def autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs):
+    """Import PersonAliases if provided in Person sheet
+    """
+    if resource_class.Meta.model == Person:
+        person_aliases = row.get('person_aliases', None)
+        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+            person = Person.objects.get(pk=row_result.object_id)
+            if person_aliases:
+                for person_alias_value in person_aliases.split(','):
+                    person_alias_value = person_alias_value.strip()
+                    PersonAlias.objects.create(person=person, name=person_alias_value)
+        if row_result.import_type == row_result.IMPORT_TYPE_SKIP or \
+                row_result.import_type == row_result.IMPORT_TYPE_UPDATE:  # when only aliases are different
+            person = Person.objects.get(pk=row['id'])
+            if person_aliases:
+                for person_alias_value in person_aliases.split(','):
+                    person_alias_value = person_alias_value.strip()
+                    try:
+                        PersonAlias.objects.get(person=person, name=person_alias_value)
+                    except PersonAlias.DoesNotExist:
+                        PersonAlias.objects.create(person=person, name=person_alias_value)
+
+
+def autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwargs):
+    """Import GroupingAlias if provided in Grouping sheet
+    """
+    if resource_class.Meta.model == Grouping:
+        grouping_aliases = row.get('grouping_aliases', None)
+        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+            grouping = Grouping.objects.get(pk=row_result.object_id)
+            if grouping_aliases:
+                for grouping_alias_value in grouping_aliases.split(','):
+                    grouping_alias_value = grouping_alias_value.strip()
+                    GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
+        if row_result.import_type == row_result.IMPORT_TYPE_SKIP or \
+                row_result.import_type == row_result.IMPORT_TYPE_UPDATE:  # when only aliases are different
+            grouping = Grouping.objects.get(pk=row['id'])
+            if grouping_aliases:
+                for grouping_alias_value in grouping_aliases.split(','):
+                    grouping_alias_value = grouping_alias_value.strip()
+                    try:
+                        GroupingAlias.objects.get(grouping=grouping, name=grouping_alias_value)
+                    except GroupingAlias.DoesNotExist:
+                        GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
+
+
+def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs):
+    """Import GroupingRelationships if provided in Grouping sheet
+    """
+    if resource_class.Meta.model == Grouping:
+        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+            grouping = Grouping.objects.get(pk=row_result.object_id)
+            for field_name in row.keys():
+                # Does it look like this: 'grouping_relationship__exists-in'?
+                if re.match(r'grouping_relationship__[a-z\-]+$', field_name):
+                    relationship_type_name = field_name.replace('grouping_relationship__', '').replace('-', ' ')
+                    type_ = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
+                    for relationship_pk in row[field_name].split(','):
+                        relationship_pk = relationship_pk.strip()
+                        GroupingRelationship.objects.create(
+                            subject_grouping=grouping,
+                            object_grouping=Grouping.objects.get(pk=relationship_pk),
+                            type=type_
+                        )
+                # Does it look like this: 'grouping_relationship__external_id__exists-in'?
+                if re.match(r'grouping_relationship__external_id__[a-z\-]+$', field_name):
+                    relationship_type_name = field_name.replace('grouping_relationship__external_id__', '').replace('-', ' ')
+                    type_ = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
+                    for relationship_external_id in row[field_name].split(','):
+                        relationship_external_id = relationship_external_id.strip()
+                        if relationship_external_id:
+                            bulk_import = BulkImport.objects.get(
+                                table_imported_to=Grouping.get_db_table(),
+                                pk_imported_from=relationship_external_id
+                            )
+                            GroupingRelationship.objects.create(
+                                subject_grouping=grouping,
+                                object_grouping=Grouping.objects.get(pk=bulk_import.pk_imported_to),
+                                type=type_
+                            )
+
+
 def after_import_row(resource_class, row, row_result, row_number=None, **kwargs):
     import_external_id(resource_class, row, row_result, row_number, **kwargs)
-
+    autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs)
+    autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwargs)
+    add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs)
 
 # Amend the resources in the map by applying the above pre and post import customizations
 for resource in resource_model_mapping.keys():
@@ -211,6 +282,7 @@ foreign_key_fields_get_only = \
 many_to_many_fields_get_only = \
     {
         'Person': ['traits', ],
+        'Grouping': ['counties', ],
     }
 
 
@@ -257,6 +329,7 @@ apply_custom_widgets(foreign_key_fields_get_only, ForeignKeyWidget)
 
 # Set up "tag" fields (m2m) -- for now not 'get or create' just get
 apply_custom_widgets(many_to_many_fields_get_only, ManyToManyWidget)
+
 
 # Nice error reports
 #

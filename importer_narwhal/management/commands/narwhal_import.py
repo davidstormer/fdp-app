@@ -37,3 +37,6 @@ class Command(BaseCommand):
             self.print_error("Error:")
             for row in report.database_errors:
                 self.print_error(str(row))
+
+    def get_version(self):
+        return '1653407733'

@@ -9,11 +9,11 @@ from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
-    Trait, Title, County, LeaveStatus, State, PersonGroupingType, AttachmentType
+    Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
-    PersonGrouping
+    PersonGrouping, GroupingAlias, GroupingRelationship
 from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
 from io import StringIO
@@ -74,7 +74,7 @@ class NarwhalTestCase(TestCase):
     def test_resources(self):
         ResourceClass = resource_model_mapping['Person']
         resource = ResourceClass()
-        dataset = tablib.Dataset(['person quasicontinuous'], headers=['name'])
+        dataset = tablib.Dataset(['person quasicontinuous', 'TRUE'], headers=['name', 'is_law_enforcement'])
         result = resource.import_data(dataset, dry_run=False)
         self.assertEqual(
             1,
@@ -181,11 +181,12 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['person', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(10):
                 row = {}
                 row['person'] = person_record.pk
+                row['is_law_enforcement'] = 'checked'
                 row['name'] = f"alias-{uuid4()}"
                 imported_records.append(row)
             imported_records[7]['name'] = 'Joe'  # <- Dupe
@@ -277,11 +278,12 @@ class NarwhalImportCommand(TestCase):
         # which specifies that a new external id should be created when the record is imported.
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_rows = []
-            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(3):
                 row = {}
                 row['external_id'] = f'external-id-{uuid4()}'
+                row['is_law_enforcement'] = 'checked'
                 row['name'] = f'Test Person {uuid4()}'
                 csv_writer.writerow(row)
                 imported_rows.append(row)
@@ -311,16 +313,18 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_rows = []
-            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(3):
                 row = {}
                 row['external_id'] = f'external-id-{uuid4()}'
+                row['is_law_enforcement'] = 'checked'
                 row['name'] = f'Test Person {uuid4()}'
                 csv_writer.writerow(row)
                 imported_rows.append(row)
             row = {}
             row['external_id'] = duplicate_external_id  # <-- this
+            row['is_law_enforcement'] = 'checked'
             row['name'] = f'Test Person {uuid4()}'
             csv_writer.writerow(row)
             imported_rows.append(row)
@@ -349,17 +353,19 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_rows = []
-            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['external_id', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(3):
                 row = {}
                 row['external_id'] = f'external-id-{uuid4()}'
+                row['is_law_enforcement'] = 'checked'
                 row['name'] = f'Test Person {uuid4()}'
                 csv_writer.writerow(row)
                 imported_rows.append(row)
             for i in range(2):                                # <-- this
                 row = {}
                 row['external_id'] = duplicate_external_id
+                row['is_law_enforcement'] = 'checked'
                 row['name'] = f'Test Person {uuid4()}'
                 csv_writer.writerow(row)
                 imported_rows.append(row)
@@ -523,6 +529,82 @@ class NarwhalImportCommand(TestCase):
             existing_record['record'].pk,
             PersonIdentifier.objects.first().person.pk
         )
+
+    def test_external_ids_on_natural_key_field(self):
+        # Given there's an import sheet with an '__external' field on a natural key lookup field (e.g.
+        # person_identifier_type)
+        person_identifier_type_import = \
+            import_record_with_extid(PersonIdentifierType, {"name": 'person-identifier-type-marteline'},
+                                     external_id='external-id-sinusoidal')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'identifier', 'person_identifier_type__external'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['person_identifier_type__external'] = 'external-id-sinusoidal'
+                row['identifier'] = f"identifier-{uuid4()}"
+                row['person'] = Person.objects.create(name=f"person-{uuid4()}").pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the import
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonIdentifier', csv_fd.name, stdout=command_output)
+
+        # Then I should see the new record linked to the existing record referenced by external id
+        self.assertEqual(
+            PersonIdentifier.objects.last().person_identifier_type,
+            person_identifier_type_import['record']
+        )
+
+    def test_external_ids_on_natural_key_field_counties(self):
+        # Given there's an import sheet with an '__external' field on a natural key lookup field (e.g.
+        # person_identifier_type)
+        county_import = import_record_with_extid(
+            County,
+            {
+                "name": 'person-identifier-type-marteline',
+                "state": State.objects.create(name='Washington')
+            },
+            external_id='external-id-sinusoidal'
+        )
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'counties__external', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['counties__external'] = 'external-id-sinusoidal'
+                row['name'] = f"name-{uuid4()}"
+                row['is_law_enforcement'] = 'checked'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+        # Then I should see the new record linked to the existing record referenced by external id
+        self.assertNotIn(
+            'County matching query does not exist',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "Direct assignment to the forward side of a many-to-many set is prohibited",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            Grouping.objects.last().counties.all()[0],
+            county_import['record']
+        )
+
 
     def test_generate_new_types_person_identifier_types(self):
         """Test that importer can add new "types" when they don't exist in the system yet
@@ -704,6 +786,256 @@ class NarwhalImportCommand(TestCase):
             PersonTitle.objects.first().title.name
         )
 
+    def test_generate_new_person_aliases_for_new_person(self):
+        # Given there's a Person import sheet that has Aliases as comma separated values in it
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there is a csv describing a new Person record
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'person_aliases', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'checked'
+                row['person_aliases'] = 'rallier, medisect'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+        # Then I should see the new PersonAliases created, and linked to the new Person record
+        self.assertEqual(
+            2,
+            PersonAlias.objects.count()
+        )
+
+    def test_update_person_aliases_for_existing_person_no_other_changes(self):
+        # Given there's an import sheet that updates aliases (and only aliases) for an existing Person record
+        person_record = Person.objects.create(name='test person')
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'person_aliases', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['id'] = person_record.pk
+                row['name'] = f'test person'  # <- Same value
+                row['person_aliases'] = 'rallier, NEW ALIAS misconstructive, medisect'
+                row['is_law_enforcement'] = 'checked'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+        # Then I should see a new PersonAliase created, and linked to the new Person record
+        self.assertEqual(
+            3,
+            PersonAlias.objects.count()
+        )
+
+    def test_update_person_aliases_for_existing_person_with_other_changes(self):
+        # Given there's an import sheet that updates aliases _and_ name for an existing Person record
+        person_record = Person.objects.create(name='test person')
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'person_aliases', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['id'] = person_record.pk
+                row['name'] = f'test person UPDATED'  # <- Different value
+                row['person_aliases'] = 'rallier, NEW ALIAS misconstructive, medisect'
+                row['is_law_enforcement'] = 'checked'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command with the target model and CSV file as positional arguments
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+        # Then I should see a new PersonAliase created, and linked to the new Person record
+        self.assertEqual(
+            3,
+            PersonAlias.objects.count()
+        )
+
+    def test_generate_new_grouping_aliases_for_new_grouping(self):
+        # Given there's a Grouping import sheet that has Aliases as comma separated values in it
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            # GIVEN there is a csv describing a new Grouping record
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_aliases', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = f'Test Grouping {uuid4()}'
+                row['grouping_aliases'] = 'readmittance, journeycake'
+                row['is_law_enforcement'] = 'checked'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # WHEN I run the grouping with the target model and CSV file as positional arguments
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+        # Then I should see the new GroupingAlias created, and linked to the new Person record
+        self.assertEqual(
+            2,
+            GroupingAlias.objects.count()
+        )
+
+    def test_grouping_sheet_add_relationships(self):
+        # Given there's a grouping import sheet with relationships in a field patterned "grouping_relationship__[NAME]"
+        # where [NAME] is a case insensitive string with hyphens instead of spaces. E.g. "grouping_relationship__reports-to"
+        # and where [NAME] is an existing relationship type.
+        # and where the related grouping already exists
+        GroupingRelationshipType.objects.create(name="Exists in")
+        existing_grouping = Grouping.objects.create(name="indulgentially")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__exists-in', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = 'New Command'
+                row['grouping_relationship__exists-in'] = existing_grouping.pk
+                row['is_law_enforcement'] = 'checked'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+        # Then I should see a new GroupingRelationship with type "Reports to" linking the existing grouping and the
+        # newly imported one
+        self.assertEqual(
+            1,
+            GroupingRelationship.objects.count()
+        )
+
+    def test_grouping_sheet_add_relationships_by_external_id(self):
+        # Given there's a grouping import sheet with relationships in a field patterned
+        # "grouping_relationship__external_id__[NAME]"
+        # where [NAME] is a case insensitive string with hyphens instead of spaces. E.g.
+        # "grouping_relationship__external_id__reports-to"
+        # and where [NAME] is an existing relationship type.
+        # and where the related grouping already exists
+        GroupingRelationshipType.objects.create(name="Exists in")
+        existing_grouping_external_id = \
+            import_record_with_extid(Grouping, {"name": 'indulgentially'}, external_id='postembryonic')['external_id']
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__external_id__exists-in', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = 'New Command'
+                row['grouping_relationship__external_id__exists-in'] = existing_grouping_external_id
+                row['is_law_enforcement'] = 'checked'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+        # Then I should see a new GroupingRelationship with type "Reports to" linking the existing grouping and the
+        # newly imported one
+        self.assertEqual(
+            1,
+            GroupingRelationship.objects.count()
+        )
+
+    def test_grouping_sheet_add_relationships_by_external_id_ignore_blank_cells(self):
+        # Given there's a grouping import sheet with relationships in a field patterned
+        # "grouping_relationship__external_id__[NAME]"
+        # where [NAME] is a case insensitive string with hyphens instead of spaces. E.g.
+        # "grouping_relationship__external_id__reports-to"
+        # and where [NAME] is an existing relationship type.
+        # and where the related grouping already exists
+        GroupingRelationshipType.objects.create(name="Exists in")
+        existing_grouping_external_id = \
+            import_record_with_extid(Grouping, {"name": 'indulgentially'}, external_id='postembryonic')['external_id']
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__external_id__exists-in', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            row = {}
+            row['name'] = 'New Command 1'
+            row['grouping_relationship__external_id__exists-in'] = ''  # <- THIS
+            row['is_law_enforcement'] = 'checked'
+            imported_records.append(row)
+            row = {}
+            row['name'] = 'New Command 2'
+            row['grouping_relationship__external_id__exists-in'] = existing_grouping_external_id
+            row['is_law_enforcement'] = 'checked'
+            imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+        # Then I shouldn't see an error message
+        self.assertNotIn(
+            "BulkImport matching query does not exist",
+            command_output.getvalue()
+        )
+        # Then I should see a new GroupingRelationship with type "Reports to" linking the existing grouping and the
+        # newly imported one
+        self.assertEqual(
+            1,
+            GroupingRelationship.objects.count()
+        )
+
+    def test_grouping_belongs_to_grouping_with_external_id(self):
+        # Given there's an import sheet with a column named `belongs_to_grouping__external` that references an
+        # exiting grouping by external id.
+        existing_grouping_external_id = \
+            import_record_with_extid(Grouping, {"name": 'Existing Command'}, external_id='postembryonic')['external_id']
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'belongs_to_grouping__external', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = 'New Command'
+                row['belongs_to_grouping__external'] = existing_grouping_external_id
+                row['is_law_enforcement'] = 'checked'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # When I do an import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+        # Then the newly added grouping's belongs_to_grouping field should point to the existing record
+        self.assertEqual(
+            Grouping.objects.last().belongs_to_grouping,
+            Grouping.objects.first()
+        )
+
     def test_generate_new_types_person_grouping_type(self):
         """Test that importer can add new "types" when they don't exist in the system yet
         Uses PersonGrouping Type
@@ -801,12 +1133,13 @@ class NarwhalImportCommand(TestCase):
             existing_records.append(Person.objects.create(name='Old Name'))
         # and Given there's an import sheet that references them by pk
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
-            csv_writer = csv.DictWriter(csv_fd, ['id', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['id', 'name', 'is_law_enforcement'])
             csv_writer.writeheader()
             for existing_record in existing_records:
                 row = {}
                 row['id'] = existing_record.pk
                 row['name'] = 'NEW Name'
+                row['is_law_enforcement'] = 'checked'
                 csv_writer.writerow(row)
             csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
 
@@ -835,12 +1168,13 @@ class NarwhalImportCommand(TestCase):
         def import_person_records() -> dict:
             with tempfile.NamedTemporaryFile(mode='w') as person_csv_fd:
                 imported_person_records = []
-                person_csv_writer = csv.DictWriter(person_csv_fd, ['external_id', 'name'])
+                person_csv_writer = csv.DictWriter(person_csv_fd, ['external_id', 'name', 'is_law_enforcement'])
                 person_csv_writer.writeheader()
                 for i in range(3):
                     row = {}
                     row['external_id'] = f'person-extid-{uuid4()}'
                     row['name'] = f"person-name-{uuid4()}"
+                    row['is_law_enforcement'] = 'checked'
                     imported_person_records.append(row)
 
                 for row in imported_person_records:
@@ -984,4 +1318,62 @@ class NarwhalImportCommand(TestCase):
             self.assertIn(
                 'attachments',
                 ContentResource().fields.keys()
+            )
+
+    def test_person_require_is_law_enforcement(self):
+        # Given there's a Person import sheet with no is_law_enforcement column
+        # TODO: column exists, but cell is blank
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name'])
+            csv_writer.writeheader()
+            for i in range(10):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # When I do an import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Person', csv_fd.name, stdout=command_output)
+
+            # Then no records should be imported
+            self.assertEqual(
+                0,
+                Person.objects.all().count()
+            )
+            # Then I should get an error
+            self.assertIn(
+                '"is_law_enforcement" is missing but required',
+                command_output.getvalue()
+            )
+
+    def test_grouping_require_is_law_enforcement(self):
+        # Given there's a Person import sheet with no is_law_enforcement column
+        # TODO: column exists, but cell is blank
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name'])
+            csv_writer.writeheader()
+            for i in range(10):
+                row = {}
+                row['name'] = f'Test Grouping {uuid4()}'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # When I do an import
+            command_output = StringIO()
+            call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
+
+            # Then I should get an error
+            self.assertIn(
+                '"is_law_enforcement" is missing but required',
+                command_output.getvalue()
+            )
+            # And no records should be imported
+            self.assertEqual(
+                0,
+                Grouping.objects.all().count()
             )
