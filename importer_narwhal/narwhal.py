@@ -303,7 +303,7 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
 
     def get_help_html(self):
         return f"""Accepts <code>{ self.model.__name__ }</code> { self.field }s rather than PKs by default.
-        Accepts external ids using <code>__external</code> extension.
+        Accepts external ids using the <code>__external</code> extension.
         """
 
 import import_export
@@ -315,7 +315,7 @@ def foreign_key_widget_help_html(self):
         <code>__external</code> extension."""
     elif self.field == 'name':
         return f"""Accepts <code>{ self.model.__name__ }</code> { self.field }s rather than PKs by default.
-        Accepts external ids using <code>__external</code> extension.
+        Accepts external ids using the <code>__external</code> extension.
         """
 
 
@@ -325,10 +325,10 @@ import_export.widgets.ForeignKeyWidget.get_help_html = foreign_key_widget_help_h
 def many_to_many_widget_help_html(self):
     if self.field == 'pk':
         return f"""References <code>{self.model.__name__}</code> by pk. Accepts external ids using 
-        <code>__external</code> extension."""
+        the <code>__external</code> extension."""
     elif self.field == 'name':
         return f"""Accepts <code>{ self.model.__name__ }</code> { self.field }s rather than PKs by default.
-        Accepts external ids using <code>__external</code> extension.
+        Accepts external ids using the <code>__external</code> extension.
         """
 
 
