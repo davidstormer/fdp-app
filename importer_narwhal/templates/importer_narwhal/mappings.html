@@ -21,13 +21,14 @@
   </li>
   {% endfor %}
   </ul>
+  <a href="#" class="btn btn-outline-secondary backdrop-filter-blur position-fixed bottom-0 mb-3 p-3"><i class="fas fa-angle-double-up"></i> Back to top</a>
 </nav>
 
 <div class="main-column col-md-9">
 {% for mapping_name, mapping in mappings.items %}
   <article class="card mb-4" id="mapping-{{mapping_name}}">
     <div class="card-body">
-  <h2 class="card-title model-name">{{ mapping_name }}</h2>
+  <h2 class="card-title model-name text-primary">{{ mapping_name }}</h2>
   <table class="table mapping-template">
     <tr>
       {% for field in mapping.fields %}
@@ -35,10 +36,20 @@
       {% endfor %}
     </tr>
   </table>
-  <div class="m-3">
+  <div class="m-3 model-fields">
   {% for field_name, field_object in mapping.fields.items %}
-  <h3 class="heading-field-name mt-4">{{ field_name }}</h3>
-  <p>{{ field_object.widget.get_help_html|safe }}</p>
+    <div class="model-field border p-3 mt-4">
+    <div class="row">
+      <div class="col md-6">
+        <h3 class="heading-field-name text-primary">{{ field_name }}</h3>
+      </div>
+      <div class="col md-6 text-end">
+        <span class="text-secondary">{{field_object.django_field_type_name}}</span>
+      </div>
+    </div>
+    <small>{{field_object.django_field_help_text}}</small>
+    <p border-top>{{ field_object.widget.get_help_html|safe }}</p>
+    </div>
   {% endfor %}
   </div>
   </div>

@@ -6,3 +6,7 @@ $dark: #212729;
 $code-color: #666;
 
 @import "./bootstrap-scss/bootstrap";
+
+.backdrop-filter-blur {
+  backdrop-filter: blur(3px);
+}

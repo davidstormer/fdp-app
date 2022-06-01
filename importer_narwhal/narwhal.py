@@ -7,7 +7,7 @@ import tablib
 from django.core.files import File
 from django.utils import timezone
 from import_export import resources, fields
-from import_export.fields import Field
+import import_export.fields
 from import_export.resources import ModelResource
 from import_export.results import RowResult
 from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
@@ -58,7 +58,6 @@ MODEL_ALLOW_LIST = [
 
 
 class ExternalIdField(fields.Field):
-
     def before_import_row(self, resource_class, row, row_number, **kwargs):
         for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
             if import_field_name.endswith('__external'):
@@ -386,6 +385,19 @@ apply_custom_widgets(foreign_key_fields_get_only, ForeignKeyWidget)
 # Set up "tag" fields (m2m) -- for now not 'get or create' just get
 apply_custom_widgets(many_to_many_fields_get_only, ManyToManyWidget)
 
+
+# Populate the resource mapping fields with details for printing on the importer mapping documentation page
+for model_name, mapping in resource_model_mapping.items():
+    django_model_class = get_data_model_from_name(model_name)
+    for field_name, field in mapping.fields.items():
+        try:
+            django_field = getattr(django_model_class, field_name).field
+            django_field_type_name = type(django_field).__name__
+            setattr(field, 'django_field_type_name', django_field_type_name)
+            setattr(field, 'django_field_help_text', django_field.help_text)
+        except AttributeError:
+            # Skip non-django fields like `external_id`
+            pass
 
 # Nice error reports
 #
