@@ -27,6 +27,11 @@ class BatchListingLandingView(ListView):
     paginate_by = 25
     queryset = ImportBatch.objects.all().order_by('-pk')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Importer'
+        return context
+
 
 class ImportBatchCreateView(CreateView):
 

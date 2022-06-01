@@ -1,19 +1,17 @@
 {% extends 'common/base-bootstrap.html' %}
 
 {% block breadcrumbs %}
-<li class="breadcrumb-item">Admin</li>
-<li class="breadcrumb-item active" aria-current="page">Importer</li>
+<li><a href="{% url 'changing:index' %}">Admin</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="column import">
-        <a href="{%url 'wholesale:create_import' %}"><i class="fas fa-upload"></i></a>
-        <h3><a href="{%url 'wholesale:create_import' %}">Import</a></h3>
+<div class="row justify-content-md-center">
+    <div class="col-md-3 text-center">
+        <a class="text-decoration-none fw-bold d-block" href="{%url 'importer_narwhal:new-batch' %}"><i class="fas fa-upload display-6"></i><br>Import</a>
     </div>
-    <div class="column template">
-        <a href="{%url 'wholesale:template' %}"><i class="fas fa-columns"></i></a>
-        <h3><a href="/changing/importer/mappings">Mapping documentation</a></h3>
+    <div class="col-md-3 text-center">
+        <a class="text-decoration-none fw-bold d-block" href="{%url 'importer_narwhal:importer-mappings' %}"><i class="fas fa-columns display-6"></i><br>Mapping<br>documentation</a>
     </div>
 </div>
 
