@@ -6,6 +6,7 @@ from pathlib import Path
 import tablib
 from django.core.files import File
 from django.utils import timezone
+import import_export
 from import_export import resources, fields
 import import_export.fields
 from import_export.resources import ModelResource
@@ -94,6 +95,9 @@ class ExternalIdField(fields.Field):
                     data_imported=json.dumps(dict(row))
                 )
 
+    def get_help_html(self):
+        return """Use the <code>external_id</code> column to create an external id on import, or refer to an existing 
+        record to update it."""
 
 class FdpModelResource(ModelResource):
     """Customized django-import-export ModelResource
@@ -116,7 +120,6 @@ class FdpModelResource(ModelResource):
 
     class Meta:
         skip_unchanged = True
-
 
 # Some of the stock widgets don't meet our needs
 # Override them with our custom versions
@@ -240,6 +243,9 @@ class GroupingRelationshipField(fields.Field):
         expects PKs, the form with <code>__external_id</code> expects external IDs.
         """
 
+    def get_available_extensions(self):
+        return ['__[relationship name]','__external_id__[relationship name]']
+
 
 resource_model_mapping['Grouping'].fields['grouping_aliases'] = GroupingAliasesField()
 resource_model_mapping['Grouping'].fields['grouping_relationships'] = GroupingRelationshipField()
@@ -335,7 +341,12 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
         PKs by default. Accepts external ids using the <code>__external_id</code> extension.
         """
 
-import import_export
+    def get_available_extensions(self):
+        return ['__external_id']
+
+
+def external_id_get_available_extensions(self):
+    return ['__external_id']
 
 
 def foreign_key_widget_help_html(self):
@@ -350,6 +361,7 @@ def foreign_key_widget_help_html(self):
 
 
 import_export.widgets.ForeignKeyWidget.get_help_html = foreign_key_widget_help_html
+import_export.widgets.ForeignKeyWidget.get_available_extensions = external_id_get_available_extensions
 
 
 def many_to_many_widget_help_html(self):
@@ -364,7 +376,7 @@ def many_to_many_widget_help_html(self):
 
 
 import_export.widgets.ManyToManyWidget.get_help_html = many_to_many_widget_help_html
-
+import_export.widgets.ManyToManyWidget.get_available_extensions = external_id_get_available_extensions
 
 # Customize the 'type' fields to use the new ForeignKeyWidgetGetOrCreate widget
 def apply_custom_widgets(target_fields, widget):
