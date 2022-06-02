@@ -30,7 +30,8 @@
 {% for mapping_name, mapping in mappings.items %}
   <article class="card mb-4" id="mapping-{{mapping_name}}">
     <div class="card-body">
-  <h2 class="card-title model-name text-primary">{{ mapping_name }}</h2>
+  <h2 class="card-title model-name text-primary mb-4 display-5">{{ mapping_name }}</h2>
+  <h3 class="text-secondary">Import sheet template</h3>
   <table class="table mapping-template">
     <tr>
       {% for field in mapping.fields %}
@@ -38,6 +39,8 @@
       {% endfor %}
     </tr>
   </table>
+  <p><small>Copy and past the above line into a spreadsheet to start a {{ mapping_name }} import sheet. (Remember to save as CSV format using UTF-8 encoding)</small></p>
+  <h3 class="text-secondary">Columns</h3>
   <div class="m-3 model-fields">
   {% for field_name, field_object in mapping.fields.items %}
     <div class="model-field border p-3 mt-4">
