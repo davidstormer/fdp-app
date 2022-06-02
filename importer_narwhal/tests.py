@@ -397,11 +397,11 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['person__external', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['person__external_id', 'name'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
-                row['person__external'] = existing_record['external_id']
+                row['person__external_id'] = existing_record['external_id']
                 row['name'] = f"alias-{uuid4()}"
                 imported_records.append(row)
             for row in imported_records:
@@ -435,11 +435,11 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['person__external', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['person__external_id', 'name'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
-                row['person__external'] = existing_record['external_id']
+                row['person__external_id'] = existing_record['external_id']
                 row['name'] = f"alias-{uuid4()}"
                 imported_records.append(row)
             for row in imported_records:
@@ -473,11 +473,11 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['person__external', 'name'])
+            csv_writer = csv.DictWriter(csv_fd, ['person__external_id', 'name'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
-                row['person__external'] = existing_record['external_id']
+                row['person__external_id'] = existing_record['external_id']
                 row['name'] = f"alias-{uuid4()}"
                 imported_records.append(row)
             for row in imported_records:
@@ -508,11 +508,11 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['person__external', 'identifier', 'person_identifier_type'])
+            csv_writer = csv.DictWriter(csv_fd, ['person__external_id', 'identifier', 'person_identifier_type'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
-                row['person__external'] = existing_record['external_id']
+                row['person__external_id'] = existing_record['external_id']
                 row['identifier'] = f"identifier-{uuid4()}"
                 row['person_identifier_type'] = 'unkissed'
                 imported_records.append(row)
@@ -531,7 +531,7 @@ class NarwhalImportCommand(TestCase):
         )
 
     def test_external_ids_on_natural_key_field(self):
-        # Given there's an import sheet with an '__external' field on a natural key lookup field (e.g.
+        # Given there's an import sheet with an '__external_id' field on a natural key lookup field (e.g.
         # person_identifier_type)
         person_identifier_type_import = \
             import_record_with_extid(PersonIdentifierType, {"name": 'person-identifier-type-marteline'},
@@ -539,11 +539,11 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['person', 'identifier', 'person_identifier_type__external'])
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'identifier', 'person_identifier_type__external_id'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
-                row['person_identifier_type__external'] = 'external-id-sinusoidal'
+                row['person_identifier_type__external_id'] = 'external-id-sinusoidal'
                 row['identifier'] = f"identifier-{uuid4()}"
                 row['person'] = Person.objects.create(name=f"person-{uuid4()}").pk
                 imported_records.append(row)
@@ -562,7 +562,7 @@ class NarwhalImportCommand(TestCase):
         )
 
     def test_external_ids_on_natural_key_field_counties(self):
-        # Given there's an import sheet with an '__external' field on a natural key lookup field (e.g.
+        # Given there's an import sheet with an '__external_id' field on a natural key lookup field (e.g.
         # person_identifier_type)
         county_import = import_record_with_extid(
             County,
@@ -575,11 +575,11 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'counties__external', 'is_law_enforcement'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'counties__external_id', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
-                row['counties__external'] = 'external-id-sinusoidal'
+                row['counties__external_id'] = 'external-id-sinusoidal'
                 row['name'] = f"name-{uuid4()}"
                 row['is_law_enforcement'] = 'checked'
                 imported_records.append(row)
@@ -616,11 +616,11 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['person__external', 'identifier', 'person_identifier_type'])
+            csv_writer = csv.DictWriter(csv_fd, ['person__external_id', 'identifier', 'person_identifier_type'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
-                row['person__external'] = existing_record['external_id']
+                row['person__external_id'] = existing_record['external_id']
                 row['identifier'] = f"identifier-{uuid4()}"
                 row['person_identifier_type'] = 'unkissed'
                 imported_records.append(row)
@@ -649,12 +649,12 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['subject_person__external', 'object_person__external', 'type'])
+            csv_writer = csv.DictWriter(csv_fd, ['subject_person__external_id', 'object_person__external_id', 'type'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
-                row['subject_person__external'] = person_subject['external_id']
-                row['object_person__external'] = person_object['external_id']
+                row['subject_person__external_id'] = person_subject['external_id']
+                row['object_person__external_id'] = person_object['external_id']
                 row['type'] = 'vaudeville'
                 imported_records.append(row)
             for row in imported_records:
@@ -1014,12 +1014,12 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'belongs_to_grouping__external', 'is_law_enforcement'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'belongs_to_grouping__external_id', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['name'] = 'New Command'
-                row['belongs_to_grouping__external'] = existing_grouping_external_id
+                row['belongs_to_grouping__external_id'] = existing_grouping_external_id
                 row['is_law_enforcement'] = 'checked'
                 imported_records.append(row)
             for row in imported_records:
@@ -1192,12 +1192,12 @@ class NarwhalImportCommand(TestCase):
         def import_person_alias_records() -> dict:
             with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
                 imported_records = []
-                csv_writer = csv.DictWriter(csv_fd, ['name', 'person__external'])
+                csv_writer = csv.DictWriter(csv_fd, ['name', 'person__external_id'])
                 csv_writer.writeheader()
                 for person in person_import_result['imported_records']:
                     row = {}
                     row['name'] = f"alias-name-{uuid4()}"
-                    row['person__external'] = person['external_id']
+                    row['person__external_id'] = person['external_id']
                     imported_records.append(row)
 
                 for row in imported_records:
@@ -1269,11 +1269,11 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'attachments__external'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'attachments__external_id'])
             csv_writer.writeheader()
             row = {}
             row['name'] = f"Test Content"
-            row['attachments__external'] = attachment_record['external_id']
+            row['attachments__external_id'] = attachment_record['external_id']
             imported_records.append(row)
 
             for row in imported_records:

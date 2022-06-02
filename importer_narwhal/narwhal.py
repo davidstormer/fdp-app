@@ -60,9 +60,9 @@ MODEL_ALLOW_LIST = [
 class ExternalIdField(fields.Field):
     def before_import_row(self, resource_class, row, row_number, **kwargs):
         for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
-            if import_field_name.endswith('__external'):
+            if import_field_name.endswith('__external_id'):
                 if row[import_field_name]:
-                    destination_field_name = import_field_name[:-10]
+                    destination_field_name = import_field_name[:-13]
                     model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
                     referenced_record = get_record_from_external_id(model_class, row[import_field_name])
                     if resource_class.fields[destination_field_name].widget.field == 'name':
@@ -331,7 +331,7 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
 
     def get_help_html(self):
         return f"""Accepts <code>{ self.model.__name__ }</code> { self.field }s rather than 
-        PKs by default. Accepts external ids using the <code>__external</code> extension.
+        PKs by default. Accepts external ids using the <code>__external_id</code> extension.
         """
 
 import import_export
@@ -340,11 +340,11 @@ import import_export
 def foreign_key_widget_help_html(self):
     if self.field == 'pk':
         return f"""References <a href="#mapping-{ self.model.__name__ }"><code>{self.model.__name__}</code></a> by pk.
-        Accepts external ids using <code>__external</code> extension.
+        Accepts external ids using <code>__external_id</code> extension.
         """
     elif self.field == 'name':
         return f"""Accepts <a href="#mapping-{ self.model.__name__ }"><code>{ self.model.__name__ }</code></a>
-        { self.field }s rather than PKs by default. Accepts external ids using the <code>__external</code> extension.
+        { self.field }s rather than PKs by default. Accepts external ids using the <code>__external_id</code> extension.
         """
 
 
@@ -354,11 +354,11 @@ import_export.widgets.ForeignKeyWidget.get_help_html = foreign_key_widget_help_h
 def many_to_many_widget_help_html(self):
     if self.field == 'pk':
         return f"""References <a href="#mapping-{ self.model.__name__ }"><code>{self.model.__name__}</code></a> by pk. 
-        Accepts external ids using the <code>__external</code> extension.
+        Accepts external ids using the <code>__external_id</code> extension.
         """
     elif self.field == 'name':
         return f"""Accepts <a href="#mapping-{ self.model.__name__ }"><code>{ self.model.__name__ }</code></a>
-        { self.field }s rather than PKs by default. Accepts external ids using the <code>__external</code> extension.
+        { self.field }s rather than PKs by default. Accepts external ids using the <code>__external_id</code> extension.
         """
 
 
