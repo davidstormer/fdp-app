@@ -172,6 +172,10 @@ class PersonAliasesField(fields.Field):
                     except PersonAlias.DoesNotExist:
                         PersonAlias.objects.create(person=person, name=person_alias_value)
 
+    def get_help_html(self):
+        return """Use this column to add <code>PersonAlias</code> records to a Person record while importing it. Write 
+        the names in comma delimited format. E.g "The shadow, Rocky, Mickey Mouse"."""
+
 
 resource_model_mapping['Person'].fields['person_aliases'] = PersonAliasesField()
 
@@ -197,6 +201,9 @@ class GroupingAliasesField(fields.Field):
                     except GroupingAlias.DoesNotExist:
                         GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
 
+    def get_help_html(self):
+        return """Use this column to add <code>GroupingAlias</code> records to a Grouping record while importing it. 
+        Write the names in comma delimited format. E.g "DCA, 4DS, AKF"."""
 
 class GroupingRelationshipField(fields.Field):
 
