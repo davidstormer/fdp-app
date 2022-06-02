@@ -229,6 +229,16 @@ class GroupingRelationshipField(fields.Field):
                                 type=type_
                             )
 
+    def get_help_html(self):
+        return f"""To related a group to another group while importing it, use the grouping_relationship column. Uses a 
+        special column name syntax: 
+        <code>grouping_relationship__[relationship name]</code> or <code>grouping_relationship__external_id__[
+        relationship name]</code>. Where [relationship name] is an existing GroupingRelationship set in all lower 
+        case with spaces replaced with hyphens.<br>Examples: <code>grouping_relationship__reports-to</code> or 
+        <code>grouping_relationship__external_id__reports-to</code>. The form without <code>__external_id</code> expects
+        PKs, the form with <code>__external_id</code> expects external IDs.
+        """
+
 
 resource_model_mapping['Grouping'].fields['grouping_aliases'] = GroupingAliasesField()
 resource_model_mapping['Grouping'].fields['grouping_relationship'] = GroupingRelationshipField()
