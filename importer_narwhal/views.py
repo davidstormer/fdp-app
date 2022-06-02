@@ -36,7 +36,7 @@ class BatchListingLandingView(ListView):
 class ImportBatchCreateView(CreateView):
 
     model = ImportBatch
-    fields = ['target_model_name', 'import_sheet']
+    fields = ['import_sheet', 'target_model_name']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

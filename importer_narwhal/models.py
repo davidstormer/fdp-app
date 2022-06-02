@@ -6,6 +6,41 @@ import os
 
 from django.urls import reverse
 
+# The mother list of models to be able to import to.
+# The options in the interface are based on this.
+MODEL_ALLOW_LIST = [
+    # From the 'core' app
+    'Person',
+    'PersonContact',
+    'PersonAlias',
+    'PersonPhoto',
+    'PersonIdentifier',
+    'PersonTitle',
+    'PersonRelationship',
+    'PersonPayment',
+    'Grouping',
+    'GroupingAlias',
+    'GroupingRelationship',
+    'PersonGrouping',
+    'Incident',
+    'PersonIncident',
+    'GroupingIncident',
+    # From the 'sourcing' app
+    'Attachment',
+    'Content',
+    'ContentIdentifier',
+    'ContentCase',
+    'ContentPerson',
+    'ContentPersonAllegation',
+    'ContentPersonPenalty',
+    # From the 'supporting' app
+    'State',
+    'County',
+    'Location',
+    'Court',
+    'Trait',
+    'TraitType',
+]
 
 def validate_import_sheet_extension(file):
     allowed_extensions = ['csv']
@@ -29,7 +64,8 @@ class ImportBatch(models.Model):
     dry_run_completed = models.DateTimeField(null=True, blank=True)
     started = models.DateTimeField(null=True, blank=True)
     completed = models.DateTimeField(null=True, blank=True)
-    target_model_name = models.CharField(max_length=256)
+    target_model_name = models.CharField(choices=zip(MODEL_ALLOW_LIST, MODEL_ALLOW_LIST), max_length=256)
+    # target_model_name = models.CharField(max_length=256)
     number_of_rows = models.IntegerField(null=True)
     errors_encountered = models.BooleanField(null=True)
     submitted_file_name = models.CharField(max_length=1024)

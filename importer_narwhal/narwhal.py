@@ -16,46 +16,10 @@ from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
 from core.models import PersonAlias, Person, Grouping, GroupingAlias, GroupingRelationship
-from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
+from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow, MODEL_ALLOW_LIST
 from importer_narwhal.widgets import BooleanWidgetValidated
 from supporting.models import GroupingRelationshipType
 from wholesale.models import ModelHelper
-
-# The mother list of models to be able to import to.
-# The options in the interface are based on this.
-MODEL_ALLOW_LIST = [
-    # From the 'core' app
-    'Person',
-    'PersonContact',
-    'PersonAlias',
-    'PersonPhoto',
-    'PersonIdentifier',
-    'PersonTitle',
-    'PersonRelationship',
-    'PersonPayment',
-    'Grouping',
-    'GroupingAlias',
-    'GroupingRelationship',
-    'PersonGrouping',
-    'Incident',
-    'PersonIncident',
-    'GroupingIncident',
-    # From the 'sourcing' app
-    'Attachment',
-    'Content',
-    'ContentIdentifier',
-    'ContentCase',
-    'ContentPerson',
-    'ContentPersonAllegation',
-    'ContentPersonPenalty',
-    # From the 'supporting' app
-    'State',
-    'County',
-    'Location',
-    'Court',
-    'Trait',
-    'TraitType',
-]
 
 
 class ExternalIdField(fields.Field):
