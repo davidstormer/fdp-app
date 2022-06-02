@@ -64,8 +64,9 @@ class ImportBatch(models.Model):
     dry_run_completed = models.DateTimeField(null=True, blank=True)
     started = models.DateTimeField(null=True, blank=True)
     completed = models.DateTimeField(null=True, blank=True)
-    target_model_name = models.CharField(choices=zip(MODEL_ALLOW_LIST, MODEL_ALLOW_LIST), max_length=256)
-    # target_model_name = models.CharField(max_length=256)
+    target_model_name = models.CharField(choices=zip(MODEL_ALLOW_LIST, MODEL_ALLOW_LIST), max_length=256,
+         help_text=f"""Select the data model that you would like to import to. Read more about appropriate mappings 
+         on the Mappings page.""")
     number_of_rows = models.IntegerField(null=True)
     errors_encountered = models.BooleanField(null=True)
     submitted_file_name = models.CharField(max_length=1024)
@@ -74,7 +75,8 @@ class ImportBatch(models.Model):
         validators=[
             validate_import_sheet_extension,
             validate_import_sheet_file_size
-        ]
+        ],
+        help_text="Must be CSV format, encoded in UTF-8"
     )
 
     def get_absolute_url(self):
