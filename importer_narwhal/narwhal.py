@@ -201,9 +201,9 @@ class GroupingRelationshipField(fields.Field):
         if row_result.import_type == row_result.IMPORT_TYPE_NEW:
             grouping = Grouping.objects.get(pk=row_result.object_id)
             for field_name in row.keys():
-                # Does it look like this: 'grouping_relationship__exists-in'?
-                if re.match(r'grouping_relationship__[a-z\-]+$', field_name):
-                    relationship_type_name = field_name.replace('grouping_relationship__', '').replace('-', ' ')
+                # Does it look like this: 'grouping_relationships__exists-in'?
+                if re.match(r'grouping_relationships__[a-z\-]+$', field_name):
+                    relationship_type_name = field_name.replace('grouping_relationships__', '').replace('-', ' ')
                     type_ = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
                     for relationship_pk in row[field_name].split(','):
                         relationship_pk = relationship_pk.strip()
@@ -212,9 +212,10 @@ class GroupingRelationshipField(fields.Field):
                             object_grouping=Grouping.objects.get(pk=relationship_pk),
                             type=type_
                         )
-                # Does it look like this: 'grouping_relationship__external_id__exists-in'?
-                if re.match(r'grouping_relationship__external_id__[a-z\-]+$', field_name):
-                    relationship_type_name = field_name.replace('grouping_relationship__external_id__', '').replace('-', ' ')
+                # Does it look like this: 'grouping_relationships__external_id__exists-in'?
+                if re.match(r'grouping_relationships__external_id__[a-z\-]+$', field_name):
+                    relationship_type_name = field_name.replace('grouping_relationships__external_id__', '') \
+                        .replace('-', ' ')
                     type_ = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
                     for relationship_external_id in row[field_name].split(','):
                         relationship_external_id = relationship_external_id.strip()
@@ -230,18 +231,18 @@ class GroupingRelationshipField(fields.Field):
                             )
 
     def get_help_html(self):
-        return f"""To related a group to another group while importing it, use the grouping_relationship column. Uses a 
-        special column name syntax: 
-        <code>grouping_relationship__[relationship name]</code> or <code>grouping_relationship__external_id__[
+        return f"""To related a group to another group while importing it, use the grouping_relationships column. 
+        Uses a special column name syntax: 
+        <code>grouping_relationships__[relationship name]</code> or <code>grouping_relationships__external_id__[
         relationship name]</code>. Where [relationship name] is an existing GroupingRelationship set in all lower 
-        case with spaces replaced with hyphens.<br>Examples: <code>grouping_relationship__reports-to</code> or 
-        <code>grouping_relationship__external_id__reports-to</code>. The form without <code>__external_id</code> expects
-        PKs, the form with <code>__external_id</code> expects external IDs.
+        case with spaces replaced with hyphens.<br>Examples: <code>grouping_relationships__reports-to</code> or 
+        <code>grouping_relationships__external_id__reports-to</code>. The form without <code>__external_id</code> 
+        expects PKs, the form with <code>__external_id</code> expects external IDs.
         """
 
 
 resource_model_mapping['Grouping'].fields['grouping_aliases'] = GroupingAliasesField()
-resource_model_mapping['Grouping'].fields['grouping_relationship'] = GroupingRelationshipField()
+resource_model_mapping['Grouping'].fields['grouping_relationships'] = GroupingRelationshipField()
 
 
 def is_law_enforcement_required_before_import_row(resource_class, row, row_number, **kwargs):
@@ -339,7 +340,7 @@ import import_export
 
 def foreign_key_widget_help_html(self):
     if self.field == 'pk':
-        return f"""References <a href="#mapping-{ self.model.__name__ }"><code>{self.model.__name__}</code></a> by pk.
+        return f"""References <a href="#mapping-{ self.model.__name__ }"><code>{self.model.__name__}</code></a> by PK.
         Accepts external ids using <code>__external_id</code> extension.
         """
     elif self.field == 'name':
@@ -353,7 +354,7 @@ import_export.widgets.ForeignKeyWidget.get_help_html = foreign_key_widget_help_h
 
 def many_to_many_widget_help_html(self):
     if self.field == 'pk':
-        return f"""References <a href="#mapping-{ self.model.__name__ }"><code>{self.model.__name__}</code></a> by pk. 
+        return f"""References <a href="#mapping-{ self.model.__name__ }"><code>{self.model.__name__}</code></a> by PK. 
         Accepts external ids using the <code>__external_id</code> extension.
         """
     elif self.field == 'name':

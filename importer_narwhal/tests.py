@@ -897,17 +897,18 @@ class NarwhalImportCommand(TestCase):
         # where [NAME] is a case insensitive string with hyphens instead of spaces. E.g. "grouping_relationship__reports-to"
         # and where [NAME] is an existing relationship type.
         # and where the related grouping already exists
-        GroupingRelationshipType.objects.create(name="Exists in")
-        existing_grouping = Grouping.objects.create(name="indulgentially")
+        relationship_type = GroupingRelationshipType.objects.create(name="Exists in")
+        existing_grouping1 = Grouping.objects.create(name="indulgentially")
+        existing_grouping2 = Grouping.objects.create(name="indulgentially 2")
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__exists-in', 'is_law_enforcement'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationships__exists-in', 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['name'] = 'New Command'
-                row['grouping_relationship__exists-in'] = existing_grouping.pk
+                row['grouping_relationships__exists-in'] = f"{existing_grouping1.pk},{existing_grouping2.pk}"
                 row['is_law_enforcement'] = 'checked'
                 imported_records.append(row)
             for row in imported_records:
@@ -918,11 +919,27 @@ class NarwhalImportCommand(TestCase):
             command_output = StringIO()
             call_command('narwhal_import', 'Grouping', csv_fd.name, stdout=command_output)
 
-        # Then I should see a new GroupingRelationship with type "Reports to" linking the existing grouping and the
+        # Then I should see new GroupingRelationships with type "Reports to" linking the existing grouping and the
         # newly imported one
         self.assertEqual(
-            1,
+            2,
             GroupingRelationship.objects.count()
+        )
+        self.assertEqual(
+            relationship_type,
+            GroupingRelationship.objects.first().type
+        )
+        self.assertEqual(
+            relationship_type,
+            GroupingRelationship.objects.last().type
+        )
+        self.assertEqual(
+            existing_grouping1,
+            GroupingRelationship.objects.first().object_grouping
+        )
+        self.assertEqual(
+            existing_grouping2,
+            GroupingRelationship.objects.last().object_grouping
         )
 
     def test_grouping_sheet_add_relationships_by_external_id(self):
@@ -932,18 +949,22 @@ class NarwhalImportCommand(TestCase):
         # "grouping_relationship__external_id__reports-to"
         # and where [NAME] is an existing relationship type.
         # and where the related grouping already exists
-        GroupingRelationshipType.objects.create(name="Exists in")
-        existing_grouping_external_id = \
-            import_record_with_extid(Grouping, {"name": 'indulgentially'}, external_id='postembryonic')['external_id']
+        relationship_type = GroupingRelationshipType.objects.create(name="Exists in")
+        existing_grouping_1_external_id = \
+            import_record_with_extid(Grouping, {"name": 'indulgentially1'}, external_id='postembryonic1')
+        existing_grouping_2_external_id = \
+            import_record_with_extid(Grouping, {"name": 'indulgentially2'}, external_id='postembryonic2')
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__external_id__exists-in', 'is_law_enforcement'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationships__external_id__exists-in',
+                                                 'is_law_enforcement'])
             csv_writer.writeheader()
             for i in range(1):
                 row = {}
                 row['name'] = 'New Command'
-                row['grouping_relationship__external_id__exists-in'] = existing_grouping_external_id
+                row['grouping_relationships__external_id__exists-in'] = \
+                    f"{existing_grouping_1_external_id['external_id']},{existing_grouping_2_external_id['external_id']}"
                 row['is_law_enforcement'] = 'checked'
                 imported_records.append(row)
             for row in imported_records:
@@ -957,8 +978,24 @@ class NarwhalImportCommand(TestCase):
         # Then I should see a new GroupingRelationship with type "Reports to" linking the existing grouping and the
         # newly imported one
         self.assertEqual(
-            1,
+            2,
             GroupingRelationship.objects.count()
+        )
+        self.assertEqual(
+            relationship_type,
+            GroupingRelationship.objects.first().type
+        )
+        self.assertEqual(
+            relationship_type,
+            GroupingRelationship.objects.last().type
+        )
+        self.assertEqual(
+            existing_grouping_1_external_id['record'],
+            GroupingRelationship.objects.first().object_grouping
+        )
+        self.assertEqual(
+            existing_grouping_2_external_id['record'],
+            GroupingRelationship.objects.last().object_grouping
         )
 
     def test_grouping_sheet_add_relationships_by_external_id_ignore_blank_cells(self):
@@ -974,16 +1011,17 @@ class NarwhalImportCommand(TestCase):
 
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationship__external_id__exists-in', 'is_law_enforcement'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'grouping_relationships__external_id__exists-in',
+                                                 'is_law_enforcement'])
             csv_writer.writeheader()
             row = {}
             row['name'] = 'New Command 1'
-            row['grouping_relationship__external_id__exists-in'] = ''  # <- THIS
+            row['grouping_relationships__external_id__exists-in'] = ''  # <- THIS
             row['is_law_enforcement'] = 'checked'
             imported_records.append(row)
             row = {}
             row['name'] = 'New Command 2'
-            row['grouping_relationship__external_id__exists-in'] = existing_grouping_external_id
+            row['grouping_relationships__external_id__exists-in'] = existing_grouping_external_id
             row['is_law_enforcement'] = 'checked'
             imported_records.append(row)
             for row in imported_records:
