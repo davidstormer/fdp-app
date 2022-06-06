@@ -1,3 +1,5 @@
+import os.path
+
 from django import template
 from django.conf import settings
 from django.forms import formsets
@@ -36,3 +38,8 @@ def get_value(dictionary, key):
     :return: Value retrieved from the dictionary with the key.
     """
     return dictionary.get(key)
+
+
+@register.filter
+def basename(file_field):
+    return os.path.basename(str(file_field))
