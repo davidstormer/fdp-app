@@ -92,7 +92,8 @@ class ImportBatchDetailView(DetailView):
         #   highlight "Validate" in stepper
         #   don't show button to import
         elif context['object'].dry_run_completed \
-                and context['object'].errors_encountered:
+                and context['object'].errors_encountered \
+                and not context['object'].started:
             context['state'] = 'post-validate-errors'
             context['stepper_number'] = 2
 
