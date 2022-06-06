@@ -118,3 +118,39 @@ class TestWebUI(SeleniumFunctionalTestCase):
             self.assertIn('Person', self.browser.page_source)
             self.assertIn('42', self.browser.page_source)
             self.assertIn(os.path.basename(csv_fd.name), self.browser.page_source)
+
+    def test_validation_step_column_mapping_errors(self):
+        # Given I upload an import sheet with a nonsense column that doesn't match any of the columns of the resource
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'supercalifragilisticexpialidocious'])
+            csv_writer.writeheader()
+            for i in range(42):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['supercalifragilisticexpialidocious'] = 'yes'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            self.log_in(is_administrator=True)
+            self.browser.get(self.live_server_url + f'/changing/importer/batch/new')
+            wait(self.browser.find_element_by_css_selector, 'input#id_import_sheet') \
+                .send_keys(csv_fd.name)
+            Select(self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name')) \
+                .select_by_visible_text('Person')
+            # And I'm on the validation step of running an import
+            self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name').submit()
+        # When I click Validate Batch
+        wait(self.browser.find_element_by_css_selector, 'input[value="Validate Batch"]') \
+            .submit()
+
+        # Then I should see an error report that warns me that it's not an expected field name
+        self.assertNotIn(
+            'there were no errors',
+            self.browser.page_source
+        )
+        self.assertIn(
+            'WARNING: <code>supercalifragilisticexpialidocious</code> not a valid column name for Person imports',
+            self.browser.page_source
+        )
