@@ -45,7 +45,7 @@
   {% for field_name, field_object in mapping.fields.items %}
     <div class="model-field border p-3 mt-4">
     <div class="row">
-      <div class="col md-10">
+      <div class="col col-md-8">
         <h3 class="heading-field-name text-primary">{{ field_name }}</h3>
         {% for extension in field_object.get_available_extensions %}
         <h3 class="heading-field-name text-primary">{{ field_name }}{{extension}}</h3>
@@ -55,7 +55,7 @@
         {% endfor %}
 
       </div>
-      <div class="col md-2 text-end">
+      <div class="col col-md-4 text-end">
         <span class="text-secondary">{{field_object.django_field_type_name}}</span>
       </div>
     </div>
