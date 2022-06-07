@@ -2,7 +2,6 @@ import json
 import os
 import re
 from pathlib import Path
-from pprint import pprint
 
 import tablib
 from django.core.files import File
@@ -497,7 +496,6 @@ def do_dry_run(batch_record):
 
         def column_name_in_available_column_names_with_extensions(column_name: str) -> bool:
             for valid_field_name in valid_field_names:
-                print(f"valid_field_name: {valid_field_name}, input_field: {column_name}")
                 if re.match(valid_field_name + '$', column_name):
                     return True
             return False

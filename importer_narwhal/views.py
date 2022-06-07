@@ -7,7 +7,8 @@ from django.views.generic import DetailView, CreateView, ListView
 from importer_narwhal.models import ImportBatch
 from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping
 
-from inheritable.views import HostAdminSyncTemplateView
+from inheritable.views import HostAdminSyncTemplateView, HostAdminSyncListView, HostAdminSyncDetailView, \
+    HostAdminAccessMixin, HostAdminSyncCreateView
 
 
 class MappingsView(HostAdminSyncTemplateView):
@@ -22,7 +23,7 @@ class MappingsView(HostAdminSyncTemplateView):
         return context
 
 
-class BatchListingLandingView(ListView):
+class BatchListingLandingView(HostAdminSyncListView):
     model = ImportBatch
     paginate_by = 25
     queryset = ImportBatch.objects.all().order_by('-pk')
@@ -33,7 +34,7 @@ class BatchListingLandingView(ListView):
         return context
 
 
-class ImportBatchCreateView(CreateView):
+class ImportBatchCreateView(HostAdminSyncCreateView):
 
     model = ImportBatch
     fields = ['import_sheet', 'target_model_name']
@@ -45,7 +46,7 @@ class ImportBatchCreateView(CreateView):
         return context
 
 
-class StartDryRun(View):
+class StartDryRun(HostAdminAccessMixin, View):
 
     def post(self, request, *args, **kwargs):
         batch = ImportBatch.objects.get(pk=kwargs['pk'])
@@ -53,7 +54,7 @@ class StartDryRun(View):
         return redirect(reverse('importer_narwhal:batch', kwargs={'pk': kwargs['pk']}))
 
 
-class RunImportBatch(View):
+class RunImportBatch(HostAdminAccessMixin, View):
 
     def post(self, request, *args, **kwargs):
         batch = ImportBatch.objects.get(pk=kwargs['pk'])
@@ -62,7 +63,7 @@ class RunImportBatch(View):
                         + '?show_workflow_after_completion=true')
 
 
-class ImportBatchDetailView(DetailView):
+class ImportBatchDetailView(HostAdminSyncDetailView):
 
     model = ImportBatch
 
