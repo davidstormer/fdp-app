@@ -2,6 +2,7 @@ import json
 import os
 import re
 from pathlib import Path
+from pprint import pprint
 
 import tablib
 from django.core.files import File
@@ -442,7 +443,7 @@ def clean_diff_html(diff_html: str) -> str:
 
 
 def do_import_from_disk(model_name: str, input_file: str):
-    """Creates and import batch from a csv file located on the local disk, and then runs it.
+    """Creates an import batch from a csv file located on the local disk, and then runs it.
     Used by management commands and tests. Not intended for use by web views.
     """
     batch_record = ImportBatch.objects.create()
@@ -453,6 +454,20 @@ def do_import_from_disk(model_name: str, input_file: str):
         batch_record.import_sheet = File(f, name=path.name)
         batch_record.save()
     return run_import_batch(batch_record)
+
+
+def create_batch_from_disk(model_name: str, input_file: str) -> ImportBatch:
+    """Creates an import batch from a csv file located on the local disk, but does not run it.
+    Used by management commands and tests. Not intended for use by web views.
+    """
+    batch_record = ImportBatch.objects.create()
+    batch_record.target_model_name = model_name
+    batch_record.submitted_file_name = os.path.basename(input_file)
+    path = Path(input_file)
+    with path.open(mode='rb') as f:
+        batch_record.import_sheet = File(f, name=path.name)
+        batch_record.save()
+    return batch_record
 
 
 def do_dry_run(batch_record):
@@ -479,10 +494,23 @@ def do_dry_run(batch_record):
                     valid_field_names.append(field_name + extension)
             except AttributeError:
                 pass
-        for input_field in input_sheet.headers:
-            if input_field not in valid_field_names:
-                error_messages.append(f"WARNING: {input_field} not a valid column name for"
-                      f" {resource_class.Meta.model.__name__} imports")
+
+        def column_name_in_available_column_names_with_extensions(column_name: str) -> bool:
+            for valid_field_name in valid_field_names:
+                print(f"valid_field_name: {valid_field_name}, input_field: {column_name}")
+                if re.match(valid_field_name + '$', column_name):
+                    return True
+            return False
+
+        for column_name in input_sheet.headers:
+            if column_name in valid_field_names:
+                continue
+            # If not then let's see if it matches available column name extensions...
+            if column_name_in_available_column_names_with_extensions(column_name):
+                continue
+            # Didn't find a match, record warning for user to alert them...
+            error_messages.append(f"WARNING: {column_name} not a valid column name for"
+                  f" {resource_class.Meta.model.__name__} imports")
 
         return error_messages
 

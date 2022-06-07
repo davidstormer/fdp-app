@@ -11,7 +11,7 @@ from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
     Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
-from .narwhal import BooleanWidgetValidated, resource_model_mapping
+from .narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
     PersonGrouping, GroupingAlias, GroupingRelationship
 from django.test import TestCase, SimpleTestCase
@@ -941,6 +941,42 @@ class NarwhalImportCommand(TestCase):
             existing_grouping2,
             GroupingRelationship.objects.last().object_grouping
         )
+
+    def test_validation_step_column_mapping_regex_patterns(self):
+        """Test that regex based column names are recognized when doing dry run checks"""
+        # Given there is a batch with an import sheet with a column named grouping_relationships__reports-to
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['count', 'grouping_relationships__exists-in', 'control'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['count'] = 'should be "counties" so should raise a warning'
+                row['grouping_relationships__exists-in'] = f"hello world"
+                row['control'] = 'control should always raise a warning'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+            import_batch = create_batch_from_disk('Grouping', csv_fd.name)
+        # When I do a dry run
+        do_dry_run(import_batch)
+        # Then I should not see a warning about the column not being recognized
+        self.assertNotIn(
+            'grouping_relationships__exists-in',
+            import_batch.general_errors
+        )
+        with self.subTest(msg="'count' doesn't match 'counties'"):
+            self.assertIn(
+                'WARNING: count not a valid column name for Grouping imports',
+                import_batch.general_errors
+            )
+        with self.subTest(msg="'control' should always raise a warning"):
+            self.assertIn(
+                'WARNING: control not a valid column name for Grouping imports',
+                import_batch.general_errors
+            )
+
 
     def test_grouping_sheet_add_relationships_by_external_id(self):
         # Given there's a grouping import sheet with relationships in a field patterned
