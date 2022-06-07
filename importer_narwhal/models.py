@@ -70,6 +70,7 @@ class ImportBatch(models.Model):
     number_of_rows = models.IntegerField(null=True)
     errors_encountered = models.BooleanField(null=True)
     submitted_file_name = models.CharField(max_length=1024)
+    general_errors = models.TextField()
     import_sheet = models.FileField(
         upload_to='import-sheets/%Y/%m/%d/%H/%M/%S/',
         validators=[

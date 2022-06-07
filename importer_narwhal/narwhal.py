@@ -215,7 +215,7 @@ class GroupingRelationshipField(fields.Field):
         """
 
     def get_available_extensions(self):
-        return ['__[relationship name]','__external_id__[relationship name]']
+        return ['__[a-z\-]+$','__external_id__[a-z\-]+$']
 
 
 resource_model_mapping['Grouping'].fields['grouping_aliases'] = GroupingAliasesField()
@@ -464,6 +464,34 @@ def do_dry_run(batch_record):
     # https://github.com/jazzband/tablib/issues/502
     resource_class = resource_model_mapping[batch_record.target_model_name]
     resource = resource_class()
+
+    def validate_field_names_mapping(resource, input_sheet):
+        """Do all of the fields in the import sheet line up with fields for the resource? If any don't match,
+        flag them to warn the user. TODO: If any are missing that are required flag them."""
+        error_messages = []
+
+        valid_field_names = []
+        for field_name, field_object in resource.fields.items():
+            valid_field_names.append(field_name)
+            try:
+                extensions = field_object.get_available_extensions()
+                for extension in extensions:
+                    valid_field_names.append(field_name + extension)
+            except AttributeError:
+                pass
+        for input_field in input_sheet.headers:
+            if input_field not in valid_field_names:
+                error_messages.append(f"WARNING: {input_field} not a valid column name for"
+                      f" {resource_class.Meta.model.__name__} imports")
+
+        return error_messages
+
+    error_messages = validate_field_names_mapping(resource, input_sheet)
+    if len(error_messages) > 0:
+        batch_record.general_errors = '\n'.join(error_messages)
+        batch_record.errors_encountered = True
+        batch_record.save()
+
     result = resource.import_data(input_sheet, dry_run=True)
     batch_record.number_of_rows = len(result.rows)
     import_report = ImportReport()

@@ -81,6 +81,13 @@ Your batch has been validated. And there were no errors! Now it's time to actual
 <p>Import finished</p>
 {% endif %}
 
+{% if object.general_errors %}
+<div class="general-errors">
+  <p>
+  {{ object.general_errors }}
+  </p>
+</div>
+{% endif %}
 
 <div class="card mb-4">
   <h2 class="card-header">{{ title }}</h2>

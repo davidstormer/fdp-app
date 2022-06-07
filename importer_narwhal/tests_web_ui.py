@@ -11,14 +11,13 @@ from io import StringIO
 import tempfile
 import csv
 from uuid import uuid4
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from core.models import Person
 from functional_tests.common import FunctionalTestCase, SeleniumFunctionalTestCase, wait
 from inheritable.tests import local_test_settings_required
 from unittest import expectedFailure, skip
 from selenium.webdriver.support.ui import Select
 import pdb
-
 
 class TestWebUI(SeleniumFunctionalTestCase):
     def test_import_batch_page_success_scenario(self):
@@ -139,18 +138,21 @@ class TestWebUI(SeleniumFunctionalTestCase):
                 .send_keys(csv_fd.name)
             Select(self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name')) \
                 .select_by_visible_text('Person')
+
             # And I'm on the validation step of running an import
             self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name').submit()
+
         # When I click Validate Batch
         wait(self.browser.find_element_by_css_selector, 'input[value="Validate Batch"]') \
             .submit()
 
-        # Then I should see an error report that warns me that it's not an expected field name
+        # Then I should see an error report that warns me that it's an un-expected field name
+        general_errors_div = wait(self.browser.find_element_by_css_selector, 'div.general-errors')
+        self.assertIn(
+            'WARNING: supercalifragilisticexpialidocious not a valid column name for Person imports',
+            general_errors_div.text
+        )
         self.assertNotIn(
             'there were no errors',
-            self.browser.page_source
-        )
-        self.assertIn(
-            'WARNING: <code>supercalifragilisticexpialidocious</code> not a valid column name for Person imports',
             self.browser.page_source
         )
