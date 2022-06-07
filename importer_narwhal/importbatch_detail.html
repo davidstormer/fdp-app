@@ -83,9 +83,7 @@ Your batch has been validated. And there were no errors! Now it's time to actual
 
 {% if object.general_errors %}
 <div class="general-errors">
-  <p>
-  {{ object.general_errors }}
-  </p>
+  <pre>{{ object.general_errors }}</pre>
 </div>
 {% endif %}
 

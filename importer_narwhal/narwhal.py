@@ -507,8 +507,8 @@ def do_dry_run(batch_record):
             if column_name_in_available_column_names_with_extensions(column_name):
                 continue
             # Didn't find a match, record warning for user to alert them...
-            error_messages.append(f"WARNING: {column_name} not a valid column name for"
-                  f" {resource_class.Meta.model.__name__} imports")
+            error_messages.append(f"ERROR: '{column_name}' not a valid column name for"
+                  f" {resource_class.Meta.model.__name__} imports.")
 
         return error_messages
 

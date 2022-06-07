@@ -149,7 +149,7 @@ class TestWebUI(SeleniumFunctionalTestCase):
         # Then I should see an error report that warns me that it's an un-expected field name
         general_errors_div = wait(self.browser.find_element_by_css_selector, 'div.general-errors')
         self.assertIn(
-            'WARNING: supercalifragilisticexpialidocious not a valid column name for Person imports',
+            "ERROR: 'supercalifragilisticexpialidocious' not a valid column name for Person imports",
             general_errors_div.text
         )
         self.assertNotIn(

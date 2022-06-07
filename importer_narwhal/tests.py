@@ -968,12 +968,12 @@ class NarwhalImportCommand(TestCase):
         )
         with self.subTest(msg="'count' doesn't match 'counties'"):
             self.assertIn(
-                'WARNING: count not a valid column name for Grouping imports',
+                "ERROR: 'count' not a valid column name for Grouping imports",
                 import_batch.general_errors
             )
         with self.subTest(msg="'control' should always raise a warning"):
             self.assertIn(
-                'WARNING: control not a valid column name for Grouping imports',
+                "ERROR: 'control' not a valid column name for Grouping imports",
                 import_batch.general_errors
             )
 
