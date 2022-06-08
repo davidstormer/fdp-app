@@ -80,64 +80,22 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
         context = super().get_context_data(**kwargs)
         context['title'] = f"Import batch: {context['object'].pk}"
 
-        # Workflow state
+        stepper_states = {
+            'pre-validate': 2,
+            'mid-validate': 2,
+            'post-validate-errors': 2,
+            'post-validate-ready': 3,
+            'mid-import': 3,
+            'complete': 4,
+            'done': 4
+        }
+        context['state'] = context['object'].state
+        context['stepper_number'] = stepper_states[context['object'].state]
 
-        # 'pre-validate' Batch newly created, ready to verify
-        #   highlight "Validate" in stepper
-        #   show button to verify
-        if not context['object'].dry_run_started and not context['object'].started and not context['object'].completed:
-            context['state'] = 'pre-validate'
-            context['stepper_number'] = 2
-
-        # 'mid-validate' Currently running validation
-        #   highlight "Validate" in stepper
-        #   say we're in the middle of validation; show spinner
-        #   don't show button to import
-        elif context['object'].dry_run_started \
-                and not context['object'].dry_run_completed:
-            context['state'] = 'mid-validate'
-            context['stepper_number'] = 2
-
-        # 'post-validate-errors' Batch verified, problems, abort
-        #   highlight "Validate" in stepper
-        #   don't show button to import
-        elif context['object'].dry_run_completed \
-                and context['object'].errors_encountered \
-                and not context['object'].started:
-            context['state'] = 'post-validate-errors'
-            context['stepper_number'] = 2
-
-        # 'post-validate-ready' Batch verified, no errors, ready to import
-        #   highlight "Import" in stepper
-        #   show button to import
-        elif context['object'].dry_run_completed \
-                and not context['object'].errors_encountered \
-                and not context['object'].started:
-            context['state'] = 'post-validate-ready'
-            context['stepper_number'] = 3
-
-        # 'mid-import' Currently running import
-        #   highlight "Import" in stepper
-        #   say we're in the middle of importing; show spinner
-        #   don't show button to import
-        elif context['object'].started and not context['object'].completed:
-            context['state'] = 'mid-import'
-            context['stepper_number'] = 3
-
-        # 'post-import' Batch imported, done! (todo: show button to delete)
-        #   keep showing stepper (last time)
-        #   highlight "Review" in stepper
-        #   don't show button to import
-        elif context['object'].completed and self.request.GET.get('show_workflow_after_completion'):
+        # Add extra state mode for when user has just completed import
+        # Won't show when the user navigates to the page from the import batch history listing
+        if context['object'].completed and self.request.GET.get('show_workflow_after_completion'):
             context['state'] = 'complete'
-            context['stepper_number'] = 4
-
-        # 'post-import' Batch imported, done! (todo: show button to delete)
-        #   don't show stepper anymore (I'm viewing it outside of the workflow)
-        #   don't show button to import
-        elif context['object'].completed:
-            context['state'] = 'done'
-            context['stepper_number'] = 4
 
         # Additional prep
         if context['state'] == 'pre-validate':

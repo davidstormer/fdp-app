@@ -104,6 +104,55 @@ class ImportBatch(models.Model):
         else:
             return "Not started yet"
 
+    @property
+    def state(self):
+        state = ''
+
+        # 'pre-validate' Batch newly created, ready to verify
+        #   highlight "Validate" in stepper
+        #   show button to verify
+        if not self.dry_run_started and not self.started and not self.completed:
+            state = 'pre-validate'
+
+        # 'mid-validate' Currently running validation
+        #   highlight "Validate" in stepper
+        #   say we're in the middle of validation; show spinner
+        #   don't show button to import
+        elif self.dry_run_started \
+                and not self.dry_run_completed:
+            state = 'mid-validate'
+
+        # 'post-validate-errors' Batch verified, problems, abort
+        #   highlight "Validate" in stepper
+        #   don't show button to import
+        elif self.dry_run_completed \
+                and self.errors_encountered \
+                and not self.started:
+            state = 'post-validate-errors'
+
+        # 'post-validate-ready' Batch verified, no errors, ready to import
+        #   highlight "Import" in stepper
+        #   show button to import
+        elif self.dry_run_completed \
+                and not self.errors_encountered \
+                and not self.started:
+            state = 'post-validate-ready'
+
+        # 'mid-import' Currently running import
+        #   highlight "Import" in stepper
+        #   say we're in the middle of importing; show spinner
+        #   don't show button to import
+        elif self.started and not self.completed:
+            state = 'mid-import'
+
+        # 'post-import' Batch imported, done! (todo: show button to delete)
+        #   don't show stepper anymore (I'm viewing it outside of the workflow)
+        #   don't show button to import
+        elif self.completed:
+            state = 'done'
+
+        return state
+
 
 class ImportedRow(models.Model):
     import_batch = models.ForeignKey(ImportBatch, on_delete=models.CASCADE, related_name='imported_rows')
