@@ -69,6 +69,13 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
 
     model = ImportBatch
 
+    def get_template_names(self):
+        context = self.get_context_data()
+        if context['state'] == 'pre-validate':
+            return f"importbatch_detail_pre-validate.html"
+        else:
+            return super().get_template_names()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = f"Import batch: {context['object'].pk}"
@@ -78,7 +85,7 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
         # 'pre-validate' Batch newly created, ready to verify
         #   highlight "Validate" in stepper
         #   show button to verify
-        if not context['object'].dry_run_started:
+        if not context['object'].dry_run_started and not context['object'].started and not context['object'].completed:
             context['state'] = 'pre-validate'
             context['stepper_number'] = 2
 

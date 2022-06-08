@@ -205,11 +205,10 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 os.path.basename(csv_fd.name),
                 info_card_element.text
             )
-            # TODO: currently reads "None" at this stage for some reason...
-            # self.assertIn(
-            #     str(len(imported_records)),
-            #     info_card_element.text
-            # )
+            self.assertIn(
+                str(len(imported_records)),
+                info_card_element.text
+            )
             self.assertIn(
                 'ContentPersonAllegation',
                 info_card_element.text
