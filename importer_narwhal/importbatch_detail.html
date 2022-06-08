@@ -62,6 +62,7 @@
 {% endif %}
 
   {% if state == 'pre-validate' %}
+  <div class="importer-csv-preview">
   <p>{{ object.import_sheet|basename }}</p>
   <div class="table-responsive">
   <table class="table table-bordered fadeout-bottom">
@@ -89,8 +90,9 @@
   </table>
   </div>
   <p class="text-end">First few rows out of {{preview_data|length}}</p>
+  </div>
 
-<div class="status-guide">
+<div class="importer-status-guide">
   Your batch has been set up. Now it needs to be validated.
   <form method="post" action="{% url 'importer_narwhal:dry-run-report' object.pk %}">
     {% csrf_token %}
@@ -119,71 +121,74 @@
   <p>Import finished</p>
   {% endif %}
 
+<div class="importer-errors">
+  {% if object.general_errors %}
+  <h2>General Errors</h2>
+  <div class="general-errors callout callout-warning">
+    <pre>{{ object.general_errors }}</pre>
+  </div>
+  {% endif %}
 
-{% if object.general_errors %}
-<h2>General Errors</h2>
-<div class="general-errors callout callout-warning">
-  <pre>{{ object.general_errors }}</pre>
+  <h2>Error Rows</h2>
+  {% if error_rows_paginated %}
+  <table class="table table-striped">
+  <tr>
+    <th>Row number</th>
+    <th>Error message</th>
+    <th>Data</th>
+  </tr>
+  {% for error in error_rows_paginated %}
+  <tr class="tablerow-callout tablerow-callout-warning">
+    <td class="datum-row_number">{{ error.row_number }}</td>
+    <td class="datum-error_message"><code>{{ error.error_message }}</code></td>
+    <td class="datum-row_data">
+      <button class="btn btn-link" type="button" data-bs-toggle="collapse"
+              data-bs-target="#collapse-{{ error.row_number }}" aria-expanded="false"
+              aria-controls="multiCollapse{{ error.row_number }}">show</button>
+    </td>
+  </tr>
+  <tr id="collapse-{{ error.row_number }}" class="collapse">
+    <td colspan="3"><code>{{ error.row_data }}</code></td>
+  </tr>
+  {% endfor %}
+  </table>
+  {% else %}
+  <p>None</p>
+  {% endif %}
 </div>
-{% endif %}
 
-<h2>Error Rows</h2>
-{% if error_rows_paginated %}
-<table class="table table-striped">
-<tr>
-  <th>Row number</th>
-  <th>Error message</th>
-  <th>Data</th>
-</tr>
-{% for error in error_rows_paginated %}
-<tr class="tablerow-callout tablerow-callout-warning">
-  <td class="datum-row_number">{{ error.row_number }}</td>
-  <td class="datum-error_message"><code>{{ error.error_message }}</code></td>
-  <td class="datum-row_data">
-    <button class="btn btn-link" type="button" data-bs-toggle="collapse"
-            data-bs-target="#collapse-{{ error.row_number }}" aria-expanded="false"
-            aria-controls="multiCollapse{{ error.row_number }}">show</button>
-  </td>
-</tr>
-<tr id="collapse-{{ error.row_number }}" class="collapse">
-  <td colspan="3"><code>{{ error.row_data }}</code></td>
-</tr>
-{% endfor %}
-</table>
-{% else %}
-<p>None</p>
-{% endif %}
-
-<h2>All Rows</h2>
-{% if imported_rows_paginated %}
-<table class="table table-striped">
-<tr>
-  <th>Row number</th>
-  <th>Errors</th>
-  <th>PK</th>
-  <th>Name</th>
-  <th>Data</th>
-</tr>
-{% for imported_row in imported_rows_paginated %}
-<tr>
-  <td class="datum-row_number">{{ imported_row.row_number }}</td>
-  <td class="datum-error"><code>{{ imported_row.errors }}</code></td>
-  <td class="datum-pk">{{ imported_row.imported_record_pk }}</td>
-  <td class="datum-name">{{ imported_row.imported_record_name }}</td>
-  <td class="datum-info">
-    <button class="btn btn-link" type="button" data-bs-toggle="collapse"
-            data-bs-target="#collapse-{{ imported_row.row_number }}" aria-expanded="false"
-            aria-controls="multiCollapse{{ imported_row.row_number }}">show</button>
-  </td>
-</tr>
-<tr id="collapse-{{ imported_row.row_number }}" class="collapse">
-  <td colspan="5"><code>{{ imported_row.info }}</code></td>
-</tr>
-{% endfor %}
-</table>
-{% else %}
-<p>None</p>
-{% endif %}
+<div class="importer-imported-rows">
+  <h2>All Rows</h2>
+  {% if imported_rows_paginated %}
+  <table class="table table-striped">
+  <tr>
+    <th>Row number</th>
+    <th>Errors</th>
+    <th>PK</th>
+    <th>Name</th>
+    <th>Data</th>
+  </tr>
+  {% for imported_row in imported_rows_paginated %}
+  <tr>
+    <td class="datum-row_number">{{ imported_row.row_number }}</td>
+    <td class="datum-error"><code>{{ imported_row.errors }}</code></td>
+    <td class="datum-pk">{{ imported_row.imported_record_pk }}</td>
+    <td class="datum-name">{{ imported_row.imported_record_name }}</td>
+    <td class="datum-info">
+      <button class="btn btn-link" type="button" data-bs-toggle="collapse"
+              data-bs-target="#collapse-{{ imported_row.row_number }}" aria-expanded="false"
+              aria-controls="multiCollapse{{ imported_row.row_number }}">show</button>
+    </td>
+  </tr>
+  <tr id="collapse-{{ imported_row.row_number }}" class="collapse">
+    <td colspan="5"><code>{{ imported_row.info }}</code></td>
+  </tr>
+  {% endfor %}
+  </table>
+  {% else %}
+  <p>None</p>
+  {% endif %}
+</div>
 
 {% if page_obj.paginator.num_pages > 1 %}
   <nav aria-label="Pagination">
@@ -198,7 +203,7 @@
 {% endif %}
 
 <div class="row">
-<div class="card col-md-6">
+<div class="importer-info-card card col-md-6">
   <div class="card-body">
     <ul class="list-group list-group-flush">
       <li class="list-group-item"><div class="datum datum-submitted_file_name"><span class="label">File name</span>  <span class="value">{{object.import_sheet.file.name|basename}}</span></div></li>

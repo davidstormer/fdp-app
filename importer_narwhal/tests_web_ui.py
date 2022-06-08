@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
 
+from django.urls import reverse
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
 from .models import ImportBatch
@@ -17,6 +19,7 @@ from functional_tests.common import FunctionalTestCase, SeleniumFunctionalTestCa
 from inheritable.tests import local_test_settings_required
 from unittest import expectedFailure, skip
 from selenium.webdriver.support.ui import Select
+
 import pdb
 
 class TestWebUI(SeleniumFunctionalTestCase):
@@ -156,3 +159,77 @@ class TestWebUI(SeleniumFunctionalTestCase):
             'there were no errors',
             self.browser.page_source
         )
+
+
+class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
+    def test_validate_pre_validate(self):
+        """Test that the CSV Preview, Info Card, and Status Guide elements are displayed on the batch detail page
+        when in the pre-validate state"""
+        # Given I've set up a batch from the Import batch setup page
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'mineralogize'])
+            csv_writer.writeheader()
+            for i in range(42):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['mineralogize'] = 'yes'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            self.log_in(is_administrator=True)
+            self.browser.get(self.live_server_url + reverse('importer_narwhal:new-batch'))
+            wait(self.browser.find_element_by_css_selector, 'input#id_import_sheet') \
+                .send_keys(csv_fd.name)
+            Select(self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name')) \
+                .select_by_visible_text('ContentPersonAllegation')
+
+            # When I submit the setup form
+            self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name').submit()
+
+            # Then I should see a CSV Preview with the first few lines from my CSV
+            csv_preview_element = wait(self.browser.find_element, By.CSS_SELECTOR, 'div.importer-csv-preview')
+            self.assertIn(
+                'mineralogize',
+                csv_preview_element.text
+            )
+            self.assertIn(
+                os.path.basename(csv_fd.name),
+                csv_preview_element.text
+            )
+
+            # and the Info Card with details of my submission
+            info_card_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-info-card')
+            self.assertIn(
+                os.path.basename(csv_fd.name),
+                info_card_element.text
+            )
+            # TODO: currently reads "None" at this stage for some reason...
+            # self.assertIn(
+            #     str(len(imported_records)),
+            #     info_card_element.text
+            # )
+            self.assertIn(
+                'ContentPersonAllegation',
+                info_card_element.text
+            )
+
+            # and the Status Guide should say that the batch is loaded and ready to validate, with a 'Validate' button
+            status_guide_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-status-guide')
+            self.assertIn(
+                'Your batch has been set up. Now it needs to be validated.',
+                status_guide_element.text
+            )
+
+            status_guide_element.find_element(By.CSS_SELECTOR, 'input[value="Validate Batch"]')
+
+            # And I should not see the errors section
+            with self.subTest(msg="No errors section"):
+                with self.assertRaises(NoSuchElementException):
+                    self.browser.find_element(By.CSS_SELECTOR, 'div.importer-errors')
+
+            # And I should not see the rows section
+            with self.subTest(msg="No imported rows section"):
+                with self.assertRaises(NoSuchElementException):
+                    self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
