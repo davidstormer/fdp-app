@@ -1,8 +1,10 @@
+import tablib
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, CreateView, ListView
+from tablib import Dataset
 
 from importer_narwhal.models import ImportBatch
 from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping
@@ -129,6 +131,11 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
         elif context['object'].completed:
             context['state'] = 'done'
             context['stepper_number'] = 4
+
+        # Additional prep
+        if context['state'] == 'pre-validate':
+            with context['object'].import_sheet.file.open() as import_sheet_raw:
+                context['preview_data'] = tablib.Dataset().load(import_sheet_raw.read().decode("utf-8"), "csv")
 
         # Pagination
         page_number = self.request.GET.get('page')

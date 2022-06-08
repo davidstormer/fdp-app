@@ -10,3 +10,39 @@ $code-color: #666;
 .backdrop-filter-blur {
   backdrop-filter: blur(3px);
 }
+
+.fadeout-bottom {
+  box-shadow: inset 0rem -1rem 1rem rgb(200, 200, 200);
+}
+
+.callout {
+    padding: 1.25rem;
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid #e9ecef;
+    border-left-width: 0.25rem;
+}
+
+.callout-info {
+  border-left-color: $info;
+}
+.callout-warning {
+  border-left-color: $warning;
+}
+.callout-danger {
+  border-left-color: $danger;
+}
+
+.tablerow-callout {
+    border: 1px solid #e9ecef;
+    border-left-width: 0.25rem;
+}
+.tablerow-callout-info {
+  border-left-color: $info;
+}
+.tablerow-callout-warning {
+  border-left-color: $warning;
+}
+.tablerow-callout-danger {
+  border-left-color: $danger;
+}
