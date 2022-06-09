@@ -232,3 +232,67 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             with self.subTest(msg="No imported rows section"):
                 with self.assertRaises(NoSuchElementException):
                     self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
+
+    def test_validate_post_validate_errors(self):
+        """Test that the Info Card, Status Guide, General Errors Readout, Error Rows, and Error Rows Paginator
+        elements are displayed on the batch detail page when in the post-validate-errors state"""
+
+        # Given I've set up a batch from the Import batch setup page containing erroneous columns and and cell
+        # validation errors, totalling over 100
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['is_archived', 'not_a_legit_column_name'])
+            csv_writer.writeheader()
+            for i in range(150):
+                row = {}
+                row['is_archived'] = 'NOT A BOOLEAN'
+                row['not_a_legit_column_name'] = 'yes'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            self.log_in(is_administrator=True)
+            self.browser.get(self.live_server_url + reverse('importer_narwhal:new-batch'))
+            wait(self.browser.find_element_by_css_selector, 'input#id_import_sheet') \
+                .send_keys(csv_fd.name)
+            Select(self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name')) \
+                .select_by_visible_text('ContentPersonAllegation')
+            self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name').submit()
+
+        # When I run the validation
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
+            .click()
+
+        # Then I should see the Info Card with details of my submission
+        info_card_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-info-card')
+        self.assertIn(
+            os.path.basename(csv_fd.name),
+            info_card_element.text
+        )
+        self.assertIn(
+            str(len(imported_records)),
+            info_card_element.text
+        )
+        self.assertIn(
+            'ContentPersonAllegation',
+            info_card_element.text
+        )
+
+        # Then I should see the Status Guide
+        self.fail("finish me")
+
+        # Then I should see and errors section
+        errors_section = wait(self.browser.find_element_by_css_selector, 'div.importer-errors')
+        # and it should contain an error about the erroneous column
+        self.assertIn(
+            "ERROR: 'not_a_legit_column_name' not a valid column name for ContentPersonAllegation imports",
+            errors_section.text
+        )
+        # and it should contain 100 row level errors (limited by pagination)
+        self.assertEqual(
+            100,
+            self.browser.page_source.count("Enter a valid boolean value")
+        )
+
+        # and the row level errors paginator
+        self.fail("finish me")
