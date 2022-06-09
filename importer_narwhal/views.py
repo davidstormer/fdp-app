@@ -83,6 +83,8 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
             return f"importbatch_detail_mid-import.html"
         elif context['state'] == "post-import-failed":
             return f"importbatch_detail_post-import-failed.html"
+        elif context['state'] == "complete":
+            return f"importbatch_detail_complete.html"
         else:
             return super().get_template_names()
 
@@ -111,6 +113,9 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
         if context['state'] == 'pre-validate':
             with context['object'].import_sheet.file.open() as import_sheet_raw:
                 context['preview_data'] = tablib.Dataset().load(import_sheet_raw.read().decode("utf-8"), "csv")
+
+        if context['object'].completed:
+            context['duration'] = context['object'].completed - context['object'].started
 
         # Pagination
         page_number = self.request.GET.get('page')
