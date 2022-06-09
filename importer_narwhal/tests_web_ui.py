@@ -241,12 +241,13 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
         # validation errors totalling over 100
         with tempfile.NamedTemporaryFile(mode='w', suffix='.csv') as csv_fd:
             imported_records = []
-            csv_writer = csv.DictWriter(csv_fd, ['is_archived', 'not_a_legit_column_name'])
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement', 'not_a_legit_column_name'])
             csv_writer.writeheader()
             for i in range(150):
                 row = {}
-                row['is_archived'] = 'NOT A BOOLEAN'
-                row['not_a_legit_column_name'] = 'yes'
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'BREAK'  # <-- bad value
+                row['not_a_legit_column_name'] = "too legit to quit"
                 csv_writer.writerow(row)
                 imported_records.append(row)
             csv_fd.flush()  # Make sure it's actually written to the filesystem!
@@ -256,7 +257,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             wait(self.browser.find_element_by_css_selector, 'input#id_import_sheet') \
                 .send_keys(csv_fd.name)
             Select(self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name')) \
-                .select_by_visible_text('ContentPersonAllegation')
+                .select_by_visible_text('Person')
             self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name').submit()
 
         # When I run the validation step
@@ -275,7 +276,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 info_card_element.text
             )
             self.assertIn(
-                'ContentPersonAllegation',
+                'Person',
                 info_card_element.text
             )
 
@@ -288,19 +289,24 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             )
             status_guide_element.find_element(By.CSS_SELECTOR, 'input[value="Start Over"]')
 
-        with self.subTest(msg="Errors Section"):
-            # Then I should see and errors section
-            errors_section = wait(self.browser.find_element_by_css_selector, 'div.importer-errors')
+        # Then I should see an errors section
+        errors_section = wait(self.browser.find_element_by_css_selector, 'div.importer-errors')
+        with self.subTest(msg="General Errors Readout"):
             # and it should contain an error about the erroneous column
             self.assertIn(
-                "ERROR: 'not_a_legit_column_name' not a valid column name for ContentPersonAllegation imports",
+                "ERROR: 'not_a_legit_column_name' not a valid column name for Person imports",
                 errors_section.text
             )
+        with self.subTest(msg="Error Rows"):
             # and it should contain 100 row level errors (limited by pagination)
             self.assertEqual(
                 100,
                 errors_section.text.count("Enter a valid boolean value")
             )
-
             # and the row level errors paginator
-            self.fail("finish me")
+            self.browser.find_element(By.CSS_SELECTOR, 'nav[aria-label="Pagination"]')
+
+        # And I should not see the imported rows section
+        with self.subTest(msg="No imported rows section"):
+            with self.assertRaises(NoSuchElementException):
+                self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
