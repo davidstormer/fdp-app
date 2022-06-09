@@ -9,9 +9,14 @@
 
 {% block content %}
 
+{% block head %}
+    {% compress css %}
+    <link rel="stylesheet" type="text/x-scss"  href="{% static 'importer_narwhal/style-importer-narwhal.scss' %}">
+    {% endcompress %}
+{% endblock %}
 
 {% if state != 'done' %}
-<nav aria-label="Workflow">
+<nav aria-label="Workflow" class="importer-{{object.state}}">
 <ul class="fdp-stepper col-md-10 offset-md-1">
   <li class="{% if stepper_number == 1 %}active{% endif %}">
     <span class="stepper-step-number">

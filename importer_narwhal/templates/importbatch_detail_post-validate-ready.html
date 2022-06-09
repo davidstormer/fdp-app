@@ -30,3 +30,13 @@
   </div>
 </div>
 {% endblock %}
+
+{% block script-bottom %}
+$('form').submit(function(event) {
+  $.post('/changing/importer/batch/{{object.pk}}/records')
+  setTimeout(() => {
+    window.location.replace("/changing/importer/batch/{{object.pk}}")
+  }, 1000)
+  event.preventDefault()
+})
+{% endblock %}

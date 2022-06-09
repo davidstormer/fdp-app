@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from time import sleep
 
 from django.urls import reverse
 from selenium.common.exceptions import NoSuchElementException
@@ -264,6 +265,10 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
         wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
             .click()
 
+        sleep(1)  # Match sleep of redirect javascript
+        # Confirm we're on the right page now
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'nav.importer-post-validate-errors')
+
         with self.subTest(msg="Info Card"):
             # Then I should see the Info Card with details of my submission
             info_card_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-info-card')
@@ -320,7 +325,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             imported_records = []
             csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
             csv_writer.writeheader()
-            for i in range(314):
+            for i in range(3):
                 row = {}
                 row['name'] = f'Test Person {uuid4()}'
                 row['is_law_enforcement'] = 'True'
@@ -340,6 +345,19 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
         wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
             .click()
 
+        sleep(1)  # Match sleep of redirect javascript
+        # Confirm we're on the right page now
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'nav.importer-post-validate-ready')
+
+        with self.subTest(msg="Status Guide"):
+            # Then I should see the Status Guide with an Import X rows button
+            status_guide_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-status-guide')
+            self.assertIn(
+                'No errors were encountered during validation. Ready to import.',
+                status_guide_element.text
+            )
+            status_guide_element.find_element(By.CSS_SELECTOR, 'input[value="Import 3 rows"]')
+
         with self.subTest(msg="Info Card"):
             # Then I should see the Info Card with details of my submission
             info_card_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-info-card')
@@ -356,15 +374,6 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 info_card_element.text
             )
 
-        with self.subTest(msg="Status Guide"):
-            # Then I should see the Status Guide with an Import X rows button
-            status_guide_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-status-guide')
-            self.assertIn(
-                'No errors were encountered during validation. Ready to import.',
-                status_guide_element.text
-            )
-            status_guide_element.find_element(By.CSS_SELECTOR, 'input[value="Import 314 rows"]')
-
         # And I should not see the errors section
         with self.subTest(msg="No errors section"):
             with self.assertRaises(NoSuchElementException):
@@ -374,3 +383,70 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
         with self.subTest(msg="No imported rows section"):
             with self.assertRaises(NoSuchElementException):
                 self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
+
+    def test_mid_import(self):
+        """Test that the Info Card and Status Guide are displayed with a note about import being in progress when in
+        the mid-import state"""
+
+        # Given I've set up a batch and validated it successfully
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(3):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'True'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            self.log_in(is_administrator=True)
+            self.browser.get(self.live_server_url + reverse('importer_narwhal:new-batch'))
+            wait(self.browser.find_element_by_css_selector, 'input#id_import_sheet') \
+                .send_keys(csv_fd.name)
+            Select(self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name')) \
+                .select_by_visible_text('Person')
+            self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name').submit()
+
+            wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
+                .click()
+
+            # Shouldn't need this...
+            # wait(self.browser.find_element, By.CSS_SELECTOR, "a.importer-refresh-button") \
+            #     .click()
+
+        # When I click the "Import X rows button"
+            wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 3 rows"]') \
+                .click()
+
+        # ... artificially force batch back into 'mid-import' state
+        batch = ImportBatch.objects.last()
+        batch.completed = None
+        batch.save()
+        # ... and go back to the detail page
+        self.browser.get(self.live_server_url + f'/changing/importer/batch/{ImportBatch.objects.last().pk}')
+
+        with self.subTest(msg="Status Guide"):
+            # Then I should see the Status Guide with a message that says "Import in progress"
+            status_guide_element = wait(self.browser.find_element, By.CSS_SELECTOR, 'div.importer-status-guide')
+            self.assertIn(
+                'Import in progress',
+                status_guide_element.text
+            )
+
+        with self.subTest(msg="Info Card"):
+            # Then I should see the Info Card with details of my submission
+            info_card_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-info-card')
+            self.assertIn(
+                os.path.basename(csv_fd.name),
+                info_card_element.text
+            )
+            self.assertIn(
+                str(len(imported_records)),
+                info_card_element.text
+            )
+            self.assertIn(
+                'Person',
+                info_card_element.text
+            )
