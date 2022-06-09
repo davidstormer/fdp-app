@@ -287,7 +287,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 'Errors encountered during validation. Please correct errors and start a new batch.',
                 status_guide_element.text
             )
-            status_guide_element.find_element(By.CSS_SELECTOR, 'input[value="Start Over"]')
+            status_guide_element.find_element(By.LINK_TEXT, 'Start Over')
 
         # Then I should see an errors section
         errors_section = wait(self.browser.find_element_by_css_selector, 'div.importer-errors')
