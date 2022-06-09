@@ -237,8 +237,8 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
         """Test that the Info Card, Status Guide, General Errors Readout, Error Rows, and Error Rows Paginator
         elements are displayed on the batch detail page when in the post-validate-errors state"""
 
-        # Given I've set up a batch from the Import batch setup page containing erroneous columns and and cell
-        # validation errors, totalling over 100
+        # Given I've set up a batch from the Import batch setup page containing an erroneous column, and cell
+        # validation errors totalling over 100
         with tempfile.NamedTemporaryFile(mode='w', suffix='.csv') as csv_fd:
             imported_records = []
             csv_writer = csv.DictWriter(csv_fd, ['is_archived', 'not_a_legit_column_name'])
@@ -259,40 +259,48 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 .select_by_visible_text('ContentPersonAllegation')
             self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name').submit()
 
-        # When I run the validation
+        # When I run the validation step
         wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
             .click()
 
-        # Then I should see the Info Card with details of my submission
-        info_card_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-info-card')
-        self.assertIn(
-            os.path.basename(csv_fd.name),
-            info_card_element.text
-        )
-        self.assertIn(
-            str(len(imported_records)),
-            info_card_element.text
-        )
-        self.assertIn(
-            'ContentPersonAllegation',
-            info_card_element.text
-        )
+        with self.subTest(msg="Info Card"):
+            # Then I should see the Info Card with details of my submission
+            info_card_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-info-card')
+            self.assertIn(
+                os.path.basename(csv_fd.name),
+                info_card_element.text
+            )
+            self.assertIn(
+                str(len(imported_records)),
+                info_card_element.text
+            )
+            self.assertIn(
+                'ContentPersonAllegation',
+                info_card_element.text
+            )
 
-        # Then I should see the Status Guide
-        self.fail("finish me")
+        with self.subTest(msg="Status Guide"):
+            # Then I should see the Status Guide
+            status_guide_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-status-guide')
+            self.assertIn(
+                'Errors encountered during validation. Please correct errors and start a new batch.',
+                status_guide_element.text
+            )
+            status_guide_element.find_element(By.CSS_SELECTOR, 'input[value="Start Over"]')
 
-        # Then I should see and errors section
-        errors_section = wait(self.browser.find_element_by_css_selector, 'div.importer-errors')
-        # and it should contain an error about the erroneous column
-        self.assertIn(
-            "ERROR: 'not_a_legit_column_name' not a valid column name for ContentPersonAllegation imports",
-            errors_section.text
-        )
-        # and it should contain 100 row level errors (limited by pagination)
-        self.assertEqual(
-            100,
-            self.browser.page_source.count("Enter a valid boolean value")
-        )
+        with self.subTest(msg="Errors Section"):
+            # Then I should see and errors section
+            errors_section = wait(self.browser.find_element_by_css_selector, 'div.importer-errors')
+            # and it should contain an error about the erroneous column
+            self.assertIn(
+                "ERROR: 'not_a_legit_column_name' not a valid column name for ContentPersonAllegation imports",
+                errors_section.text
+            )
+            # and it should contain 100 row level errors (limited by pagination)
+            self.assertEqual(
+                100,
+                errors_section.text.count("Enter a valid boolean value")
+            )
 
-        # and the row level errors paginator
-        self.fail("finish me")
+            # and the row level errors paginator
+            self.fail("finish me")
