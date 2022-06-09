@@ -281,7 +281,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             )
 
         with self.subTest(msg="Status Guide"):
-            # Then I should see the Status Guide
+            # Then I should see the Status Guide with a "Start Over" button
             status_guide_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-status-guide')
             self.assertIn(
                 'Errors encountered during validation. Please correct errors and start a new batch.',
@@ -305,6 +305,70 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             )
             # and the row level errors paginator
             self.browser.find_element(By.CSS_SELECTOR, 'nav[aria-label="Pagination"]')
+
+        # And I should not see the imported rows section
+        with self.subTest(msg="No imported rows section"):
+            with self.assertRaises(NoSuchElementException):
+                self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
+
+    def test_validate_post_validate_ready(self):
+        """Test that the Info Card and Status Guide are displayed and no other elements on the batch detail page
+        when in the post-validate-ready state"""
+
+        # Given I've set up a batch from the Import batch setup page that has no erroneous rows or invalid cells
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(314):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'True'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            self.log_in(is_administrator=True)
+            self.browser.get(self.live_server_url + reverse('importer_narwhal:new-batch'))
+            wait(self.browser.find_element_by_css_selector, 'input#id_import_sheet') \
+                .send_keys(csv_fd.name)
+            Select(self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name')) \
+                .select_by_visible_text('Person')
+            self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name').submit()
+
+        # When I run the validation step
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
+            .click()
+
+        with self.subTest(msg="Info Card"):
+            # Then I should see the Info Card with details of my submission
+            info_card_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-info-card')
+            self.assertIn(
+                os.path.basename(csv_fd.name),
+                info_card_element.text
+            )
+            self.assertIn(
+                str(len(imported_records)),
+                info_card_element.text
+            )
+            self.assertIn(
+                'Person',
+                info_card_element.text
+            )
+
+        with self.subTest(msg="Status Guide"):
+            # Then I should see the Status Guide with an Import X rows button
+            status_guide_element = self.browser.find_element(By.CSS_SELECTOR, 'div.importer-status-guide')
+            self.assertIn(
+                'No errors were encountered during validation. Ready to import.',
+                status_guide_element.text
+            )
+            status_guide_element.find_element(By.CSS_SELECTOR, 'input[value="Import 314 rows"]')
+
+        # And I should not see the errors section
+        with self.subTest(msg="No errors section"):
+            with self.assertRaises(NoSuchElementException):
+                self.browser.find_element(By.CSS_SELECTOR, 'div.importer-errors')
 
         # And I should not see the imported rows section
         with self.subTest(msg="No imported rows section"):

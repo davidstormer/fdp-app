@@ -73,8 +73,10 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
         context = self.get_context_data()
         if context['state'] == 'pre-validate':
             return f"importbatch_detail_pre-validate.html"
-        if context['state'] == "post-validate-errors":
+        elif context['state'] == "post-validate-errors":
             return f"importbatch_detail_post-validate-errors.html"
+        elif context['state'] == "post-validate-ready":
+            return f"importbatch_detail_post-validate-ready.html"
         else:
             return super().get_template_names()
 
