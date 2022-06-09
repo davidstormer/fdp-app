@@ -15,8 +15,8 @@
     {% endcompress %}
 {% endblock %}
 
-{% if state != 'done' %}
-<nav aria-label="Workflow" class="importer-{{object.state}}">
+{% if not hide_stepper  %}
+<nav aria-label="Workflow">
 <ul class="fdp-stepper col-md-10 offset-md-1">
   <li class="{% if stepper_number == 1 %}active{% endif %}">
     <span class="stepper-step-number">
@@ -66,7 +66,9 @@
 <hr>
 {% endif %}
 
+<div class="importer-inner-content importer-{{object.state}}">
 {% block inner_content %}
 {% endblock %}
+</div>
 
 {% endblock %}

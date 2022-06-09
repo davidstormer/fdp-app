@@ -145,11 +145,12 @@ class ImportBatch(models.Model):
         elif self.started and not self.completed:
             state = 'mid-import'
 
-        # 'post-import' Batch imported, done! (todo: show button to delete)
-        #   don't show stepper anymore (I'm viewing it outside of the workflow)
-        #   don't show button to import
+        # 'post-import-failed'
+        elif self.completed and self.errors_encountered:
+            state = 'post-import-failed'
+
         elif self.completed:
-            state = 'done'
+            state = 'complete'
 
         return state
 

@@ -81,6 +81,8 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
             return f"importbatch_detail_post-validate-ready.html"
         elif context['state'] == "mid-import":
             return f"importbatch_detail_mid-import.html"
+        elif context['state'] == "post-import-failed":
+            return f"importbatch_detail_post-import-failed.html"
         else:
             return super().get_template_names()
 
@@ -94,16 +96,16 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
             'post-validate-errors': 2,
             'post-validate-ready': 3,
             'mid-import': 3,
+            'post-import-failed': 4,
             'complete': 4,
-            'done': 4
         }
         context['state'] = context['object'].state
         context['stepper_number'] = stepper_states[context['object'].state]
 
         # Add extra state mode for when user has just completed import
         # Won't show when the user navigates to the page from the import batch history listing
-        if context['object'].completed and self.request.GET.get('show_workflow_after_completion'):
-            context['state'] = 'complete'
+        if context['object'].completed and not self.request.GET.get('show_workflow_after_completion'):
+            context['hide_stepper'] = True
 
         # Additional prep
         if context['state'] == 'pre-validate':
