@@ -432,11 +432,12 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             # wait(self.browser.find_element, By.CSS_SELECTOR, "a.importer-refresh-button") \
             #     .click()
 
-        # When I click the "Import X rows button"
+            # When I click the "Import X rows button"
             wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 3 rows"]') \
                 .click()
 
         # ... artificially force batch back into 'mid-import' state
+        sleep(1)  # Pass on CircleCI?
         batch = ImportBatch.objects.last()
         batch.completed = None
         batch.save()
