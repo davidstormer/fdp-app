@@ -55,7 +55,6 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             'Log in',
             button.text
         )
-        self.fail("Test CircleCI artifacts")  # <--- intentionally fail test to see if we get artifacts saved
 
     # But what if something fails? Comment out @expectedFailure to see!
     @expectedFailure
