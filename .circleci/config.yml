@@ -62,6 +62,8 @@ jobs:
           # This assumes pytest is installed via the install-package step above
           command: ./run-all-tests.sh
           no_output_timeout: 30m
+      - store_artifacts:
+          path: ~/project/functional_tests/screendumps
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
