@@ -23,6 +23,7 @@ from selenium.webdriver.support.ui import Select
 
 import pdb
 
+
 class TestWebUI(SeleniumFunctionalTestCase):
     def test_import_batch_page_success_scenario(self):
         # GIVEN an import has been run
