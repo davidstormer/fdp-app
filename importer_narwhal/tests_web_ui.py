@@ -438,7 +438,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 .click()
 
         # ... artificially force batch back into 'mid-import' state
-        sleep(1)  # Pass on CircleCI?
+        self.wait_until_import_is_done()
         batch = ImportBatch.objects.last()
         batch.completed = None
         batch.save()
