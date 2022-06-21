@@ -497,13 +497,14 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
                 .click()
 
-            sleep(1)  # Match sleep of redirect javascript
+            self.wait_until_dry_run_is_done()
+            self.browser.refresh()
             wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 150 rows"]') \
                 .click()
 
-        sleep(2)
         # Jump back to the detail page now that the import has completed in the background -- side stepping the
         # mid-import page for this test.
+        self.wait_until_import_is_done()
         self.browser.get(self.live_server_url + f'/changing/importer/batch/{ImportBatch.objects.last().pk}')
         # Confirm we're on the right page now
         wait(self.browser.find_element, By.CSS_SELECTOR, 'div.importer-post-import-failed')
