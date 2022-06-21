@@ -7,6 +7,10 @@ $code-color: #666;
 
 @import "./bootstrap-scss/bootstrap";
 
+.pagination {
+  justify-content: center;
+}
+
 .backdrop-filter-blur {
   backdrop-filter: blur(3px);
 }
