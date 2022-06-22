@@ -233,6 +233,7 @@ INSTALLED_APPS = [
     "crispy_bootstrap5",
     # allows user to add and update large volumes of data through a simplified and automated process
     'importer_narwhal',
+    'django.contrib.humanize',
 ]
 
 

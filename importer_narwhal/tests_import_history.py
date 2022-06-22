@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from .models import ImportBatch
-from .narwhal import do_import
+from .narwhal import do_import_from_disk
 from django.test import TestCase
 from django.core.management import call_command
 from io import StringIO
@@ -24,7 +24,7 @@ class TestImportHistoryCommand(TestCase):
                 csv_writer.writerow(row)
                 imported_records.append(row)
             csv_fd.flush()  # Make sure it's actually written to the filesystem!
-            do_import('Person', csv_fd.name)
+            do_import_from_disk('Person', csv_fd.name)
 
             # WHEN I run the import_history command
             command_output = StringIO()
@@ -52,7 +52,7 @@ class TestImportHistoryCommand(TestCase):
                     csv_writer.writerow(row)
                     imported_records.append(row)
                 csv_fd.flush()  # Make sure it's actually written to the filesystem!
-                do_import('Person', csv_fd.name)
+                do_import_from_disk('Person', csv_fd.name)
 
         # WHEN I run the import_history command
         command_output = StringIO()
@@ -81,7 +81,7 @@ class TestImportHistoryCommand(TestCase):
                 csv_writer.writerow(row)
                 imported_records.append(row)
             csv_fd.flush()  # Make sure it's actually written to the filesystem!
-            do_import('Person', csv_fd.name)
+            do_import_from_disk('Person', csv_fd.name)
 
             # WHEN I pass the batch number as an argument to the import_history command
             command_output_stream = StringIO()
@@ -109,7 +109,7 @@ class TestImportHistoryCommand(TestCase):
                 csv_writer.writerow(row)
                 imported_records.append(row)
             csv_fd.flush()  # Make sure it's actually written to the filesystem!
-            do_import('Person', csv_fd.name)
+            do_import_from_disk('Person', csv_fd.name)
 
             # WHEN I pass the batch number as an argument to the import_history command
             command_output_stream = StringIO()
@@ -121,10 +121,4 @@ class TestImportHistoryCommand(TestCase):
             self.assertEqual(
                 4,
                 command_output.count("Enter a valid boolean value")
-            )
-
-            # And there should be no completed time
-            self.assertIn(
-                'Completed: Aborted',
-                command_output
             )

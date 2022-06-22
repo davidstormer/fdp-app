@@ -580,6 +580,25 @@ class HostAdminSyncListView(HostAdminAccessMixin, ContextDataMixin, ListView):
         return self._add_context(context)
 
 
+class HostAdminSyncDetailView(HostAdminAccessMixin, ContextDataMixin, DetailView):
+    """ Host admin only synchronously rendered view to detail object.
+
+    Log is in required, and users must be able to view host only and admin only data, and access corresponding
+    functionality.
+
+    Only POST or GET request methods accepted.
+
+    """
+    def get_context_data(self, **kwargs):
+        """ Adds additional context such as permissions and theme customization.
+
+        :param kwargs:
+        :return: Expanded context data dictionary.
+        """
+        context = super().get_context_data(**kwargs)
+        return self._add_context(context)
+
+
 class SecuredSyncDetailView(CoreAccessMixin, ContextDataMixin, DetailView):
     """ Secure synchronously rendered view rendering a template.
 

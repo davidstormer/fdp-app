@@ -1,4 +1,10 @@
 /* GLOBAL STYLES */
+a,
+.btn-link,
+.page-link
+{
+  color: #447e9b;
+}
 .text-error {
   color: #dc3545;
 }
@@ -134,4 +140,64 @@ span#release-number {
 /* Forms */
 legend {
     color: #417690;
+}
+
+/* Data display */
+.datum {
+    margin-bottom: 0.5em;
+}
+.datum .label {
+    width: 8em;
+    display: inline-block;
+}
+.datum .value {
+  vertical-align: top;
+}
+
+/* STEPPERS */
+ul.fdp-stepper {
+    display: flex;
+    justify-content: space-evenly;
+    padding: 0;
+
+    font-weight: bold;
+    color: #6c757d;
+}
+.fdp-stepper li {
+    list-style: none;
+    padding: 1em;
+}
+li.fdp-stepper-line {
+    height: 1px;
+    padding: 2em 0 0 0;
+    flex-grow: 1;
+    border-bottom: 1px solid lightgray;
+}
+span.stepper-step-number {
+    display: inline-block;
+    background-color: #447e9b;
+    border: 1px solid gray;
+    height: 2em;
+    width: 2em;
+    text-align: center;
+    border-radius: 1em;
+    line-height: 2em;
+    color: white;
+    margin-right: .5em;
+}
+/*
+.fdp-stepper li.active {
+    border: 1px solid gray;
+    background-color: #447e9b;
+    color: white;
+    border-radius: 2px;
+}
+*/
+.fdp-stepper li.pending {
+  font-weight: normal;
+  color: lightgray;
+}
+li.pending span.stepper-step-number {
+  background-color: lightgray;
+  border: none;
 }

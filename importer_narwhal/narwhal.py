@@ -1,11 +1,14 @@
 import json
 import os
 import re
+from pathlib import Path
 
 import tablib
+from django.core.files import File
 from django.utils import timezone
+import import_export
 from import_export import resources, fields
-from import_export.fields import Field
+import import_export.fields
 from import_export.resources import ModelResource
 from import_export.results import RowResult
 from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
@@ -13,52 +16,57 @@ from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
 from core.models import PersonAlias, Person, Grouping, GroupingAlias, GroupingRelationship
-from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
+from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow, MODEL_ALLOW_LIST
 from importer_narwhal.widgets import BooleanWidgetValidated
 from supporting.models import GroupingRelationshipType
 from wholesale.models import ModelHelper
 
-# The mother list of models to be able to import to.
-# The options in the interface are based on this.
-MODEL_ALLOW_LIST = [
-    # From the 'sourcing' app
-    'Attachment',
-    'Content',
-    'ContentIdentifier',
-    'ContentCase',
-    'ContentPerson',
-    'ContentPersonAllegation',
-    'ContentPersonPenalty',
-    # From the 'core' app
-    'Person',
-    'PersonContact',
-    'PersonAlias',
-    'PersonPhoto',
-    'PersonIdentifier',
-    'PersonTitle',
-    'PersonRelationship',
-    'PersonPayment',
-    'Grouping',
-    'GroupingAlias',
-    'GroupingRelationship',
-    'PersonGrouping',
-    'Incident',
-    'PersonIncident',
-    'GroupingIncident',
-    # From the 'supporting' app
-    'State',
-    'County',
-    'Location',
-    'Court',
-    'Trait',
-    'TraitType',
-]
 
+class ExternalIdField(fields.Field):
+    def before_import_row(self, resource_class, row, row_number, **kwargs):
+        for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
+            if import_field_name.endswith('__external_id'):
+                if row[import_field_name]:
+                    destination_field_name = import_field_name[:-13]
+                    model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
+                    referenced_record = get_record_from_external_id(model_class, row[import_field_name])
+                    if resource_class.fields[destination_field_name].widget.field == 'name':
+                        # Field expects a natural key value, not a pk:
+                        row[destination_field_name] = referenced_record.name
+                    else:
+                        row[destination_field_name] = referenced_record.pk
+
+    def after_import_row(self, resource_class, row, row_result, row_number, **kwargs):
+        # TODO: I think this should maybe be a 'get or create' logic, rather than just always create...?
+        # If so, if there's a pk in the sheet too it should probably compare to the one in the BulkImport record,
+        # and balk if there's an inconsistency?
+        if row_result.import_type == row_result.IMPORT_TYPE_NEW:
+            external_id = row.get('external_id', None)
+            if external_id:
+                model = resource_class.Meta.model
+                # Check to see if external id already exists, raise an error if so
+                found = BulkImport.objects.filter(
+                    table_imported_to=model.get_db_table(),
+                    pk_imported_from=external_id
+                )
+                if len(found) > 0:
+                    raise Exception(f"External ID already exists: {model}:{external_id}")
+                # If doesn't exist go ahead and create it
+                BulkImport.objects.create(
+                    table_imported_to=model.get_db_table(),
+                    pk_imported_to=row_result.object_id,
+                    pk_imported_from=external_id,
+                    data_imported=json.dumps(dict(row))
+                )
+
+    def get_help_html(self):
+        return """Use the <code>external_id</code> column to create an external id on import, or refer to an existing 
+        record to update it."""
 
 class FdpModelResource(ModelResource):
     """Customized django-import-export ModelResource
     """
-    external_id = Field()
+    external_id = ExternalIdField()
 
     # On export retrieve external id of record and fill it into the 'external_id' column
     def dehydrate_external_id(self, record):
@@ -76,7 +84,6 @@ class FdpModelResource(ModelResource):
 
     class Meta:
         skip_unchanged = True
-
 
 # Some of the stock widgets don't meet our needs
 # Override them with our custom versions
@@ -108,65 +115,9 @@ def _compile_resources():
 resource_model_mapping = _compile_resources()
 
 
-# Before import
-#
-#
-# On import, locate relationship columns in external id form, and resolve the respective pk
-def dereference_external_ids(resource_class, row, row_number=None, **kwargs):
-    for import_field_name in row.copy().keys():  # '.copy()' prevents 'OrderedDict mutated during iteration' exception
-        if import_field_name.endswith('__external'):
-            if row[import_field_name]:
-                destination_field_name = import_field_name[:-10]
-                model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
-                referenced_record = get_record_from_external_id(model_class, row[import_field_name])
-                if resource_class.fields[destination_field_name].widget.field == 'name':
-                    # Field expects a natural key value, not a pk:
-                    row[destination_field_name] = referenced_record.name
-                else:
-                    row[destination_field_name] = referenced_record.pk
+class PersonAliasesField(fields.Field):
 
-
-# Modify the before_import_row hook with our custom transformations
-def before_import_row(resource_class, row, row_number=None, **kwargs):
-    dereference_external_ids(resource_class, row, row_number, **kwargs)
-    # Make "is_law_enforcement" required for Person and Group resources
-    if resource_class.Meta.model == Person or \
-            resource_class.Meta.model == Grouping:
-            if 'is_law_enforcement' not in row:
-                raise Exception('"is_law_enforcement" is missing but required')
-
-# After import
-#
-#
-# After import, generate the external id in the 'external_id' column
-def import_external_id(resource_class, row, row_result, row_number, **kwargs):
-    # TODO: I think this should maybe be a 'get or create' logic, rather than just always create...?
-    # If so, if there's a pk in the sheet too it should probably compare to the one in the BulkImport record,
-    # and balk if there's an inconsistency?
-    if row_result.import_type == row_result.IMPORT_TYPE_NEW:
-        external_id = row.get('external_id', None)
-        if external_id:
-            model = resource_class.Meta.model
-            # Check to see if external id already exists, raise an error if so
-            found = BulkImport.objects.filter(
-                table_imported_to=model.get_db_table(),
-                pk_imported_from=external_id
-            )
-            if len(found) > 0:
-                raise Exception(f"External ID already exists: {model}:{external_id}")
-            # If doesn't exist go ahead and create it
-            BulkImport.objects.create(
-                table_imported_to=model.get_db_table(),
-                pk_imported_to=row_result.object_id,
-                pk_imported_from=external_id,
-                data_imported=json.dumps(dict(row))
-            )
-
-
-def autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs):
-    """Import PersonAliases if provided in Person sheet
-    """
-    if resource_class.Meta.model == Person:
+    def after_import_row(self, resource_class, row, row_result, row_number, **kwargs):
         person_aliases = row.get('person_aliases', None)
         if row_result.import_type == row_result.IMPORT_TYPE_NEW:
             person = Person.objects.get(pk=row_result.object_id)
@@ -185,11 +136,17 @@ def autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs
                     except PersonAlias.DoesNotExist:
                         PersonAlias.objects.create(person=person, name=person_alias_value)
 
+    def get_help_html(self):
+        return """Use this column to add <code>PersonAlias</code> records to a Person record while importing it. Write 
+        the names in comma delimited format. E.g "The shadow, Rocky, Mickey Mouse"."""
 
-def autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwargs):
-    """Import GroupingAlias if provided in Grouping sheet
-    """
-    if resource_class.Meta.model == Grouping:
+
+resource_model_mapping['Person'].fields['person_aliases'] = PersonAliasesField()
+
+
+class GroupingAliasesField(fields.Field):
+
+    def after_import_row(self, resource_class, row, row_result, row_number, **kwargs):
         grouping_aliases = row.get('grouping_aliases', None)
         if row_result.import_type == row_result.IMPORT_TYPE_NEW:
             grouping = Grouping.objects.get(pk=row_result.object_id)
@@ -208,17 +165,19 @@ def autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwar
                     except GroupingAlias.DoesNotExist:
                         GroupingAlias.objects.create(grouping=grouping, name=grouping_alias_value)
 
+    def get_help_html(self):
+        return """Use this column to add <code>GroupingAlias</code> records to a Grouping record while importing it. 
+        Write the names in comma delimited format. E.g "DCA, 4DS, AKF"."""
 
-def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs):
-    """Import GroupingRelationships if provided in Grouping sheet
-    """
-    if resource_class.Meta.model == Grouping:
+class GroupingRelationshipField(fields.Field):
+
+    def after_import_row(self, resource_class, row, row_result, row_number, **kwargs):
         if row_result.import_type == row_result.IMPORT_TYPE_NEW:
             grouping = Grouping.objects.get(pk=row_result.object_id)
             for field_name in row.keys():
-                # Does it look like this: 'grouping_relationship__exists-in'?
-                if re.match(r'grouping_relationship__[a-z\-]+$', field_name):
-                    relationship_type_name = field_name.replace('grouping_relationship__', '').replace('-', ' ')
+                # Does it look like this: 'grouping_relationships__exists-in'?
+                if re.match(r'grouping_relationships__[a-z\-]+$', field_name):
+                    relationship_type_name = field_name.replace('grouping_relationships__', '').replace('-', ' ')
                     type_ = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
                     for relationship_pk in row[field_name].split(','):
                         relationship_pk = relationship_pk.strip()
@@ -227,9 +186,10 @@ def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_resu
                             object_grouping=Grouping.objects.get(pk=relationship_pk),
                             type=type_
                         )
-                # Does it look like this: 'grouping_relationship__external_id__exists-in'?
-                if re.match(r'grouping_relationship__external_id__[a-z\-]+$', field_name):
-                    relationship_type_name = field_name.replace('grouping_relationship__external_id__', '').replace('-', ' ')
+                # Does it look like this: 'grouping_relationships__external_id__exists-in'?
+                if re.match(r'grouping_relationships__external_id__[a-z\-]+$', field_name):
+                    relationship_type_name = field_name.replace('grouping_relationships__external_id__', '') \
+                        .replace('-', ' ')
                     type_ = GroupingRelationshipType.objects.get(name__iexact=relationship_type_name)
                     for relationship_external_id in row[field_name].split(','):
                         relationship_external_id = relationship_external_id.strip()
@@ -244,12 +204,60 @@ def add_grouping_relationships_from_grouping_sheet(resource_class, row, row_resu
                                 type=type_
                             )
 
+    def get_help_html(self):
+        return f"""To related a group to another group while importing it, use the grouping_relationships column. 
+        Uses a special column name syntax: 
+        <code>grouping_relationships__[relationship name]</code> or <code>grouping_relationships__external_id__[
+        relationship name]</code>. Where [relationship name] is an existing GroupingRelationship set in all lower 
+        case with spaces replaced with hyphens.<br>Examples: <code>grouping_relationships__reports-to</code> or 
+        <code>grouping_relationships__external_id__reports-to</code>. The form without <code>__external_id</code> 
+        expects PKs, the form with <code>__external_id</code> expects external IDs.
+        """
 
+    def get_available_extensions(self):
+        return ['__[a-z\-]+$','__external_id__[a-z\-]+$']
+
+
+resource_model_mapping['Grouping'].fields['grouping_aliases'] = GroupingAliasesField()
+resource_model_mapping['Grouping'].fields['grouping_relationships'] = GroupingRelationshipField()
+
+
+def is_law_enforcement_required_before_import_row(resource_class, row, row_number, **kwargs):
+    # Make "is_law_enforcement" required
+    if 'is_law_enforcement' not in row:
+        raise Exception('"is_law_enforcement" is missing but required')
+
+
+setattr(resource_model_mapping['Grouping'].fields['is_law_enforcement'], 'before_import_row',
+    is_law_enforcement_required_before_import_row)
+
+setattr(resource_model_mapping['Person'].fields['is_law_enforcement'], 'before_import_row',
+    is_law_enforcement_required_before_import_row)
+
+# Before import
+#
+#
+# On import, locate relationship columns in external id form, and resolve the respective pk
+# Modify the before_import_row hook with our custom transformations
+def before_import_row(resource_class, row, row_number=None, **kwargs):
+    for _, field in resource_class.fields.items():
+        try:
+            field.before_import_row(resource_class, row, row_number, **kwargs)
+        except AttributeError:
+            pass
+
+
+
+# After import
+#
+#
 def after_import_row(resource_class, row, row_result, row_number=None, **kwargs):
-    import_external_id(resource_class, row, row_result, row_number, **kwargs)
-    autoadd_person_aliases(resource_class, row, row_result, row_number, **kwargs)
-    autoadd_grouping_aliases(resource_class, row, row_result, row_number, **kwargs)
-    add_grouping_relationships_from_grouping_sheet(resource_class, row, row_result, row_number, **kwargs)
+    for _, field in resource_class.fields.items():
+        try:
+            field.after_import_row(resource_class, row, row_result, row_number, **kwargs)
+        except AttributeError:
+            pass
+
 
 # Amend the resources in the map by applying the above pre and post import customizations
 for resource in resource_model_mapping.keys():
@@ -299,6 +307,47 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
         else:
             return None
 
+    def get_help_html(self):
+        return f"""Accepts <code>{ self.model.__name__ }</code> { self.field }s rather than 
+        PKs by default. Accepts external ids using the <code>__external_id</code> extension.
+        """
+
+    def get_available_extensions(self):
+        return ['__external_id']
+
+
+def external_id_get_available_extensions(self):
+    return ['__external_id']
+
+
+def foreign_key_widget_help_html(self):
+    if self.field == 'pk':
+        return f"""References <a href="#mapping-{ self.model.__name__ }"><code>{self.model.__name__}</code></a> by PK.
+        Accepts external ids using <code>__external_id</code> extension.
+        """
+    elif self.field == 'name':
+        return f"""Accepts <a href="#mapping-{ self.model.__name__ }"><code>{ self.model.__name__ }</code></a>
+        { self.field }s rather than PKs by default. Accepts external ids using the <code>__external_id</code> extension.
+        """
+
+
+import_export.widgets.ForeignKeyWidget.get_help_html = foreign_key_widget_help_html
+import_export.widgets.ForeignKeyWidget.get_available_extensions = external_id_get_available_extensions
+
+
+def many_to_many_widget_help_html(self):
+    if self.field == 'pk':
+        return f"""References <a href="#mapping-{ self.model.__name__ }"><code>{self.model.__name__}</code></a> by PK. 
+        Accepts external ids using the <code>__external_id</code> extension.
+        """
+    elif self.field == 'name':
+        return f"""Accepts <a href="#mapping-{ self.model.__name__ }"><code>{ self.model.__name__ }</code></a>
+        { self.field }s rather than PKs by default. Accepts external ids using the <code>__external_id</code> extension.
+        """
+
+
+import_export.widgets.ManyToManyWidget.get_help_html = many_to_many_widget_help_html
+import_export.widgets.ManyToManyWidget.get_available_extensions = external_id_get_available_extensions
 
 # Customize the 'type' fields to use the new ForeignKeyWidgetGetOrCreate widget
 def apply_custom_widgets(target_fields, widget):
@@ -330,6 +379,19 @@ apply_custom_widgets(foreign_key_fields_get_only, ForeignKeyWidget)
 # Set up "tag" fields (m2m) -- for now not 'get or create' just get
 apply_custom_widgets(many_to_many_fields_get_only, ManyToManyWidget)
 
+
+# Populate the resource mapping fields with details for printing on the importer mapping documentation page
+for model_name, mapping in resource_model_mapping.items():
+    django_model_class = get_data_model_from_name(model_name)
+    for field_name, field in mapping.fields.items():
+        try:
+            django_field = getattr(django_model_class, field_name).field
+            django_field_type_name = type(django_field).__name__
+            setattr(field, 'django_field_type_name', django_field_type_name)
+            setattr(field, 'django_field_help_text', django_field.help_text)
+        except AttributeError:
+            # Skip non-django fields like `external_id`
+            pass
 
 # Nice error reports
 #
@@ -379,85 +441,197 @@ def clean_diff_html(diff_html: str) -> str:
         .replace(' style="background:#ffe6e6;"', '')
 
 
-# The business
-def do_import(model_name: str, input_file: str):
-    """Main api interface for narwhal importer
+def do_import_from_disk(model_name: str, input_file: str):
+    """Creates an import batch from a csv file located on the local disk, and then runs it.
+    Used by management commands and tests. Not intended for use by web views.
     """
-
     batch_record = ImportBatch.objects.create()
     batch_record.target_model_name = model_name
     batch_record.submitted_file_name = os.path.basename(input_file)
+    path = Path(input_file)
+    with path.open(mode='rb') as f:
+        batch_record.import_sheet = File(f, name=path.name)
+        batch_record.save()
+    return run_import_batch(batch_record)
 
-    with open(input_file, 'r') as fd:
-        input_sheet = tablib.Dataset().load(fd, "csv")
-        # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
-        # https://github.com/jazzband/tablib/issues/502
-        resource_class = resource_model_mapping[model_name]
-        resource = resource_class()
-        result = resource.import_data(input_sheet, dry_run=True)
-        batch_record.number_of_rows = len(result.rows)
-        import_report = ImportReport()
 
-        # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
-        # encounter any database level errors. We'll apply this pattern here:
-        if result.has_validation_errors():
+def create_batch_from_disk(model_name: str, input_file: str) -> ImportBatch:
+    """Creates an import batch from a csv file located on the local disk, but does not run it.
+    Used by management commands and tests. Not intended for use by web views.
+    """
+    batch_record = ImportBatch.objects.create()
+    batch_record.target_model_name = model_name
+    batch_record.submitted_file_name = os.path.basename(input_file)
+    path = Path(input_file)
+    with path.open(mode='rb') as f:
+        batch_record.import_sheet = File(f, name=path.name)
+        batch_record.save()
+    return batch_record
+
+
+def do_dry_run(batch_record):
+    batch_record.dry_run_started = timezone.now()
+    batch_record.save()
+    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8")
+    input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
+    # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
+    # https://github.com/jazzband/tablib/issues/502
+    resource_class = resource_model_mapping[batch_record.target_model_name]
+    resource = resource_class()
+
+    def validate_field_names_mapping(resource, input_sheet):
+        """Do all of the fields in the import sheet line up with fields for the resource? If any don't match,
+        flag them to warn the user. TODO: If any are missing that are required flag them."""
+        error_messages = []
+
+        valid_field_names = []
+        for field_name, field_object in resource.fields.items():
+            valid_field_names.append(field_name)
+            try:
+                extensions = field_object.get_available_extensions()
+                for extension in extensions:
+                    valid_field_names.append(field_name + extension)
+            except AttributeError:
+                pass
+
+        def column_name_in_available_column_names_with_extensions(column_name: str) -> bool:
+            for valid_field_name in valid_field_names:
+                if re.match(valid_field_name + '$', column_name):
+                    return True
+            return False
+
+        for column_name in input_sheet.headers:
+            if column_name in valid_field_names:
+                continue
+            # If not then let's see if it matches available column name extensions...
+            if column_name_in_available_column_names_with_extensions(column_name):
+                continue
+            # Didn't find a match, record warning for user to alert them...
+            error_messages.append(f"ERROR: '{column_name}' not a valid column name for"
+                  f" {resource_class.Meta.model.__name__} imports.")
+
+        return error_messages
+
+    error_messages = validate_field_names_mapping(resource, input_sheet)
+    if len(error_messages) > 0:
+        batch_record.general_errors = '\n'.join(error_messages)
+        batch_record.errors_encountered = True
+        batch_record.save()
+
+    result = resource.import_data(input_sheet, dry_run=True)
+    batch_record.number_of_rows = len(result.rows)
+    import_report = ImportReport()
+
+    # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
+    # encounter any database level errors. We'll apply this pattern here:
+    if result.has_validation_errors():
+        batch_record.errors_encountered = True
+        batch_record.save()
+        for row_num, row in enumerate(result.rows):
+            ImportedRow.objects.create(
+                row_number=row_num,
+                import_batch=batch_record,
+                action=row.import_type,
+                errors=row.validation_error,
+                info=clean_diff_html(str(row.diff)),
+                imported_record_name=row.object_repr,
+                imported_record_pk=row.object_id,
+            )
+        for invalid_row in result.invalid_rows:
+            # Nice error reports continued...
+            ErrorRow.objects.create(
+                import_batch=batch_record,
+                row_number=invalid_row.number,
+                error_message=str(invalid_row.error_dict),
+                row_data=str(invalid_row.values)
+            )
+            import_report.validation_errors.append(
+                ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
+            )
+    batch_record.dry_run_completed = timezone.now()
+    batch_record.save()
+
+
+# The business
+def run_import_batch(batch_record):
+    """Main api interface for narwhal importer
+    """
+    batch_record.started = timezone.now()
+    batch_record.save()
+    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8")
+    input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
+    # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
+    # https://github.com/jazzband/tablib/issues/502
+    resource_class = resource_model_mapping[batch_record.target_model_name]
+    resource = resource_class()
+    result = resource.import_data(input_sheet, dry_run=True)
+    batch_record.number_of_rows = len(result.rows)
+    import_report = ImportReport()
+
+    # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
+    # encounter any database level errors. We'll apply this pattern here:
+    if result.has_validation_errors():
+        batch_record.errors_encountered = True
+        batch_record.save()
+        for invalid_row in result.invalid_rows:
+            # Nice error reports continued...
+            ErrorRow.objects.create(
+                import_batch=batch_record,
+                row_number=invalid_row.number,
+                error_message=str(invalid_row.error_dict),
+                row_data=str(invalid_row.values)
+            )
+            import_report.validation_errors.append(
+                ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
+            )
+            batch_record.completed = timezone.now()
+            batch_record.save()
+    else:  # We're safe to proceed with live rounds
+        result = resource.import_data(input_sheet, dry_run=False)
+        if result.has_errors():
             batch_record.errors_encountered = True
             batch_record.save()
-            for invalid_row in result.invalid_rows:
-                # Nice error reports continued...
-                ErrorRow.objects.create(
-                    import_batch=batch_record,
-                    row_number=invalid_row.number,
-                    error_message=str(invalid_row.error_dict),
-                    row_data=str(invalid_row.values)
-                )
-                import_report.validation_errors.append(
-                    ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
-                )
-        else:  # We're safe to proceed with live rounds
-            result = resource.import_data(input_sheet, dry_run=False)
-            if result.has_errors():
-                batch_record.errors_encountered = True
-                batch_record.save()
-                for error_row in result.row_errors():
-                    row_num = error_row[0]
-                    errors = error_row[1]
-                    for error in errors:
-                        # Nice error reports continued...
-                        ErrorRow.objects.create(
-                            import_batch=batch_record,
-                            row_number=row_num,
-                            error_message=str(error.error),
-                            row_data=str(dict(error.row))
-                        )
-                        import_report.database_errors.append(
-                            ErrorReportRow(row_num, str(error.error), str(dict(error.row)))
-                        )
-            else:
-                batch_record.errors_encountered = False
-                for row_num, row in enumerate(result.rows):
-                    ImportedRow.objects.create(
-                        row_number=row_num,
+            for error_row in result.row_errors():
+                row_num = error_row[0]
+                errors = error_row[1]
+                for error in errors:
+                    # Nice error reports continued...
+                    ErrorRow.objects.create(
                         import_batch=batch_record,
-                        action=row.import_type,
-                        errors=row.validation_error,
-                        info=clean_diff_html(str(row.diff)),
-                        imported_record_name=row.object_repr,
-                        imported_record_pk=row.object_id,
+                        row_number=row_num,
+                        error_message=str(error.error),
+                        row_data=str(dict(error.row))
                     )
-                    import_report.imported_records.append(
-                        ImportedReportRow(
-                            row_num,
-                            row.import_type,
-                            row.validation_error,
-                            row.diff,
-                            row.object_id,
-                            row.object_repr)
+                    import_report.database_errors.append(
+                        ErrorReportRow(row_num, str(error.error), str(dict(error.row)))
                     )
-                batch_record.completed = timezone.now()
-                batch_record.save()
+                    batch_record.completed = timezone.now()
+                    batch_record.save()
+        else:
+            batch_record.errors_encountered = False
+            for row_num, row in enumerate(result.rows):
+                ImportedRow.objects.create(
+                    row_number=row_num,
+                    import_batch=batch_record,
+                    action=row.import_type,
+                    errors=row.validation_error,
+                    info=clean_diff_html(str(row.diff)),
+                    imported_record_name=row.object_repr,
+                    imported_record_pk=row.object_id,
+                )
+                import_report.imported_records.append(
+                    ImportedReportRow(
+                        row_num,
+                        row.import_type,
+                        row.validation_error,
+                        row.diff,
+                        row.object_id,
+                        row.object_repr)
+                )
+            batch_record.completed = timezone.now()
+            batch_record.save()
 
-        return import_report
+    return import_report
 
 
 def do_export(model_name, file_name):

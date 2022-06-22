@@ -20,3 +20,10 @@ class BooleanWidgetValidated(widgets.BooleanWidget):
             return False
         else:
             raise ValueError("Enter a valid boolean value.")
+
+    def get_help_html(self):
+        return """Valid boolean values
+        True: <code>"1", 1, "TRUE", 'checked'</code>;
+        False: <code>"0", 0, "FALSE"</code>;
+        Null: <code>"" (empty string), "NULL", "none"</code>.
+        """
