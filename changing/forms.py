@@ -146,21 +146,6 @@ grouping_relationship_form_fields.append('grouping_relationship_started')
 grouping_relationship_form_fields.append('grouping_relationship_ended')
 
 
-def deferred_get_grouping_relationship_types():
-    """ Retrieves the grouping relationship types when called.
-
-    Used in GroupingRelationshipModelForm so that queryset is only accessed  in the context of the view, rather than in
-    the context of the module loading.
-
-    Resolves following issue encountered during initial Django database migration for all FDP apps:
-
-        django.db.utils.ProgrammingError: relation "fdp_grouping_relationship_type" does not exist
-
-    :return: List of tuples representing active grouping relationship types.
-    """
-    return [(str(r.pk), r.__str__()) for r in GroupingRelationshipType.active_objects.all()]
-
-
 class GroupingRelationshipModelForm(AbstractWizardModelForm):
     """ Form used to create new and edit existing instances of grouping relationship models.
 
@@ -189,7 +174,7 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
         # and custom validation on the individual field components will be used.
         required=True,
         label=_('Relationship'),
-        queryset=deferred_get_grouping_relationship_types,
+        queryset=GroupingRelationshipType.active_objects,
         fields=()  # ignored
     )
 
@@ -732,21 +717,6 @@ person_relationship_form_fields.append('person_relationship_started')
 person_relationship_form_fields.append('person_relationship_ended')
 
 
-def deferred_get_person_relationship_types():
-    """ Retrieves the person relationship types when called.
-
-    Used in PersonRelationshipModelForm so that queryset is only accessed  in the context of the view, rather than in
-    the context of the module loading.
-
-    Resolves following issue encountered during initial Django database migration for all FDP apps:
-
-        django.db.utils.ProgrammingError: relation "fdp_person_relationship_type" does not exist
-
-    :return: List of tuples representing active person relationship types.
-    """
-    return [(str(r.pk), r.__str__()) for r in PersonRelationshipType.active_objects.all()]
-
-
 class PersonRelationshipModelForm(AbstractWizardModelForm):
     """ Form used to create new and edit existing instances of person relationship models.
 
@@ -775,7 +745,7 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
         # and custom validation on the individual field components will be used.
         required=True,
         label=_('Relationship'),
-        queryset=deferred_get_person_relationship_types,
+        queryset=PersonRelationshipType.active_objects,
         fields=()  # ignored
     )
 
