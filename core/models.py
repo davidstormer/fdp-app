@@ -162,7 +162,7 @@ class Person(Confidentiable, Descriptable):
         verbose_name=_('organization access')
     )
 
-    search_full_text = SearchVectorField(null=True)
+    search_full_text = SearchVectorField(null=True, blank=True)
 
     #: Fields to display in the model form.
     form_fields = \
