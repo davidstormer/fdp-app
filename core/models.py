@@ -1186,80 +1186,6 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
         ordering = ['person', 'person_identifier_type'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
 
 
-class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
-    """ Title for a person such as detective, fdptain, director, etc.
-
-    Attributes:
-        :title (fk): Title of person during period.
-        :person (fk): Person holding title during period.
-    """
-    title = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        related_name='person_titles',
-        related_query_name='person_title',
-        blank=False,
-        null=False,
-        help_text=_('Title of person during period'),
-        verbose_name=_('title')
-    )
-
-    person = models.ForeignKey(
-        Person,
-        on_delete=models.CASCADE,
-        related_name='person_titles',
-        related_query_name='person_title',
-        blank=False,
-        null=False,
-        help_text=_('Person holding title during period'),
-        verbose_name=_('person')
-    )
-
-    #: Fields to display in the model form.
-    form_fields = ['title', 'person', 'at_least_since']
-
-    def __str__(self):
-        """Defines string representation for a person title.
-
-        :return: String representation of a person title.
-        """
-        return '{p} {w} {r}'.format(
-            p=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='person'),
-            w=_('with title'),
-            r=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='title')
-        )
-
-    @classmethod
-    def filter_for_admin(cls, queryset, user):
-        """ Filter a queryset for the admin interfaces.
-
-        Assumes that queryset has already been filtered for direct confidentiality, i.e. whether user has access to
-        each record based on the record's level of confidentiality. E.g. a confidentiable queryset of Person.
-
-        Can be used to filter for indirect confidentiality, i..e whether user has access to each record based on other
-        relevant records' levels of confidentiality. E.g. a queryset of PersonAlias linking to a confidentiality
-        queryset of Person.
-
-        :param queryset: Queryset to filter.
-        :param user: User for which to filter queryset.
-        :return: Filtered queryset.
-        """
-        return queryset.filter(
-            person__in=Person.filter_for_admin(
-                queryset=Person.active_objects.all().filter_for_confidential_by_user(user=user),
-                user=user
-            )
-        )
-
-    class Meta:
-        db_table = '{d}person_title'.format(d=settings.DB_PREFIX)
-        verbose_name = _('Person title')
-        unique_together = (
-            'person', 'title', 'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
-        )
-        ordering = ['person'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
-
-
 class PersonRelationship(Archivable, AbstractAtLeastSinceDateBounded):
     """ Defines a relationship between two persons in the format: subject verb object.
 
@@ -2024,6 +1950,91 @@ class GroupingRelationship(Archivable, AbstractAtLeastSinceDateBounded):
         verbose_name = _('Grouping relationship')
         unique_together = ('subject_grouping', 'object_grouping', 'type')
         ordering = ['subject_grouping', 'type', 'object_grouping']
+
+
+class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
+    """ Title for a person such as detective, fdptain, director, etc.
+
+    Attributes:
+        :title (fk): Title of person during period.
+        :person (fk): Person holding title during period.
+    """
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='person_titles',
+        related_query_name='person_title',
+        blank=False,
+        null=False,
+        help_text=_('Title of person during period'),
+        verbose_name=_('title')
+    )
+
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.CASCADE,
+        related_name='person_titles',
+        related_query_name='person_title',
+        blank=False,
+        null=False,
+        help_text=_('Person holding title during period'),
+        verbose_name=_('person')
+    )
+
+    grouping = models.ForeignKey(
+        Grouping,
+        on_delete=models.CASCADE,
+        related_name='persontitle_groupings',
+        related_query_name='persontitle_grouping',
+        blank=True,
+        null=True,
+        help_text=_('The group in which the title was held. Optional: use this when an officer holds two titles at '
+                    'the same time at different agencies.'),
+    )
+
+    #: Fields to display in the model form.
+    form_fields = ['title', 'person', 'at_least_since', 'grouping']
+
+    def __str__(self):
+        """Defines string representation for a person title.
+
+        :return: String representation of a person title.
+        """
+        return '{p} {w} {r}'.format(
+            p=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='person'),
+            w=_('with title'),
+            r=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='title')
+        )
+
+    @classmethod
+    def filter_for_admin(cls, queryset, user):
+        """ Filter a queryset for the admin interfaces.
+
+        Assumes that queryset has already been filtered for direct confidentiality, i.e. whether user has access to
+        each record based on the record's level of confidentiality. E.g. a confidentiable queryset of Person.
+
+        Can be used to filter for indirect confidentiality, i..e whether user has access to each record based on other
+        relevant records' levels of confidentiality. E.g. a queryset of PersonAlias linking to a confidentiality
+        queryset of Person.
+
+        :param queryset: Queryset to filter.
+        :param user: User for which to filter queryset.
+        :return: Filtered queryset.
+        """
+        return queryset.filter(
+            person__in=Person.filter_for_admin(
+                queryset=Person.active_objects.all().filter_for_confidential_by_user(user=user),
+                user=user
+            )
+        )
+
+    class Meta:
+        db_table = '{d}person_title'.format(d=settings.DB_PREFIX)
+        verbose_name = _('Person title')
+        unique_together = (
+            'person', 'title', 'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
+        )
+        ordering = ['person'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
 
 
 class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):

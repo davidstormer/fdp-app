@@ -1,4 +1,4 @@
-from django.forms import HiddenInput
+from django.forms import HiddenInput, TextInput
 from django import forms
 from django.core.validators import ValidationError
 from django.conf import settings
@@ -532,8 +532,14 @@ class PersonTitleModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
+    grouping_name = AsyncSearchCharField(
+        required=False,
+        label=_('Grouping'),
+    )
+
     #: Fields to show in the form
     fields_to_show = person_title_form_fields.copy()
+    fields_to_show.append('grouping_name')
 
     #: Prefix to use for form
     prefix = 'titles'
@@ -564,6 +570,13 @@ class PersonTitleModelForm(AbstractWizardModelForm):
             end_field_name='person_title_ended'
         )
 
+        self.fields['grouping_name'].widget.attrs.update({'class': 'titlegroupingname'})
+        # instance of model exists
+        if hasattr(self, 'instance') and self.instance:
+            instance = self.instance
+            if hasattr(instance, 'grouping') and instance.grouping:
+                self.fields['grouping_name'].initial = instance.grouping.__str__()
+
     def save(self, commit=True):
         """ Ensure that individual date components are set for starting and ending dates.
 
@@ -582,7 +595,7 @@ class PersonTitleModelForm(AbstractWizardModelForm):
         model = PersonTitle
         fields = person_title_form_fields.copy()
         fields_order = person_title_form_fields.copy()
-
+        widgets = {'grouping': HiddenInput(attrs={'class': 'titlegrouping'})}
 
 #: Starting and ending date, and counties fields are added to person payments
 person_payment_form_fields = PersonPayment.form_fields.copy()
