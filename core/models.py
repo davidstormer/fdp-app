@@ -1,11 +1,10 @@
-from django.contrib.postgres.search import TrigramSimilarity, SearchVector, SearchRank, SearchVectorField
+from django.contrib.postgres.search import TrigramSimilarity, SearchRank, SearchVectorField
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.db.models.functions import Coalesce, Length
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
-from django.db.models import Q, Prefetch, Exists, FloatField
-from django.db.models.expressions import RawSQL, Subquery, OuterRef, F, ExpressionWrapper
+from django.db.models import Q, Prefetch, Exists
+from django.db.models.expressions import RawSQL, Subquery, OuterRef, F
 from django.apps import apps
 
 from core.common import normalize_search_text
@@ -74,28 +73,6 @@ class PersonManager(ConfidentiableManager):
             )
 
         return results_prefetched
-
-    def search_by_name(self, query: str, user: FdpUser, is_law_enforcement=True):
-        results = (
-            self.all()
-            .filter(is_law_enforcement=is_law_enforcement)
-            .filter_for_confidential_by_user(user=user)
-            .annotate(tg_similarity=TrigramSimilarity('name', query))
-            .filter(tg_similarity__gt=0.1)
-            .order_by('-tg_similarity')
-        )
-        return results
-
-    def search_by_identifiers(self, query: str, user: FdpUser, is_law_enforcement=True):
-        results = (
-            self.all()
-            .filter(is_law_enforcement=is_law_enforcement)
-            .filter_for_confidential_by_user(user=user)
-            .annotate(tg_similarity=TrigramSimilarity('person_identifier__identifier', query))
-            .filter(tg_similarity__gt=0.1)
-            .order_by('-tg_similarity')
-        )
-        return results
 
 
 class Person(Confidentiable, Descriptable):

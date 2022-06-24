@@ -12,6 +12,7 @@ faker = Faker()
 
 
 def make_fake_person_records(number):
+    """Misc helper that can be used on local dev environment for testing"""
     PersonIdentifierType.objects.create(name=uuid4())
 
     with transaction.atomic():
@@ -24,8 +25,6 @@ def make_fake_person_records(number):
                 identifier=f'{faker.ssn()} 2-{i}', person=person_record,
                 person_identifier_type=PersonIdentifierType.objects.last())
             PersonAlias.objects.create(name=faker.name(), person=person_record)
-            # PersonAlias.objects.create(name=faker.name(), person=person_record)
-            # PersonAlias.objects.create(name=faker.name(), person=person_record)
 
 
 class FullTextIndexing(TestCase):
