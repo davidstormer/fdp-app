@@ -3,6 +3,7 @@ import pdb
 from django.test import Client
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.remote.webelement import WebElement
 
 from fdpuser.models import FdpUser
 from inheritable.tests import AbstractTestCase
@@ -146,6 +147,10 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
             windowid=self._windowid,
             timestamp=timestamp
         )
+
+    def el(self, css_selector: str) -> WebElement:
+        """Shorthand for self.browser.find_element(By.CSS_SELECTOR, css_selector)"""
+        return self.browser.find_element(By.CSS_SELECTOR, css_selector)
 
     def log_in(self, is_host=True, is_administrator=False, is_superuser=False) -> object:
         """Log into the system
