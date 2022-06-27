@@ -2,6 +2,7 @@ import json
 
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
 from inheritable.models import AbstractUrlValidator, AbstractSearchValidator, \
@@ -127,6 +128,12 @@ class OfficerSearchFormView(SecuredSyncFormView):
         """
         self.form = form
         return super(OfficerSearchFormView, self).form_valid(form=form)
+
+    def get(self, request, *args, **kwargs):
+        if getattr(settings, 'LEGACY_OFFICER_SEARCH_ENABLE', False):
+            return super(OfficerSearchFormView, self).get(request, *args, **kwargs)
+        else:
+            return redirect(reverse('profiles:officer_search_roundup'), permanent=True)
 
 
 class OfficerSearchResultsListView(SecuredSyncListView):

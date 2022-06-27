@@ -1,5 +1,6 @@
 from unittest import skip
 from uuid import uuid4
+from django.test import override_settings
 
 from selenium.webdriver.common.by import By
 
@@ -324,6 +325,33 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             FdpUser.objects.last(),
             OfficerSearch.objects.last().fdp_user
         )
+
+    @override_settings(LEGACY_OFFICER_SEARCH_ENABLE=True)
+    def test_legacy_mode_setting_enabled_from_landing(self):
+        # Given the legacy mode is unset
+        # and I'm on the staff end user landing page
+        admin_client = self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/')
+
+        # When I click the Officer link
+        self.browser.find_element(By.LINK_TEXT, "Officer").find_element(By.CSS_SELECTOR, 'i') \
+            .click()
+
+        # Then I should be taken to the old pre-roundup search
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'form.search div.criteria')
+
+    def test_legacy_mode_setting_unset_from_landing(self):
+        # Given the legacy mode is unset
+        # and I'm on the staff end user landing page
+        admin_client = self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/')
+
+        # When I click the Officer link
+        self.browser.find_element(By.LINK_TEXT, "Officer").find_element(By.CSS_SELECTOR, 'i') \
+            .click()
+
+        # Then I should be taken to the new roundup officer search
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'form.roundup-officer-search')
 
 
 class SearchPageTestCaseRoundup(FunctionalTestCase):

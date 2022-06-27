@@ -12,7 +12,7 @@
 
 {% block content %}
 <div class="col-lg-6">
-<form method="post" class="mb-5">
+<form method="post" class="mb-5 roundup-officer-search">
     {% csrf_token %}
     <label for="officer-search" class="form-label">Terms</label>
     <div class="input-group input-group-lg mb-3">
@@ -51,7 +51,7 @@
         <input type="hidden" name="page" value="{{ page_obj.number }}">
         <input type="submit" value="relevance" class="btn btn-link">
         </form>
-</div>
+    </div>
 </div>
 
 <div class="row row-filters-results">
