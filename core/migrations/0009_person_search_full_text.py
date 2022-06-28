@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='person',
             name='search_full_text',
-            field=django.contrib.postgres.search.SearchVectorField(null=True),
+            field=django.contrib.postgres.search.SearchVectorField(blank=True, null=True),
         ),
     ]
