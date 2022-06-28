@@ -7,6 +7,19 @@ $code-color: #666;
 
 @import "./bootstrap-scss/bootstrap";
 
+.text-identifier {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.875em;
+  color: #424950;
+  word-wrap: break-word;
+  direction: ltr /* rtl:ignore */;
+  unicode-bidi: bidi-override;
+}
+
+.btn-link {
+  vertical-align: 0%;
+}
+
 .pagination {
   justify-content: center;
 }

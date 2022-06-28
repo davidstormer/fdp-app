@@ -79,5 +79,6 @@ xlrd==2.0.1
 crispy-bootstrap5==0.6
 django-crispy-forms==1.14.0
 django-import-export
+faker
 django-libsass==0.9
 libsass==0.21.0

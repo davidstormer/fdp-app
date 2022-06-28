@@ -1,19 +1,78 @@
+from django.contrib.postgres.search import TrigramSimilarity, SearchRank, SearchVectorField
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.db.models import Q, Prefetch, Exists
-from django.db.models.expressions import RawSQL, Subquery, OuterRef
+from django.db.models.expressions import RawSQL, Subquery, OuterRef, F
 from django.apps import apps
+
+from core.common import normalize_search_text
 from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, \
     AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractAtLeastSinceDateBounded, Confidentiable, \
-    AbstractFileValidator, AbstractUrlValidator, Linkable, AbstractConfiguration
+    AbstractFileValidator, AbstractUrlValidator, Linkable, AbstractConfiguration, ConfidentiableManager
 from supporting.models import State, Trait, PersonRelationshipType, Location, PersonIdentifierType, County, \
     Title, GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
     PersonIncidentTag, LeaveStatus, SituationRole, TraitType
-from fdpuser.models import FdpOrganization
+from fdpuser.models import FdpOrganization, FdpUser
 from django.urls import reverse
 from datetime import date
+
+
+class PersonManager(ConfidentiableManager):
+    def search_all_fields(self, query: str, user: FdpUser, is_law_enforcement=True):
+        """Searches multiple fields
+        name
+        identifiers
+        """
+        if query == '':
+            results = (
+                self.all()
+                .filter(is_law_enforcement=is_law_enforcement)
+                .filter_for_confidential_by_user(user=user)
+                .order_by('-pk')
+            )
+        else:
+            # Normalize query -- strip out diacritic marks
+            query = normalize_search_text(query)
+            results = (
+                self.all()
+                .filter(is_law_enforcement=is_law_enforcement)
+                .filter_for_confidential_by_user(user=user)
+                .annotate(search_full_text_rank=SearchRank('search_full_text', query) * 10)
+                .annotate(search_name_rank=TrigramSimilarity('name', query))
+                .annotate(search_rank=F('search_full_text_rank') + F('search_name_rank'))
+                .filter(search_rank__gt=0.15)
+                .order_by('-search_rank',
+                          'name', '-pk')  # <- for consistent order when ranks match
+            )
+
+        # PERFORMANCE
+        # Do some prefetching of one-to-many relationships for performance,
+        # because they're almost always used in search results listings
+        # e.g. https://hakibenita.com/all-you-need-to-know-about-prefetching-in-django
+        results_prefetched = results \
+            .prefetch_related('person_aliases') \
+            .prefetch_related('person_titles') \
+            .prefetch_related(
+                Prefetch(
+                    'person_titles',
+                    queryset=PersonTitle.objects.filter(end_year=0, end_month=0, end_day=0).select_related('title'),
+                    to_attr='current_titles'
+                )
+            ) \
+            .prefetch_related('person_identifiers') \
+            .prefetch_related('person_identifiers__person_identifier_type') \
+            .prefetch_related(
+                Prefetch(
+                    'person_groupings',
+                    queryset=PersonGrouping.objects.filter(grouping__is_law_enforcement=True).select_related(
+                        'grouping'),
+                    to_attr='groups_law_enforcement'
+                )
+            )
+
+        return results_prefetched
 
 
 class Person(Confidentiable, Descriptable):
@@ -80,9 +139,44 @@ class Person(Confidentiable, Descriptable):
         verbose_name=_('organization access')
     )
 
+    search_full_text = SearchVectorField(null=True, blank=True)
+
     #: Fields to display in the model form.
     form_fields = \
         ['name', 'birth_date_range_start', 'birth_date_range_end', 'traits'] + Confidentiable.confidentiable_form_fields
+
+    def save(self, *args, **kwargs):
+        self.reindex_search_fields()
+        super().save(*args, **kwargs)
+
+    def reindex_search_fields(self, commit=False):
+        """Normalize and concatenate various fields and write them into the search_full_text field.
+        Does not actually do anything directly with true database indexes.
+        """
+
+        def get_name():
+            return normalize_search_text(self.name)
+
+        def get_aliases_unique_terms():
+            """To prevent repeated first name from skewing search results"""
+            aliases_unique_terms = set()
+            for alias_record in self.person_aliases.all():
+                for word in alias_record.name.split():  # tokenize on white spaces
+                    aliases_unique_terms.add(word)
+            return ' '.join(aliases_unique_terms)
+
+        def get_identifiers():
+            return ' '.join([identifier.identifier for identifier in self.person_identifiers.all()])
+
+        self.search_full_text = \
+            f"""{get_name()}
+
+            {get_aliases_unique_terms()}
+
+            {get_identifiers()}
+            """
+        if commit:
+            self.save()
 
     @property
     def get_edit_url(self):
@@ -706,6 +800,8 @@ class Person(Confidentiable, Descriptable):
         :return: Filtered queryset.
         """
         return queryset
+
+    objects = PersonManager()
 
     class Meta:
         db_table = '{d}person'.format(d=settings.DB_PREFIX)

@@ -1,4 +1,9 @@
+import json
+
 from django.contrib import messages
+from django.core.paginator import Paginator
+from django.shortcuts import redirect
+from django.views.generic import TemplateView
 
 from inheritable.models import AbstractUrlValidator, AbstractSearchValidator, \
     AbstractFileValidator
@@ -123,6 +128,12 @@ class OfficerSearchFormView(SecuredSyncFormView):
         """
         self.form = form
         return super(OfficerSearchFormView, self).form_valid(form=form)
+
+    def get(self, request, *args, **kwargs):
+        if getattr(settings, 'LEGACY_OFFICER_SEARCH_ENABLE', False):
+            return super(OfficerSearchFormView, self).get(request, *args, **kwargs)
+        else:
+            return redirect(reverse('profiles:officer_search_roundup'), permanent=True)
 
 
 class OfficerSearchResultsListView(SecuredSyncListView):
@@ -312,6 +323,73 @@ class OfficerSearchResultsListView(SecuredSyncListView):
         """
         self.__get_officer_results()
         return self.__result_list
+
+
+class OfficerSearchRoundupView(SecuredSyncTemplateView):
+    template_name = "officer_search_roundup.html"
+
+    def get(self, request, *args, **kwargs):
+        # when the user first navigates to the page it will be a get request
+        # but all of our logic is in the post function. So just trick the view into
+        # handling the GET request as if it was a POST.
+        # So that we don't have to maintain logic in two places, it was causing bugs! now DRY
+        return self.post(request)
+
+    # Handle searches via POST so that the query string is kept out of the URL (security)
+    def post(self, request, *args, **kwargs):
+        query_string = request.POST.get('q') or ''
+        sort = request.POST.get('sort') or 'relevance'
+        page_number = request.POST.get('page')
+
+        try:
+            group = Grouping.objects.get(pk=request.POST.get('group'))
+        except Grouping.DoesNotExist:
+            group = None
+        except ValueError:
+            group = None
+
+        results = Person.objects.search_all_fields(query_string, request.user)
+
+        if group:
+            results = results.filter(person_grouping__grouping=group).distinct()
+
+        if sort == 'name':
+            results = results.order_by('name')
+        elif sort == 'relevance':
+            # Do nothing, because the results are already ordered by relevance by default
+            pass
+
+        # Log this query to the OfficerSearch log
+        if query_string:
+            OfficerSearch.objects.create_officer_search(
+                num_of_results=results.count(),
+                parsed_search_criteria=json.dumps({
+                    'query_string': query_string,
+                    'sort': sort,
+                    'group': group.name if group else '',
+                }),
+                fdp_user=request.user,
+                request=request
+            )
+
+        paginator = Paginator(results, 50)
+
+        related_groups = (
+            Grouping.objects.filter(is_law_enforcement=True)
+            .filter(person_grouping__person__in=results)
+            .order_by('name')
+            .distinct()
+        )
+        page_obj = paginator.get_page(page_number)
+        return self.render_to_response({
+            'title': 'Officer Search',
+            'query': query_string,
+            'within_group': group,
+            'sort': sort,
+            'page_obj': page_obj,
+            'number_of_results': results.count(),
+            'groups': related_groups,
+        })
 
 
 class OfficerDetailView(SecuredSyncDetailView):

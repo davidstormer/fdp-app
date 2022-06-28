@@ -9,7 +9,7 @@ from core.models import Person, PersonIncident, Incident, PersonRelationship, Gr
 from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase
 from supporting.models import PersonRelationshipType, ContentIdentifierType, Trait, TraitType
 from os.path import splitext
-from django.test import Client
+from django.test import override_settings
 from datetime import datetime, timedelta
 import logging
 
@@ -1280,6 +1280,7 @@ class ProfileTestCase(AbstractTestCase):
         # remove content identifiers with different confidentiality levels
         self.__delete_content_identifiers_for_command_related_data()
 
+    @override_settings(LEGACY_OFFICER_SEARCH_ENABLE=True)
     def test_officer_profile_views(self):
         """ Test for Officer profile search results and profile views for all permutations of user roles,
         confidentiality levels and relevant models.
