@@ -670,7 +670,8 @@ class RelationshipField(MultiValueField):
         :param data_list: List of field values in the order of: subject_id, subject_str, type, object_id, object_str.
         :return: Single string.
         """
-        return RelationshipWidget.split_chars.join(['' if not d else str(d) for d in data_list])
+        subjectid, subjectname, relationshiptype, objectid, objectname = data_list
+        return f"{subjectid or ''}-----{subjectname}-----{relationshiptype.pk}-----{objectid or ''}-----{objectname}"
 
     def validate(self, value):
         """ Validate the relationship field by ensuring that:
