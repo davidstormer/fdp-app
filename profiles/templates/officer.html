@@ -111,6 +111,7 @@
                     <span>{{ object.officer_title.title.name }}</span>
                     <div class="identification-meta">
                         <span class="dates">{% if object.officer_title.at_least_since_bounding_dates %}{{ object.officer_title.at_least_since_bounding_dates }}{% endif %}</span>
+                        {% if object.officer_title.grouping.name %}<p>{{ object.officer_title.grouping.name }}</p>{% endif %}
                     </div>
                 </li>
 
@@ -119,6 +120,7 @@
                     <span>{{ title.title.name }}</span>
                     <div class="identification-meta">
                         <span class="dates">{% if title.at_least_since_bounding_dates %}{{ title.at_least_since_bounding_dates }}{% endif %}</span>
+                        {% if title.grouping.name %}<p>{{ title.grouping.name }}</p>{% endif %}
                     </div>
                 </li>
                 {% endfor %}

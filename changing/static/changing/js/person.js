@@ -545,6 +545,22 @@ var Fdp = (function (fdpDef, $, w, d) {
         });
         // initialize newly added date pickers
         _initDatePickers(".persontitleform" /* containerSelector */);
+
+        // grouping searching with autocomplete
+        var groupingSearchInput = Fdp.Common.getAutocompleteSearchElem(formContainer /* formContainer */, ".titlegroupingname" /* selector */);
+        var groupingIdInput = Fdp.Common.getAutocompleteIdElem(formContainer /* formContainer */, ".titlegrouping" /* selector */);
+        Fdp.Common.initAutocomplete(
+            groupingSearchInput, /* searchInputElem */
+            groupingIdInput, /* idInputElem */
+            _getGroupingsUrl, /* ajaxUrl */
+            "titlegroupingac" /* extraCssClass */
+        );
+        // copy hidden errors to the corresponding visible input
+        Fdp.Common.copyErrorsFromInput(
+            groupingIdInput, /* fromInput */
+            groupingSearchInput /* toInput */
+        );
+
     };
 
     /**
