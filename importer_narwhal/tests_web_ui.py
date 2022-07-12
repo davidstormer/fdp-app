@@ -24,6 +24,22 @@ from selenium.webdriver.support.ui import Select
 import pdb
 
 
+def wait_until_dry_run_is_done():
+    for _ in range(60):
+        if ImportBatch.objects.last().dry_run_completed:
+            break
+        else:
+            sleep(1)
+
+
+def wait_until_import_is_done():
+    for _ in range(60):
+        if ImportBatch.objects.last().completed:
+            break
+        else:
+            sleep(1)
+
+
 class TestWebUI(SeleniumFunctionalTestCase):
     def test_import_batch_page_success_scenario(self):
         # GIVEN an import has been run
@@ -55,7 +71,7 @@ class TestWebUI(SeleniumFunctionalTestCase):
             imported_records = []
             csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
             csv_writer.writeheader()
-            for i in range(300):
+            for i in range(3):
                 row = {}
                 row['name'] = f'Test Person {uuid4()}'
                 row['is_law_enforcement'] = 'BREAK'  # <-- bad value
@@ -70,7 +86,7 @@ class TestWebUI(SeleniumFunctionalTestCase):
 
             # THEN I should see a listing showing the error rows of the import
             self.assertEqual(
-                100,
+                3,
                 self.browser.page_source.count("Enter a valid boolean value")
             )
 
@@ -165,20 +181,6 @@ class TestWebUI(SeleniumFunctionalTestCase):
 
 class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
 
-    def wait_until_dry_run_is_done(self):
-        for _ in range(60):
-            if ImportBatch.objects.last().dry_run_completed:
-                break
-            else:
-                sleep(1)
-
-    def wait_until_import_is_done(self):
-        for _ in range(60):
-            if ImportBatch.objects.last().completed:
-                break
-            else:
-                sleep(1)
-
     def test_validate_pre_validate(self):
         """Test that the CSV Preview, Info Card, and Status Guide elements are displayed on the batch detail page
         when in the pre-validate state"""
@@ -250,17 +252,17 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 with self.assertRaises(NoSuchElementException):
                     self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
 
+    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_validate_post_validate_errors(self):
-        """Test that the Info Card, Status Guide, General Errors Readout, Error Rows, and Error Rows Paginator
+        """Test that the Info Card, Status Guide, General Errors Readout, Error Rows, and Error Rows ~Paginator~
         elements are displayed on the batch detail page when in the post-validate-errors state"""
 
-        # Given I've set up a batch from the Import batch setup page containing an erroneous column, and cell
-        # validation errors totalling over 100
+        # Given I've set up a batch from the Import batch setup page containing an erroneous column
         with tempfile.NamedTemporaryFile(mode='w', suffix='.csv') as csv_fd:
             imported_records = []
             csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement', 'not_a_legit_column_name'])
             csv_writer.writeheader()
-            for i in range(150):
+            for i in range(5):
                 row = {}
                 row['name'] = f'Test Person {uuid4()}'
                 row['is_law_enforcement'] = 'BREAK'  # <-- bad value
@@ -281,7 +283,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
         wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
             .click()
 
-        self.wait_until_dry_run_is_done()
+        wait_until_dry_run_is_done()
         self.browser.get(self.live_server_url + f'/changing/importer/batch/{ImportBatch.objects.last().pk}')
         # Confirm we're on the right page now
         wait(self.browser.find_element, By.CSS_SELECTOR, 'div.importer-post-validate-errors')
@@ -320,19 +322,20 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 errors_section.text
             )
         with self.subTest(msg="Error Rows"):
-            # and it should contain 100 row level errors (limited by pagination)
+            # and it should contain 5 row level errors (limited by pagination)
             self.assertEqual(
-                100,
+                5,
                 errors_section.text.count("Enter a valid boolean value")
             )
-            # and the row level errors paginator
-            self.browser.find_element(By.CSS_SELECTOR, 'nav[aria-label="Pagination"]')
+            # # and the row level errors paginator
+            # self.browser.find_element(By.CSS_SELECTOR, 'nav[aria-label="Pagination"]')
 
         # And I should not see the imported rows section
         with self.subTest(msg="No imported rows section"):
             with self.assertRaises(NoSuchElementException):
                 self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
 
+    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_validate_post_validate_ready(self):
         """Test that the Info Card and Status Guide are displayed and no other elements on the batch detail page
         when in the post-validate-ready state"""
@@ -401,6 +404,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             with self.assertRaises(NoSuchElementException):
                 self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
 
+    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_mid_import(self):
         """Test that the Info Card and Status Guide are displayed with a note about import being in progress when in
         the mid-import state"""
@@ -429,16 +433,15 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
                 .click()
 
-            # Shouldn't need this...
-            # wait(self.browser.find_element, By.CSS_SELECTOR, "a.importer-refresh-button") \
-            #     .click()
 
             # When I click the "Import X rows button"
+            wait_until_dry_run_is_done()
+            self.browser.get(self.live_server_url + f'/changing/importer/batch/{ImportBatch.objects.last().pk}')
             wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 3 rows"]') \
                 .click()
 
         # ... artificially force batch back into 'mid-import' state
-        self.wait_until_import_is_done()
+        wait_until_import_is_done()
         batch = ImportBatch.objects.last()
         batch.completed = None
         batch.save()
@@ -469,8 +472,9 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 info_card_element.text
             )
 
+    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_post_import_failed(self):
-        """Test that Info Card, Status Guide, Row Errors, and Paginator are present but not All Rows when in the
+        """Test that Info Card, Status Guide, Row Errors, and ~Paginator~ are present but not All Rows when in the
         post-import-failed state"""
 
         # Given I've set up a batch from the Import batch setup page containing foreign key errors
@@ -478,7 +482,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             imported_records = []
             csv_writer = csv.DictWriter(csv_fd, ['subject_person', 'type', 'object_person'])
             csv_writer.writeheader()
-            for i in range(150):
+            for i in range(5):
                 row = {}
                 row['subject_person'] = 1  # <- Doesn't exist
                 row['type'] = 'Test Type'
@@ -498,14 +502,14 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
                 .click()
 
-            self.wait_until_dry_run_is_done()
+            wait_until_dry_run_is_done()
             self.browser.refresh()
-            wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 150 rows"]') \
+            wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 5 rows"]') \
                 .click()
 
         # Jump back to the detail page now that the import has completed in the background -- side stepping the
         # mid-import page for this test.
-        self.wait_until_import_is_done()
+        wait_until_import_is_done()
         self.browser.get(self.live_server_url + f'/changing/importer/batch/{ImportBatch.objects.last().pk}')
         # Confirm we're on the right page now
         wait(self.browser.find_element, By.CSS_SELECTOR, 'div.importer-post-import-failed')
@@ -538,21 +542,22 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
         # Then I should see an errors section
         errors_section = wait(self.browser.find_element_by_css_selector, 'div.importer-errors')
         with self.subTest(msg="Error Rows"):
-            # and it should contain 100 row level errors (limited by pagination)
+            # and it should contain 5 row level errors
             self.assertEqual(
-                100,
+                5,
                 errors_section.text.count("Person matching query does not exist")
             )
-            # and the row level errors paginator
-            self.browser.find_element(By.CSS_SELECTOR, 'nav[aria-label="Pagination"]')
+            # # and the row level errors paginator
+            # self.browser.find_element(By.CSS_SELECTOR, 'nav[aria-label="Pagination"]')
 
         # And I should not see the imported rows section
         with self.subTest(msg="No imported rows section"):
             with self.assertRaises(NoSuchElementException):
                 self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
 
+    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_complete(self):
-        """Test that Info Card, All Rows, and Status Guide, but not Row Errors are present when int the complete
+        """Test that Info Card, All Rows, and Status Guide, but not Row Errors are present when in the complete
         state"""
 
         # Given I've set up a batch from the Import batch setup page containing NO errors
@@ -560,7 +565,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             imported_records = []
             csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
             csv_writer.writeheader()
-            for i in range(115):
+            for i in range(5):
                 row = {}
                 row['name'] = f'Test Person {uuid4()}'
                 row['is_law_enforcement'] = 'checked'
@@ -579,12 +584,12 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
                 .click()
 
-            self.wait_until_dry_run_is_done()
+            wait_until_dry_run_is_done()
             self.browser.get(self.live_server_url + f'/changing/importer/batch/{ImportBatch.objects.last().pk}')
-            wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 115 rows"]') \
+            wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 5 rows"]') \
                 .click()
 
-        self.wait_until_import_is_done()
+        wait_until_import_is_done()
         # Jump back to the detail page now that the import has completed in the background -- side stepping the
         # mid-import page for this test.
         self.browser.get(self.live_server_url + f'/changing/importer/batch/{ImportBatch.objects.last().pk}')

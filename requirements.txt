@@ -82,3 +82,4 @@ django-import-export
 faker
 django-libsass==0.9
 libsass==0.21.0
+tblib

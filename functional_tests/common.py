@@ -50,7 +50,7 @@ def wait(fn, *args, **kwargs):
     """Call a given function repeatedly until it doesn't raise AssertionError or WebDriverException.
     Gives up after five seconds.
     """
-    max_wait = 5
+    max_wait = 20
     start_time = time.time()
     while True:
         try:
