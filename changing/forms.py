@@ -1214,6 +1214,9 @@ class PersonIncidentModelForm(AbstractWizardModelForm):
             instance = self.instance
             if hasattr(instance, 'person') and instance.person:
                 self.fields['person_name'].initial = instance.person.__str__()
+        self.fields['description'].help_text = \
+            "Any further information about the person's relationship to the incident. Only visible to administrators," \
+            " but may be visible to users in the future."
 
     class Meta:
         model = PersonIncident
@@ -1264,6 +1267,9 @@ class GroupingIncidentModelForm(AbstractWizardModelForm):
             instance = self.instance
             if hasattr(instance, 'grouping') and instance.grouping:
                 self.fields['grouping_name'].initial = instance.grouping.__str__()
+        self.fields['description'].help_text = \
+            "Any further information about the Group’s relationship to the incident. Only visible to administrators," \
+            " but may be visible to users in the future."
 
     class Meta:
         model = GroupingIncident
