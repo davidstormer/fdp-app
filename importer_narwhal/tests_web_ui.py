@@ -252,6 +252,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 with self.assertRaises(NoSuchElementException):
                     self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
 
+    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_validate_post_validate_errors(self):
         """Test that the Info Card, Status Guide, General Errors Readout, Error Rows, and Error Rows ~Paginator~
         elements are displayed on the batch detail page when in the post-validate-errors state"""
@@ -334,6 +335,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             with self.assertRaises(NoSuchElementException):
                 self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
 
+    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_validate_post_validate_ready(self):
         """Test that the Info Card and Status Guide are displayed and no other elements on the batch detail page
         when in the post-validate-ready state"""
