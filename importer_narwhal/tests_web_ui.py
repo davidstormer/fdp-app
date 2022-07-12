@@ -553,7 +553,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
 
     def test_complete(self):
-        """Test that Info Card, All Rows, and Status Guide, but not Row Errors are present when int the complete
+        """Test that Info Card, All Rows, and Status Guide, but not Row Errors are present when in the complete
         state"""
 
         # Given I've set up a batch from the Import batch setup page containing NO errors
@@ -561,7 +561,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             imported_records = []
             csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
             csv_writer.writeheader()
-            for i in range(115):
+            for i in range(5):
                 row = {}
                 row['name'] = f'Test Person {uuid4()}'
                 row['is_law_enforcement'] = 'checked'
@@ -582,7 +582,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
 
             wait_until_dry_run_is_done()
             self.browser.get(self.live_server_url + f'/changing/importer/batch/{ImportBatch.objects.last().pk}')
-            wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 115 rows"]') \
+            wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 5 rows"]') \
                 .click()
 
         wait_until_import_is_done()
