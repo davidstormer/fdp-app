@@ -469,7 +469,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 info_card_element.text
             )
 
-    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
+#    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_post_import_failed(self):
         """Test that Info Card, Status Guide, Row Errors, and ~Paginator~ are present but not All Rows when in the
         post-import-failed state"""
