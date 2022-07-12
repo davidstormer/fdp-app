@@ -468,9 +468,9 @@ COMPRESS_JS_FILTERS = [
 # Connect with workaround DummyCache because of issue with local-memory caching used as default
 AXES_CACHE = 'axes_cache'
 # Number of login attempts before record is created for failed login
-AXES_FAILURE_LIMIT = 3
+AXES_FAILURE_LIMIT = 6
 # Number of hours of user inactivity after which old failed logins are forgotten
-AXES_COOLOFF_TIME = 48
+AXES_COOLOFF_TIME = 2
 # Prevents the login from IP under a particular user if the attempt limit has been exceeded
 AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
 # Redact contents of password parameter in login request
