@@ -402,6 +402,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             with self.assertRaises(NoSuchElementException):
                 self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
 
+    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_mid_import(self):
         """Test that the Info Card and Status Guide are displayed with a note about import being in progress when in
         the mid-import state"""
@@ -469,7 +470,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 info_card_element.text
             )
 
-#    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
+    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_post_import_failed(self):
         """Test that Info Card, Status Guide, Row Errors, and ~Paginator~ are present but not All Rows when in the
         post-import-failed state"""
@@ -552,6 +553,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
             with self.assertRaises(NoSuchElementException):
                 self.browser.find_element(By.CSS_SELECTOR, 'div.importer-imported-rows')
 
+    @override_settings(DEBUG=True, COMPRESS_ENABLED=True)
     def test_complete(self):
         """Test that Info Card, All Rows, and Status Guide, but not Row Errors are present when in the complete
         state"""
