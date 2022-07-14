@@ -80,8 +80,7 @@ class AbstractIsLawEnforcementModelForm(AbstractWizardModelForm):
     law_enforcement = forms.ChoiceField(
         required=True,
         label=_('Is law enforcement'),
-        help_text=_('Is this person a member of law enforcement? (only law enforcement are searchable to users and '
-                    'have profile pages)'),
+        help_text=_('Only law enforcement are searchable to users and have profile pages)'),
         choices=LawEnforcementCategories.choices,
     )
 
@@ -1268,7 +1267,7 @@ class GroupingIncidentModelForm(AbstractWizardModelForm):
             if hasattr(instance, 'grouping') and instance.grouping:
                 self.fields['grouping_name'].initial = instance.grouping.__str__()
         self.fields['description'].help_text = \
-            "Any further information about the Group’s relationship to the incident. Only visible to administrators," \
+            "Any further information about the group’s relationship to the incident. Only visible to administrators," \
             " but may be visible to users in the future."
 
     class Meta:
