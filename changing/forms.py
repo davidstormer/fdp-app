@@ -449,12 +449,14 @@ class PersonGroupingModelForm(AbstractWizardModelForm):
     person_grouping_ended = DateWithComponentsField(
         required=True,
         label=_('End date'),
-        fields=()  # ignored
+        fields=(), # ignored
+        help_text="Enter a zero for day, month, or year when unknown. Enter all zeros if group relationship is "
+                  "ongoing, i.e. 'until present'."
     )
 
     grouping_name = AsyncSearchCharField(
         required=True,
-        label=_('Grouping'),
+        label=_('Group'),
     )
 
     #: Fields to show in the form

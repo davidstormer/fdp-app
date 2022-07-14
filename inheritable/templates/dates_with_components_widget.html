@@ -11,4 +11,5 @@
     {% endif %}
     {% include widget.template_name %}
 {% endfor %}
+<div class="help">{{ widget.help_text|safe }}</div>
 {% endspaceless %}
