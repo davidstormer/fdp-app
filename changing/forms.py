@@ -1615,6 +1615,7 @@ class ContentIncidentModelForm(AbstractWizardModelForm):
     incident_name = AsyncSearchCharField(
         required=True,
         label=_('Incident'),
+        help_text="Incident related to this content"
     )
 
     #: Fields to show in the form
