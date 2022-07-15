@@ -40,7 +40,7 @@ html-json-forms==1.1.1
 idna==3.2
 isodate==0.6.0
 itertable==2.0.0
-lxml==4.7.1
+lxml==4.9.1
 msal==1.13.0
 msal-extensions==0.3.0
 msrest==0.6.21
