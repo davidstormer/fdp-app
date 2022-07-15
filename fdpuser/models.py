@@ -775,11 +775,15 @@ class Eula(Metable):
         ],
         max_length=AbstractFileValidator.MAX_EULA_FILE_LEN,
         verbose_name=_('File'),
-        help_text=_('End-user license agreement file. Should be less than {s}MB.'.format(
-            s=AbstractFileValidator.get_megabytes_from_bytes(
-                num_of_bytes=AbstractConfiguration.max_eula_file_bytes()
+        help_text=_(
+            'End-user license agreement file. Should be less than {s}MB.'
+            '<br>Allowed file formats: {allowed_file_formats}'.format(
+                s=AbstractFileValidator.get_megabytes_from_bytes(
+                    num_of_bytes=AbstractConfiguration.max_eula_file_bytes()
+                ),
+                allowed_file_formats=AbstractConfiguration().supported_eula_file_types_str()
             )
-        )),
+        ),
         unique=True,
     )
 

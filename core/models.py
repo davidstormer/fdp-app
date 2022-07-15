@@ -1029,10 +1029,11 @@ class PersonPhoto(Archivable, Descriptable):
         blank=False,
         null=False,
         help_text=_(
-            'Photo representing person. Should be less than {s}MB.'.format(
+            'Photo representing person. Should be less than {s}MB.<br>Allowed file formats: {ff}'.format(
                 s=AbstractFileValidator.get_megabytes_from_bytes(
                     num_of_bytes=AbstractConfiguration.max_person_photo_file_bytes()
-                )
+                ),
+                ff=AbstractConfiguration().supported_person_photo_file_types_str()
             )
         ),
         validators=[

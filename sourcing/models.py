@@ -45,10 +45,12 @@ class Attachment(Confidentiable, Descriptable):
         blank=True,
         null=False,
         help_text=_(
-            'If the attachment is a file, upload it here. Should be less than {s}MB.'.format(
+            'If the attachment is a file, upload it here. Should be less than {s}MB.<br>Allowed file formats: {'
+            'ff}'.format(
                 s=AbstractFileValidator.get_megabytes_from_bytes(
                     num_of_bytes=AbstractConfiguration.max_attachment_file_bytes()
-                )
+                ),
+                ff=AbstractConfiguration().supported_attachment_file_types_str()
             )
         ),
         validators=[
