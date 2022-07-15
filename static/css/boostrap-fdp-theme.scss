@@ -70,3 +70,12 @@ $code-color: #666;
 .hp-200 {
   height: 200px;
 }
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  .container {
+    min-height: 20px;
+  }
+}
