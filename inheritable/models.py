@@ -3036,6 +3036,15 @@ class AbstractImport(models.Model):
         abstract = True
 
 
+# Make this a separate function, instead of a method of AbstractConfiguration,
+# Because for some reason AbstractConfiguration is an abstract model, and thus cannot be instantiated...
+def _format_file_types(file_types_data_structure):
+    output = ''
+    for file_type in file_types_data_structure:
+        output = output + f"{file_type[0]} .{file_type[1]}, "
+    return output.strip(', ')
+
+
 class AbstractConfiguration(models.Model):
     """ An abstract definition of methods and constants to interact with and interpret settings.
 
@@ -3144,13 +3153,6 @@ class AbstractConfiguration(models.Model):
         return getattr(settings, 'FDP_MAX_EULA_FILE_BYTES',  CONST_MAX_EULA_FILE_BYTES)
 
     @staticmethod
-    def format_file_types(file_types_data_structure):
-        output = ''
-        for file_type in file_types_data_structure:
-            output = output + f"{file_type[0]} .{file_type[1]}, "
-        return output.strip(', ')
-
-    @staticmethod
     def supported_eula_file_types():
         """ Checks the necessary setting to retrieve a list of tuples that define the types of user-uploaded files that
         are supported for an instance of the Eula (end-user license agreement) model. Each tuple has two items: the
@@ -3161,13 +3163,13 @@ class AbstractConfiguration(models.Model):
         """
         return getattr(settings, 'FDP_SUPPORTED_EULA_FILE_TYPES',  CONST_SUPPORTED_EULA_FILE_TYPES)
 
-    def supported_eula_file_types_str(self):
+    @staticmethod
+    def supported_eula_file_types_str():
         """Returns a human readable string of supported file types, for use in help text.
         """
         file_types_data_structure = getattr(settings, 'FDP_SUPPORTED_EULA_FILE_TYPES',
                                             CONST_SUPPORTED_EULA_FILE_TYPES)
-        return self.format_file_types(file_types_data_structure)
-
+        return _format_file_types(file_types_data_structure)
 
     @staticmethod
     def max_wholesale_file_bytes():
@@ -3208,12 +3210,13 @@ class AbstractConfiguration(models.Model):
         """
         return getattr(settings, 'FDP_SUPPORTED_ATTACHMENT_FILE_TYPES',  CONST_SUPPORTED_ATTACHMENT_FILE_TYPES)
 
-    def supported_attachment_file_types_str(self):
+    @staticmethod
+    def supported_attachment_file_types_str():
         """Returns a human readable string of supported file types, for use in help text.
         """
         file_types_data_structure = getattr(settings, 'FDP_SUPPORTED_ATTACHMENT_FILE_TYPES',
                                             CONST_SUPPORTED_ATTACHMENT_FILE_TYPES)
-        return self.format_file_types(file_types_data_structure)
+        return _format_file_types(file_types_data_structure)
 
     @staticmethod
     def max_person_photo_file_bytes():
@@ -3234,12 +3237,13 @@ class AbstractConfiguration(models.Model):
         """
         return getattr(settings, 'FDP_SUPPORTED_PERSON_PHOTO_FILE_TYPES',  CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES)
 
-    def supported_person_photo_file_types_str(self):
+    @staticmethod
+    def supported_person_photo_file_types_str():
         """Returns a human readable string of supported file types, for use in help text.
         """
         file_types_data_structure = getattr(settings, 'FDP_SUPPORTED_PHOTO_FILE_TYPES',
                                             CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES)
-        return self.format_file_types(file_types_data_structure)
+        return _format_file_types(file_types_data_structure)
 
     @staticmethod
     def models_in_wholesale_allowlist():

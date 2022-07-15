@@ -50,7 +50,7 @@ class Attachment(Confidentiable, Descriptable):
                 s=AbstractFileValidator.get_megabytes_from_bytes(
                     num_of_bytes=AbstractConfiguration.max_attachment_file_bytes()
                 ),
-                ff=AbstractConfiguration().supported_attachment_file_types_str()
+                ff=AbstractConfiguration.supported_attachment_file_types_str()
             )
         ),
         validators=[

@@ -781,7 +781,7 @@ class Eula(Metable):
                 s=AbstractFileValidator.get_megabytes_from_bytes(
                     num_of_bytes=AbstractConfiguration.max_eula_file_bytes()
                 ),
-                allowed_file_formats=AbstractConfiguration().supported_eula_file_types_str()
+                allowed_file_formats=AbstractConfiguration.supported_eula_file_types_str()
             )
         ),
         unique=True,
