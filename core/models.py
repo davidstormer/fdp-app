@@ -99,14 +99,16 @@ class Person(Confidentiable, Descriptable):
     birth_date_range_start = models.DateField(
         null=True,
         blank=True,
-        help_text=_('If birth date is known, ensure start and end ranges are the same'),
+        help_text=_(''),
         verbose_name=_('Starting range for birth date')
     )
 
     birth_date_range_end = models.DateField(
         null=True,
         blank=True,
-        help_text=_('If birth date is known, ensure start and end ranges are the same'),
+        help_text=_('Example: If you know that a person is 28 years old on Jan 24 2021 enter the start range as '
+                    'January 25 1992 and end range January 24 1993. If known birth date is exact, set start and end '
+                    'ranges to the same date'),
         verbose_name=_('Ending range for birth date')
     )
 
@@ -134,8 +136,7 @@ class Person(Confidentiable, Descriptable):
         related_query_name='person',
         db_table='{d}person_fdp_organization'.format(d=settings.DB_PREFIX),
         blank=True,
-        help_text=_('FDP organizations, which have exclusive access to person. Leave blank if all registered users '
-                    'can access.'),
+        help_text=_('Restrict access to users from the specified non-host organization (both staff and administrators).'),
         verbose_name=_('organization access')
     )
 
@@ -826,7 +827,7 @@ class PersonContact(Archivable, Descriptable):
     phone_number = models.CharField(
         null=False,
         blank=True,
-        help_text=_('Phone number for person'),
+        help_text=_('Phone number'),
         max_length=256,
         verbose_name=_('phone number')
     )
@@ -834,7 +835,7 @@ class PersonContact(Archivable, Descriptable):
     email = models.EmailField(
         null=False,
         blank=True,
-        help_text=_('Email address for'),
+        help_text=_('Email address'),
         verbose_name=_('email')
     )
 
@@ -842,7 +843,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Building number, street name, unit # and PO box if available'),
+        help_text=_('Street address'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('address')
     )
@@ -851,7 +852,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('City for address of person'),
+        help_text=_('City'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('city')
     )
@@ -863,7 +864,7 @@ class PersonContact(Archivable, Descriptable):
         related_query_name='person_contact',
         blank=True,
         null=True,
-        help_text=_('State for address of person'),
+        help_text=_('State'),
         verbose_name=_('state')
     )
 
@@ -871,7 +872,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('ZIP code for address of person'),
+        help_text=_('ZIP code'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('zip code')
     )
@@ -881,7 +882,7 @@ class PersonContact(Archivable, Descriptable):
         blank=False,
         default=False,
         verbose_name=_('Is current'),
-        help_text=_('Select if contact information is currently used by person'),
+        help_text=_('Check if contact information is currently used by person'),
     )
 
     person = models.ForeignKey(
@@ -1028,10 +1029,11 @@ class PersonPhoto(Archivable, Descriptable):
         blank=False,
         null=False,
         help_text=_(
-            'Photo representing person. Should be less than {s}MB.'.format(
+            'Photo representing person. Should be less than {s}MB.<br>Allowed file formats: {ff}'.format(
                 s=AbstractFileValidator.get_megabytes_from_bytes(
                     num_of_bytes=AbstractConfiguration.max_person_photo_file_bytes()
-                )
+                ),
+                ff=AbstractConfiguration().supported_person_photo_file_types_str()
             )
         ),
         validators=[
@@ -1115,7 +1117,7 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
     identifier = models.CharField(
         null=False,
         blank=False,
-        help_text=_('Identifier number, such as the driver\'s license number, passport number, or similar'),
+        help_text=_("Identifier value. Can be non-numeric."),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('identifier')
     )
@@ -1127,7 +1129,7 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
         related_query_name='person_identifier',
         blank=False,
         null=False,
-        help_text=_('Type of documentation containing identifier, such as driver\'s license, passport, or similar'),
+        help_text=_("Type of identifier, such as shield number, driver's license, etc."),
         verbose_name=_('type')
     )
 
@@ -1448,7 +1450,6 @@ class Grouping(Archivable, Descriptable):
     name = models.CharField(
         null=False,
         blank=True,
-        help_text=_('Name of grouping'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('name')
     )
@@ -1457,7 +1458,6 @@ class Grouping(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Phone number for grouping'),
         max_length=256,
         verbose_name=_('phone number')
     )
@@ -1466,7 +1466,6 @@ class Grouping(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Email address for grouping'),
         verbose_name=_('email')
     )
 
@@ -1474,7 +1473,7 @@ class Grouping(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Full address for grouping'),
+        help_text=_('Full address of group'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('address')
     )
@@ -1484,7 +1483,7 @@ class Grouping(Archivable, Descriptable):
         blank=False,
         default=False,
         verbose_name=_('Is inactive'),
-        help_text=_('Select if the grouping is no longer active')
+        help_text=_("Select if the grouping is no longer active. Instead of deleting a group, mark it as inactive so that all the data relating to the group and the group history remains. This can also be used if you don't know the ceased date for a group but you know that they are no longer active.")
     )
 
     is_law_enforcement = models.BooleanField(
@@ -1505,7 +1504,7 @@ class Grouping(Archivable, Descriptable):
     cease_date = models.DateField(
         null=True,
         blank=True,
-        help_text=_('Date grouping ceased to exist'),
+        help_text=_('Date grouping ceased to exist. If unknown leave blank and check "Is inactive"'),
         verbose_name=_('cease date')
     )
 
@@ -1515,7 +1514,8 @@ class Grouping(Archivable, Descriptable):
         related_query_name='grouping',
         db_table='{d}grouping_county'.format(d=settings.DB_PREFIX),
         blank=True,
-        help_text=_('Counties in which the grouping operates'),
+        help_text=_('All counties where the group operates, has jurisdiction in. If county not on list <a '
+                    'href="/admin/supporting/county/" target="_blank">manage options here</a>'),
         verbose_name=_('counties')
     )
 
@@ -1533,7 +1533,7 @@ class Grouping(Archivable, Descriptable):
 
     #: Fields to display in the model form.
     form_fields = [
-        'name', 'phone_number', 'email', 'address', 'is_inactive', 'inception_date', 'cease_date', 'counties',
+        'name', 'phone_number', 'email', 'address', 'inception_date', 'cease_date', 'is_inactive', 'counties',
         'description', 'belongs_to_grouping', 'belongs_to_grouping_name'
     ]
 
@@ -1813,6 +1813,10 @@ class Grouping(Archivable, Descriptable):
         ordering = ['name']
 
 
+Grouping._meta.get_field('description').help_text = "Description of group and what it does. Appears on the group's " \
+                                                    "profile page."
+
+
 class GroupingAlias(Archivable, AbstractAlias):
     """ Aliases for a grouping, e.g. nicknames, common misspellings, etc.
 
@@ -1868,6 +1872,10 @@ class GroupingAlias(Archivable, AbstractAlias):
         verbose_name_plural = _('Grouping aliases')
         unique_together = ('grouping', 'name')
         ordering = ['grouping', 'name']
+
+
+GroupingAlias._meta.get_field('name').help_text = \
+    "Alternative name such as acronym, abbreviation, code, or nickname. Do not add variations in case or punctuation."
 
 
 class GroupingRelationship(Archivable, AbstractAtLeastSinceDateBounded):
@@ -1966,7 +1974,7 @@ class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
         related_query_name='person_title',
         blank=False,
         null=False,
-        help_text=_('Title of person during period'),
+        help_text=_('Title or rank'),
         verbose_name=_('title')
     )
 
@@ -2077,7 +2085,7 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         related_query_name='person_grouping',
         blank=True,
         null=True,
-        help_text=_('Category for link between the person and grouping'),
+        help_text=_('The type of relationships between the person and the group'),
         verbose_name=_('type')
     )
 
@@ -2086,7 +2094,7 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         blank=False,
         default=False,
         verbose_name=_('Is inactive'),
-        help_text=_('Select if the link between person and grouping is no longer active')
+        help_text=_("Select if the person is no longer associate with group but the end date is unknown")
     )
 
     #: Fields to display in the model form.
@@ -2182,7 +2190,7 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         blank=True,
         null=True,
-        help_text=_('Location where incident occurred'),
+        help_text=_('Location of incident'),
         verbose_name=_('location')
     )
 
@@ -2193,7 +2201,8 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         blank=True,
         null=True,
-        help_text=_('Type of location where incident occurred'),
+        help_text=_('If type not on list <a href="/admin/supporting/incidentlocationtype/" '
+                    'target="_blank">manage options here</a>'),
         verbose_name=_('location type')
     )
 
@@ -2204,7 +2213,8 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         blank=True,
         null=True,
-        help_text=_('Reason for encounter during incident'),
+        help_text=_('If reason not on list <a href="/admin/supporting/encounterreason/" '
+                    'target="_blank">manage options here</a>'),
         verbose_name=_('encounter reason')
     )
 
@@ -2214,7 +2224,8 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         db_table='{d}incident_incident_tag'.format(d=settings.DB_PREFIX),
         blank=True,
-        help_text=_('Tags describing incident'),
+        help_text=_('Add all tags that describe the incident. Add as many tags as are relevant. <a '
+                    'href="/admin/supporting/incidenttag/" target="_blank">manage options here</a>'),
         verbose_name=_('tags')
     )
 
@@ -2284,6 +2295,10 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         ordering = AbstractExactDateBounded.order_by_date_fields + ['location']
 
 
+Incident._meta.get_field('description').help_text = \
+    "The main text that appears on officer profiles under known incidents"
+
+
 class PersonIncident(Archivable, Descriptable, Linkable, AbstractKnownInfo):
     """ Links between people and incidents, e.g. describing a victim or officer in an incident.
 
@@ -2333,7 +2348,8 @@ class PersonIncident(Archivable, Descriptable, Linkable, AbstractKnownInfo):
         related_query_name='person_incident',
         blank=True,
         null=True,
-        help_text=_('Categorizes the person\'s involvement in the incident'),
+        help_text=_('Select the role the person had in this particular incident. If role not on list <a '
+                    'href="/admin/supporting/situationrole/" target="_blank">manage options here</a>'),
         verbose_name=_('situation role')
     )
 

@@ -470,6 +470,8 @@ class DateWithComponentsField(MultiValueField):
             *args,
             **kwargs
         )
+        if not self.help_text:
+            self.help_text = "Enter a zero for day, month, or year when unknown. Enter all zeros if start date is unknown."
 
     @staticmethod
     def compress_vals(data_list):

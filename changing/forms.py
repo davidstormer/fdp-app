@@ -80,7 +80,7 @@ class AbstractIsLawEnforcementModelForm(AbstractWizardModelForm):
     law_enforcement = forms.ChoiceField(
         required=True,
         label=_('Is law enforcement'),
-        help_text=_('Is this entity part of law enforcement'),
+        help_text=_('Only law enforcement are searchable to users and have profile pages)'),
         choices=LawEnforcementCategories.choices,
     )
 
@@ -175,7 +175,12 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
         required=True,
         label=_('Relationship'),
         queryset=GroupingRelationshipType.active_objects,
-        fields=()  # ignored
+        fields=(),  # ignored
+        help_text="Document a relationship between this group and another group (don't repeat the relationship in "
+                  "the 'Belongs to' field). Select the relationship type, select a group they relate to, "
+                  "and if needed "
+                  "change the direction of the relationship hierarchy. Only set the relationship for one group, it "
+                  "will display on both groups' profiles."
     )
 
     primary_key = forms.IntegerField(
@@ -274,6 +279,10 @@ class GroupingModelForm(AbstractIsLawEnforcementModelForm):
     belongs_to_grouping_name = AsyncSearchCharField(
         required=False,
         label=_('Belongs to'),
+        help_text="The top-level group that this group belongs to. For commands or precincts, this is the main law "
+                  "enforcement agency at the top of their hierarchy. All subgroups should have something in this "
+                  "field. Leave this field blank for top-level agencies (police departments, sheriff's offices, "
+                  "etc). All other relationships are defined in the 'Relationships' section below."
     )
 
     #: Fields to show in the form
@@ -440,12 +449,14 @@ class PersonGroupingModelForm(AbstractWizardModelForm):
     person_grouping_ended = DateWithComponentsField(
         required=True,
         label=_('End date'),
-        fields=()  # ignored
+        fields=(), # ignored
+        help_text="Enter a zero for day, month, or year when unknown. Enter all zeros if group relationship is "
+                  "ongoing, i.e. 'until present'."
     )
 
     grouping_name = AsyncSearchCharField(
         required=True,
-        label=_('Grouping'),
+        label=_('Group'),
     )
 
     #: Fields to show in the form
@@ -759,7 +770,10 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
         required=True,
         label=_('Relationship'),
         queryset=PersonRelationshipType.active_objects,
-        fields=()  # ignored
+        fields=(),  # ignored
+        help_text="Document a relationship between this person and another person. Select the relationship type, "
+                  "select the person they relate to, and if needed change the direction of the relationship. Note: you "
+                  "only need to set up the relationship for one person and it will display on both persons' profiles."
     )
 
     primary_key = forms.IntegerField(
@@ -1081,13 +1095,17 @@ class IncidentModelForm(AbstractWizardModelForm, PopupForm):
     """
     incident_started = DateWithComponentsField(
         required=True,
-        label=_('Incident started'),
+        label=_('Incident start date'),
         fields=()  # ignored
     )
 
     incident_ended = DateWithComponentsField(
         required=True,
-        label=_('Incident ended'),
+        label=_('Incident end date'),
+        help_text="Enter the same date for start and end if the incident happened on a single day. Typically "
+                  "the end date does not include resulting investigations "
+                  "cases, or reporting. Enter a zero for day, month, or year when unknown. Enter all zeros if whole "
+                  "date is unknown.",
         fields=()  # ignored
     )
 
@@ -1163,6 +1181,9 @@ class PersonIncidentModelForm(AbstractWizardModelForm):
     person_name = AsyncSearchCharField(
         required=True,
         label=_('Person'),
+        help_text="Any person related to the incident that your organization tracks, not only the officers involved. "
+                  "This incident will appear on profiles of linked persons. If person not on list <a "
+                  "href='/changing/persons/add/person/' target='_blank'>add them here</a>"
     )
 
     #: Fields to show in the form
@@ -1194,6 +1215,9 @@ class PersonIncidentModelForm(AbstractWizardModelForm):
             instance = self.instance
             if hasattr(instance, 'person') and instance.person:
                 self.fields['person_name'].initial = instance.person.__str__()
+        self.fields['description'].help_text = \
+            "Any further information about the person's relationship to the incident. Only visible to administrators," \
+            " but may be visible to users in the future."
 
     class Meta:
         model = PersonIncident
@@ -1210,7 +1234,9 @@ class GroupingIncidentModelForm(AbstractWizardModelForm):
     """
     grouping_name = AsyncSearchCharField(
         required=True,
-        label=_('Grouping'),
+        label=_('Group'),
+        help_text='Link groups involved in the incident. This incident will appear on profiles of linked groups. If '
+                  'group not on list <a href="/changing/groupings/add/grouping/" target="_blank">add them here</a>'
     )
 
     #: Fields to show in the form
@@ -1242,6 +1268,9 @@ class GroupingIncidentModelForm(AbstractWizardModelForm):
             instance = self.instance
             if hasattr(instance, 'grouping') and instance.grouping:
                 self.fields['grouping_name'].initial = instance.grouping.__str__()
+        self.fields['description'].help_text = \
+            "Any further information about the group’s relationship to the incident. Only visible to administrators," \
+            " but may be visible to users in the future."
 
     class Meta:
         model = GroupingIncident
@@ -1398,13 +1427,13 @@ class ContentCaseModelForm(AbstractWizardModelForm):
     """
     case_opened = DateWithComponentsField(
         required=True,
-        label=_('Case opened'),
+        label=_('Case opened date'),
         fields=()  # ignored
     )
 
     case_closed = DateWithComponentsField(
         required=True,
-        label=_('Case closed'),
+        label=_('Case closed date'),
         fields=()  # ignored
     )
 
@@ -1586,6 +1615,7 @@ class ContentIncidentModelForm(AbstractWizardModelForm):
     incident_name = AsyncSearchCharField(
         required=True,
         label=_('Incident'),
+        help_text="Incident related to this content"
     )
 
     #: Fields to show in the form

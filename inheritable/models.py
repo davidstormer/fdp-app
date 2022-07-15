@@ -420,7 +420,8 @@ class Confidentiable(Archivable):
         null=False,
         blank=False,
         default=False,
-        help_text=_('Select if only administrators for the specified organizations can access.'),
+        help_text=_("Restrict access to this record to users who are Administrators (both host and guest "
+                    "administrators). When combined with 'Host Only', then only host administrators can access this record."),
         verbose_name=_('admin only')
     )
 
@@ -428,8 +429,9 @@ class Confidentiable(Archivable):
         null=False,
         blank=False,
         default=False,
-        help_text=_('Select if only users belonging to the host organization can access. When combined with \'admin '
-                    'only\', then only host administrators can access.'),
+        help_text=_('Restrict access to this record to users belonging to the host organization (both host staff and '
+                    'host administrators). When combined with \'Admin Only\', then only host administrators can '
+                    'access this record.'),
         verbose_name=_('host only')
     )
 
@@ -688,8 +690,8 @@ class Linkable(models.Model):
         null=False,
         blank=False,
         default=False,
-        verbose_name=_('Is this a guess'),
-        help_text=_('Select if link is a guess')
+        verbose_name=_('This is a guess'),
+        help_text=_("Check if there is uncertainty that the person being linked is the correct person involved")
     )
 
     class Meta:
@@ -712,7 +714,7 @@ class Descriptable(models.Model):
         null=False,
         blank=True,
         verbose_name=_('Description'),
-        help_text=_('Verbose, user-friendly narrative'),
+        help_text=_(''),
     )
 
     def __get_truncated_description(self):
@@ -1992,7 +1994,7 @@ class AbstractAlias(Descriptable):
     name = models.CharField(
         null=False,
         blank=False,
-        help_text=_('Alternative name, such as a nickname, acronym, or common misspelling'),
+        help_text=_('Alternative name, such as a nickname, or maiden name. Do not add variations in case or punctuation.'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('alias')
     )
@@ -2325,7 +2327,7 @@ class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
         null=False,
         blank=False,
         default=False,
-        help_text=_('Select if start date is the earliest known start date, but not necessarily the true start date'),
+        help_text=_("Select if start date is the earliest known start date, but not necessarily the true start date"),
     )
 
     #: Fields that can be used in the admin interface to filter by date
@@ -3154,6 +3156,13 @@ class AbstractConfiguration(models.Model):
         return getattr(settings, 'FDP_MAX_EULA_FILE_BYTES',  CONST_MAX_EULA_FILE_BYTES)
 
     @staticmethod
+    def format_file_types(file_types_data_structure):
+        output = ''
+        for file_type in file_types_data_structure:
+            output = output + f"{file_type[0]} .{file_type[1]}, "
+        return output.strip(', ')
+
+    @staticmethod
     def supported_eula_file_types():
         """ Checks the necessary setting to retrieve a list of tuples that define the types of user-uploaded files that
         are supported for an instance of the Eula (end-user license agreement) model. Each tuple has two items: the
@@ -3163,6 +3172,14 @@ class AbstractConfiguration(models.Model):
         :return: List of tuples, each with two items.
         """
         return getattr(settings, 'FDP_SUPPORTED_EULA_FILE_TYPES',  CONST_SUPPORTED_EULA_FILE_TYPES)
+
+    def supported_eula_file_types_str(self):
+        """Returns a human readable string of supported file types, for use in help text.
+        """
+        file_types_data_structure = getattr(settings, 'FDP_SUPPORTED_EULA_FILE_TYPES',
+                                            CONST_SUPPORTED_EULA_FILE_TYPES)
+        return self.format_file_types(file_types_data_structure)
+
 
     @staticmethod
     def max_wholesale_file_bytes():
@@ -3203,6 +3220,13 @@ class AbstractConfiguration(models.Model):
         """
         return getattr(settings, 'FDP_SUPPORTED_ATTACHMENT_FILE_TYPES',  CONST_SUPPORTED_ATTACHMENT_FILE_TYPES)
 
+    def supported_attachment_file_types_str(self):
+        """Returns a human readable string of supported file types, for use in help text.
+        """
+        file_types_data_structure = getattr(settings, 'FDP_SUPPORTED_ATTACHMENT_FILE_TYPES',
+                                            CONST_SUPPORTED_ATTACHMENT_FILE_TYPES)
+        return self.format_file_types(file_types_data_structure)
+
     @staticmethod
     def max_person_photo_file_bytes():
         """ Checks the necessary setting to retrieve the maximum number of bytes that a user-uploaded file can have for
@@ -3221,6 +3245,13 @@ class AbstractConfiguration(models.Model):
         :return: List of tuples, each with two items.
         """
         return getattr(settings, 'FDP_SUPPORTED_PERSON_PHOTO_FILE_TYPES',  CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES)
+
+    def supported_person_photo_file_types_str(self):
+        """Returns a human readable string of supported file types, for use in help text.
+        """
+        file_types_data_structure = getattr(settings, 'FDP_SUPPORTED_PHOTO_FILE_TYPES',
+                                            CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES)
+        return self.format_file_types(file_types_data_structure)
 
     @staticmethod
     def models_in_wholesale_allowlist():

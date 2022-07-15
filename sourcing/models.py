@@ -35,7 +35,7 @@ class Attachment(Confidentiable, Descriptable):
         blank=False,
         max_length=settings.MAX_NAME_LEN,
         help_text=_(
-            'Name of attachment. If a user-friendly name is not available, use the file name, title of article, etc.'
+            'The name of the attachment as shown to users.'
         ),
         verbose_name=_('name')
     )
@@ -45,11 +45,12 @@ class Attachment(Confidentiable, Descriptable):
         blank=True,
         null=False,
         help_text=_(
-            'Uploaded file as the attachment. Should be less than {s}MB. '
-            'Ignore if linking an attachment via the web.'.format(
+            'If the attachment is a file, upload it here. Should be less than {s}MB.<br>Allowed file formats: {'
+            'ff}'.format(
                 s=AbstractFileValidator.get_megabytes_from_bytes(
                     num_of_bytes=AbstractConfiguration.max_attachment_file_bytes()
-                )
+                ),
+                ff=AbstractConfiguration().supported_attachment_file_types_str()
             )
         ),
         validators=[
@@ -70,8 +71,8 @@ class Attachment(Confidentiable, Descriptable):
     link = models.URLField(
         null=False,
         blank=True,
-        help_text=_('URL for an attachment linked via the web. Ignore if uploading a file as the attachment.'),
-        verbose_name=_('web link')
+        help_text=_('If the attachment is located on the web, add the web address.'),
+        verbose_name=_('Web address')
     )
 
     type = models.ForeignKey(
@@ -81,7 +82,7 @@ class Attachment(Confidentiable, Descriptable):
         related_query_name='attachment',
         blank=True,
         null=True,
-        help_text=_('Category for attachment'),
+        help_text=_('<a href="/admin/supporting/attachmenttype/" target="_blank">Manage options here</a>'),
         verbose_name=_('type')
     )
 
@@ -250,7 +251,7 @@ class Content(Confidentiable, Descriptable):
         default='',
         max_length=settings.MAX_NAME_LEN,
         help_text=_(
-            'Name of content. Use this for the article headline, report title or other user-friendly name.'
+            'Name of content such as article headline, or case header, if applicable. E.g. "People v. John Doe"'
         ),
         verbose_name=_('name')
     )
@@ -282,7 +283,7 @@ class Content(Confidentiable, Descriptable):
         related_query_name='content',
         blank=True,
         null=True,
-        help_text=_('Category for content'),
+        help_text=_('Type of content'),
         verbose_name=_('type')
     )
 
@@ -290,7 +291,7 @@ class Content(Confidentiable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('URL from which content was retrieved'),
+        help_text=_('URL from which content was retrieved. If applicable.'),
         verbose_name=_('web link'),
         max_length=AbstractUrlValidator.MAX_LINK_LEN
     )
@@ -298,7 +299,7 @@ class Content(Confidentiable, Descriptable):
     publication_date = models.DateField(
         null=True,
         blank=True,
-        help_text=_('Date content was published'),
+        help_text=_('Date content was published. If applicable.'),
         verbose_name=_('publication date')
     )
 
@@ -413,7 +414,8 @@ class ContentIdentifier(Confidentiable, Descriptable):
     identifier = models.CharField(
         null=False,
         blank=False,
-        help_text=_('Identifier number, such as the lawsuit number, IAB case number, or similar'),
+        help_text=_('Identifier number value, such as the lawsuit number, IAB case number, or similar. Can be '
+                    'non-numeric.'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('identifier')
     )
@@ -425,7 +427,7 @@ class ContentIdentifier(Confidentiable, Descriptable):
         related_query_name='content_identifier',
         blank=False,
         null=False,
-        help_text=_('Context for identifier, such as lawsuit, IAB case, or similar'),
+        help_text=_('Type of content identifier, such as case number'),
         verbose_name=_('content identifier type')
     )
 
@@ -530,7 +532,7 @@ class ContentCase(Archivable, AbstractExactDateBounded):
         related_query_name='content_case',
         blank=True,
         null=True,
-        help_text=_('Outcome of lawsuit such as dismissed or similar'),
+        help_text=_('Outcome of case, if applicable.'),
         verbose_name=_('case disposition')
     )
 
@@ -541,7 +543,7 @@ class ContentCase(Archivable, AbstractExactDateBounded):
         related_query_name='content_case',
         blank=True,
         null=True,
-        help_text=_('Court or agency in which case was pursued'),
+        help_text=_('Court or administration in which case was pursued'),
         verbose_name=_('court')
     )
 
@@ -550,7 +552,7 @@ class ContentCase(Archivable, AbstractExactDateBounded):
         blank=True,
         max_digits=12,
         decimal_places=2,
-        help_text=_('Amount received by plaintiff as settlement'),
+        help_text=_("If case was resolved with a settlement, the amount of that settlement."),
         verbose_name=_('settlement amount')
     )
 
@@ -669,7 +671,7 @@ class ContentPerson(Archivable, Descriptable, Linkable, AbstractKnownInfo):
         related_query_name='content_person',
         blank=True,
         null=True,
-        help_text=_('Context with which person is linked to content, such as attorney, plaintiff or similar'),
+        help_text=_("The role the person had in relation to this piece of content"),
         verbose_name=_('situation role')
     )
 
