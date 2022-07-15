@@ -2379,7 +2379,7 @@ class AbstractSql(models.Model):
         abstract = True
 
 
-class AbstractJson(models.Model):
+class AbstractJson:
     """ Abstract class from which all Json object wrapper classes inherit.
 
     """
@@ -2390,10 +2390,7 @@ class AbstractJson(models.Model):
 
         :return: Dictionary representing the JSON object.
         """
-        pass
-
-    class Meta:
-        abstract = True
+        raise NotImplementedError
 
 
 class JsonError(AbstractJson):
@@ -2402,12 +2399,9 @@ class JsonError(AbstractJson):
     Attributes:
         :error (string): Message describing error.
     """
-    error = models.TextField(
-        null=False,
-        blank=False,
-        verbose_name=_('error'),
-        help_text=_('Message describing error'),
-    )
+
+    def __init__(self, error):
+        self.error = error
 
     def get_json_dict(self):
         """ Retrieves a dictionary representing the JSON object containing the error to return through the JsonResponse.
@@ -2429,12 +2423,9 @@ class JsonData(AbstractJson):
     Attributes:
         :data (json): Dictionary representation of the JSON data object.
     """
-    data = models.JSONField(
-        null=False,
-        blank=True,
-        verbose_name=_('JSON data'),
-        help_text=_('JSON data to return'),
-    )
+
+    def __init__(self, data):
+        self.data = data
 
     def get_json_dict(self):
         """ Retrieves a dictionary representing the JSON object containing the HTML to return through the JsonResponse.
@@ -2445,9 +2436,6 @@ class JsonData(AbstractJson):
             AbstractUrlValidator.JSON_DAT_PARAM: True,
             AbstractUrlValidator.JSON_DAT_DAT_PARAM: self.data if self.data else {}
         }
-
-    class Meta:
-        abstract = True
 
 
 class AbstractAnySearch(models.Model):

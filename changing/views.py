@@ -1106,8 +1106,8 @@ class AbstractAsyncGetModelView(AdminAsyncJsonView):
         :param kwargs: Ignored.
         :return: JSON formatted response containing the search results or an error that was encountered.
         """
-        filter_dict = self._get_filter_dict(request=request)
         try:
+            filter_dict = self._get_filter_dict(request=request)
             queryset = self._get_specific_queryset(filter_dict=filter_dict)
             model = queryset.model
             # filter queryset for confidentiality
