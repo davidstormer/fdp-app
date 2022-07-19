@@ -58,12 +58,6 @@ div#release-number {
   font-weight: bold;
   text-align: right;
 }
-/* Move footer to bottom when on 2fa pages, where body div becomes tiny window */
-body.login div#footer-global {
-  position: fixed;
-  bottom: 0;
-  right: 0;
-}
 
 /* Help center button */
 a.help-center-button {
