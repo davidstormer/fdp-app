@@ -1033,7 +1033,7 @@ class PersonPhoto(Archivable, Descriptable):
                 s=AbstractFileValidator.get_megabytes_from_bytes(
                     num_of_bytes=AbstractConfiguration.max_person_photo_file_bytes()
                 ),
-                ff=AbstractConfiguration().supported_person_photo_file_types_str()
+                ff=AbstractConfiguration.supported_person_photo_file_types_str()
             )
         ),
         validators=[
