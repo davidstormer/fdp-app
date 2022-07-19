@@ -71,10 +71,25 @@ $code-color: #666;
   height: 200px;
 }
 
+// Make footer stick to bottom of page, when there's not enough content to push it down
+//
+// https://css-tricks.com/couple-takes-sticky-footer/#aa-there-is-flexbox
+
+html, body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+main.container {
+  flex: 1 0 auto;
+}
+
 .footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
+  flex-shrink: 0;
   .container {
     min-height: 20px;
   }
