@@ -397,7 +397,7 @@
                         {% if officer_misconduct.is_guess %}
                         <p class="warning">{% translate 'WARNING: A DIFFERENT OFFICER MAY BE INVOLVED' %}</p>
                         {% endif %}
-                        <pre class="missummary body-font">{{ officer_misconduct.incident.description }}</pre>
+                        <pre class="missummary body-font text-wrap">{{ officer_misconduct.incident.description }}</pre>
                         {% if officer_misconduct.incident.officer_incident_tags %}
                         <p class="mistags">
                             {% for tag in officer_misconduct.incident.officer_incident_tags %}
@@ -511,7 +511,7 @@
                                 {{ content_identifier.identifier }}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         </span>
-                        <pre class="missummary body-font">{% if content.description %}{{ content.description }}
+                        <pre class="missummary body-font text-wrap">{% if content.description %}{{ content.description }}
                             {% else %}{% translate 'There is no summary available for this content.' %}{% endif %}
                         </pre>
                         {% if content_person.content.officer_other_persons %}

@@ -124,3 +124,10 @@ a.custom-text-edit-link {
   font-size: 14px;
   color: #333;
 }
+
+.text-wrap {
+  /* https://stackoverflow.com/a/52130554 */
+  white-space: pre-wrap;
+  word-break: keep-all
+  word-wrap: break-word;
+}
