@@ -334,7 +334,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
         self.browser.get(self.live_server_url + '/')
 
         # When I click the Officer link
-        self.browser.find_element(By.LINK_TEXT, "Officer").find_element(By.CSS_SELECTOR, 'i') \
+        self.browser.find_element(By.LINK_TEXT, "Person Search").find_element(By.CSS_SELECTOR, 'i') \
             .click()
 
         # Then I should be taken to the old pre-roundup search
@@ -347,7 +347,7 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
         self.browser.get(self.live_server_url + '/')
 
         # When I click the Officer link
-        self.browser.find_element(By.LINK_TEXT, "Officer").find_element(By.CSS_SELECTOR, 'i') \
+        self.browser.find_element(By.LINK_TEXT, "Person Search").find_element(By.CSS_SELECTOR, 'i') \
             .click()
 
         # Then I should be taken to the new roundup officer search
