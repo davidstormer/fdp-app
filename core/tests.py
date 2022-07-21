@@ -536,7 +536,7 @@ class UnitTests(AbstractTestCase):
                 'output': 'from 04/28/2010 until unknown-end-date',
                 'inputs':
                     {
-                        'is_inactive': True,
+                        'ended_unknown_date': True,
                         'end_year': 0,
                         'end_month': 0,
                         'end_day': 0,
@@ -549,7 +549,7 @@ class UnitTests(AbstractTestCase):
                 'output': 'from 04/28/2010',
                 'inputs':
                     {
-                        'is_inactive': False,
+                        'ended_unknown_date': False,
                         'end_year': 0,
                         'end_month': 0,
                         'end_day': 0,
@@ -562,7 +562,7 @@ class UnitTests(AbstractTestCase):
                 'output': 'from 04/28/2010 until 04/28/2020',
                 'inputs':
                     {
-                        'is_inactive': True,
+                        'ended_unknown_date': True,
                         'end_year': 2020,
                         'end_month': 4,
                         'end_day': 28,
@@ -575,7 +575,7 @@ class UnitTests(AbstractTestCase):
                 'output': 'from 04/28/2010 until 04/28/2020',
                 'inputs':
                     {
-                        'is_inactive': False,
+                        'ended_unknown_date': False,
                         'end_year': 2020,
                         'end_month': 4,
                         'end_day': 28,
@@ -595,7 +595,7 @@ class UnitTests(AbstractTestCase):
                     person_grouping = PersonGrouping.objects.create(
                         person=person,
                         grouping=grouping,
-                        is_inactive=scenario['inputs']['is_inactive'],
+                        ended_unknown_date=scenario['inputs']['ended_unknown_date'],
                         end_year=scenario['inputs']['end_year'],
                         end_month=scenario['inputs']['end_month'],
                         end_day=scenario['inputs']['end_day'],

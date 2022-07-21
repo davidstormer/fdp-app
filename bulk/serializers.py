@@ -1031,7 +1031,7 @@ class GroupingAirTableSerializer(AbstractModelWithAliasesSerializer):
         #: Model fields that are excluded here must be passed into the validated_data dictionary through the
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = FdpModelSerializer.excluded_fields + [
-            'belongs_to_grouping', 'cease_date', 'counties', 'description', 'inception_date', 'is_inactive'
+            'belongs_to_grouping', 'cease_date', 'counties', 'description', 'inception_date', 'ended_unknown_date'
         ]
 
 
@@ -1315,7 +1315,7 @@ class PersonAirTableSerializer(AbstractModelWithAliasesSerializer):
         # optionally create person groupings
         for grouping_id in split_grouping_ids:
             grouping = Grouping.objects.get(pk=grouping_id)
-            person_grouping = PersonGrouping(person=instance, grouping=grouping, is_inactive=False)
+            person_grouping = PersonGrouping(person=instance, grouping=grouping, ended_unknown_date=False)
             person_grouping.full_clean()
             person_grouping.save()
         return instance
@@ -2055,7 +2055,7 @@ class PersonGroupingAirTableSerializer(AbstractAsOfDateBoundedModelSerializer, A
     Attributes:
         :grouping (str): Grouping matched by external grouping ID.
         :type (str): Type matched by unique name or added if it does not exist.
-        :is_inactive_checkbox (str): Is inactive checkbox.
+        :ended_unknown_date_checkbox (str): Is inactive checkbox.
     """
     grouping = CharField(
         required=False,
@@ -2069,20 +2069,20 @@ class PersonGroupingAirTableSerializer(AbstractAsOfDateBoundedModelSerializer, A
         label=_('Type - match by unique name, or add if it does not exist')
     )
 
-    is_inactive_checkbox = CharField(
+    ended_unknown_date_checkbox = CharField(
         required=False,
         allow_null=True,
         label=_('Is inactive checkbox')
     )
 
-    def __validate_is_inactive_checkbox(self):
+    def __validate_ended_unknown_date_checkbox(self):
         """ Validates the Is Inactive checkbox field.
 
         :return: Nothing.
         """
         self._validate_checkbox_field(
-            unvalidated_checkbox_field='is_inactive_checkbox',
-            validated_checkbox_field='is_inactive'
+            unvalidated_checkbox_field='ended_unknown_date_checkbox',
+            validated_checkbox_field='ended_unknown_date'
         )
 
     def is_valid(self, raise_exception=False):
@@ -2109,7 +2109,7 @@ class PersonGroupingAirTableSerializer(AbstractAsOfDateBoundedModelSerializer, A
         is_valid = super(PersonGroupingAirTableSerializer, self).is_valid(raise_exception=raise_exception)
         # record is valid
         if is_valid:
-            self.__validate_is_inactive_checkbox()
+            self.__validate_ended_unknown_date_checkbox()
         return is_valid
 
     class Meta:
@@ -2118,7 +2118,7 @@ class PersonGroupingAirTableSerializer(AbstractAsOfDateBoundedModelSerializer, A
         # self.custom_validated_data dictionary attribute, before the super's create(...) method is called.
         exclude = list(set(AbstractAsOfDateBoundedModelSerializer.excluded_fields +
                            AbstractPersonLinkModelSerializer.excluded_fields +
-                           ['is_inactive', 'description']))
+                           ['ended_unknown_date', 'description']))
 
 
 class PersonTitleAirTableSerializer(AbstractAsOfDateBoundedModelSerializer, AbstractPersonLinkModelSerializer):

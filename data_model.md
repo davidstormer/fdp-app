@@ -214,7 +214,7 @@
         - phone_number - CharField
         - email - EmailField
         - address - CharField
-        - is_inactive - BooleanField
+        - ended_unknown_date - BooleanField
         - is_law_enforcement - BooleanField
         - inception_date - DateField
         - cease_date - DateField
@@ -426,7 +426,7 @@
         - person - ForeignKey
         - grouping - ForeignKey
         - type - ForeignKey
-        - is_inactive - BooleanField
+        - ended_unknown_date - BooleanField
     - Methods (non-private/internal):
         - check_start_date_before_end_date()
         - filter_for_admin()
