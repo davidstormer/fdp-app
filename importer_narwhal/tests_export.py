@@ -549,7 +549,7 @@ class ExportOfficerSearchLog(SeleniumFunctionalTestCase):
         user = self.log_in(is_administrator=True)
         self.browser.get(self.live_server_url + '/officer/search/')
 
-        self.input('search').send_keys('monastic mustachio')
+        self.input('q').send_keys('monastic mustachio')
         self.submit_button('Search').click()
 
         # When I run an export
@@ -629,13 +629,13 @@ class ExportOfficerSearchLog(SeleniumFunctionalTestCase):
         # Given two ppl have done an officer search, first admin, second not admin
         user = self.log_in(is_administrator=True)
         self.browser.get(self.live_server_url + '/officer/search/')
-        self.input('search').send_keys('monastic mustachio')
+        self.input('q').send_keys('monastic mustachio')
         self.submit_button('Search').click()
         self.log_out()
 
         user = self.log_in(is_administrator=False)
         self.browser.get(self.live_server_url + '/officer/search/')
-        self.input('search').send_keys('monastic mustachio')
+        self.input('q').send_keys('monastic mustachio')
         self.submit_button('Search').click()
 
         # When I run an export
@@ -645,7 +645,7 @@ class ExportOfficerSearchLog(SeleniumFunctionalTestCase):
 
             self.browser.get(self.live_server_url + '/officer/search/')
 
-            self.input('search').send_keys('monastic mustachio')
+            self.input('q').send_keys('monastic mustachio')
             self.submit_button('Search').click()
 
             # When I run an export
