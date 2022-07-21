@@ -1,23 +1,29 @@
+import hashlib
 import json
 import os
 import re
 from pathlib import Path
 
 import tablib
+from axes.models import AccessLog
 from django.core.files import File
 from django.utils import timezone
 import import_export
 from import_export import resources, fields
 import import_export.fields
+from import_export.fields import Field
 from import_export.resources import ModelResource
 from import_export.results import RowResult
 from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 
 from bulk.models import BulkImport
 from bulk_data_manipulation.common import get_record_from_external_id
+from fdpuser.models import FdpUser
+from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow
 from core.models import PersonAlias, Person, Grouping, GroupingAlias, GroupingRelationship
 from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow, MODEL_ALLOW_LIST
 from importer_narwhal.widgets import BooleanWidgetValidated
+from profiles.models import OfficerSearch, CommandSearch, OfficerView, CommandView
 from supporting.models import GroupingRelationshipType
 from wholesale.models import ModelHelper
 
@@ -634,8 +640,100 @@ def run_import_batch(batch_record):
     return import_report
 
 
+class AccessLogResource(resources.ModelResource):
+
+    is_administrator = Field()
+
+    class Meta:
+        model = AccessLog
+
+    def dehydrate_ip_address(self, access_log):
+        return hashlib.sha256(access_log.ip_address.encode('utf-8')).hexdigest()
+
+    def dehydrate_username(self, access_log):
+        return hashlib.sha256(access_log.username.encode('utf-8')).hexdigest()
+
+    def dehydrate_is_administrator(self, access_log):
+        try:
+            user = FdpUser.objects.get(email=access_log.username)
+            if user.is_administrator:
+                return 'TRUE'
+            else:
+                return 'FALSE'
+        except FdpUser.DoesNotExist:
+            return 'ACCOUNT MISSING'
+
+
+class CommonSearchViewResource(resources.ModelResource):
+    """Handles common elements of CommandSearchResource, OfficerViewResource, etc"""
+
+    is_administrator = Field()
+
+    def dehydrate_fdp_user(self, record):
+        return hashlib.sha256(record.fdp_user.email.encode('utf-8')).hexdigest()
+
+    def dehydrate_ip_address(self, record):
+        return hashlib.sha256(record.ip_address.encode('utf-8')).hexdigest()
+
+    def dehydrate_is_administrator(self, record):
+        user = record.fdp_user
+        if user.is_administrator or user.is_superuser:
+            return 'TRUE'
+        else:
+            return 'FALSE'
+
+
+class OfficerSearchResource(CommonSearchViewResource):
+
+    class Meta:
+        model = OfficerSearch
+
+    def dehydrate_parsed_search_criteria(self, record):
+        return hashlib.sha256(str(record.parsed_search_criteria).encode('utf-8')).hexdigest()
+
+
+class CommandSearchResource(CommonSearchViewResource):
+
+    class Meta:
+        model = CommandSearch
+
+    def dehydrate_parsed_search_criteria(self, record):
+        return hashlib.sha256(str(record.parsed_search_criteria).encode('utf-8')).hexdigest()
+
+
+class OfficerViewResource(CommonSearchViewResource):
+
+    class Meta:
+        model = OfficerView
+
+    def dehydrate_person(self, record):
+        return hashlib.sha256(str(record.person.pk).encode('utf-8')).hexdigest()
+
+
+class CommandViewResource(CommonSearchViewResource):
+
+    class Meta:
+        model = CommandView
+
+    def dehydrate_grouping(self, record):
+        return hashlib.sha256(str(record.grouping.pk).encode('utf-8')).hexdigest()
+
+
+usage_logs_model_mapping = {
+    'AccessLog': AccessLogResource,
+    'OfficerSearch': OfficerSearchResource,
+    'CommandSearch': CommandSearchResource,
+    'OfficerView': OfficerViewResource,
+    'CommandView': CommandViewResource,
+}
+
+
 def do_export(model_name, file_name):
-    resource_class = resource_model_mapping[model_name]
+    try:
+        resource_class = resource_model_mapping[model_name]
+    except KeyError:
+        resource_class = usage_logs_model_mapping[model_name]
+
     model_resource = resource_class()
     data_set = model_resource.export()
     with open(file_name, 'w') as fd:
