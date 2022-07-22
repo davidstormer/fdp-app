@@ -106,7 +106,7 @@
 
                 {% if object.officer_title %}
                 <h3>{% if object.officer_titles %}{% translate 'Ranks' %}{% else %}{% translate 'Rank' %}{% endif %}</h3>
-                <ul>
+                <ul class="titles">
                 <li>
                     <span>{{ object.officer_title.title.name }}</span>
                     <div class="identification-meta">

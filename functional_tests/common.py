@@ -243,6 +243,9 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
             group_input.send_keys(Keys.DOWN)
         group_input.send_keys(Keys.ENTER)
 
+    def el_select(self, name: str) -> WebElement:
+        return wait(self.browser.find_element, By.CSS_SELECTOR, f'select[name="{name}"]')
+
     def input(self, name: str) -> WebElement:
         return wait(self.browser.find_element, By.CSS_SELECTOR, f'input[name="{name}"]')
 

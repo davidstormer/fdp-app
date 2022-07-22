@@ -1999,8 +1999,17 @@ class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
                     'the same time at different agencies.'),
     )
 
+    ended_unknown_date = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name=_('ended at unknown date'),
+        help_text=_("Select if you don't know the ceased date for a title but you know that it is no longer being "
+                    "held by the person.")
+    )
+
     #: Fields to display in the model form.
-    form_fields = ['title', 'person', 'at_least_since', 'grouping']
+    form_fields = ['title', 'person', 'at_least_since', 'ended_unknown_date', 'grouping']
 
     def __str__(self):
         """Defines string representation for a person title.
@@ -2034,6 +2043,23 @@ class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
                 user=user
             )
         )
+
+    @property
+    def at_least_since_bounding_dates(self):
+        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
+
+        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
+        """
+        def end_date_is_all_zeros(self) -> bool:
+            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
+                return True
+            else:
+                return False
+
+        if self.ended_unknown_date and end_date_is_all_zeros(self):
+            return super(PersonTitle, self).at_least_since_bounding_dates + ' until unknown-end-date'
+        else:
+            return super(PersonTitle, self).at_least_since_bounding_dates
 
     class Meta:
         db_table = '{d}person_title'.format(d=settings.DB_PREFIX)
