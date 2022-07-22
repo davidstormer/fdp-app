@@ -52,7 +52,7 @@ class IndexTemplateView(SecuredSyncTemplateView):
         context = super(IndexTemplateView, self).get_context_data(**kwargs)
         context.update({
             'title': _('What are you searching for?'),
-            'description': _('Select whether to search for officers or commands.')
+            'description': _('Select whether to search for persons or commands.')
         })
         return context
 
@@ -111,8 +111,8 @@ class OfficerSearchFormView(SecuredSyncFormView):
         """
         context = super(OfficerSearchFormView, self).get_context_data(**kwargs)
         context.update({
-            'title': _('Officer Search'),
-            'description': _('Search for officers and corresponding information.')
+            'title': _('Person Search'),
+            'description': _('Search for persons and corresponding information.')
         })
         return context
 
@@ -133,7 +133,7 @@ class OfficerSearchFormView(SecuredSyncFormView):
         if getattr(settings, 'LEGACY_OFFICER_SEARCH_ENABLE', False):
             return super(OfficerSearchFormView, self).get(request, *args, **kwargs)
         else:
-            return redirect(reverse('profiles:officer_search_roundup'), permanent=True)
+            return redirect(reverse('profiles:officer_search_roundup'), permanent=False)
 
 
 class OfficerSearchResultsListView(SecuredSyncListView):
@@ -306,8 +306,8 @@ class OfficerSearchResultsListView(SecuredSyncListView):
         querystring = QueryDict('', mutable=True)
         querystring.update({AbstractUrlValidator.GET_PREV_URL_PARAM: urlquote(current_search_querystring)})
         context.update({
-            'title': _('Officer Search Results'),
-            'description': _('Browse a list of officers matching the search criteria.'),
+            'title': _('Person Search Results'),
+            'description': _('Browse a list of persons matching the search criteria.'),
             'search': self.__search_class.parsed_search_criteria,
             'back_link_querystring': querystring.urlencode(),
             'queryset_count': self.__count,
@@ -382,7 +382,7 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
         )
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
-            'title': 'Officer Search',
+            'title': 'Person Search',
             'query': query_string,
             'within_group': group,
             'sort': sort,
@@ -425,7 +425,7 @@ class OfficerDetailView(SecuredSyncDetailView):
         OfficerView.objects.create_officer_view(person=self.object, fdp_user=user, request=request)
         back_link = request.GET.get(AbstractUrlValidator.GET_PREV_URL_PARAM, None)
         context.update({
-            'title': _('Officer Profile'),
+            'title': _('Person Profile'),
             'description': _('Review an officer\'s profile, including corresponding information.'),
             'search_results_url': reverse('profiles:officer_search') if not back_link
             else '{url}?{querystring}'.format(
@@ -687,7 +687,7 @@ class OfficerDownloadAllFilesView(SecuredSyncView):
         """
         user = request.user
         if not pk:
-            raise Exception(_('No officer was specified'))
+            raise Exception(_('No person was specified'))
         files_to_zip = Person.get_officer_attachments(pk=pk, user=user)
         # create ZIP archive for all attachments
         bytes_io = AbstractFileValidator.zip_files(files_to_zip=files_to_zip)
