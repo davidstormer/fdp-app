@@ -254,8 +254,8 @@ class ProfileTestCase(AbstractTestCase):
                 person.fdp_organizations.add(fdp_org)
             person_ids[name] = person.pk
             # connect person to data
-            PersonGrouping.objects.create(grouping=unrestricted_grouping, person=person, is_inactive=True)
-            PersonGrouping.objects.create(grouping=unrestricted_grouping, person=person, is_inactive=False)
+            PersonGrouping.objects.create(grouping=unrestricted_grouping, person=person, ended_unknown_date=True)
+            PersonGrouping.objects.create(grouping=unrestricted_grouping, person=person, ended_unknown_date=False)
             incident = Incident.objects.create(description='Desc1', **self._not_confidential_dict)
             GroupingIncident.objects.create(grouping=unrestricted_grouping, incident=incident)
             PersonIncident.objects.create(person=person, incident=incident)

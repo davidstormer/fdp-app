@@ -116,10 +116,10 @@ class GroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for groupings of people.
 
     """
-    _list_display = ['name', 'is_law_enforcement', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_display
+    _list_display = ['name', 'is_law_enforcement', 'ended_unknown_date', 'belongs_to_grouping'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
-    list_filter = ['counties', 'is_law_enforcement', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_filter
+    list_filter = ['counties', 'is_law_enforcement', 'ended_unknown_date', 'belongs_to_grouping'] + ArchivableAdmin.list_filter
     search_fields = ['name', 'phone_number', 'email', 'address']
     ordering = ['name']
 
@@ -159,10 +159,10 @@ class PersonGroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for links between persons and groupings.
 
     """
-    _list_display = ['person', 'at_least_since_bounding_dates', 'grouping', 'type', 'is_inactive'] + ArchivableAdmin.list_display
+    _list_display = ['person', 'at_least_since_bounding_dates', 'grouping', 'type', 'ended_unknown_date'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
-    list_filter = PersonGrouping.list_filter_fields + ['type', 'is_inactive'] + ArchivableAdmin.list_filter
+    list_filter = PersonGrouping.list_filter_fields + ['type', 'ended_unknown_date'] + ArchivableAdmin.list_filter
     search_fields = ['person__name', 'grouping__name']
     ordering = ['person__name'] + PersonGrouping.order_by_date_fields + ['grouping__name']
 

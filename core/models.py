@@ -1442,7 +1442,7 @@ class Grouping(Archivable, Descriptable):
         :inception_date (date): Date grouping came into existence.
         :cease_date (date): Date grouping ceased to exist.
         :counties (m2m): Counties in which grouping operates.
-        :is_inactive (bool): True if link between person and grouping is no longer active.
+        :ended_unknown_date (bool): True if link between person and grouping is no longer active.
         :is_law_enforcement (bool): True if grouping is part of law enforcement, false otherwise.
         :belongs_to_grouping (fk): The top-level grouping to which this grouping belongs.
     """
@@ -1477,11 +1477,11 @@ class Grouping(Archivable, Descriptable):
         verbose_name=_('address')
     )
 
-    is_inactive = models.BooleanField(
+    ended_unknown_date = models.BooleanField(
         null=False,
         blank=False,
         default=False,
-        verbose_name=_('Is inactive'),
+        verbose_name=_('ended at unknown date'),
         help_text=_("Select if the grouping is no longer active. Instead of deleting a group, mark it as inactive so that all the data relating to the group and the group history remains. This can also be used if you don't know the ceased date for a group but you know that they are no longer active.")
     )
 
@@ -1532,7 +1532,7 @@ class Grouping(Archivable, Descriptable):
 
     #: Fields to display in the model form.
     form_fields = [
-        'name', 'phone_number', 'email', 'address', 'inception_date', 'cease_date', 'is_inactive', 'counties',
+        'name', 'phone_number', 'email', 'address', 'inception_date', 'cease_date', 'ended_unknown_date', 'counties',
         'description', 'belongs_to_grouping', 'belongs_to_grouping_name'
     ]
 
@@ -1627,11 +1627,11 @@ class Grouping(Archivable, Descriptable):
         return qs
 
     @classmethod
-    def __get_person_grouping_query(cls, accessible_officers, is_inactive):
+    def __get_person_grouping_query(cls, accessible_officers, ended_unknown_date):
         """ Retrieves a person grouping queryset that is filtered by active/inactive and a list of accessible officers.
 
         :param accessible_officers: List or queryset of officers that can be accessed by the user.
-        :param is_inactive: True if only inactive person-groupings should be retrieved, false if only active
+        :param ended_unknown_date: True if only inactive person-groupings should be retrieved, false if only active
         person-groupings should be retrieved.
         :return: Person grouping queryset.
         """
@@ -1639,7 +1639,7 @@ class Grouping(Archivable, Descriptable):
             id__in=Subquery(
                 PersonGrouping.active_objects.filter(
                     # only active career segments
-                    Q(is_inactive=is_inactive)
+                    Q(ended_unknown_date=ended_unknown_date)
                     &
                     # only for current grouping
                     Q(grouping_id=OuterRef('grouping_id'))
@@ -1717,13 +1717,13 @@ class Grouping(Archivable, Descriptable):
             Prefetch(
                 'person_groupings',
                 # don't need to filter groupings, since filtered above
-                queryset=cls.__get_person_grouping_query(accessible_officers=accessible_officers, is_inactive=False),
+                queryset=cls.__get_person_grouping_query(accessible_officers=accessible_officers, ended_unknown_date=False),
                 to_attr='command_active_officers'
             ),
             Prefetch(
                 'person_groupings',
                 # don't need to filter groupings, since filtered above
-                queryset=cls.__get_person_grouping_query(accessible_officers=accessible_officers, is_inactive=True),
+                queryset=cls.__get_person_grouping_query(accessible_officers=accessible_officers, ended_unknown_date=True),
                 to_attr='command_inactive_officers'
             ),
             Prefetch(
@@ -2052,7 +2052,7 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         :person (fk): Person who is linked to the grouping.
         :grouping (fk): Grouping which is linked to the person.
         :type (fk): Category for link between the person and grouping.
-        :is_inactive (bool): True if link between person and grouping is no longer active.
+        :ended_unknown_date (bool): True if link between person and grouping is no longer active.
 
     """
     person = models.ForeignKey(
@@ -2088,16 +2088,16 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         verbose_name=_('type')
     )
 
-    is_inactive = models.BooleanField(
+    ended_unknown_date = models.BooleanField(
         null=False,
         blank=False,
         default=False,
-        verbose_name=_('Is inactive'),
+        verbose_name=_('ended at unknown end date'),
         help_text=_("Select if the person is no longer associate with group but the end date is unknown")
     )
 
     #: Fields to display in the model form.
-    form_fields = ['is_inactive', 'at_least_since', 'grouping', 'type', 'person']
+    form_fields = ['ended_unknown_date', 'at_least_since', 'grouping', 'type', 'person']
 
     def __str__(self):
         """Defines string representation for a link between a person and a grouping.
@@ -2154,7 +2154,7 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
             else:
                 return False
 
-        if self.is_inactive and end_date_is_all_zeros(self):
+        if self.ended_unknown_date and end_date_is_all_zeros(self):
             return super(PersonGrouping, self).at_least_since_bounding_dates + ' until unknown-end-date'
         else:
             return super(PersonGrouping, self).at_least_since_bounding_dates
