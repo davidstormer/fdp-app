@@ -714,7 +714,6 @@ class Descriptable(models.Model):
         null=False,
         blank=True,
         verbose_name=_('Description'),
-        help_text=_(''),
     )
 
     def __get_truncated_description(self):

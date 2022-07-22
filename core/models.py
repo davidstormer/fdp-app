@@ -99,7 +99,6 @@ class Person(Confidentiable, Descriptable):
     birth_date_range_start = models.DateField(
         null=True,
         blank=True,
-        help_text=_(''),
         verbose_name=_('Starting range for birth date')
     )
 
