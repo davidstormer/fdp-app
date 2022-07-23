@@ -1,11 +1,11 @@
-from django.contrib.postgres.search import TrigramSimilarity, SearchVector, SearchRank, SearchVectorField
+from django.contrib.postgres.search import TrigramSimilarity, SearchRank, SearchVectorField
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Coalesce, Length
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
-from django.db.models import Q, Prefetch, Exists, FloatField
-from django.db.models.expressions import RawSQL, Subquery, OuterRef, F, ExpressionWrapper
+from django.db.models import Q, Prefetch, Exists
+from django.db.models.expressions import RawSQL, Subquery, OuterRef, F
 from django.apps import apps
 
 from core.common import normalize_search_text
@@ -34,6 +34,8 @@ class PersonManager(ConfidentiableManager):
                 .order_by('-pk')
             )
         else:
+            # Normalize query -- strip out diacritic marks
+            query = normalize_search_text(query)
             results = (
                 self.all()
                 .filter(is_law_enforcement=is_law_enforcement)
@@ -46,54 +48,32 @@ class PersonManager(ConfidentiableManager):
                           'name', '-pk')  # <- for consistent order when ranks match
             )
 
-        # Do some prefetching of one-to-many relationships,
-        # because they're almost always used in search results listings.
-
-        def divided_years(model):
-            return [
-                RawSQL(
-                    model.order_by_sql_year.format(t=model.get_db_table(), o=''),
-                    params=[]
-                ).desc(),
-                RawSQL(
-                    model.order_by_sql_month.format(t=model.get_db_table(), o=''),
-                    params=[]
-                ).desc(),
-                RawSQL(
-                    model.order_by_sql_day.format(t=model.get_db_table(), o=''),
-                    params=[]
-                ).desc()
-            ]
-
+        # PERFORMANCE
+        # Do some prefetching of one-to-many relationships for performance,
+        # because they're almost always used in search results listings
+        # e.g. https://hakibenita.com/all-you-need-to-know-about-prefetching-in-django
         results_prefetched = results \
             .prefetch_related('person_aliases') \
             .prefetch_related('person_titles') \
+            .prefetch_related(
+                Prefetch(
+                    'person_titles',
+                    queryset=PersonTitle.objects.filter(end_year=0, end_month=0, end_day=0).select_related('title'),
+                    to_attr='current_titles'
+                )
+            ) \
             .prefetch_related('person_identifiers') \
-            .prefetch_related('person_groupings')
+            .prefetch_related('person_identifiers__person_identifier_type') \
+            .prefetch_related(
+                Prefetch(
+                    'person_groupings',
+                    queryset=PersonGrouping.objects.filter(grouping__is_law_enforcement=True).select_related(
+                        'grouping'),
+                    to_attr='groups_law_enforcement'
+                )
+            )
 
         return results_prefetched
-
-    def search_by_name(self, query: str, user: FdpUser, is_law_enforcement=True):
-        results = (
-            self.all()
-            .filter(is_law_enforcement=is_law_enforcement)
-            .filter_for_confidential_by_user(user=user)
-            .annotate(tg_similarity=TrigramSimilarity('name', query))
-            .filter(tg_similarity__gt=0.1)
-            .order_by('-tg_similarity')
-        )
-        return results
-
-    def search_by_identifiers(self, query: str, user: FdpUser, is_law_enforcement=True):
-        results = (
-            self.all()
-            .filter(is_law_enforcement=is_law_enforcement)
-            .filter_for_confidential_by_user(user=user)
-            .annotate(tg_similarity=TrigramSimilarity('person_identifier__identifier', query))
-            .filter(tg_similarity__gt=0.1)
-            .order_by('-tg_similarity')
-        )
-        return results
 
 
 class Person(Confidentiable, Descriptable):
@@ -120,14 +100,15 @@ class Person(Confidentiable, Descriptable):
     birth_date_range_start = models.DateField(
         null=True,
         blank=True,
-        help_text=_('If birth date is known, ensure start and end ranges are the same'),
         verbose_name=_('Starting range for birth date')
     )
 
     birth_date_range_end = models.DateField(
         null=True,
         blank=True,
-        help_text=_('If birth date is known, ensure start and end ranges are the same'),
+        help_text=_('Example: If you know that a person is 28 years old on Jan 24 2021 enter the start range as '
+                    'January 25 1992 and end range January 24 1993. If known birth date is exact, set start and end '
+                    'ranges to the same date'),
         verbose_name=_('Ending range for birth date')
     )
 
@@ -155,12 +136,11 @@ class Person(Confidentiable, Descriptable):
         related_query_name='person',
         db_table='{d}person_fdp_organization'.format(d=settings.DB_PREFIX),
         blank=True,
-        help_text=_('FDP organizations, which have exclusive access to person. Leave blank if all registered users '
-                    'can access.'),
+        help_text=_('Restrict access to users from the specified non-host organization (both staff and administrators).'),
         verbose_name=_('organization access')
     )
 
-    search_full_text = SearchVectorField(null=True)
+    search_full_text = SearchVectorField(null=True, blank=True)
 
     #: Fields to display in the model form.
     form_fields = \
@@ -847,7 +827,7 @@ class PersonContact(Archivable, Descriptable):
     phone_number = models.CharField(
         null=False,
         blank=True,
-        help_text=_('Phone number for person'),
+        help_text=_('Phone number'),
         max_length=256,
         verbose_name=_('phone number')
     )
@@ -855,7 +835,7 @@ class PersonContact(Archivable, Descriptable):
     email = models.EmailField(
         null=False,
         blank=True,
-        help_text=_('Email address for'),
+        help_text=_('Email address'),
         verbose_name=_('email')
     )
 
@@ -863,7 +843,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Building number, street name, unit # and PO box if available'),
+        help_text=_('Street address'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('address')
     )
@@ -872,7 +852,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('City for address of person'),
+        help_text=_('City'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('city')
     )
@@ -884,7 +864,7 @@ class PersonContact(Archivable, Descriptable):
         related_query_name='person_contact',
         blank=True,
         null=True,
-        help_text=_('State for address of person'),
+        help_text=_('State'),
         verbose_name=_('state')
     )
 
@@ -892,7 +872,7 @@ class PersonContact(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('ZIP code for address of person'),
+        help_text=_('ZIP code'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('zip code')
     )
@@ -902,7 +882,7 @@ class PersonContact(Archivable, Descriptable):
         blank=False,
         default=False,
         verbose_name=_('Is current'),
-        help_text=_('Select if contact information is currently used by person'),
+        help_text=_('Check if contact information is currently used by person'),
     )
 
     person = models.ForeignKey(
@@ -1049,10 +1029,11 @@ class PersonPhoto(Archivable, Descriptable):
         blank=False,
         null=False,
         help_text=_(
-            'Photo representing person. Should be less than {s}MB.'.format(
+            'Photo representing person. Should be less than {s}MB.<br>Allowed file formats: {ff}'.format(
                 s=AbstractFileValidator.get_megabytes_from_bytes(
                     num_of_bytes=AbstractConfiguration.max_person_photo_file_bytes()
-                )
+                ),
+                ff=AbstractConfiguration.supported_person_photo_file_types_str()
             )
         ),
         validators=[
@@ -1136,7 +1117,7 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
     identifier = models.CharField(
         null=False,
         blank=False,
-        help_text=_('Identifier number, such as the driver\'s license number, passport number, or similar'),
+        help_text=_("Identifier value. Can be non-numeric."),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('identifier')
     )
@@ -1148,7 +1129,7 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
         related_query_name='person_identifier',
         blank=False,
         null=False,
-        help_text=_('Type of documentation containing identifier, such as driver\'s license, passport, or similar'),
+        help_text=_("Type of identifier, such as shield number, driver's license, etc."),
         verbose_name=_('type')
     )
 
@@ -1205,80 +1186,6 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
         verbose_name = _('Person identifier')
         unique_together = ('person', 'person_identifier_type', 'identifier')
         ordering = ['person', 'person_identifier_type'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
-
-
-class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
-    """ Title for a person such as detective, fdptain, director, etc.
-
-    Attributes:
-        :title (fk): Title of person during period.
-        :person (fk): Person holding title during period.
-    """
-    title = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        related_name='person_titles',
-        related_query_name='person_title',
-        blank=False,
-        null=False,
-        help_text=_('Title of person during period'),
-        verbose_name=_('title')
-    )
-
-    person = models.ForeignKey(
-        Person,
-        on_delete=models.CASCADE,
-        related_name='person_titles',
-        related_query_name='person_title',
-        blank=False,
-        null=False,
-        help_text=_('Person holding title during period'),
-        verbose_name=_('person')
-    )
-
-    #: Fields to display in the model form.
-    form_fields = ['title', 'person', 'at_least_since']
-
-    def __str__(self):
-        """Defines string representation for a person title.
-
-        :return: String representation of a person title.
-        """
-        return '{p} {w} {r}'.format(
-            p=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='person'),
-            w=_('with title'),
-            r=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='title')
-        )
-
-    @classmethod
-    def filter_for_admin(cls, queryset, user):
-        """ Filter a queryset for the admin interfaces.
-
-        Assumes that queryset has already been filtered for direct confidentiality, i.e. whether user has access to
-        each record based on the record's level of confidentiality. E.g. a confidentiable queryset of Person.
-
-        Can be used to filter for indirect confidentiality, i..e whether user has access to each record based on other
-        relevant records' levels of confidentiality. E.g. a queryset of PersonAlias linking to a confidentiality
-        queryset of Person.
-
-        :param queryset: Queryset to filter.
-        :param user: User for which to filter queryset.
-        :return: Filtered queryset.
-        """
-        return queryset.filter(
-            person__in=Person.filter_for_admin(
-                queryset=Person.active_objects.all().filter_for_confidential_by_user(user=user),
-                user=user
-            )
-        )
-
-    class Meta:
-        db_table = '{d}person_title'.format(d=settings.DB_PREFIX)
-        verbose_name = _('Person title')
-        unique_together = (
-            'person', 'title', 'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
-        )
-        ordering = ['person'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
 
 
 class PersonRelationship(Archivable, AbstractAtLeastSinceDateBounded):
@@ -1536,14 +1443,13 @@ class Grouping(Archivable, Descriptable):
         :inception_date (date): Date grouping came into existence.
         :cease_date (date): Date grouping ceased to exist.
         :counties (m2m): Counties in which grouping operates.
-        :is_inactive (bool): True if link between person and grouping is no longer active.
+        :ended_unknown_date (bool): True if link between person and grouping is no longer active.
         :is_law_enforcement (bool): True if grouping is part of law enforcement, false otherwise.
         :belongs_to_grouping (fk): The top-level grouping to which this grouping belongs.
     """
     name = models.CharField(
         null=False,
         blank=True,
-        help_text=_('Name of grouping'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('name')
     )
@@ -1552,7 +1458,6 @@ class Grouping(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Phone number for grouping'),
         max_length=256,
         verbose_name=_('phone number')
     )
@@ -1561,7 +1466,6 @@ class Grouping(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Email address for grouping'),
         verbose_name=_('email')
     )
 
@@ -1569,17 +1473,17 @@ class Grouping(Archivable, Descriptable):
         null=False,
         blank=True,
         default='',
-        help_text=_('Full address for grouping'),
+        help_text=_('Full address of group'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('address')
     )
 
-    is_inactive = models.BooleanField(
+    ended_unknown_date = models.BooleanField(
         null=False,
         blank=False,
         default=False,
-        verbose_name=_('Is inactive'),
-        help_text=_('Select if the grouping is no longer active')
+        verbose_name=_('ended at unknown date'),
+        help_text=_("Select if the grouping is no longer active. Instead of deleting a group, mark it as inactive so that all the data relating to the group and the group history remains. This can also be used if you don't know the ceased date for a group but you know that they are no longer active.")
     )
 
     is_law_enforcement = models.BooleanField(
@@ -1600,7 +1504,7 @@ class Grouping(Archivable, Descriptable):
     cease_date = models.DateField(
         null=True,
         blank=True,
-        help_text=_('Date grouping ceased to exist'),
+        help_text=_('Date grouping ceased to exist. If unknown leave blank and check "Is inactive"'),
         verbose_name=_('cease date')
     )
 
@@ -1610,7 +1514,8 @@ class Grouping(Archivable, Descriptable):
         related_query_name='grouping',
         db_table='{d}grouping_county'.format(d=settings.DB_PREFIX),
         blank=True,
-        help_text=_('Counties in which the grouping operates'),
+        help_text=_('All counties where the group operates, has jurisdiction in. If county not on list <a '
+                    'href="/admin/supporting/county/" target="_blank">manage options here</a>'),
         verbose_name=_('counties')
     )
 
@@ -1628,7 +1533,7 @@ class Grouping(Archivable, Descriptable):
 
     #: Fields to display in the model form.
     form_fields = [
-        'name', 'phone_number', 'email', 'address', 'is_inactive', 'inception_date', 'cease_date', 'counties',
+        'name', 'phone_number', 'email', 'address', 'inception_date', 'cease_date', 'ended_unknown_date', 'counties',
         'description', 'belongs_to_grouping', 'belongs_to_grouping_name'
     ]
 
@@ -1723,11 +1628,11 @@ class Grouping(Archivable, Descriptable):
         return qs
 
     @classmethod
-    def __get_person_grouping_query(cls, accessible_officers, is_inactive):
+    def __get_person_grouping_query(cls, accessible_officers, ended_unknown_date):
         """ Retrieves a person grouping queryset that is filtered by active/inactive and a list of accessible officers.
 
         :param accessible_officers: List or queryset of officers that can be accessed by the user.
-        :param is_inactive: True if only inactive person-groupings should be retrieved, false if only active
+        :param ended_unknown_date: True if only inactive person-groupings should be retrieved, false if only active
         person-groupings should be retrieved.
         :return: Person grouping queryset.
         """
@@ -1735,7 +1640,7 @@ class Grouping(Archivable, Descriptable):
             id__in=Subquery(
                 PersonGrouping.active_objects.filter(
                     # only active career segments
-                    Q(is_inactive=is_inactive)
+                    Q(ended_unknown_date=ended_unknown_date)
                     &
                     # only for current grouping
                     Q(grouping_id=OuterRef('grouping_id'))
@@ -1813,13 +1718,13 @@ class Grouping(Archivable, Descriptable):
             Prefetch(
                 'person_groupings',
                 # don't need to filter groupings, since filtered above
-                queryset=cls.__get_person_grouping_query(accessible_officers=accessible_officers, is_inactive=False),
+                queryset=cls.__get_person_grouping_query(accessible_officers=accessible_officers, ended_unknown_date=False),
                 to_attr='command_active_officers'
             ),
             Prefetch(
                 'person_groupings',
                 # don't need to filter groupings, since filtered above
-                queryset=cls.__get_person_grouping_query(accessible_officers=accessible_officers, is_inactive=True),
+                queryset=cls.__get_person_grouping_query(accessible_officers=accessible_officers, ended_unknown_date=True),
                 to_attr='command_inactive_officers'
             ),
             Prefetch(
@@ -1908,6 +1813,10 @@ class Grouping(Archivable, Descriptable):
         ordering = ['name']
 
 
+Grouping._meta.get_field('description').help_text = "Description of group and what it does. Appears on the group's " \
+                                                    "profile page."
+
+
 class GroupingAlias(Archivable, AbstractAlias):
     """ Aliases for a grouping, e.g. nicknames, common misspellings, etc.
 
@@ -1963,6 +1872,10 @@ class GroupingAlias(Archivable, AbstractAlias):
         verbose_name_plural = _('Grouping aliases')
         unique_together = ('grouping', 'name')
         ordering = ['grouping', 'name']
+
+
+GroupingAlias._meta.get_field('name').help_text = \
+    "Alternative name such as acronym, abbreviation, code, or nickname. Do not add variations in case or punctuation."
 
 
 class GroupingRelationship(Archivable, AbstractAtLeastSinceDateBounded):
@@ -2047,6 +1960,91 @@ class GroupingRelationship(Archivable, AbstractAtLeastSinceDateBounded):
         ordering = ['subject_grouping', 'type', 'object_grouping']
 
 
+class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
+    """ Title for a person such as detective, fdptain, director, etc.
+
+    Attributes:
+        :title (fk): Title of person during period.
+        :person (fk): Person holding title during period.
+    """
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='person_titles',
+        related_query_name='person_title',
+        blank=False,
+        null=False,
+        help_text=_('Title or rank'),
+        verbose_name=_('title')
+    )
+
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.CASCADE,
+        related_name='person_titles',
+        related_query_name='person_title',
+        blank=False,
+        null=False,
+        help_text=_('Person holding title during period'),
+        verbose_name=_('person')
+    )
+
+    grouping = models.ForeignKey(
+        Grouping,
+        on_delete=models.CASCADE,
+        related_name='persontitle_groupings',
+        related_query_name='persontitle_grouping',
+        blank=True,
+        null=True,
+        help_text=_('The group in which the title was held. Optional: use this when an officer holds two titles at '
+                    'the same time at different agencies.'),
+    )
+
+    #: Fields to display in the model form.
+    form_fields = ['title', 'person', 'at_least_since', 'grouping']
+
+    def __str__(self):
+        """Defines string representation for a person title.
+
+        :return: String representation of a person title.
+        """
+        return '{p} {w} {r}'.format(
+            p=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='person'),
+            w=_('with title'),
+            r=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='title')
+        )
+
+    @classmethod
+    def filter_for_admin(cls, queryset, user):
+        """ Filter a queryset for the admin interfaces.
+
+        Assumes that queryset has already been filtered for direct confidentiality, i.e. whether user has access to
+        each record based on the record's level of confidentiality. E.g. a confidentiable queryset of Person.
+
+        Can be used to filter for indirect confidentiality, i..e whether user has access to each record based on other
+        relevant records' levels of confidentiality. E.g. a queryset of PersonAlias linking to a confidentiality
+        queryset of Person.
+
+        :param queryset: Queryset to filter.
+        :param user: User for which to filter queryset.
+        :return: Filtered queryset.
+        """
+        return queryset.filter(
+            person__in=Person.filter_for_admin(
+                queryset=Person.active_objects.all().filter_for_confidential_by_user(user=user),
+                user=user
+            )
+        )
+
+    class Meta:
+        db_table = '{d}person_title'.format(d=settings.DB_PREFIX)
+        verbose_name = _('Person title')
+        unique_together = (
+            'person', 'title', 'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
+        )
+        ordering = ['person'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
+
+
 class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
     """ Links between persons and groupings, e.g. describing an attorney's involvement in a law office or an
     officer's involvement in a command or precinct.
@@ -2055,7 +2053,7 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         :person (fk): Person who is linked to the grouping.
         :grouping (fk): Grouping which is linked to the person.
         :type (fk): Category for link between the person and grouping.
-        :is_inactive (bool): True if link between person and grouping is no longer active.
+        :ended_unknown_date (bool): True if link between person and grouping is no longer active.
 
     """
     person = models.ForeignKey(
@@ -2087,20 +2085,20 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         related_query_name='person_grouping',
         blank=True,
         null=True,
-        help_text=_('Category for link between the person and grouping'),
+        help_text=_('The type of relationships between the person and the group'),
         verbose_name=_('type')
     )
 
-    is_inactive = models.BooleanField(
+    ended_unknown_date = models.BooleanField(
         null=False,
         blank=False,
         default=False,
-        verbose_name=_('Is inactive'),
-        help_text=_('Select if the link between person and grouping is no longer active')
+        verbose_name=_('ended at unknown end date'),
+        help_text=_("Select if the person is no longer associate with group but the end date is unknown")
     )
 
     #: Fields to display in the model form.
-    form_fields = ['is_inactive', 'at_least_since', 'grouping', 'type', 'person']
+    form_fields = ['ended_unknown_date', 'at_least_since', 'grouping', 'type', 'person']
 
     def __str__(self):
         """Defines string representation for a link between a person and a grouping.
@@ -2157,7 +2155,7 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
             else:
                 return False
 
-        if self.is_inactive and end_date_is_all_zeros(self):
+        if self.ended_unknown_date and end_date_is_all_zeros(self):
             return super(PersonGrouping, self).at_least_since_bounding_dates + ' until unknown-end-date'
         else:
             return super(PersonGrouping, self).at_least_since_bounding_dates
@@ -2192,7 +2190,7 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         blank=True,
         null=True,
-        help_text=_('Location where incident occurred'),
+        help_text=_('Location of incident'),
         verbose_name=_('location')
     )
 
@@ -2203,7 +2201,8 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         blank=True,
         null=True,
-        help_text=_('Type of location where incident occurred'),
+        help_text=_('If type not on list <a href="/admin/supporting/incidentlocationtype/" '
+                    'target="_blank">manage options here</a>'),
         verbose_name=_('location type')
     )
 
@@ -2214,7 +2213,8 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         blank=True,
         null=True,
-        help_text=_('Reason for encounter during incident'),
+        help_text=_('If reason not on list <a href="/admin/supporting/encounterreason/" '
+                    'target="_blank">manage options here</a>'),
         verbose_name=_('encounter reason')
     )
 
@@ -2224,7 +2224,8 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         related_query_name='incident',
         db_table='{d}incident_incident_tag'.format(d=settings.DB_PREFIX),
         blank=True,
-        help_text=_('Tags describing incident'),
+        help_text=_('Add all tags that describe the incident. Add as many tags as are relevant. <a '
+                    'href="/admin/supporting/incidenttag/" target="_blank">manage options here</a>'),
         verbose_name=_('tags')
     )
 
@@ -2294,6 +2295,10 @@ class Incident(Confidentiable, AbstractExactDateBounded):
         ordering = AbstractExactDateBounded.order_by_date_fields + ['location']
 
 
+Incident._meta.get_field('description').help_text = \
+    "The main text that appears on officer profiles under known incidents"
+
+
 class PersonIncident(Archivable, Descriptable, Linkable, AbstractKnownInfo):
     """ Links between people and incidents, e.g. describing a victim or officer in an incident.
 
@@ -2343,7 +2348,8 @@ class PersonIncident(Archivable, Descriptable, Linkable, AbstractKnownInfo):
         related_query_name='person_incident',
         blank=True,
         null=True,
-        help_text=_('Categorizes the person\'s involvement in the incident'),
+        help_text=_('Select the role the person had in this particular incident. If role not on list <a '
+                    'href="/admin/supporting/situationrole/" target="_blank">manage options here</a>'),
         verbose_name=_('situation role')
     )
 

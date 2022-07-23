@@ -420,7 +420,8 @@ class Confidentiable(Archivable):
         null=False,
         blank=False,
         default=False,
-        help_text=_('Select if only administrators for the specified organizations can access.'),
+        help_text=_("Restrict access to this record to users who are Administrators (both host and guest "
+                    "administrators). When combined with 'Host Only', then only host administrators can access this record."),
         verbose_name=_('admin only')
     )
 
@@ -428,8 +429,9 @@ class Confidentiable(Archivable):
         null=False,
         blank=False,
         default=False,
-        help_text=_('Select if only users belonging to the host organization can access. When combined with \'admin '
-                    'only\', then only host administrators can access.'),
+        help_text=_('Restrict access to this record to users belonging to the host organization (both host staff and '
+                    'host administrators). When combined with \'Admin Only\', then only host administrators can '
+                    'access this record.'),
         verbose_name=_('host only')
     )
 
@@ -688,8 +690,8 @@ class Linkable(models.Model):
         null=False,
         blank=False,
         default=False,
-        verbose_name=_('Is this a guess'),
-        help_text=_('Select if link is a guess')
+        verbose_name=_('This is a guess'),
+        help_text=_("Check if there is uncertainty that the person being linked is the correct person involved")
     )
 
     class Meta:
@@ -712,7 +714,6 @@ class Descriptable(models.Model):
         null=False,
         blank=True,
         verbose_name=_('Description'),
-        help_text=_('Verbose, user-friendly narrative'),
     )
 
     def __get_truncated_description(self):
@@ -1992,7 +1993,7 @@ class AbstractAlias(Descriptable):
     name = models.CharField(
         null=False,
         blank=False,
-        help_text=_('Alternative name, such as a nickname, acronym, or common misspelling'),
+        help_text=_('Alternative name, such as a nickname, or maiden name. Do not add variations in case or punctuation.'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('alias')
     )
@@ -2325,7 +2326,7 @@ class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
         null=False,
         blank=False,
         default=False,
-        help_text=_('Select if start date is the earliest known start date, but not necessarily the true start date'),
+        help_text=_("Select if start date is the earliest known start date, but not necessarily the true start date"),
     )
 
     #: Fields that can be used in the admin interface to filter by date
@@ -2377,7 +2378,7 @@ class AbstractSql(models.Model):
         abstract = True
 
 
-class AbstractJson(models.Model):
+class AbstractJson:
     """ Abstract class from which all Json object wrapper classes inherit.
 
     """
@@ -2388,10 +2389,7 @@ class AbstractJson(models.Model):
 
         :return: Dictionary representing the JSON object.
         """
-        pass
-
-    class Meta:
-        abstract = True
+        raise NotImplementedError
 
 
 class JsonError(AbstractJson):
@@ -2400,12 +2398,9 @@ class JsonError(AbstractJson):
     Attributes:
         :error (string): Message describing error.
     """
-    error = models.TextField(
-        null=False,
-        blank=False,
-        verbose_name=_('error'),
-        help_text=_('Message describing error'),
-    )
+
+    def __init__(self, error):
+        self.error = error
 
     def get_json_dict(self):
         """ Retrieves a dictionary representing the JSON object containing the error to return through the JsonResponse.
@@ -2427,12 +2422,9 @@ class JsonData(AbstractJson):
     Attributes:
         :data (json): Dictionary representation of the JSON data object.
     """
-    data = models.JSONField(
-        null=False,
-        blank=True,
-        verbose_name=_('JSON data'),
-        help_text=_('JSON data to return'),
-    )
+
+    def __init__(self, data):
+        self.data = data
 
     def get_json_dict(self):
         """ Retrieves a dictionary representing the JSON object containing the HTML to return through the JsonResponse.
@@ -2443,9 +2435,6 @@ class JsonData(AbstractJson):
             AbstractUrlValidator.JSON_DAT_PARAM: True,
             AbstractUrlValidator.JSON_DAT_DAT_PARAM: self.data if self.data else {}
         }
-
-    class Meta:
-        abstract = True
 
 
 class AbstractAnySearch(models.Model):
@@ -3046,6 +3035,15 @@ class AbstractImport(models.Model):
         abstract = True
 
 
+# Make this a separate function, instead of a method of AbstractConfiguration,
+# Because for some reason AbstractConfiguration is an abstract model, and thus cannot be instantiated...
+def _format_file_types(file_types_data_structure):
+    output = ''
+    for file_type in file_types_data_structure:
+        output = output + f"{file_type[0]} .{file_type[1]}, "
+    return output.strip(', ')
+
+
 class AbstractConfiguration(models.Model):
     """ An abstract definition of methods and constants to interact with and interpret settings.
 
@@ -3165,6 +3163,14 @@ class AbstractConfiguration(models.Model):
         return getattr(settings, 'FDP_SUPPORTED_EULA_FILE_TYPES',  CONST_SUPPORTED_EULA_FILE_TYPES)
 
     @staticmethod
+    def supported_eula_file_types_str():
+        """Returns a human readable string of supported file types, for use in help text.
+        """
+        file_types_data_structure = getattr(settings, 'FDP_SUPPORTED_EULA_FILE_TYPES',
+                                            CONST_SUPPORTED_EULA_FILE_TYPES)
+        return _format_file_types(file_types_data_structure)
+
+    @staticmethod
     def max_wholesale_file_bytes():
         """ Checks the necessary setting to retrieve the maximum number of bytes that a user-uploaded file can have
         for an instance of the WholesaleImport model.
@@ -3204,6 +3210,14 @@ class AbstractConfiguration(models.Model):
         return getattr(settings, 'FDP_SUPPORTED_ATTACHMENT_FILE_TYPES',  CONST_SUPPORTED_ATTACHMENT_FILE_TYPES)
 
     @staticmethod
+    def supported_attachment_file_types_str():
+        """Returns a human readable string of supported file types, for use in help text.
+        """
+        file_types_data_structure = getattr(settings, 'FDP_SUPPORTED_ATTACHMENT_FILE_TYPES',
+                                            CONST_SUPPORTED_ATTACHMENT_FILE_TYPES)
+        return _format_file_types(file_types_data_structure)
+
+    @staticmethod
     def max_person_photo_file_bytes():
         """ Checks the necessary setting to retrieve the maximum number of bytes that a user-uploaded file can have for
         an instance of the Person Photo model.
@@ -3221,6 +3235,14 @@ class AbstractConfiguration(models.Model):
         :return: List of tuples, each with two items.
         """
         return getattr(settings, 'FDP_SUPPORTED_PERSON_PHOTO_FILE_TYPES',  CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES)
+
+    @staticmethod
+    def supported_person_photo_file_types_str():
+        """Returns a human readable string of supported file types, for use in help text.
+        """
+        file_types_data_structure = getattr(settings, 'FDP_SUPPORTED_PHOTO_FILE_TYPES',
+                                            CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES)
+        return _format_file_types(file_types_data_structure)
 
     @staticmethod
     def models_in_wholesale_allowlist():

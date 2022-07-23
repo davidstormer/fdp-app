@@ -272,7 +272,6 @@ class BulkDelete(TestCase):
                 Person.objects.all().count()
             )
 
-            print(command_output.getvalue())
             # THEN I should see a message about a deleted record
             self.assertIn("Deleted", command_output.getvalue())
 

@@ -384,7 +384,7 @@ class ConfidentiableAdmin(ArchivableAdmin):
 
     """
     list_display = ArchivableAdmin.list_display + ['for_admin_only', 'all_fdp_organizations']
-    list_filter = ArchivableAdmin.list_filter + ['for_admin_only', 'fdp_organizations']
+    list_filter = ArchivableAdmin.list_filter + ['for_admin_only', 'for_host_only', 'fdp_organizations']
 
     def get_queryset(self, request):
         """ Filters queryset so that records displayed are confidentiality appropriate for user.

@@ -3,6 +3,7 @@ import pdb
 from django.test import Client
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.remote.webelement import WebElement
 
 from fdpuser.models import FdpUser
 from inheritable.tests import AbstractTestCase
@@ -49,7 +50,7 @@ def wait(fn, *args, **kwargs):
     """Call a given function repeatedly until it doesn't raise AssertionError or WebDriverException.
     Gives up after five seconds.
     """
-    max_wait = 5
+    max_wait = 20
     start_time = time.time()
     while True:
         try:
@@ -78,6 +79,37 @@ class FunctionalTestCase(AbstractTestCase):
             is_administrator=is_administrator,
             is_superuser=is_superuser,
             email_counter=FdpUser.objects.all().count()
+        )
+        two_factor = self._create_2fa_record(user=fdp_user)
+        # log in user
+        login_response = self._do_login(
+            c=client,
+            username=fdp_user.email,
+            password=self._password,
+            two_factor=two_factor,
+            login_status_code=200,
+            two_factor_status_code=200,
+            will_login_succeed=True
+        )
+        return client
+
+    def log_in_as(self, email, is_host=True, is_administrator=False, is_superuser=False) -> object:
+        """Log into the system
+        - Create an account
+        - Set the password
+        - Set up 2FA tokens
+        - Log into the system
+
+        Returns a Django test client object
+        """
+        client = Client()
+        fdp_user = self._create_fdp_user(
+            password=self._password,
+            is_host=is_host,
+            is_administrator=is_administrator,
+            is_superuser=is_superuser,
+            email_counter=FdpUser.objects.all().count(),
+            email=email
         )
         two_factor = self._create_2fa_record(user=fdp_user)
         # log in user
@@ -147,7 +179,11 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
             timestamp=timestamp
         )
 
-    def log_in(self, is_host=True, is_administrator=False, is_superuser=False) -> object:
+    def el(self, css_selector: str) -> WebElement:
+        """Shorthand for self.browser.find_element(By.CSS_SELECTOR, css_selector)"""
+        return self.browser.find_element(By.CSS_SELECTOR, css_selector)
+
+    def log_in(self, is_host=True, is_administrator=False, is_superuser=False) -> FdpUser:
         """Log into the system
         - Create an account
         - Set the password
@@ -185,6 +221,10 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         # all done
         return user
 
+    def log_out(self):
+        self.browser.get(self.live_server_url + '/account/logout/')
+
+
     def enter_autocomplete_data(self, input_css_selector: str, results_css_selector: str, search_string: str,
                                 nth_result: int = 1) -> None:
         """Interacts with the autocomplete widget to select a database entity.
@@ -202,3 +242,12 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         for i in range(nth_result):
             group_input.send_keys(Keys.DOWN)
         group_input.send_keys(Keys.ENTER)
+
+    def input(self, name: str) -> WebElement:
+        return wait(self.browser.find_element, By.CSS_SELECTOR, f'input[name="{name}"]')
+
+    def submit_button(self, value: str) -> WebElement:
+        return wait(self.browser.find_element, By.CSS_SELECTOR, f"input[value='{value}']")
+
+    def el(self, css_selector) -> WebElement:
+        return wait(self.browser.find_element, By.CSS_SELECTOR, css_selector)

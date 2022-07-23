@@ -1,20 +1,28 @@
 <div class="card mb-3">
-  <a class="card-body profile-link" href="{{profile_url}}">
-    <h5 class="card-title text-primary">{{name}}</h5>
+  <div class="card-body">
+    <h5 class="card-title text-primary"><a href="{{profile_url}}" class="profile-link">{{name}}</a></h5>
     {% if aliases %}<h6 class="card-subtitle mb-2 text-muted">a.k.a. {{ aliases|join:', ' }}</h6>{% endif %}
-    {% if current_titles %}<p class="card-text"></p>{% endif %}
-    {% if groups %}<p class="card-text">{{ groups|join:', ' }}</p>{% endif %}
-  </a>
-  {% if current_titles or identifiers %}
+    <div class="row">
+      <div class="card-main-left col-md-8">
+        {% if groups %}<p class="card-text">{{ groups|join:', ' }}</p>{% endif %}
+      </div>
+      <div class="card-main-right col-md-4 text-end">
+        <p class="card-text">
+          {% for identifier in identifiers %}
+            <span class="text-secondary">{{ identifier.person_identifier_type }}:</span>
+            <span class="text-identifier">{{ identifier.identifier }}</span><br>
+          {% endfor %}
+        </p>
+      </div>
+    </div>
+  </div>
+  {% if current_titles %}
   <div class="fdp-card-footer border-top text-secondary">
     <div class="row">
     <div class="current-titles col-md-6">
     {{ current_titles|join:', ' }}
     </div>
     <div class="identifiers col-md-6 text-end">
-    {% for identifier in identifiers %}
-    <span class="badge rounded-pill border text-secondary" title="{{identifier.person_identifier_type}}">{{ identifier.identifier }}</span>
-    {% endfor %}
     </div>
     </div>
   </div>

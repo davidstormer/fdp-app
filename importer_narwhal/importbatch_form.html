@@ -1,0 +1,10 @@
+{% extends "importer_narwhal/templates/importbatch_detail_base.html" %}
+{% load i18n admin_urls static compress crispy_forms_tags %}
+
+{% block inner_content %}
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form|crispy }}
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}

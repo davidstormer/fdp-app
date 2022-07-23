@@ -1,5 +1,8 @@
+import json
+
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
 from inheritable.models import AbstractUrlValidator, AbstractSearchValidator, \
@@ -49,7 +52,7 @@ class IndexTemplateView(SecuredSyncTemplateView):
         context = super(IndexTemplateView, self).get_context_data(**kwargs)
         context.update({
             'title': _('What are you searching for?'),
-            'description': _('Select whether to search for officers or commands.')
+            'description': _('Select whether to search for persons or commands.')
         })
         return context
 
@@ -108,8 +111,8 @@ class OfficerSearchFormView(SecuredSyncFormView):
         """
         context = super(OfficerSearchFormView, self).get_context_data(**kwargs)
         context.update({
-            'title': _('Officer Search'),
-            'description': _('Search for officers and corresponding information.')
+            'title': _('Person Search'),
+            'description': _('Search for persons and corresponding information.')
         })
         return context
 
@@ -125,6 +128,12 @@ class OfficerSearchFormView(SecuredSyncFormView):
         """
         self.form = form
         return super(OfficerSearchFormView, self).form_valid(form=form)
+
+    def get(self, request, *args, **kwargs):
+        if getattr(settings, 'LEGACY_OFFICER_SEARCH_ENABLE', False):
+            return super(OfficerSearchFormView, self).get(request, *args, **kwargs)
+        else:
+            return redirect(reverse('profiles:officer_search_roundup'), permanent=False)
 
 
 class OfficerSearchResultsListView(SecuredSyncListView):
@@ -297,8 +306,8 @@ class OfficerSearchResultsListView(SecuredSyncListView):
         querystring = QueryDict('', mutable=True)
         querystring.update({AbstractUrlValidator.GET_PREV_URL_PARAM: urlquote(current_search_querystring)})
         context.update({
-            'title': _('Officer Search Results'),
-            'description': _('Browse a list of officers matching the search criteria.'),
+            'title': _('Person Search Results'),
+            'description': _('Browse a list of persons matching the search criteria.'),
             'search': self.__search_class.parsed_search_criteria,
             'back_link_querystring': querystring.urlencode(),
             'queryset_count': self.__count,
@@ -320,26 +329,18 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
     template_name = "officer_search_roundup.html"
 
     def get(self, request, *args, **kwargs):
-
-        results = Person.objects.search_all_fields('', request.user)
-
-        paginator = Paginator(results, 50)
-
-        page_number = request.POST.get('page')
-        page_obj = paginator.get_page(page_number)
-        return self.render_to_response({
-            'title': 'Officer Search',
-            'query': '',
-            'sort': 'relevance',
-            'page_obj': page_obj,
-            'number_of_results': results.count(),
-            'groups': Grouping.objects.filter(is_law_enforcement=True).order_by('name'),
-        })
+        # when the user first navigates to the page it will be a get request
+        # but all of our logic is in the post function. So just trick the view into
+        # handling the GET request as if it was a POST.
+        # So that we don't have to maintain logic in two places, it was causing bugs! now DRY
+        return self.post(request)
 
     # Handle searches via POST so that the query string is kept out of the URL (security)
     def post(self, request, *args, **kwargs):
-        query_string = request.POST.get('q')
+        query_string = request.POST.get('q') or ''
         sort = request.POST.get('sort') or 'relevance'
+        page_number = request.POST.get('page')
+
         try:
             group = Grouping.objects.get(pk=request.POST.get('group'))
         except Grouping.DoesNotExist:
@@ -358,18 +359,36 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
             # Do nothing, because the results are already ordered by relevance by default
             pass
 
+        # Log this query to the OfficerSearch log
+        if query_string:
+            OfficerSearch.objects.create_officer_search(
+                num_of_results=results.count(),
+                parsed_search_criteria=json.dumps({
+                    'query_string': query_string,
+                    'sort': sort,
+                    'group': group.name if group else '',
+                }),
+                fdp_user=request.user,
+                request=request
+            )
+
         paginator = Paginator(results, 50)
 
-        page_number = request.POST.get('page')
+        related_groups = (
+            Grouping.objects.filter(is_law_enforcement=True)
+            .filter(person_grouping__person__in=results)
+            .order_by('name')
+            .distinct()
+        )
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
-            'title': 'Officer Search',
+            'title': 'Person Search',
             'query': query_string,
             'within_group': group,
             'sort': sort,
             'page_obj': page_obj,
             'number_of_results': results.count(),
-            'groups': Grouping.objects.filter(is_law_enforcement=True).order_by('name'),
+            'groups': related_groups,
         })
 
 
@@ -406,7 +425,7 @@ class OfficerDetailView(SecuredSyncDetailView):
         OfficerView.objects.create_officer_view(person=self.object, fdp_user=user, request=request)
         back_link = request.GET.get(AbstractUrlValidator.GET_PREV_URL_PARAM, None)
         context.update({
-            'title': _('Officer Profile'),
+            'title': _('Person Profile'),
             'description': _('Review an officer\'s profile, including corresponding information.'),
             'search_results_url': reverse('profiles:officer_search') if not back_link
             else '{url}?{querystring}'.format(
@@ -668,7 +687,7 @@ class OfficerDownloadAllFilesView(SecuredSyncView):
         """
         user = request.user
         if not pk:
-            raise Exception(_('No officer was specified'))
+            raise Exception(_('No person was specified'))
         files_to_zip = Person.get_officer_attachments(pk=pk, user=user)
         # create ZIP archive for all attachments
         bytes_io = AbstractFileValidator.zip_files(files_to_zip=files_to_zip)

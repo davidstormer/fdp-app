@@ -43,6 +43,7 @@ rest_urlpatterns = [
     path('fdp/user/', include('fdpuser.urls', namespace='fdpuser')),
     path('', include('bulk.urls', namespace='bulk')),
     path('', include('changing.urls', namespace='changing')),
+    path('changing/importer/', include('importer_narwhal.urls', namespace='importer_narwhal')),
     path('', include('profiles.urls', namespace='profiles')),
     path('', include('core.urls', namespace='core')),
     path('', include('sourcing.urls', namespace='sourcing')),

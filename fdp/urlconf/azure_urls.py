@@ -48,7 +48,7 @@ two_factor_urlpatterns = [
 ]
 
 
-urlpatterns = admin_urlpatterns + two_factor_urlpatterns + (
+urlpatterns = two_factor_urlpatterns + (
     # only include URLs for social_django package is external authentication through Azure Active Directory is supported
     [] if not AbstractConfiguration.can_do_azure_active_directory() else [
         # URLs for authenticating via Microsoft Azure Active Directory
@@ -57,4 +57,4 @@ urlpatterns = admin_urlpatterns + two_factor_urlpatterns + (
 ) + logout_urlpatterns + (
     cannot_do_password_reset_urlpatterns if not AbstractConfiguration.can_do_password_reset()
     else can_do_password_reset_urlpatterns
-) + rest_urlpatterns
+) + rest_urlpatterns + admin_urlpatterns

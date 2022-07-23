@@ -58,12 +58,6 @@ div#release-number {
   font-weight: bold;
   text-align: right;
 }
-/* Move footer to bottom when on 2fa pages, where body div becomes tiny window */
-body.login div#footer-global {
-  position: fixed;
-  bottom: 0;
-  right: 0;
-}
 
 /* Help center button */
 a.help-center-button {
@@ -120,4 +114,20 @@ a.custom-text-edit-link {
     padding: 2em;
     padding-top: .5em;
   }
+}
+
+/* Misc Typography */
+
+/* use to force <pre> text to match the rest of the page */
+.body-font {
+  font-family: "Roboto","Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+
+.text-wrap {
+  /* https://stackoverflow.com/a/52130554 */
+  white-space: pre-wrap;
+  word-break: keep-all
+  word-wrap: break-word;
 }

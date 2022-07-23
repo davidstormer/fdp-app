@@ -12,11 +12,11 @@
 
 {% block content %}
 <div class="col-lg-6">
-<form method="post" class="mb-5">
+<form method="post" class="mb-5 roundup-officer-search">
     {% csrf_token %}
     <label for="officer-search" class="form-label">Terms</label>
     <div class="input-group input-group-lg mb-3">
-    <input type="text" name="q" value="{{ query }}" size="100" id="officer-search" class="form-control" aria-describedby="officer-search-help">
+    <input type="text" name="q" value="{{ query }}" size="100" id="officer-search" class="form-control" aria-describedby="officer-search-help" autofocus>
     <input type="submit" value="Search" class="btn btn-primary">
     </div>
     <div id="officer-search-help" class="form-text">
@@ -51,7 +51,7 @@
         <input type="hidden" name="page" value="{{ page_obj.number }}">
         <input type="submit" value="relevance" class="btn btn-link">
         </form>
-</div>
+    </div>
 </div>
 
 <div class="row row-filters-results">
@@ -75,7 +75,7 @@
         <input type="hidden" name="sort" value={{ sort }}>
         <input type="hidden" name="group" value="{{ group.pk }}">
         {% if within_group.pk == group.pk %}
-        <i class="fas fa-check-square search-facet-status-indicator"></i>
+        <i class="fas fa-check-square search-facet-status-indicator text-primary"></i>
         <span class="sr-only">active</span>
         {% endif %}
         <input type="submit" value="{{ group.name }}"

@@ -1,11 +1,15 @@
 from unittest import skip
+from uuid import uuid4
+from django.test import override_settings
 
 from selenium.webdriver.common.by import By
 
 from core.models import Person, PersonAlias, PersonIdentifier, Grouping, PersonGrouping, PersonTitle
-from functional_tests.common import wait, SeleniumFunctionalTestCase
+from fdpuser.models import FdpUser
+from functional_tests.common import wait, SeleniumFunctionalTestCase, FunctionalTestCase
 from faker import Faker
 
+from profiles.models import OfficerSearch
 from supporting.models import PersonIdentifierType, PersonGroupingType, Title
 
 faker = Faker()
@@ -63,7 +67,6 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             '314',
             self.browser.find_element(By.CSS_SELECTOR, "span.number-of-results").text
         )
-
 
     def test_search_results_rows_aliases(self):
         # Given there is an officer record with aliases
@@ -228,11 +231,11 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
         PersonGrouping.objects.create(
             type=person_grouping_type,
             person=person_record,
-            grouping=Grouping.objects.create(name=f"subcommissaryship"))
+            grouping=Grouping.objects.create(name=f"subcommissaryship", is_law_enforcement=True))
         PersonGrouping.objects.create(
             type=person_grouping_type,
             person=person_record,
-            grouping=Grouping.objects.create(name=f"withindoors"))
+            grouping=Grouping.objects.create(name=f"withindoors", is_law_enforcement=True))
 
         # When I do a search for the officer
         self.log_in(is_administrator=False)
@@ -253,6 +256,31 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             first_result.text
         )
 
+    def test_search_results_rows_commands_law_enforcement_only(self):
+        # Given there is an officer record with a command that isn't marked is law enforcement True
+        person_record = Person.objects.create(name="Kayla Ellis", is_law_enforcement=True)
+        person_grouping_type = PersonGroupingType.objects.create(name="pgtype")
+        PersonGrouping.objects.create(
+            type=person_grouping_type,
+            person=person_record,
+            grouping=Grouping.objects.create(name=f"extracolumella",
+                                             is_law_enforcement=False))  # <- this
+
+        # When I do a search for the officer
+        self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'input[name="q"]') \
+            .send_keys("Kayla Ellis")
+        self.browser.find_element(By.CSS_SELECTOR, "input[value='Search']") \
+            .click()
+
+        # Then I should NOT see the civilian command printed in their search result row
+        first_result = self.browser.find_element(By.CSS_SELECTOR, "div.search-results li.row-1")
+        self.assertNotIn(
+            "extracolumella",
+            first_result.text
+        )
+
     def test_blank_search_new_record_listed_first(self):
         # Given there are a number of officers in the system and I add one more
         for i in range(100):
@@ -269,3 +297,147 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             "microcosmography",
             first_result.text
         )
+
+    def test_query_logging(self):
+        """Ensure that logs are recorded of user's searches
+        """
+        # Given I'm logged in as a user
+        self.log_in(is_administrator=False)
+        # When I perform a search
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'input[name="q"]') \
+            .send_keys("zephyry")
+        self.browser.find_element(By.CSS_SELECTOR, "input[value='Search']") \
+            .click()
+
+        # Then I should see a new OfficerSearch record created
+        self.assertEqual(
+            1,
+            OfficerSearch.objects.count()
+        )
+        # Then it should contain my search query
+        self.assertIn(
+            'zephyry',
+            OfficerSearch.objects.last().parsed_search_criteria
+        )
+        # Then it should contain my user id
+        self.assertEqual(
+            FdpUser.objects.last(),
+            OfficerSearch.objects.last().fdp_user
+        )
+
+    @override_settings(LEGACY_OFFICER_SEARCH_ENABLE=True)
+    def test_legacy_mode_setting_enabled_from_landing(self):
+        # Given the legacy mode is unset
+        # and I'm on the staff end user landing page
+        admin_client = self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/')
+
+        # When I click the Officer link
+        self.browser.find_element(By.LINK_TEXT, "Person Search").find_element(By.CSS_SELECTOR, 'i') \
+            .click()
+
+        # Then I should be taken to the old pre-roundup search
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'form.search div.criteria')
+
+    def test_legacy_mode_setting_unset_from_landing(self):
+        # Given the legacy mode is unset
+        # and I'm on the staff end user landing page
+        admin_client = self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/')
+
+        # When I click the Officer link
+        self.browser.find_element(By.LINK_TEXT, "Person Search").find_element(By.CSS_SELECTOR, 'i') \
+            .click()
+
+        # Then I should be taken to the new roundup officer search
+        wait(self.browser.find_element, By.CSS_SELECTOR, 'form.roundup-officer-search')
+
+
+class SearchPageTestCaseRoundup(FunctionalTestCase):
+    @staticmethod
+    def make_records():
+        person_record = Person.objects.create(name=f"Daniel Wilson" + str(uuid4()), is_law_enforcement=True)
+        PersonAlias.objects.create(name=f"contortioned" + str(uuid4()), person=person_record)
+        PersonAlias.objects.create(name=f"pompoleon" + str(uuid4()), person=person_record)
+        PersonTitle.objects.create(
+            title=Title.objects.create(name=f'ferulic' + str(uuid4())),
+            person=person_record,
+            start_day=1,
+            start_month=1,
+            start_year=2001,
+
+            end_day=2,
+            end_month=1,
+            end_year=0,
+
+            at_least_since=True
+        )
+        PersonTitle.objects.create(
+            title=Title.objects.create(name=f'miasmatical' + str(uuid4())),
+            person=person_record,
+            start_day=3,
+            start_month=1,
+            start_year=2001,
+
+            end_day=0,
+            end_month=0,
+            end_year=0,
+
+            at_least_since=True
+        )
+        PersonTitle.objects.create(
+            title=Title.objects.create(name=f'pompoleon' + str(uuid4())),
+            person=person_record,
+            start_day=3,
+            start_month=1,
+            start_year=2000,
+
+            end_day=0,
+            end_month=0,
+            end_year=0,
+
+            at_least_since=True
+        )
+        id_type = PersonIdentifierType.objects.create(name=f'Test Type' + str(uuid4()))
+        PersonIdentifier.objects.create(
+            identifier=f'bathmic' + str(uuid4()), person=person_record,
+            person_identifier_type=id_type)
+        PersonIdentifier.objects.create(
+            identifier=f'intertarsal' + str(uuid4()), person=person_record,
+            person_identifier_type=id_type)
+        person_grouping_type = PersonGroupingType.objects.create(name=f"pgtype" + str(uuid4()))
+        PersonGrouping.objects.create(
+            type=person_grouping_type,
+            person=person_record,
+            grouping=Grouping.objects.create(name=f"subcommissaryship" + str(uuid4()), is_law_enforcement=True))
+        PersonGrouping.objects.create(
+            type=person_grouping_type,
+            person=person_record,
+            grouping=Grouping.objects.create(name=f"withindoors" + str(uuid4()), is_law_enforcement=True))
+
+    def test_search_view_num_queries(self):
+        # Given there are officers with related aliases, titles, identifiers, and groupings
+        self.make_records()
+        # When I do a search
+        # Then five queries should be performed (heh let's see...)
+        admin_client = self.log_in(is_administrator=True)
+        with self.assertNumQueries(23):
+            # response = admin_client.get('/')
+            response = admin_client.post('/officer/search-roundup', follow=True, data={
+                'q': 'Daniel'
+            })
+
+    def test_search_view_num_queries_invariant(self):
+        # Given there are officers with related aliases, titles, identifiers, and groupings
+        for _ in range(100):
+            self.make_records()
+
+        # When I do a search
+        # Then five queries should be performed (heh let's see...)
+        admin_client = self.log_in(is_administrator=True)
+        with self.assertNumQueries(23):
+            # response = admin_client.get('/')
+            response = admin_client.post('/officer/search-roundup', follow=True, data={
+                'q': 'Daniel'
+            })

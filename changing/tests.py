@@ -1,8 +1,11 @@
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
+
+from functional_tests.common import FunctionalTestCase
 from inheritable.tests import AbstractTestCase, local_test_settings_required
 from fdpuser.models import FdpOrganization, FdpUser
 from core.models import Person, PersonRelationship, Incident, PersonIncident
+from inheritable.views import SecuredAsyncJsonView
 from sourcing.models import Content, ContentPerson, Attachment, ContentIdentifier
 from supporting.models import PersonRelationshipType, ContentIdentifierType, Allegation
 from .forms import WizardSearchForm
@@ -1340,3 +1343,59 @@ class ChangingTestCase(AbstractTestCase):
         self.__test_attachment_changing_async_view(fdp_org=fdp_org, other_fdp_org=other_fdp_org)
         logger.debug(_('\nSuccessfully finished test for asynchronous Changing views for all permutations of user roles, '
                 'confidentiality levels and relevant models\n\n'))
+
+
+class TristanTests(FunctionalTestCase):
+
+    def test_AsyncGetPersonsView(self):
+        # Given there's a person record in the system
+        Person.objects.create(name="ostreiculture")
+
+        # When I query the persons ajax query endpoint by the name
+        client = self.log_in(is_administrator=True)
+        response = client.post(
+            reverse('changing:async_get_persons'),
+            {
+                'searchCriteria': "ostreiculture",
+            },
+            content_type='application/json'
+        )
+
+        # Then I should get back a json response where the "data" key contains a list
+        data = response.json()['data']
+        self.assertEqual(
+            type(data),
+            type([])
+        )
+        # And the first item on the list should be a dictionary with the person's name
+        self.assertEqual(
+            "ostreiculture",
+            data[0]['label']
+        )
+
+    def test_AsyncGetPersonsView_invalid_request_data(self):
+        # Given there's a person record in the system
+        Person.objects.create(name="ostreiculture")
+
+        # When I query the persons ajax query endpoint with an invalid search query
+        client = self.log_in(is_administrator=True)
+        response = client.post(
+            reverse('changing:async_get_persons'),
+            {
+                'searchCriteria': "",
+            },
+            content_type='application/json'
+        )
+
+        # Then I should get back a json response with an error message
+        self.assertEqual(
+            'Could not retrieve persons. Please reload the page. No search criteria specified.',
+            response.json()['error']
+        )
+
+    def test_jsonify_error(self):
+        result = SecuredAsyncJsonView.jsonify_error(err="Exception message", b="Localized text preceding the error")
+        self.assertEqual(
+            result.error,
+            'Localized text preceding the error Exception message.'
+        )

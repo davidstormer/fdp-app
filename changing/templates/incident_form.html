@@ -44,7 +44,7 @@
             </div>
         </div> <!-- div.collapsible for Details -->
 
-        <button type="button" class="collapsible expanded">{% translate 'Persons' %}</button>
+        <button type="button" class="collapsible expanded">{% translate 'Persons involved in incident' %}</button>
         <div class="collapsible">
             {% if suggested_persons %}
             <div class="suggestedpersoncont">
@@ -77,7 +77,7 @@
             </div>
         </div> <!-- div.collapsible for Persons -->
 
-        <button type="button" class="collapsible expanded">{% translate 'Groupings' %}</button>
+        <button type="button" class="collapsible expanded">{% translate 'Groups involved in incident' %}</button>
         <div class="collapsible">
             <div>
                 {{ grouping_incident_model_formset.management_form }}

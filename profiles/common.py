@@ -1,4 +1,5 @@
 import bleach
+from django.conf import settings
 
 from profiles.models import get_site_setting
 
@@ -41,3 +42,9 @@ def global_custom_text_block_context_processor(request) -> dict:
             'custom_text_block_global_left': get_site_setting('custom_text_blocks-global_footer_left'),
             'custom_text_block_global_right': get_site_setting('custom_text_blocks-global_footer_right'),
         }
+
+
+def snapshot_toggle_context_processor(request) -> dict:
+    return {
+        'snapshot_enable': not settings.SNAPSHOT_DISABLE
+    }

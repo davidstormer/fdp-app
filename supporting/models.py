@@ -317,14 +317,14 @@ class Location(Archivable):
         related_query_name='location',
         blank=False,
         null=False,
-        help_text=_('County for location'),
+        help_text=_('If county not on list <a href="/admin/supporting/county/add/" target="_blank">add it here</a>'),
         verbose_name=_('county')
     )
 
     address = models.CharField(
         null=False,
         blank=True,
-        help_text=_('Full address for location'),
+        help_text=_('Full address, cross street, or partial address'),
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('address')
     )

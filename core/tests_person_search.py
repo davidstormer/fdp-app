@@ -4,13 +4,15 @@ from django.db import transaction
 from django.test import TestCase
 from faker import Faker
 from core.models import Person, PersonAlias, PersonIdentifier
-from fdpuser.models import FdpUser
+from fdpuser.models import FdpUser, FdpOrganization
+from profiles.models import OfficerSearch
 from supporting.models import PersonIdentifierType
 
 faker = Faker()
 
 
 def make_fake_person_records(number):
+    """Misc helper that can be used on local dev environment for testing"""
     PersonIdentifierType.objects.create(name=uuid4())
 
     with transaction.atomic():
@@ -23,8 +25,6 @@ def make_fake_person_records(number):
                 identifier=f'{faker.ssn()} 2-{i}', person=person_record,
                 person_identifier_type=PersonIdentifierType.objects.last())
             PersonAlias.objects.create(name=faker.name(), person=person_record)
-            # PersonAlias.objects.create(name=faker.name(), person=person_record)
-            # PersonAlias.objects.create(name=faker.name(), person=person_record)
 
 
 class FullTextIndexing(TestCase):
@@ -211,7 +211,7 @@ class PersonSearchAllFields(TestCase):
             PersonAlias.objects.create(name=f'Alias 2 for {person_record}', person=person_record)
 
         admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             results = Person.objects.search_all_fields('Mohammed', user=admin_user)
             for result in results:
                 list(result.person_aliases.all())
@@ -236,6 +236,22 @@ class PersonSearchAllFields(TestCase):
         )
         self.assertEqual(
             "Mohammed Alabbadi",
+            results[0].name
+        )
+
+    def test_query_diacritic_folding(self):
+        """Ensure that diacritic folding is happening to search query before search is performed
+        """
+        # Given there's a person record 'cafe' WITHOUT a diacritic mark in the name
+        # and another record with a similar spelling off by one but EARLIER in alphabetical order
+        person_record_match = Person.objects.create(name="cafe", is_law_enforcement=True)
+        person_record_mismatch = Person.objects.create(name="cafa", is_law_enforcement=True)
+        # When I do a search WITH a diacritic mark
+        admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+        results = Person.objects.search_all_fields('café', user=admin_user)
+        # Then the record named "cafe" should be first, not "cafa"
+        self.assertEqual(
+            "cafe",
             results[0].name
         )
 
@@ -288,6 +304,132 @@ class PersonSearchAllFields(TestCase):
             0,
             len(guest_admin_results)
         )
+
+    def test_access_controls_organization_only(self):
+        organization = FdpOrganization.objects.create(name="unprophesiable")
+
+        person_record = Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True)
+        person_record.fdp_organizations.add(organization)
+
+        with self.subTest(msg="host end user can't see"):
+            host_admin_user = FdpUser.objects.create(email='usertwo@localhost',
+                                                     is_host=True)
+            admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", host_admin_user)
+            self.assertEqual(
+                0,
+                admin_results.count()
+            )
+
+        with self.subTest(msg="org user can see"):
+            org_admin_user = FdpUser.objects.create(email='userthree@localhost',
+                                                    is_administrator=False,
+                                                    fdp_organization=organization,
+                                                    is_host=False)
+            org_admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", org_admin_user)
+
+            # Then I should NOT see the matching record in the results
+            self.assertEqual(
+                1,
+                len(org_admin_results)
+            )
+
+        # BTW
+        with self.subTest(msg="host admin CAN see"):  # Too bad...
+            host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True,
+                                                     is_host=True)
+            admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", host_admin_user)
+            self.assertEqual(
+                1,
+                admin_results.count()
+            )
+
+    def test_access_controls_for_admin_only_blank_search(self):
+        # Given there is a record marked "admin only" in the system
+        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True,
+                              for_admin_only=True)
+
+        with self.subTest(msg="admin can see"):
+            # When I call a query as an admin
+            admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
+            admin_results = Person.objects.search_all_fields('', admin_user)
+
+            # Then I should see the matching record in the results
+            self.assertEqual(
+                "Mohammed Alabbadi",
+                admin_results[0].name
+            )
+
+        # When I call the same query as a non-admin user
+        admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False)
+        non_admin_results = Person.objects.search_all_fields('', admin_user)
+
+        # Then I should NOT see the matching record in the results
+        self.assertEqual(
+            0,
+            len(non_admin_results)
+        )
+
+    def test_access_controls_for_host_only_blank_search(self):
+        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True,
+                              for_host_only=True)
+
+        with self.subTest(msg="admin can see"):
+            host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True,
+                                                     is_host=True)
+            admin_results = Person.objects.search_all_fields("", host_admin_user)
+
+            self.assertEqual(
+                "Mohammed Alabbadi",
+                admin_results[0].name
+            )
+
+        guest_admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False,
+                                                  is_host=False)
+        guest_admin_results = Person.objects.search_all_fields("", guest_admin_user)
+
+        # Then I should NOT see the matching record in the results
+        self.assertEqual(
+            0,
+            len(guest_admin_results)
+        )
+
+    def test_access_controls_organization_only_blank_search(self):
+        organization = FdpOrganization.objects.create(name="unprophesiable")
+
+        person_record = Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=True)
+        person_record.fdp_organizations.add(organization)
+
+        with self.subTest(msg="host end user can't see"):
+            host_admin_user = FdpUser.objects.create(email='usertwo@localhost',
+                                                     is_host=True)
+            admin_results = Person.objects.search_all_fields("", host_admin_user)
+            self.assertEqual(
+                0,
+                admin_results.count()
+            )
+
+        with self.subTest(msg="org user can see"):
+            org_admin_user = FdpUser.objects.create(email='userthree@localhost',
+                                                    is_administrator=False,
+                                                    fdp_organization=organization,
+                                                    is_host=False)
+            org_admin_results = Person.objects.search_all_fields("", org_admin_user)
+
+            # Then I should NOT see the matching record in the results
+            self.assertEqual(
+                1,
+                len(org_admin_results)
+            )
+
+        # BTW
+        with self.subTest(msg="host admin CAN see"):  # Too bad...
+            host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True,
+                                                     is_host=True)
+            admin_results = Person.objects.search_all_fields("", host_admin_user)
+            self.assertEqual(
+                1,
+                admin_results.count()
+            )
 
     def test_access_is_law_enforcement(self):
         Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=False)

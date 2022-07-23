@@ -6,7 +6,7 @@ from .constants import CONST_TWO_FACTOR_BASE_ROUTE
 from .base_urls import *
 
 
-urlpatterns = admin_urlpatterns + [
+urlpatterns = [
     # The following URL is disabled, so that a user cannot disable their 2FA once it is enabled
     path('{b}account/two_factor/disable/'.format(b=CONST_TWO_FACTOR_BASE_ROUTE), page_not_found,
          {'exception': Exception('This page is disabled')}),
@@ -16,4 +16,4 @@ urlpatterns = admin_urlpatterns + [
 ] + logout_urlpatterns + (
     cannot_do_password_reset_urlpatterns if not AbstractConfiguration.can_do_password_reset()
     else can_do_password_reset_urlpatterns
-) + rest_urlpatterns
+) + rest_urlpatterns + admin_urlpatterns
