@@ -101,3 +101,4 @@ FEDERATED_LOGIN_OPTIONS = [
         'css_hover': {'color': '#f5dd5d'}
     }
 ]
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14
