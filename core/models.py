@@ -1143,8 +1143,16 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
         verbose_name=_('person')
     )
 
+    ended_unknown_date = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name=_('ended at unknown date'),
+        help_text=_("Select if you know that it has ceased but you don't know when.")
+    )
+
     #: Fields to display in the model form.
-    form_fields = ['person_identifier_type', 'identifier', 'person']
+    form_fields = ['person_identifier_type', 'identifier', 'ended_unknown_date', 'person']
 
     def __str__(self):
         """Defines string representation for a person identifier.
@@ -1157,6 +1165,23 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
             f=_('for'),
             p=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='person')
         )
+
+    @property
+    def at_least_since_bounding_dates(self):
+        # TODO: Factor this out into AbstractAtLeastSinceDateBounded
+        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
+        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
+        """
+        def end_date_is_all_zeros(self) -> bool:
+            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
+                return True
+            else:
+                return False
+
+        if self.ended_unknown_date and end_date_is_all_zeros(self):
+            return super(PersonIdentifier, self).at_least_since_bounding_dates + ' until unknown-end-date'
+        else:
+            return super(PersonIdentifier, self).at_least_since_bounding_dates
 
     @classmethod
     def filter_for_admin(cls, queryset, user):

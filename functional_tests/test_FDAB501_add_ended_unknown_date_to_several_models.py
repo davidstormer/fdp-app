@@ -2,7 +2,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from core.models import (
-    Person, PersonTitle,
+    Person, PersonTitle, PersonIdentifier,
 )
 from functional_tests.common import (
     SeleniumFunctionalTestCase,
@@ -27,7 +27,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
         # And I set the ended_unknown_date box to checked
         self.input('identifiers-0-ended_unknown_date').click()
         # And I set a start date
-        start_date_section = self.el('div#f_id_identifiers-0-person_identifier_started_0')
+        start_date_section = self.el('div#f_id_identifiers-0-identifier_started_0')
         start_date_section.find_element(By.CSS_SELECTOR, 'input.datemonth').clear()
         start_date_section.find_element(By.CSS_SELECTOR, 'input.datemonth') \
             .send_keys('1')
@@ -39,8 +39,9 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             .send_keys('2000')
 
         # ... and I fill any other necessary fields ...
-        Select(self.el_select('identifiers-0-identifier')) \
+        Select(self.el_select('identifiers-0-person_identifier_type')) \
             .select_by_visible_text('person-identifier-type-ammocoetoid')
+        self.input('identifiers-0-identifier').send_keys('TEST IDENTIFIER VALUE')
         Select(b.find_element(By.CSS_SELECTOR, 'select#id_law_enforcement')) \
             .select_by_visible_text('Yes')
         b.find_element(By.CSS_SELECTOR, 'input[name="name"]')\
@@ -58,7 +59,6 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             'until unknown-end-date',
             self.browser.find_element(By.CSS_SELECTOR, 'section.identification ul.identifiers').text
         )
-        self.take_screenshot_and_dump_html()
 
     def test_person_title(self):
         # Given there's an existing Title type
@@ -104,7 +104,6 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             'until unknown-end-date',
             self.browser.find_element(By.CSS_SELECTOR, 'section.identification ul.titles').text
         )
-        self.take_screenshot_and_dump_html()
 
 
 class UnitTests(TestCase):
@@ -113,7 +112,8 @@ class UnitTests(TestCase):
         title = Title.objects.create(name="title-ammocoetoid")
         # Given there's an existing Person record
         person = Person.objects.create(name="person-mnemotechnist")
-        # Given I create a new model instance of a PersonTitle, the ended_unknown_date set to True
+        # Given I create a new model instance of a PersonTitle,
+        # with the ended_unknown_date set to True
         PersonTitle.objects.create(
             ended_unknown_date=True,
             person=person,
@@ -124,4 +124,23 @@ class UnitTests(TestCase):
         self.assertEqual(
             True,
             PersonTitle.objects.last().ended_unknown_date
+        )
+
+    def test_person_identifier(self):
+        # Given there's an existing identifier type
+        person_identifier_type = PersonIdentifierType.objects.create(name='person-identifier-type-test')
+        # Given there's an existing Person record
+        person = Person.objects.create(name="person-test")
+        # Given I create a new model instance of a PersonIdentifier,
+        # with the ended_unknown_date set to True
+        PersonIdentifier.objects.create(
+            ended_unknown_date=True,
+            person=person,
+            person_identifier_type=person_identifier_type
+        )
+        # When I load the new instance
+        # Then I should see ended_unknown_date set to True
+        self.assertEqual(
+            True,
+            PersonIdentifier.objects.last().ended_unknown_date
         )
