@@ -137,7 +137,7 @@
                     {% else %}
                     <span class="offnm"><a href="{% url 'profiles:officer' pk=person_grouping.person_id %}">{{ person_grouping.person }}</a></span>
                     {% endif %}
-                    <span class="offdt">{{ person_grouping.at_least_since_bounding_dates }}</span>
+                    <span class="offdt">{{ person_grouping.date_span_str }}</span>
                 </li>
                 {% endfor %}
             </ul>
@@ -162,7 +162,7 @@
                     {% else %}
                     <span class="offnm"><a href="{% url 'profiles:officer' pk=person_grouping.person_id %}">{{ person_grouping.person }}</a></span>
                     {% endif %}
-                    <span class="offdt">{{ person_grouping.at_least_since_bounding_dates }}</span>
+                    <span class="offdt">{{ person_grouping.date_span_str }}</span>
                 </li>
                 {% endfor %}
             </ul>

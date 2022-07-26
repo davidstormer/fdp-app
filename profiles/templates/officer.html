@@ -110,7 +110,7 @@
                 <li>
                     <span>{{ object.officer_title.title.name }}</span>
                     <div class="identification-meta">
-                        {% if object.officer_title.at_least_since_bounding_dates %}<span class="dates">{{ object.officer_title.at_least_since_bounding_dates }}</span>{% endif %}
+                        {% if object.officer_title.date_span_str %}<span class="dates">{{ object.officer_title.date_span_str }}</span>{% endif %}
                         {% if object.officer_title.grouping.name %}<p>{{ object.officer_title.grouping.name }}</p>{% endif %}
                     </div>
                 </li>
@@ -119,7 +119,7 @@
                 <li>
                     <span>{{ title.title.name }}</span>
                     <div class="identification-meta">
-                        {% if title.at_least_since_bounding_dates %}<span class="dates">{{ title.at_least_since_bounding_dates }}</span>{% endif %}
+                        {% if title.date_span_str %}<span class="dates">{{ title.date_span_str }}</span>{% endif %}
                         {% if title.grouping.name %}<p>{{ title.grouping.name }}</p>{% endif %}
                     </div>
                 </li>
@@ -165,9 +165,9 @@
                 <li>
                     <span class="label">{{ identifier.person_identifier_type }}:</span>
                     <span>{{ identifier.identifier }}</span>
-                    {% if identifier.at_least_since_bounding_dates %}
+                    {% if identifier.date_span_str %}
                     <div class="identification-meta">
-                        {% if identifier.at_least_since_bounding_dates %}<span class="dates">{{ identifier.at_least_since_bounding_dates }}</span>{% endif %}
+                        {% if identifier.date_span_str %}<span class="dates">{{ identifier.date_span_str }}</span>{% endif %}
                     </div>
                     {% endif %}
                 </li>
@@ -182,7 +182,7 @@
                         <span><a href="{{ object.officer_command.grouping.get_profile_url }}">{{ object.officer_command.grouping.name }}</a></span>
                         <div class="identification-meta">
                             <span>{{ object.officer_command.type.name }}</span>
-                            {% if object.officer_command.at_least_since_bounding_dates %}<span class="dates">{{ object.officer_command.at_least_since_bounding_dates }}</span>{% endif %}
+                            {% if object.officer_command.date_span_str %}<span class="dates">{{ object.officer_command.date_span_str }}</span>{% endif %}
                         </div>
                     </li>
                 {% for command in object.officer_commands %}
@@ -190,7 +190,7 @@
                         <span><a href="{{ command.grouping.get_profile_url }}">{{ command.grouping.name }}</a></span>
                         <div class="identification-meta">
                             <span>{{ command.type.name }}</span>
-                            {% if command.at_least_since_bounding_dates %}<span class="dates">{{ command.at_least_since_bounding_dates }}</span>{% endif %}
+                            {% if command.date_span_str %}<span class="dates">{{ command.date_span_str }}</span>{% endif %}
                         </div>
                     </li>
                 {% endfor %}
@@ -222,7 +222,7 @@
                             <tbody>
                             {% for officer_payment in object.officer_payments %}
                                 <tr>
-                                    <td>{{ officer_payment.at_least_since_bounding_dates|capfirst }}</td>
+                                    <td>{{ officer_payment.date_span_str|capfirst }}</td>
                                     <td>${{ officer_payment.base_salary }}</td>
                                     <td>{{ officer_payment.regular_hours|table_cell }}</td>
                                     <td>{{ officer_payment.regular_gross_pay|table_cell_currency }}</td>
@@ -263,7 +263,7 @@
         {% for relationship in object.relationships %}
             <li>
                 {% link_to_others relationship.subject_person %} {{ relationship.type.name }} {% link_to_others relationship.object_person %}
-                {% if relationship.at_least_since_bounding_dates %}({{ relationship.at_least_since_bounding_dates }}){% endif %}
+                {% if relationship.date_span_str %}({{ relationship.date_span_str }}){% endif %}
             </li>
         {% endfor %}
         </ul>

@@ -9,7 +9,7 @@ from django.apps import apps
 
 from core.common import normalize_search_text
 from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, \
-    AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractAtLeastSinceDateBounded, Confidentiable, \
+    AbstractExactDateBounded, AbstractKnownInfo, AbstractAlias, AbstractFuzzyDateSpan, Confidentiable, \
     AbstractFileValidator, AbstractUrlValidator, Linkable, AbstractConfiguration, ConfidentiableManager
 from supporting.models import State, Trait, PersonRelationshipType, Location, PersonIdentifierType, County, \
     Title, GroupingRelationshipType, PersonGroupingType, IncidentLocationType, EncounterReason, IncidentTag, \
@@ -1104,7 +1104,7 @@ class PersonPhoto(Archivable, Descriptable):
         ordering = ['person']
 
 
-class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
+class PersonIdentifier(Archivable, AbstractFuzzyDateSpan):
     """ Identifier for a person such as a passport number, driver's license number, etc.
 
     Attributes:
@@ -1143,14 +1143,6 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
         verbose_name=_('person')
     )
 
-    ended_unknown_date = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name=_('ended at unknown date'),
-        help_text=_("Select if you know that it has ceased but you don't know when.")
-    )
-
     #: Fields to display in the model form.
     form_fields = ['person_identifier_type', 'identifier', 'ended_unknown_date', 'person']
 
@@ -1165,23 +1157,6 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
             f=_('for'),
             p=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='person')
         )
-
-    @property
-    def at_least_since_bounding_dates(self):
-        # TODO: Factor this out into AbstractAtLeastSinceDateBounded
-        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
-        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
-        """
-        def end_date_is_all_zeros(self) -> bool:
-            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
-                return True
-            else:
-                return False
-
-        if self.ended_unknown_date and end_date_is_all_zeros(self):
-            return super(PersonIdentifier, self).at_least_since_bounding_dates + ' until unknown-end-date'
-        else:
-            return super(PersonIdentifier, self).at_least_since_bounding_dates
 
     @classmethod
     def filter_for_admin(cls, queryset, user):
@@ -1209,10 +1184,10 @@ class PersonIdentifier(Archivable, AbstractAtLeastSinceDateBounded):
         db_table = '{d}person_identifier'.format(d=settings.DB_PREFIX)
         verbose_name = _('Person identifier')
         unique_together = ('person', 'person_identifier_type', 'identifier')
-        ordering = ['person', 'person_identifier_type'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
+        ordering = ['person', 'person_identifier_type'] + AbstractFuzzyDateSpan.order_by_date_fields
 
 
-class PersonRelationship(Archivable, AbstractAtLeastSinceDateBounded):
+class PersonRelationship(Archivable, AbstractFuzzyDateSpan):
     """ Defines a relationship between two persons in the format: subject verb object.
 
     For example subject_person=Person #1, type=is brother of, object_person=Person #2.
@@ -1256,33 +1231,8 @@ class PersonRelationship(Archivable, AbstractAtLeastSinceDateBounded):
         verbose_name=_('object person')
     )
 
-    ended_unknown_date = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name=_('ended at unknown date'),
-        help_text=_("Select if you know that it has ceased but you don't know when.")
-    )
-
     #: Fields to display in the model form.
     form_fields = ['at_least_since', 'ended_unknown_date']
-
-    @property
-    def at_least_since_bounding_dates(self):
-        # TODO: Factor this out into AbstractAtLeastSinceDateBounded
-        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
-        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
-        """
-        def end_date_is_all_zeros(self) -> bool:
-            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
-                return True
-            else:
-                return False
-
-        if self.ended_unknown_date and end_date_is_all_zeros(self):
-            return super(PersonRelationship, self).at_least_since_bounding_dates + ' until unknown-end-date'
-        else:
-            return super(PersonRelationship, self).at_least_since_bounding_dates
 
     def __str__(self):
         """Defines string representation for a person relationship.
@@ -1331,7 +1281,7 @@ class PersonRelationship(Archivable, AbstractAtLeastSinceDateBounded):
         ordering = ['subject_person', 'type', 'object_person']
 
 
-class PersonPayment(Archivable, AbstractAtLeastSinceDateBounded):
+class PersonPayment(Archivable, AbstractFuzzyDateSpan):
     """ A payment made to a payment for work over a period of time.
 
     Attributes:
@@ -1432,36 +1382,11 @@ class PersonPayment(Archivable, AbstractAtLeastSinceDateBounded):
         verbose_name=_('leave status')
     )
 
-    ended_unknown_date = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name=_('ended at unknown date'),
-        help_text=_("Select if you know that it has ceased but you don't know when.")
-    )
-
     #: Fields to display in the model form.
     form_fields = [
         'at_least_since', 'ended_unknown_date', 'leave_status', 'base_salary', 'regular_hours', 'regular_gross_pay', 'overtime_hours',
         'overtime_pay', 'total_other_pay', 'person',
     ]
-
-    @property
-    def at_least_since_bounding_dates(self):
-        # TODO: Factor this out into AbstractAtLeastSinceDateBounded
-        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
-        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
-        """
-        def end_date_is_all_zeros(self) -> bool:
-            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
-                return True
-            else:
-                return False
-
-        if self.ended_unknown_date and end_date_is_all_zeros(self):
-            return super(PersonPayment, self).at_least_since_bounding_dates + ' until unknown-end-date'
-        else:
-            return super(PersonPayment, self).at_least_since_bounding_dates
 
     def __str__(self):
         """Defines string representation for a person payment.
@@ -1470,7 +1395,7 @@ class PersonPayment(Archivable, AbstractAtLeastSinceDateBounded):
         """
         return '{p} {d} {f} {o}'.format(
             p=_('payment for'),
-            d=self.at_least_since_bounding_dates,
+            d=self.date_span_str,
             f=_('for'),
             o=AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='person')
         )
@@ -1503,7 +1428,7 @@ class PersonPayment(Archivable, AbstractAtLeastSinceDateBounded):
         unique_together = (
             'person', 'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
         )
-        ordering = ['person'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
+        ordering = ['person'] + AbstractFuzzyDateSpan.order_by_date_fields
 
 
 class Grouping(Archivable, Descriptable):
@@ -1551,7 +1476,6 @@ class Grouping(Archivable, Descriptable):
         max_length=settings.MAX_NAME_LEN,
         verbose_name=_('address')
     )
-
     ended_unknown_date = models.BooleanField(
         null=False,
         blank=False,
@@ -1559,7 +1483,6 @@ class Grouping(Archivable, Descriptable):
         verbose_name=_('ended at unknown date'),
         help_text=_("Select if the grouping is no longer active. Instead of deleting a group, mark it as inactive so that all the data relating to the group and the group history remains. This can also be used if you don't know the ceased date for a group but you know that they are no longer active.")
     )
-
     is_law_enforcement = models.BooleanField(
         null=False,
         blank=False,
@@ -1952,7 +1875,7 @@ GroupingAlias._meta.get_field('name').help_text = \
     "Alternative name such as acronym, abbreviation, code, or nickname. Do not add variations in case or punctuation."
 
 
-class GroupingRelationship(Archivable, AbstractAtLeastSinceDateBounded):
+class GroupingRelationship(Archivable, AbstractFuzzyDateSpan):
     """ Defines a relationship between two groupings in the format: subject verb object.
 
     For example subject_grouping=Command, type=Belongs To, object_grouping=Precinct.
@@ -1996,14 +1919,6 @@ class GroupingRelationship(Archivable, AbstractAtLeastSinceDateBounded):
         verbose_name=_('object grouping')
     )
 
-    ended_unknown_date = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name=_('ended at unknown date'),
-        help_text=_("Select if you know that it has ceased but you don't know when.")
-    )
-
     #: Fields to display in the model form.
     form_fields = ['at_least_since', 'ended_unknown_date']
 
@@ -2042,7 +1957,7 @@ class GroupingRelationship(Archivable, AbstractAtLeastSinceDateBounded):
         ordering = ['subject_grouping', 'type', 'object_grouping']
 
 
-class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
+class PersonTitle(Archivable, AbstractFuzzyDateSpan):
     """ Title for a person such as detective, fdptain, director, etc.
 
     Attributes:
@@ -2082,15 +1997,6 @@ class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
                     'the same time at different agencies.'),
     )
 
-    ended_unknown_date = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name=_('ended at unknown date'),
-        help_text=_("Select if you don't know the ceased date for a title but you know that it is no longer being "
-                    "held by the person.")
-    )
-
     #: Fields to display in the model form.
     form_fields = ['title', 'person', 'at_least_since', 'ended_unknown_date', 'grouping']
 
@@ -2127,33 +2033,16 @@ class PersonTitle(Archivable, AbstractAtLeastSinceDateBounded):
             )
         )
 
-    @property
-    def at_least_since_bounding_dates(self):
-        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
-
-        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
-        """
-        def end_date_is_all_zeros(self) -> bool:
-            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
-                return True
-            else:
-                return False
-
-        if self.ended_unknown_date and end_date_is_all_zeros(self):
-            return super(PersonTitle, self).at_least_since_bounding_dates + ' until unknown-end-date'
-        else:
-            return super(PersonTitle, self).at_least_since_bounding_dates
-
     class Meta:
         db_table = '{d}person_title'.format(d=settings.DB_PREFIX)
         verbose_name = _('Person title')
         unique_together = (
             'person', 'title', 'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
         )
-        ordering = ['person'] + AbstractAtLeastSinceDateBounded.order_by_date_fields
+        ordering = ['person'] + AbstractFuzzyDateSpan.order_by_date_fields
 
 
-class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
+class PersonGrouping(Archivable, AbstractFuzzyDateSpan):
     """ Links between persons and groupings, e.g. describing an attorney's involvement in a law office or an
     officer's involvement in a command or precinct.
 
@@ -2195,14 +2084,6 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         null=True,
         help_text=_('The type of relationships between the person and the group'),
         verbose_name=_('type')
-    )
-
-    ended_unknown_date = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name=_('ended at unknown end date'),
-        help_text=_("Select if the person is no longer associate with group but the end date is unknown")
     )
 
     #: Fields to display in the model form.
@@ -2251,24 +2132,6 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
             )
         )
 
-    @property
-    def at_least_since_bounding_dates(self):
-        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
-
-        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
-        """
-        def end_date_is_all_zeros(self) -> bool:
-            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
-                return True
-            else:
-                return False
-
-        if self.ended_unknown_date and end_date_is_all_zeros(self):
-            return super(PersonGrouping, self).at_least_since_bounding_dates + ' until unknown-end-date'
-        else:
-            return super(PersonGrouping, self).at_least_since_bounding_dates
-
-
     class Meta:
         db_table = '{d}person_grouping'.format(d=settings.DB_PREFIX)
         verbose_name = _('Link between person and grouping')
@@ -2276,7 +2139,7 @@ class PersonGrouping(Archivable, AbstractAtLeastSinceDateBounded):
         unique_together = (
             'person', 'grouping', 'type', 'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
         )
-        ordering = AbstractAtLeastSinceDateBounded.order_by_date_fields + ['grouping', 'person']
+        ordering = AbstractFuzzyDateSpan.order_by_date_fields + ['grouping', 'person']
 
 
 class Incident(Confidentiable, AbstractExactDateBounded):

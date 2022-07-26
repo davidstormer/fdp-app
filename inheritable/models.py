@@ -2312,7 +2312,7 @@ class AbstractExactDateBounded(Descriptable):
         abstract = True
 
 
-class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
+class AbstractFuzzyDateSpan(AbstractExactDateBounded):
     """ Base class from which all classes with at least since bounding dates inherit.
 
     Attributes:
@@ -2327,6 +2327,14 @@ class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
         blank=False,
         default=False,
         help_text=_("Select if start date is the earliest known start date, but not necessarily the true start date"),
+    )
+
+    ended_unknown_date = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name=_('ended at unknown date'),
+        help_text=_("Select if you know that it has ceased but you don't know when.")
     )
 
     #: Fields that can be used in the admin interface to filter by date
@@ -2352,6 +2360,23 @@ class AbstractAtLeastSinceDateBounded(AbstractExactDateBounded):
 
     class Meta:
         abstract = True
+
+    @property
+    def date_span_str(self):
+        # TODO: Factor this out into AbstractFuzzyDateSpan
+        """ Human-friendly version of "fuzzy" at least since starting and ending dates.
+        :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
+        """
+        def end_date_is_all_zeros(self) -> bool:
+            if self.end_year == 0 and self.end_month == 0 and self.end_day == 0:
+                return True
+            else:
+                return False
+
+        if self.ended_unknown_date and end_date_is_all_zeros(self):
+            return self.__get_at_least_since_bounding_dates() + ' until unknown-end-date'
+        else:
+            return self.__get_at_least_since_bounding_dates()
 
 
 class AbstractSql(models.Model):
