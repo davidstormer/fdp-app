@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from inheritable.models import AbstractDateValidator
 from inheritable.forms import AbstractWizardModelForm, DateWithComponentsField, DateWithCalendarInput, \
     RelationshipField, AbstractWizardInlineFormSet, AbstractWizardModelFormSet, DateWithCalendarAndSplitInput, \
-    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField
+    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField, FuzzyDateSpanEndField
 from .models import LawEnforcementCategories
 from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPerson, Attachment, \
     ContentPersonAllegation, ContentPersonPenalty
@@ -369,7 +369,7 @@ class PersonIdentifierModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    identifier_ended = DateWithComponentsField(
+    identifier_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -377,6 +377,15 @@ class PersonIdentifierModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = person_identifier_form_fields.copy()
+
+    field_order = [
+        'identifier',
+        'person_identifier_type',
+        'at_least_since',
+        'identifier_started',
+        'identifier_ended',
+        'ended_unknown_date',
+    ]
 
     #: Prefix to use for form
     prefix = 'identifiers'

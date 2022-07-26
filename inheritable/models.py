@@ -2363,7 +2363,6 @@ class AbstractFuzzyDateSpan(AbstractExactDateBounded):
 
     @property
     def date_span_str(self):
-        # TODO: Factor this out into AbstractFuzzyDateSpan
         """ Human-friendly version of "fuzzy" at least since starting and ending dates.
         :return: Human-friendly version of "fuzzy" at least since starting and ending dates.
         """
