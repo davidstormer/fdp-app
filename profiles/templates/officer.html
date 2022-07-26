@@ -177,7 +177,7 @@
 
                 {% if object.officer_command %}
                 <h3>{% if object.officer_commands %}{% translate 'Commands' %}{% else %}{% translate 'Command' %}{% endif %}</h3>
-                <ul>
+                <ul id="commands">
                     <li>
                         <span><a href="{{ object.officer_command.grouping.get_profile_url }}">{{ object.officer_command.grouping.name }}</a></span>
                         <div class="identification-meta">
