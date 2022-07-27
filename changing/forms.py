@@ -463,7 +463,7 @@ class PersonGroupingModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_grouping_ended = DateWithComponentsField(
+    person_grouping_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=(), # ignored
@@ -478,6 +478,16 @@ class PersonGroupingModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = ['grouping_name'] + person_grouping_form_fields.copy()
+
+    field_order = [
+        'grouping_name',
+        'type',
+        'at_least_since',
+        'person_grouping_started',
+        'person_grouping_ended',
+        'ended_unknown_date',
+        'person',
+    ]
 
     #: Prefix to use for form
     prefix = 'persongroupings'
