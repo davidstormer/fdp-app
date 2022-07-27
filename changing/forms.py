@@ -163,7 +163,7 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    grouping_relationship_ended = DateWithComponentsField(
+    grouping_relationship_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -194,6 +194,14 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
     fields_to_show = [
                          'grouping_relationship_started', 'grouping_relationship_ended', 'grouping_relationship'
                      ] + GroupingRelationship.form_fields
+
+    field_order = [
+        'grouping_relationship',
+        'at_least_since',
+        'grouping_relationship_started',
+        'grouping_relationship_ended',
+        'ended_unknown_date',
+    ]
 
     #: Key in cleaned data dictionary indicating the grouping for whom the relationship form is saved.
     for_grouping_key = '_for_grouping'
