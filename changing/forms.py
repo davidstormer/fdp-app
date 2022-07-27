@@ -546,7 +546,7 @@ class PersonTitleModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_title_ended = DateWithComponentsField(
+    person_title_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -555,11 +555,22 @@ class PersonTitleModelForm(AbstractWizardModelForm):
     grouping_name = AsyncSearchCharField(
         required=False,
         label=_('Grouping'),
+        help_text='The command or group at which this rank or title was held.'
     )
 
     #: Fields to show in the form
     fields_to_show = person_title_form_fields.copy()
     fields_to_show.append('grouping_name')
+
+    field_order = [
+        'title',
+        'grouping_name',
+        'at_least_since',
+        'person_title_started',
+        'person_title_ended',
+        'ended_unknown_date',
+        'person',
+    ]
 
     #: Prefix to use for form
     prefix = 'titles'
