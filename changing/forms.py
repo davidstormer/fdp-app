@@ -778,7 +778,7 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_relationship_ended = DateWithComponentsField(
+    person_relationship_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -805,6 +805,14 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = person_relationship_form_fields.copy()
+
+    field_order = [
+        'person_relationship',
+        'at_least_since',
+        'person_relationship_started',
+        'person_relationship_ended',
+        'ended_unknown_date',
+    ]
 
     #: Key in cleaned data dictionary indicating the person for whom the relationship form is saved.
     for_person_key = '_for_person'
