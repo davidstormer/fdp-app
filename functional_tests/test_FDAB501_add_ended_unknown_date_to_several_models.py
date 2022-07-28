@@ -13,7 +13,6 @@ from django.test import TestCase
 from unittest import skip
 
 
-### Title
 class SeleniumTestCase(SeleniumFunctionalTestCase):
     def test_grouping_relationship(self):
         """Relationship dates not showing on group profile page right now. For now check that the field works on the
@@ -340,6 +339,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             'until unknown-end-date',
             self.browser.find_element(By.CSS_SELECTOR, 'section.identification ul.titles').text
         )
+
 
 
 class UnitTests(TestCase):

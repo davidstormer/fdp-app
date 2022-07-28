@@ -162,7 +162,7 @@ class PersonGroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
     _list_display = ['person', 'date_span_str', 'grouping', 'type', 'ended_unknown_date'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
-    list_filter = PersonGrouping.list_filter_fields + ['type', 'ended_unknown_date'] + ArchivableAdmin.list_filter
+    list_filter = PersonGrouping.list_filter_fields + ['type'] + ArchivableAdmin.list_filter
     search_fields = ['person__name', 'grouping__name']
     ordering = ['person__name'] + PersonGrouping.order_by_date_fields + ['grouping__name']
 

@@ -2338,7 +2338,16 @@ class AbstractFuzzyDateSpan(AbstractExactDateBounded):
     )
 
     #: Fields that can be used in the admin interface to filter by date
-    list_filter_fields = ['start_year', 'start_month', 'start_day', 'end_year', 'end_month', 'end_day', 'at_least_since']
+    list_filter_fields = [
+        'at_least_since',
+        'start_year',
+        'start_month',
+        'start_day',
+        'end_year',
+        'end_month',
+        'end_day',
+        'ended_unknown_date',
+    ]
 
     def __get_at_least_since_bounding_dates(self):
         """ Retrieve the human-friendly version of the "fuzzy" at least since starting and ending dates.
