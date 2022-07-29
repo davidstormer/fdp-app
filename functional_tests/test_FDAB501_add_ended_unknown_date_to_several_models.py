@@ -8,12 +8,64 @@ from functional_tests.common import (
     SeleniumFunctionalTestCase,
     wait,
 )
+from sourcing.models import Content
 from supporting.models import Title, PersonIdentifierType, PersonRelationshipType, GroupingRelationshipType
 from django.test import TestCase, tag
 from unittest import skip
 
 
 class SeleniumTestCase(SeleniumFunctionalTestCase):
+    @tag('wip')
+    def test_contentcase(self):
+        """ContentCase dates not showing on officer profile page right now. For now check create and update pages."""
+
+        # Given there is an existing officer record
+        officer = Person.objects.create(name="Test Officer", is_law_enforcement=True)
+        # And I go to the create new content page
+        b = self.browser
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + '/changing/content/add/content/')
+
+        # And I set the ended_unknown_date box to checked
+        self.input('cases-0-ended_unknown_date').click()  # <-- THIS
+
+        # And I set a start date
+        start_date_section = self.el('div#f_id_cases-0-case_opened_0')
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.datemonth').clear()
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.datemonth') \
+            .send_keys('1')
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateday').clear()
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateday') \
+            .send_keys('1')
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateyear').clear()
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateyear') \
+            .send_keys('2000')
+
+        # And I link the officer to the incident
+        self.browser.find_element(By.XPATH, "//*[text()=' Add another person']") \
+            .click()
+        self.enter_autocomplete_data(
+            '.personform input#id_persons-0-person_name',
+            'ul.ui-autocomplete.personac li.ui-menu-item',
+            'Test Officer'
+        )
+
+        # And I save the new record
+        self.submit_button('Save').click()
+
+        # THEN there should be no validation errors
+        with self.assertRaises(NoSuchElementException):
+            error = self.browser.find_element(By.CSS_SELECTOR, 'ul.errorlist').text
+            print(f"Validation error found: '{error}'")
+
+        # When I go to the update page (rather than the profile page)
+        # Because the profile page doesn't display dates atm
+        self.browser.get(self.live_server_url + f'/changing/content/update/content/{Content.objects.last().pk}/')
+        # Then the ended unknown date check-box should be checked
+        self.assertTrue(
+            self.input('cases-0-ended_unknown_date').is_selected()
+        )
+
     def test_incident(self):
         # Given there is an existing officer record & and group record
         officer = Person.objects.create(name="Test Officer", is_law_enforcement=True)
@@ -171,8 +223,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             )
 
     def test_grouping_relationship(self):
-        """Relationship dates not showing on group profile page right now. For now check that the field works on the
-        create and update changing pages."""
+        """Relationship dates not showing on group profile page right now. For now check update changing pages."""
         # Given there's an existing grouping
         Grouping.objects.create(name="Existing Grouping", is_law_enforcement=True)
         # Given there's an existing grouping relationship type
@@ -495,7 +546,6 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             'until unknown-end-date',
             self.browser.find_element(By.CSS_SELECTOR, 'section.identification ul.titles').text
         )
-
 
 
 class UnitTests(TestCase):

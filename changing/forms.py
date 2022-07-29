@@ -1477,7 +1477,7 @@ class ContentCaseModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    case_closed = DateWithComponentsField(
+    case_closed = FuzzyDateSpanEndField(
         required=True,
         label=_('Case closed date'),
         fields=()  # ignored
@@ -1485,6 +1485,17 @@ class ContentCaseModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = content_case_form_fields.copy()
+
+    field_order = [
+        'outcome',
+        'settlement_amount',
+        'court',
+        'at_least_since',
+        'case_opened',
+        'case_closed',
+        'ended_unknown_date',
+        'content',
+    ]
 
     #: Prefix to use for form
     prefix = 'cases'
