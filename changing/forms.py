@@ -1149,9 +1149,8 @@ class IncidentModelForm(AbstractWizardModelForm, PopupForm):
         required=True,
         label=_('Incident end date'),
         help_text="Enter the same date for start and end if the incident happened on a single day. Typically "
-                  "the end date does not include resulting investigations "
-                  "cases, or reporting. Enter a zero for day, month, or year when unknown. Enter all zeros if whole "
-                  "date is unknown.",
+                  "the end date does not include resulting investigations cases, or reporting. Enter a zero for day, "
+                  "month, or year when unknown. Enter all zeros for 'until present' or 'ongoing'.",
         fields=()  # ignored
     )
 
