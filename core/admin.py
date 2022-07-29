@@ -172,7 +172,7 @@ class IncidentAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
     """ Admin interface for incidents.
 
     """
-    _list_display = ['exact_bounding_dates', 'location', 'truncated_description'] + ConfidentiableAdmin.list_display
+    _list_display = ['date_span_str', 'location', 'truncated_description'] + ConfidentiableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     list_filter = Incident.list_filter_fields + [

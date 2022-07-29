@@ -189,8 +189,8 @@
         </div>
         {% endif %}
         {% for command_misconduct in object.command_misconducts %}
-        <div class="mispad">
-            <button type="button" class="collapsible expanded">{% if not command_misconduct.incident.exact_bounding_dates %}{% translate 'On an unknown date' %}{% else %}{{ command_misconduct.incident.exact_bounding_dates|capfirst }}{% endif %}</button>
+        <div class="mispad command-misconduct">
+            <button type="button" class="collapsible expanded heading">{% if not command_misconduct.incident.date_span_str %}{% translate 'On an unknown date' %}{% else %}{{ command_misconduct.incident.date_span_str|capfirst }}{% endif %}</button>
             <div class="collapsible">
                 <div class="gridrow gridgroup">
                     <div class="gridcol gridcell_1_of_2">

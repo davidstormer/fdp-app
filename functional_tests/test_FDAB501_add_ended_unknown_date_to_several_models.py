@@ -9,11 +9,167 @@ from functional_tests.common import (
     wait,
 )
 from supporting.models import Title, PersonIdentifierType, PersonRelationshipType, GroupingRelationshipType
-from django.test import TestCase
+from django.test import TestCase, tag
 from unittest import skip
 
 
 class SeleniumTestCase(SeleniumFunctionalTestCase):
+    def test_incident(self):
+        # Given there is an existing officer record & and group record
+        officer = Person.objects.create(name="Test Officer", is_law_enforcement=True)
+        group = Grouping.objects.create(name="Test Group", is_law_enforcement=True)
+        # And I go to the create new incident page
+        b = self.browser
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + '/changing/incidents/add/incident/')
+        # And I set the ended_unknown_date box to checked
+        self.input('ended_unknown_date').click()  # <-- THIS
+
+        # And I set a start date
+        start_date_section = self.el('div#f_id_incident_started_0')
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.datemonth').clear()
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.datemonth') \
+            .send_keys('1')
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateday').clear()
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateday') \
+            .send_keys('1')
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateyear').clear()
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateyear') \
+            .send_keys('2000')
+
+        # And I link the officer to the incident
+        self.browser.find_element(By.XPATH, "//*[text()=' Add another person']") \
+            .click()
+        self.enter_autocomplete_data(
+            '.personincidentform input#id_personincidents-0-person_name',
+            'ul.ui-autocomplete.personac li.ui-menu-item',
+            'Test Officer'
+        )
+        # And I link the group to the incident
+        self.browser.find_element(By.XPATH, "//*[text()=' Add another grouping']") \
+            .click()
+        self.enter_autocomplete_data(
+            '.groupingincidentform input#id_groupingincidents-0-grouping_name',
+            'ul.ui-autocomplete.groupingac li.ui-menu-item',
+            'Test Group'
+        )
+        # And I save the new record
+        self.submit_button('Save').click()
+        # THEN there should be no validation errors
+        with self.assertRaises(NoSuchElementException):
+            error = self.browser.find_element(By.CSS_SELECTOR, 'ul.errorlist').text
+            print(f"Validation error found: '{error}'")
+
+        with self.subTest(msg="Officer profile page"):
+            # When I go to the officer's profile page
+            #
+            self.browser.get(self.live_server_url + f'/officer/{officer.pk}')
+            # Then I should see the incident named by a date span including "until unknown-end-date"
+            self.assertIn(
+                'until unknown-end-date',
+                self.el('div.incident h3').text
+            )
+
+        with self.subTest(msg="Command profile page"):
+            # When I go to the group's profile page
+            #
+            self.browser.get(self.live_server_url + f'/command/{group.pk}')
+            # Then I should see the incident named by a date span including "until unknown-end-date"
+            self.assertIn(
+                'until unknown-end-date',
+                self.el('div.command-misconduct button.heading').text
+            )
+
+        with self.subTest(msg="Django admin Incident listing page"):
+            # When I go to the django admin listing page
+            #
+            self.browser.get(self.live_server_url + f'/admin/core/incident/')
+            # Then I should see the incident named by a date span including "until unknown-end-date"
+            self.assertIn(
+                'until unknown-end-date',
+                self.el('table#result_list tbody tr th').text
+            )
+
+    def test_incident_at_least_since(self):
+        # Migrating Incident model to use AbstractFuzzyDateSpan. Test that it adds "at least since" to the model too.
+        # Given there is an existing officer record & and group record
+        officer = Person.objects.create(name="Test Officer", is_law_enforcement=True)
+        group = Grouping.objects.create(name="Test Group", is_law_enforcement=True)
+        # And I go to the create new incident page
+        b = self.browser
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + '/changing/incidents/add/incident/')
+        # And I set the ended_unknown_date box to checked
+        self.input('at_least_since').click()  # <-- THIS
+
+        # And I set a start date
+        start_date_section = self.el('div#f_id_incident_started_0')
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.datemonth').clear()
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.datemonth') \
+            .send_keys('1')
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateday').clear()
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateday') \
+            .send_keys('1')
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateyear').clear()
+        start_date_section.find_element(By.CSS_SELECTOR, 'input.dateyear') \
+            .send_keys('2000')
+
+        # And I link the officer to the incident
+        self.browser.find_element(By.XPATH, "//*[text()=' Add another person']") \
+            .click()
+        self.enter_autocomplete_data(
+            '.personincidentform input#id_personincidents-0-person_name',
+            'ul.ui-autocomplete.personac li.ui-menu-item',
+            'Test Officer'
+        )
+
+        # And I link the group to the incident
+        self.browser.find_element(By.XPATH, "//*[text()=' Add another grouping']") \
+            .click()
+        self.enter_autocomplete_data(
+            '.groupingincidentform input#id_groupingincidents-0-grouping_name',
+            'ul.ui-autocomplete.groupingac li.ui-menu-item',
+            'Test Group'
+        )
+
+        # And I save the new record
+        self.submit_button('Save').click()
+
+        # THEN there should be no validation errors
+        with self.assertRaises(NoSuchElementException):
+            error = self.browser.find_element(By.CSS_SELECTOR, 'ul.errorlist').text
+            print(f"Validation error found: '{error}'")
+
+        with self.subTest(msg="Officer profile page"):
+            # When I go to the officer's profile page
+            #
+            self.browser.get(self.live_server_url + f'/officer/{officer.pk}')
+            # Then I should see the incident named by a date span including "at least since"
+            self.assertIn(
+                'At least since',
+                self.el('div.incident h3').text
+            )
+
+        with self.subTest(msg="Command profile page"):
+            # When I go to the group's profile page
+            #
+            self.browser.get(self.live_server_url + f'/command/{group.pk}')
+            # Then I should see the incident named by a date span including "until unknown-end-date"
+            self.assertIn(
+                'At least since',
+                self.el('div.command-misconduct button.heading').text
+            )
+
+        with self.subTest(msg="Django admin Incident listing page"):
+            # When I go to the django admin listing page
+            #
+            self.browser.get(self.live_server_url + f'/admin/core/incident/')
+            # Then I should see the incident named by a date span including "until unknown-end-date"
+            self.assertIn(
+                'at least since',
+                self.el('table#result_list tbody tr th').text
+            )
+
     def test_grouping_relationship(self):
         """Relationship dates not showing on group profile page right now. For now check that the field works on the
         create and update changing pages."""

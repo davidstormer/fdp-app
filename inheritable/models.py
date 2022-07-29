@@ -2313,15 +2313,6 @@ class AbstractExactDateBounded(Descriptable):
 
 
 class AbstractFuzzyDateSpan(AbstractExactDateBounded):
-    """ Base class from which all classes with at least since bounding dates inherit.
-
-    Attributes:
-        :at_least_since (bool): True if start date is the earliest known start date, but not necessarily the true start date.
-
-    Properties:
-        :at_least_since_bounding_dates (str): User-friendly rendering of the as of bounding dates.
-
-    """
     at_least_since = models.BooleanField(
         null=False,
         blank=False,

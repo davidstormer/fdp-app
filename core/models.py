@@ -2142,7 +2142,7 @@ class PersonGrouping(Archivable, AbstractFuzzyDateSpan):
         ordering = AbstractFuzzyDateSpan.order_by_date_fields + ['grouping', 'person']
 
 
-class Incident(Confidentiable, AbstractExactDateBounded):
+class Incident(Confidentiable, AbstractFuzzyDateSpan):
     """ Incident such as an assault involving an officer.
 
     Attributes:
@@ -2214,7 +2214,7 @@ class Incident(Confidentiable, AbstractExactDateBounded):
     #: Fields to display in the model form.
     form_fields = [
                       'location', 'location_type', 'encounter_reason', 'tags', 'description'
-                  ] + Confidentiable.confidentiable_form_fields
+                  ] + Confidentiable.confidentiable_form_fields + ['at_least_since', 'ended_unknown_date']
 
     def __str__(self):
         """ String representation for an incident.
