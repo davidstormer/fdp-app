@@ -1157,6 +1157,21 @@ class IncidentModelForm(AbstractWizardModelForm, PopupForm):
     #: Fields to show in the form
     fields_to_show = incident_form_fields.copy()
 
+    field_order = [
+        'location',
+        'location_type',
+        'at_least_since',
+        'incident_started',
+        'incident_ended',
+        'ended_unknown_date',
+        'encounter_reason',
+        'tags',
+        'description',
+        'for_host_only',
+        'for_admin_only',
+        'fdp_organizations',
+    ]
+
     def __init__(self, *args, **kwargs):
         """ If we're editing an instance of a case content, then set the incident started and incident ended initial
         values.

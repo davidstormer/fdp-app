@@ -15,7 +15,6 @@ from unittest import skip
 
 
 class SeleniumTestCase(SeleniumFunctionalTestCase):
-    @tag('wip')
     def test_contentcase(self):
         """ContentCase dates not showing on officer profile page right now. For now check create and update pages."""
 
