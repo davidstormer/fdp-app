@@ -222,15 +222,15 @@
                             <tbody>
                             {% for officer_payment in object.officer_payments %}
                                 <tr>
-                                    <td>{{ officer_payment.date_span_str|capfirst }}</td>
-                                    <td>${{ officer_payment.base_salary }}</td>
-                                    <td>{{ officer_payment.regular_hours|table_cell }}</td>
-                                    <td>{{ officer_payment.regular_gross_pay|table_cell_currency }}</td>
-                                    <td>{{ officer_payment.overtime_hours|table_cell }}</td>
-                                    <td>{{ officer_payment.overtime_pay|table_cell_currency }}</td>
-                                    <td>{{ officer_payment.total_other_pay|table_cell_currency }}</td>
-                                    <td>{{ officer_payment.county|table_cell }}</td>
-                                    <td>{{ officer_payment.leave_status|table_cell }}</td>
+                                    <td class="field-date_span_str">{{ officer_payment.date_span_str|capfirst }}</td>
+                                    <td class="field-base_salary">{{ officer_payment.base_salary|table_cell_currency }}</td>
+                                    <td class="field-regular_hours">{{ officer_payment.regular_hours|table_cell }}</td>
+                                    <td class="field-regular_gross_pay">{{ officer_payment.regular_gross_pay|table_cell_currency }}</td>
+                                    <td class="field-overtime_hours">{{ officer_payment.overtime_hours|table_cell }}</td>
+                                    <td class="field-overtime_pay">{{ officer_payment.overtime_pay|table_cell_currency }}</td>
+                                    <td class="field-total_other_pay">{{ officer_payment.total_other_pay|table_cell_currency }}</td>
+                                    <td class="field-county">{{ officer_payment.county|table_cell }}</td>
+                                    <td class="field-leave_status">{{ officer_payment.leave_status|table_cell }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>

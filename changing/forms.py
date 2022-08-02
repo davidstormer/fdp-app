@@ -682,6 +682,21 @@ class PersonPaymentModelForm(AbstractWizardModelForm):
     #: Fields to show in the form
     fields_to_show = person_payment_form_fields.copy()
 
+    field_order = [
+        'at_least_since',
+        'person_payment_started',
+        'person_payment_ended',
+        'ended_unknown_date',
+        'dynamic_county',
+        'leave_status',
+        'base_salary',
+        'regular_hours',
+        'regular_gross_pay',
+        'overtime_hours',
+        'overtime_pay',
+        'total_other_pay',
+    ]
+
     #: Prefix to use for form
     prefix = 'payments'
 

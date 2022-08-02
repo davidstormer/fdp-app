@@ -343,7 +343,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
 
     # Having trouble getting the ended unknown date checkbox field to show in the edit interface
     # Skipping for now because this is a low priority
-    @skip
+    @tag('wip')
     def test_person_payment(self):
         # Given I go to the create new officer page
         b = self.browser
@@ -358,7 +358,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
         self.input('payments-0-ended_unknown_date').click()  # <-- THIS
 
         # And I set a start date
-        start_date_section = self.el('div#f_id_payments-0-person_payment_started_0')
+        start_date_section = self.el('td#f_id_payments-0-person_payment_started_0')
         start_date_section.find_element(By.CSS_SELECTOR, 'input.datemonth').clear()
         start_date_section.find_element(By.CSS_SELECTOR, 'input.datemonth') \
             .send_keys('1')
@@ -384,10 +384,13 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
         # When I go to the profile page
         self.browser.get(self.live_server_url + f'/officer/{Person.objects.last().pk}')
 
+        # And open the payroll accordion
+        self.el('section.payroll div#accordion').click()
+
         # Then I should see a new person relationship with date span from ... "until unknown-end-date"
         self.assertIn(
             'until unknown-end-date',
-            self.browser.find_element(By.CSS_SELECTOR, 'section.associates ul#relationships').text
+            self.el('div.payrollcontainer td.field-date_span_str').text
         )
 
     def test_person_relationship(self):

@@ -179,10 +179,6 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
             timestamp=timestamp
         )
 
-    def el(self, css_selector: str) -> WebElement:
-        """Shorthand for self.browser.find_element(By.CSS_SELECTOR, css_selector)"""
-        return self.browser.find_element(By.CSS_SELECTOR, css_selector)
-
     def log_in(self, is_host=True, is_administrator=False, is_superuser=False) -> FdpUser:
         """Log into the system
         - Create an account
