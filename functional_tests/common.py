@@ -4,6 +4,7 @@ from django.test import Client
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support.ui import Select
 
 from fdpuser.models import FdpUser
 from inheritable.tests import AbstractTestCase
@@ -239,14 +240,15 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
             group_input.send_keys(Keys.DOWN)
         group_input.send_keys(Keys.ENTER)
 
-    def el_select(self, name: str) -> WebElement:
-        return wait(self.browser.find_element, By.CSS_SELECTOR, f'select[name="{name}"]')
+    def el(self, css_selector: str) -> WebElement:
+        """Shorthand for self.browser.find_element(By.CSS_SELECTOR, css_selector)"""
+        return wait(self.browser.find_element,By.CSS_SELECTOR, css_selector)
+
+    def select_list(self, name: str) -> WebElement:
+        return Select(wait(self.browser.find_element, By.CSS_SELECTOR, f'select[name="{name}"]'))
 
     def input(self, name: str) -> WebElement:
         return wait(self.browser.find_element, By.CSS_SELECTOR, f'input[name="{name}"]')
 
     def submit_button(self, value: str) -> WebElement:
         return wait(self.browser.find_element, By.CSS_SELECTOR, f"input[value='{value}']")
-
-    def el(self, css_selector) -> WebElement:
-        return wait(self.browser.find_element, By.CSS_SELECTOR, css_selector)

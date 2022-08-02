@@ -1,6 +1,5 @@
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
 from core.models import (
     Person, PersonTitle, PersonIdentifier, Grouping,
 )
@@ -237,7 +236,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
         self.browser.find_element(By.XPATH, "//*[text()=' Add another relationship']") \
             .click()
         # And I set the relationship type
-        Select(self.el_select('relationships-0-grouping_relationship_2')) \
+        self.select_list('relationships-0-grouping_relationship_2') \
             .select_by_visible_text('Group Relationship Type')
 
         # ... other grouping
@@ -263,7 +262,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             .send_keys('2000')
 
         # ... is law enforcement
-        Select(self.el_select('law_enforcement')) \
+        self.select_list('law_enforcement') \
             .select_by_visible_text('Yes')
 
         # ... group name
@@ -321,7 +320,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
         )
 
         # ... is law enforcement
-        Select(b.find_element(By.CSS_SELECTOR, 'select#id_law_enforcement')) \
+        self.select_list('law_enforcement') \
             .select_by_visible_text('Yes')
 
         # And I save the new record
@@ -369,7 +368,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             .send_keys('2000')
 
         # ... is law enforcement
-        Select(b.find_element(By.CSS_SELECTOR, 'select#id_law_enforcement')) \
+        self.select_list('law_enforcement') \
             .select_by_visible_text('Yes')
 
         # And I save the new record
@@ -425,8 +424,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
 
         # and I fill any other necessary fields ...
         # ... relationship type
-        Select(self.browser.find_element(
-            By.CSS_SELECTOR, '.personrelationshipform select#id_relationships-0-person_relationship_2')) \
+        self.select_list('relationships-0-person_relationship_2') \
             .select_by_visible_text('test relationship type')
 
         # ... other officer
@@ -437,7 +435,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
         )
 
         # ... is law enforcement
-        Select(b.find_element(By.CSS_SELECTOR, 'select#id_law_enforcement')) \
+        self.select_list('law_enforcement') \
             .select_by_visible_text('Yes')
 
         # And I save the new record
@@ -457,6 +455,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             self.browser.find_element(By.CSS_SELECTOR, 'section.associates ul#relationships').text
         )
 
+    @tag('wip')
     def test_person_identifier(self):
         # Given there's an existing Title type
         person_identifier_type = PersonIdentifierType.objects.create(name="person-identifier-type-ammocoetoid")
@@ -482,10 +481,10 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             .send_keys('2000')
 
         # ... and I fill any other necessary fields ...
-        Select(self.el_select('identifiers-0-person_identifier_type')) \
+        self.select_list('identifiers-0-person_identifier_type') \
             .select_by_visible_text('person-identifier-type-ammocoetoid')
         self.input('identifiers-0-identifier').send_keys('TEST IDENTIFIER VALUE')
-        Select(b.find_element(By.CSS_SELECTOR, 'select#id_law_enforcement')) \
+        self.select_list('law_enforcement') \
             .select_by_visible_text('Yes')
         b.find_element(By.CSS_SELECTOR, 'input[name="name"]')\
             .send_keys('person-name-electrocardiographic')
@@ -528,9 +527,9 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             .send_keys('2000')
 
         # ... and I fill any other necessary fields ...
-        Select(self.el_select('titles-0-title')) \
+        self.select_list('titles-0-title') \
             .select_by_visible_text('title-ammocoetoid')
-        Select(b.find_element(By.CSS_SELECTOR, 'select#id_law_enforcement')) \
+        self.select_list('law_enforcement') \
             .select_by_visible_text('Yes')
         b.find_element(By.CSS_SELECTOR, 'input[name="name"]')\
             .send_keys('person-name-psychorhythmia')
