@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from inheritable.models import AbstractDateValidator
 from inheritable.forms import AbstractWizardModelForm, DateWithComponentsField, DateWithCalendarInput, \
     RelationshipField, AbstractWizardInlineFormSet, AbstractWizardModelFormSet, DateWithCalendarAndSplitInput, \
-    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField
+    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField, FuzzyDateSpanEndField
 from .models import LawEnforcementCategories
 from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPerson, Attachment, \
     ContentPersonAllegation, ContentPersonPenalty
@@ -163,7 +163,7 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    grouping_relationship_ended = DateWithComponentsField(
+    grouping_relationship_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -194,6 +194,14 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
     fields_to_show = [
                          'grouping_relationship_started', 'grouping_relationship_ended', 'grouping_relationship'
                      ] + GroupingRelationship.form_fields
+
+    field_order = [
+        'grouping_relationship',
+        'at_least_since',
+        'grouping_relationship_started',
+        'grouping_relationship_ended',
+        'ended_unknown_date',
+    ]
 
     #: Key in cleaned data dictionary indicating the grouping for whom the relationship form is saved.
     for_grouping_key = '_for_grouping'
@@ -369,7 +377,7 @@ class PersonIdentifierModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    identifier_ended = DateWithComponentsField(
+    identifier_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -377,6 +385,15 @@ class PersonIdentifierModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = person_identifier_form_fields.copy()
+
+    field_order = [
+        'identifier',
+        'person_identifier_type',
+        'at_least_since',
+        'identifier_started',
+        'identifier_ended',
+        'ended_unknown_date',
+    ]
 
     #: Prefix to use for form
     prefix = 'identifiers'
@@ -446,7 +463,7 @@ class PersonGroupingModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_grouping_ended = DateWithComponentsField(
+    person_grouping_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=(), # ignored
@@ -461,6 +478,16 @@ class PersonGroupingModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = ['grouping_name'] + person_grouping_form_fields.copy()
+
+    field_order = [
+        'grouping_name',
+        'type',
+        'at_least_since',
+        'person_grouping_started',
+        'person_grouping_ended',
+        'ended_unknown_date',
+        'person',
+    ]
 
     #: Prefix to use for form
     prefix = 'persongroupings'
@@ -537,7 +564,7 @@ class PersonTitleModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_title_ended = DateWithComponentsField(
+    person_title_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -546,11 +573,22 @@ class PersonTitleModelForm(AbstractWizardModelForm):
     grouping_name = AsyncSearchCharField(
         required=False,
         label=_('Grouping'),
+        help_text='The command or group at which this rank or title was held.'
     )
 
     #: Fields to show in the form
     fields_to_show = person_title_form_fields.copy()
     fields_to_show.append('grouping_name')
+
+    field_order = [
+        'title',
+        'grouping_name',
+        'at_least_since',
+        'person_title_started',
+        'person_title_ended',
+        'ended_unknown_date',
+        'person',
+    ]
 
     #: Prefix to use for form
     prefix = 'titles'
@@ -643,6 +681,21 @@ class PersonPaymentModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = person_payment_form_fields.copy()
+
+    field_order = [
+        'at_least_since',
+        'person_payment_started',
+        'person_payment_ended',
+        'ended_unknown_date',
+        'dynamic_county',
+        'leave_status',
+        'base_salary',
+        'regular_hours',
+        'regular_gross_pay',
+        'overtime_hours',
+        'overtime_pay',
+        'total_other_pay',
+    ]
 
     #: Prefix to use for form
     prefix = 'payments'
@@ -758,7 +811,7 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_relationship_ended = DateWithComponentsField(
+    person_relationship_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -785,6 +838,14 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = person_relationship_form_fields.copy()
+
+    field_order = [
+        'person_relationship',
+        'at_least_since',
+        'person_relationship_started',
+        'person_relationship_ended',
+        'ended_unknown_date',
+    ]
 
     #: Key in cleaned data dictionary indicating the person for whom the relationship form is saved.
     for_person_key = '_for_person'
@@ -1103,14 +1164,28 @@ class IncidentModelForm(AbstractWizardModelForm, PopupForm):
         required=True,
         label=_('Incident end date'),
         help_text="Enter the same date for start and end if the incident happened on a single day. Typically "
-                  "the end date does not include resulting investigations "
-                  "cases, or reporting. Enter a zero for day, month, or year when unknown. Enter all zeros if whole "
-                  "date is unknown.",
+                  "the end date does not include resulting investigations cases, or reporting. Enter a zero for day, "
+                  "month, or year when unknown. Enter all zeros for 'until present' or 'ongoing'.",
         fields=()  # ignored
     )
 
     #: Fields to show in the form
     fields_to_show = incident_form_fields.copy()
+
+    field_order = [
+        'location',
+        'location_type',
+        'at_least_since',
+        'incident_started',
+        'incident_ended',
+        'ended_unknown_date',
+        'encounter_reason',
+        'tags',
+        'description',
+        'for_host_only',
+        'for_admin_only',
+        'fdp_organizations',
+    ]
 
     def __init__(self, *args, **kwargs):
         """ If we're editing an instance of a case content, then set the incident started and incident ended initial
@@ -1431,7 +1506,7 @@ class ContentCaseModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    case_closed = DateWithComponentsField(
+    case_closed = FuzzyDateSpanEndField(
         required=True,
         label=_('Case closed date'),
         fields=()  # ignored
@@ -1439,6 +1514,17 @@ class ContentCaseModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = content_case_form_fields.copy()
+
+    field_order = [
+        'outcome',
+        'settlement_amount',
+        'court',
+        'at_least_since',
+        'case_opened',
+        'case_closed',
+        'ended_unknown_date',
+        'content',
+    ]
 
     #: Prefix to use for form
     prefix = 'cases'

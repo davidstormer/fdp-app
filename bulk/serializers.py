@@ -66,7 +66,7 @@ class FdpModelSerializer(ModelSerializer):
         'start_year', 'end_year', 'start_month', 'end_month', 'start_day', 'end_day'
     ]
 
-    #: Fields for AbstractAtLeastSinceDateBounded models that should be excluded from the list of mappable target serializer
+    #: Fields for AbstractFuzzyDateSpan models that should be excluded from the list of mappable target serializer
     # fields.
     abstract_at_least_since_date_bounded_excluded_fields = abstract_exact_date_bounded_excluded_fields + [
         'at_least_since']
@@ -626,7 +626,7 @@ class AbstractAsOfDateBoundedModelSerializer(FdpModelSerializer):
 
     Examples include the Person Grouping Air Table serializer and the Person Title Air Table serializer.
 
-    See the inheritable.models.AbstractAtLeastSinceDateBounded class.
+    See the inheritable.models.AbstractFuzzyDateSpan class.
 
     Attributes:
         :start_year (str): Date component meant to store starting year.

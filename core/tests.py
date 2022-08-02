@@ -607,7 +607,7 @@ class UnitTests(AbstractTestCase):
                     # WHEN I call at_least_since_bounding_dates on the given inputs
                     #
                     #
-                    result = person_grouping.at_least_since_bounding_dates
+                    result = person_grouping.date_span_str
 
                     # THEN I should get the respective output from the truth table
                     #
