@@ -6,7 +6,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from inheritable.models import Archivable, Descriptable, AbstractForeignKeyValidator, AbstractKnownInfo, \
     AbstractFileValidator, Confidentiable, AbstractUrlValidator, AbstractExactDateBounded, Linkable, \
-    AbstractConfiguration
+    AbstractConfiguration, AbstractFuzzyDateSpan
 from supporting.models import ContentType, Court, ContentIdentifierType, ContentCaseOutcome, \
     AttachmentType, SituationRole, Allegation, AllegationOutcome
 from fdpuser.models import FdpOrganization
@@ -516,7 +516,7 @@ class ContentIdentifier(Confidentiable, Descriptable):
         ordering = ['content', 'content_identifier_type']
 
 
-class ContentCase(Archivable, AbstractExactDateBounded):
+class ContentCase(Archivable, AbstractFuzzyDateSpan):
     """ Case content such as lawsuit and other cases brought against officer(s) or agency(ies).
 
     Attributes:
@@ -568,7 +568,7 @@ class ContentCase(Archivable, AbstractExactDateBounded):
     )
 
     #: Fields to display in the model form.
-    form_fields = ['outcome', 'settlement_amount', 'court', 'content']
+    form_fields = ['outcome', 'settlement_amount', 'court', 'content', 'at_least_since', 'ended_unknown_date']
 
     def __str__(self):
         """Defines string representation for a case content.

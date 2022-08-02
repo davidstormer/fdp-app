@@ -6,7 +6,7 @@ from django.forms import formsets
 from django.forms.formsets import BaseFormSet
 from django.forms.fields import BoundField
 from django.forms.models import BaseInlineFormSet, BaseModelFormSet, ModelChoiceField
-from django.forms.widgets import MultiWidget, NumberInput, HiddenInput, DateInput
+from django.forms.widgets import MultiWidget, NumberInput, HiddenInput, DateInput, CheckboxInput
 from django.utils.translation import ugettext_lazy as _
 from .models import AbstractDateValidator
 
@@ -489,6 +489,13 @@ class DateWithComponentsField(MultiValueField):
         :return: Single string in the format mm/dd/yyyy.
         """
         return self.compress_vals(data_list=data_list)
+
+
+class FuzzyDateSpanEndField(DateWithComponentsField):
+    def __init__(self, *args, **kwargs):
+        super(FuzzyDateSpanEndField, self).__init__(*args, **kwargs)
+        self.help_text = "Enter a zero for day, month, or year when unknown. Enter all zeros for 'until present' " \
+                         "or 'ongoing'."
 
 
 class DateWithCalendarAndSplitInput(DateWithCalendarInput):
