@@ -38,7 +38,7 @@ class ContentCaseAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
     """
     _list_display = [
-                        'outcome', 'court', 'settlement_amount', 'exact_bounding_dates', 'truncated_description'
+                        'outcome', 'court', 'settlement_amount', 'date_span_str', 'truncated_description'
                     ] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display

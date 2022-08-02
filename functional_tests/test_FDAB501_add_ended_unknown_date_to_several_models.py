@@ -343,7 +343,6 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
 
     # Having trouble getting the ended unknown date checkbox field to show in the edit interface
     # Skipping for now because this is a low priority
-    @tag('wip')
     def test_person_payment(self):
         # Given I go to the create new officer page
         b = self.browser

@@ -2222,7 +2222,7 @@ class Incident(Confidentiable, AbstractFuzzyDateSpan):
         :return: String representing incident.
         """
         location = AbstractForeignKeyValidator.stringify_foreign_key(obj=self, foreign_key='location', unknown='')
-        dates = self.exact_bounding_dates
+        dates = self.date_span_str
         str_rep = '{d}{p}{s}{t}'.format(
             d='' if not dates else '{d} '.format(d=dates.title()),
             p='' if not location else '{i} {p} '.format(i=_('In'), p=location.title()),
@@ -2339,7 +2339,7 @@ class PersonIncident(Archivable, Descriptable, Linkable, AbstractKnownInfo):
                 foreign_key='location',
                 unknown=''
             )
-            dates = getattr(incident, 'exact_bounding_dates')
+            dates = getattr(incident, 'date_span_str')
             incident_str = '{d}{p}'.format(
                 d='' if not dates else '{d} '.format(d=dates.title()),
                 p='' if not location else '{i} {p} '.format(i=_('In'), p=location.title()),
