@@ -2,6 +2,64 @@
 
 All releases will be logged in this file.
 
+## [6.0.0] - 2022-08-03
+
+### Added
+- New Person search page with improved usability ('roundup' search)
+- New Person search algorithm that better handles middle names, abbreviations, variation in spelling and 
+  punctuation ('roundup' search)
+- Newly designed bulk importer workflow pages with more specific error reporting and guidance
+- Bulk importer columns documentation page
+- Command line interface for bulk importer
+- Command line data exporter tool (no Web UI yet)
+- Custom text blocks on site footer and profile pages
+- Help text for data fields on editing pages
+- Optional default types and tags (available on installation)
+
+### Changed
+- Add Group field to Person Title records
+- Rename "is inactive" field to "ended unknown date"
+- Add "ended unknown date" to date fields on PersonIdentifier, PersonRelationship, PersonPayment, 
+  GroupingRelationship, PersonTitle, PersonGrouping, ContentCase, and Incident; and add "at least since" field on 
+  ContentCase, and Incident
+- Fix relationship types not updating on Person and Group editing pages
+- Add audit log when AAD attempted logins have incorrect domain (security)
+- Fix carriage returns in description text not showing on detail pages
+- Increase default max failed password attempts and decrease default lockout time
+- Fix empty parens when rank dates set to all zeros
+- Add missing 'host only' filter option in Advanced Admin listing pages
+- Rename "Officer" to "Person" on homepage, and officer search pages
+
+### Removed
+- "Snapshot" feature on person profile page now disabled by default, but reenablable via settings.py setting
+- Prior version of Officer search disabled by default, but reenablable via settings.py setting
+
+### Security patches
+- Upgrade Django to 3.2 LTS release from deprecated 3.1 release channel
+- PyJWT 2.4.0
+- sqlparse 0.4.2
+- lxml 4.9.1
+
+### Upgrading notes
+The new 'roundup' search requires that the TrigramSimilarity extension be enabled in PostgreSQL, and adds a new 
+"full_text" field. This change is handled in a migration file. There are several other new fields and a field rename.
+
+To accomplish all of this database migrations must be run during upgrade:
+```shell
+python3 manage.py migrate
+```
+You may get 500 errors until you do this.
+
+In addition, the "full_text" field must be populated during upgrade using a custom management command:
+
+```shell
+python3 manage.py reindex_search
+```
+
+This may take a while to run. Search will not function properly until this is done. Note that moving forward the 
+full_text field automatically updates with any new or updated records, so it is unnecessary to run this command 
+again in the future after the upgrade.
+
 ## [5.0.1] - 2022-03-07
 
 ### Changed
