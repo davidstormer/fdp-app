@@ -31,7 +31,7 @@ All releases will be logged in this file.
 - Rename "Officer" to "Person" on homepage, and officer search pages
 
 ### Removed
-- "Snapshot" feature on person profile page now disabled by default, but reenablable via settings.py setting
+- "Snapshot" feature on person profile page now disableable via settings.py setting
 - Prior version of Officer search disabled by default, but reenablable via settings.py setting
 
 ### Security patches
