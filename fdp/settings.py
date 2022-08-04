@@ -85,22 +85,22 @@ LOGGING = {
 #: To customize the options that are listed on the federated login page, remove the comments from the below assignment.
 # If no options are listed below, the federated login page will be skipped, and the user will be automatically
 # redirected to the primary login page.
-FEDERATED_LOGIN_OPTIONS = [
-    {
-        'label': 'Sign in with FDP',
-        'url_pattern_name': 'two_factor:login',
-        'url_pattern_args': [],
-        'css': {'background-color': '#417690', 'color': '#FFF'},
-        'css_hover': {'color': '#f5dd5d'}
-    },
-    {
-        'label': 'Sign in with Azure Active Directory',
-        'url_pattern_name': 'social:begin',
-        'url_pattern_args': ['inheritable.models.AbstractConfiguration.azure_active_directory_provider'],
-        'css': {'background-color': '#417690', 'color': '#FFF'},
-        'css_hover': {'color': '#f5dd5d'}
-    }
-]
+# FEDERATED_LOGIN_OPTIONS = [
+#     {
+#         'label': 'Sign in with FDP',
+#         'url_pattern_name': 'two_factor:login',
+#         'url_pattern_args': [],
+#         'css': {'background-color': '#417690', 'color': '#FFF'},
+#         'css_hover': {'color': '#f5dd5d'}
+#     },
+#     {
+#         'label': 'Sign in with Azure Active Directory',
+#         'url_pattern_name': 'social:begin',
+#         'url_pattern_args': ['inheritable.models.AbstractConfiguration.azure_active_directory_provider'],
+#         'css': {'background-color': '#417690', 'color': '#FFF'},
+#         'css_hover': {'color': '#f5dd5d'}
+#     }
+# ]
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 14
 
 LEGACY_OFFICER_SEARCH_ENABLE = True
