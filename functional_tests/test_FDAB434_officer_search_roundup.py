@@ -1,6 +1,6 @@
 from unittest import skip
 from uuid import uuid4
-from django.test import override_settings
+from django.test import override_settings, tag
 
 from selenium.webdriver.common.by import By
 
@@ -352,6 +352,32 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
 
         # Then I should be taken to the new roundup officer search
         wait(self.browser.find_element, By.CSS_SELECTOR, 'form.roundup-officer-search')
+
+    def test_admin_link_visible_to_admins(self):
+        # Given I'm an admin
+        admin_client = self.log_in(is_administrator=True)
+
+        # When I go to the roundup officer search page
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+
+        # Then I should see an admin link in the top right bar
+        self.assertIn(
+            'ADMIN',
+            self.el('div#user-tools').text
+        )
+
+    def test_admin_link_not_visible_to_end_users(self):
+        # Given I'm not an admin
+        admin_client = self.log_in(is_administrator=False)
+
+        # When I go to the roundup officer search page
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+
+        # Then I should see an admin link in the top right bar
+        self.assertNotIn(
+            'ADMIN',
+            self.el('div#user-tools').text
+        )
 
 
 class SearchPageTestCaseRoundup(FunctionalTestCase):
