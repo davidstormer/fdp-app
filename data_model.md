@@ -204,6 +204,7 @@
         - grouping_alias - ManyToOneRel
         - subject_grouping_relationship - ManyToOneRel
         - object_grouping_relationship - ManyToOneRel
+        - persontitle_grouping - ManyToOneRel
         - person_grouping - ManyToOneRel
         - grouping_incident - ManyToOneRel
         - command_view - ManyToOneRel
@@ -278,6 +279,7 @@
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
         - at_least_since - BooleanField
+        - ended_unknown_date - BooleanField
         - subject_grouping - ForeignKey
         - type - ForeignKey
         - object_grouping - ForeignKey
@@ -310,6 +312,8 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
+        - at_least_since - BooleanField
+        - ended_unknown_date - BooleanField
         - location - ForeignKey
         - location_type - ForeignKey
         - encounter_reason - ForeignKey
@@ -335,10 +339,10 @@
         - person_alias - ManyToOneRel
         - person_photo - ManyToOneRel
         - person_identifier - ManyToOneRel
-        - person_title - ManyToOneRel
         - subject_person_relationship - ManyToOneRel
         - object_person_relationship - ManyToOneRel
         - person_payment - ManyToOneRel
+        - person_title - ManyToOneRel
         - person_grouping - ManyToOneRel
         - person_incident - ManyToOneRel
         - content_person - ManyToOneRel
@@ -353,6 +357,7 @@
         - birth_date_range_start - DateField
         - birth_date_range_end - DateField
         - is_law_enforcement - BooleanField
+        - search_full_text - SearchVectorField
         - traits - ManyToManyField
         - fdp_organizations - ManyToManyField
     - Methods (non-private/internal):
@@ -369,6 +374,7 @@
         - get_title_sql()
         - get_verbose_name()
         - get_verbose_name_plural()
+        - reindex_search_fields()
 
 
 # core.PersonAlias
@@ -423,10 +429,10 @@
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
         - at_least_since - BooleanField
+        - ended_unknown_date - BooleanField
         - person - ForeignKey
         - grouping - ForeignKey
         - type - ForeignKey
-        - ended_unknown_date - BooleanField
     - Methods (non-private/internal):
         - check_start_date_before_end_date()
         - filter_for_admin()
@@ -453,6 +459,7 @@
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
         - at_least_since - BooleanField
+        - ended_unknown_date - BooleanField
         - identifier - CharField
         - person_identifier_type - ForeignKey
         - person - ForeignKey
@@ -502,6 +509,7 @@
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
         - at_least_since - BooleanField
+        - ended_unknown_date - BooleanField
         - base_salary - DecimalField
         - regular_hours - DecimalField
         - regular_gross_pay - DecimalField
@@ -553,6 +561,7 @@
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
         - at_least_since - BooleanField
+        - ended_unknown_date - BooleanField
         - subject_person - ForeignKey
         - type - ForeignKey
         - object_person - ForeignKey
@@ -581,8 +590,10 @@
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
         - at_least_since - BooleanField
+        - ended_unknown_date - BooleanField
         - title - ForeignKey
         - person - ForeignKey
+        - grouping - ForeignKey
     - Methods (non-private/internal):
         - check_start_date_before_end_date()
         - filter_for_admin()
@@ -849,6 +860,51 @@
         - logout()
 
 
+# importer_narwhal.ErrorRow
+    - Fields:
+        - id - AutoField
+        - import_batch - ForeignKey
+        - row_number - IntegerField
+        - error_message - TextField
+        - row_data - TextField
+    - Methods (non-private/internal):
+
+
+# importer_narwhal.ImportBatch
+    - Fields:
+        - imported_rows - ManyToOneRel
+        - error_rows - ManyToOneRel
+        - id - AutoField
+        - created - DateTimeField
+        - dry_run_started - DateTimeField
+        - dry_run_completed - DateTimeField
+        - started - DateTimeField
+        - completed - DateTimeField
+        - target_model_name - CharField
+        - number_of_rows - IntegerField
+        - errors_encountered - BooleanField
+        - submitted_file_name - CharField
+        - general_errors - TextField
+        - import_sheet - FileField
+    - Methods (non-private/internal):
+        - get_next_by_created()
+        - get_previous_by_created()
+        - get_target_model_name_display()
+
+
+# importer_narwhal.ImportedRow
+    - Fields:
+        - id - AutoField
+        - import_batch - ForeignKey
+        - row_number - IntegerField
+        - action - CharField
+        - errors - TextField
+        - info - TextField
+        - imported_record_pk - CharField
+        - imported_record_name - CharField
+    - Methods (non-private/internal):
+
+
 # otp_static.StaticDevice
     - Fields:
         - token_set - ManyToOneRel
@@ -987,6 +1043,22 @@
         - parse_search_criteria()
 
 
+# profiles.SiteSetting
+    - Fields:
+        - id - AutoField
+        - is_archived - BooleanField
+        - key - CharField
+        - value - JSONField
+    - Methods (non-private/internal):
+        - filter_for_admin()
+        - get_active_filter()
+        - get_db_table()
+        - get_db_table_for_many_to_many()
+        - get_fk_model()
+        - get_verbose_name()
+        - get_verbose_name_plural()
+
+
 # reversion.Revision
     - Fields:
         - version - ManyToOneRel
@@ -1117,6 +1189,8 @@
         - end_year - PositiveSmallIntegerField
         - end_month - PositiveSmallIntegerField
         - end_day - PositiveSmallIntegerField
+        - at_least_since - BooleanField
+        - ended_unknown_date - BooleanField
         - outcome - ForeignKey
         - court - ForeignKey
         - settlement_amount - DecimalField
@@ -1731,4 +1805,4 @@
         - get_verbose_name_plural()
 
 
-# Total Models Listed: 90
+# Total Models Listed: 94

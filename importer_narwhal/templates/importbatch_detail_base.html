@@ -2,8 +2,8 @@
 {% load i18n admin_urls static compress crispy_forms_tags changing_extras %}
 
 {% block breadcrumbs %}
-<li><a href="{% url 'changing:index' %}">Admin</a></li>
-<li><a href="{% url 'importer_narwhal:importer-landing' %}">Importer</a></li>
+<li class="breadcrumb-item"><a href="{% url 'changing:index' %}">Admin</a></li>
+<li class="breadcrumb-item"><a href="{% url 'importer_narwhal:importer-landing' %}">Importer</a></li>
 <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
 {% endblock %}
 
