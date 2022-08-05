@@ -127,6 +127,13 @@ The default list of fields that are in the denylist, and so denied from use thro
 
     FDP_WHOLESALE_FIELDS_DENYLIST = ['is_archived', ...]
 
+## Legacy officer search page
+
+Version 6.0.0 introduces a new officer search page, which replaces the legacy search page. To re-enable the old legacy 
+search use this setting:
+
+    LEGACY_OFFICER_SEARCH_ENABLE = True
+
 ## FDP Settings for Azure
 
 For hosting in Microsoft Azure, it is recommended that the most sensitive settings are stored in Microsoft Azure Key Vault as Secrets. Less sensitive settings can be stored in the Azure App Service as Application Settings. The following is one possible configuration:

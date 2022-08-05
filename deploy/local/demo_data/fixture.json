@@ -1186,7 +1186,7 @@
         "phone_number": "",
         "email": "",
         "address": "",
-        "is_inactive": false,
+        "ended_unknown_date": false,
         "inception_date": null,
         "cease_date": null,
         "belongs_to_grouping": 315,
@@ -1203,7 +1203,7 @@
         "phone_number": "",
         "email": "",
         "address": "",
-        "is_inactive": false,
+        "ended_unknown_date": false,
         "inception_date": null,
         "cease_date": null,
         "belongs_to_grouping": 315,
@@ -1220,7 +1220,7 @@
         "phone_number": "",
         "email": "",
         "address": "",
-        "is_inactive": false,
+        "ended_unknown_date": false,
         "inception_date": null,
         "cease_date": null,
         "belongs_to_grouping": 315,
@@ -1237,7 +1237,7 @@
         "phone_number": "",
         "email": "",
         "address": "",
-        "is_inactive": false,
+        "ended_unknown_date": false,
         "inception_date": null,
         "cease_date": null,
         "belongs_to_grouping": 315,
@@ -1254,7 +1254,7 @@
         "phone_number": "2029566725",
         "email": "4d@nypd.dc.gov",
         "address": "1893 Georgia Ave NW, New York City 10024",
-        "is_inactive": false,
+        "ended_unknown_date": false,
         "inception_date": null,
         "cease_date": null,
         "belongs_to_grouping": 315,
@@ -1274,7 +1274,7 @@
         "phone_number": "",
         "email": "",
         "address": "",
-        "is_inactive": false,
+        "ended_unknown_date": false,
         "inception_date": null,
         "cease_date": null,
         "belongs_to_grouping": 315,
@@ -1291,7 +1291,7 @@
         "phone_number": "",
         "email": "",
         "address": "",
-        "is_inactive": false,
+        "ended_unknown_date": false,
         "inception_date": null,
         "cease_date": null,
         "belongs_to_grouping": null,
@@ -1316,7 +1316,7 @@
         "phone_number": "",
         "email": "",
         "address": "",
-        "is_inactive": false,
+        "ended_unknown_date": false,
         "inception_date": null,
         "cease_date": null,
         "belongs_to_grouping": null,
@@ -1411,7 +1411,7 @@
         "person": 3,
         "grouping": 264,
         "type": null,
-        "is_inactive": false
+        "ended_unknown_date": false
     }
 },
 {
@@ -1430,7 +1430,7 @@
         "person": 5,
         "grouping": 315,
         "type": 1,
-        "is_inactive": false
+        "ended_unknown_date": false
     }
 },
 {
@@ -1449,7 +1449,7 @@
         "person": 6774,
         "grouping": 264,
         "type": 1,
-        "is_inactive": false
+        "ended_unknown_date": false
     }
 },
 {
@@ -1468,7 +1468,7 @@
         "person": 6775,
         "grouping": 264,
         "type": 3,
-        "is_inactive": false
+        "ended_unknown_date": false
     }
 },
 {
@@ -1487,7 +1487,7 @@
         "person": 6775,
         "grouping": 129,
         "type": 1,
-        "is_inactive": true
+        "ended_unknown_date": true
     }
 },
 {
@@ -1506,7 +1506,7 @@
         "person": 3,
         "grouping": 129,
         "type": 1,
-        "is_inactive": true
+        "ended_unknown_date": true
     }
 },
 {
@@ -1525,7 +1525,7 @@
         "person": 3,
         "grouping": 271,
         "type": 3,
-        "is_inactive": true
+        "ended_unknown_date": true
     }
 },
 {
@@ -1544,7 +1544,7 @@
         "person": 6895,
         "grouping": 264,
         "type": null,
-        "is_inactive": true
+        "ended_unknown_date": true
     }
 },
 {

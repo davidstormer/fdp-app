@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class FdpUserTestCase(FdpUserCommonTestCase):
 
+    @override_settings(LEGACY_OFFICER_SEARCH_ENABLE=True)
     def test_access_to_views(self):
         """ Test access to views:
                 (a) For all user types

@@ -228,6 +228,12 @@ INSTALLED_APPS = [
     'bulk_data_manipulation',
     # allows users to add and update large volumes of data through a simplified and automated process
     'wholesale',
+    # bootstrap compatible forms
+    "crispy_forms",
+    "crispy_bootstrap5",
+    # allows user to add and update large volumes of data through a simplified and automated process
+    'importer_narwhal',
+    'django.contrib.humanize',
 ]
 
 
@@ -262,7 +268,9 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     'django.template.context_processors.debug',
     'django.template.context_processors.request',
     'django.contrib.auth.context_processors.auth',
-    'django.contrib.messages.context_processors.messages'
+    'django.contrib.messages.context_processors.messages',
+    'profiles.common.global_custom_text_block_context_processor',
+    'profiles.common.snapshot_toggle_context_processor',
 ]
 # Defines a part of the dictionary that is the first item in the Django's standard TEMPLATES setting list
 # TEMPLATE_FIRST_DICT['OPTIONS'] = {'context_processors': TEMPLATE_CONTEXT_PROCESSORS}
@@ -358,6 +366,10 @@ STATICFILES_FINDERS = [
     'compressor.finders.CompressorFinder'
 ]
 
+# For bootstrap SASS compilation
+COMPRESS_PRECOMPILERS = (
+    ('text/x-scss', 'django_libsass.SassCompiler'),
+)
 
 # Protection against Denial-of-service (DoS) Attacks
 # Maximum size in bytes of request body
@@ -457,9 +469,9 @@ COMPRESS_JS_FILTERS = [
 # Connect with workaround DummyCache because of issue with local-memory caching used as default
 AXES_CACHE = 'axes_cache'
 # Number of login attempts before record is created for failed login
-AXES_FAILURE_LIMIT = 3
+AXES_FAILURE_LIMIT = 6
 # Number of hours of user inactivity after which old failed logins are forgotten
-AXES_COOLOFF_TIME = 48
+AXES_COOLOFF_TIME = 2
 # Prevents the login from IP under a particular user if the attempt limit has been exceeded
 AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
 # Redact contents of password parameter in login request
@@ -483,6 +495,8 @@ CSP_SCRIPT_SRC = (
     'https://ajax.googleapis.com/ajax/libs/jqueryui/',
     'https://cdnjs.cloudflare.com/ajax/libs/vex-js/',
     'https://cdnjs.cloudflare.com/ajax/libs/select2/',
+    'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/',
+    'https://code.jquery.com/jquery-3.6.0.min.js',
 )
 # Disables <base> URIs, preventing attackers from changing the locations of scripts loaded from relative URLs. If
 # your application uses <base> tags, base-uri 'self' is usually also safe.
@@ -499,6 +513,8 @@ CSP_DEFAULT_SRC = (
     'https://cdnjs.cloudflare.com/ajax/libs/vex-js/',
     'https://cdnjs.cloudflare.com/ajax/libs/select2/',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/',
+    'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/',
+    'https://code.jquery.com/jquery-3.6.0.min.js',
     "'self' data:",
 )
 # Defines valid sources for stylesheets.
@@ -701,3 +717,10 @@ FDP_MAX_PERSON_PHOTO_FILE_BYTES = CONST_MAX_PERSON_PHOTO_FILE_BYTES
 # model. Each tuple has two items: the first is a user-friendly short description of the supported file type; the second
 # is the expected extension of the supported file type.
 FDP_SUPPORTED_PERSON_PHOTO_FILE_TYPES = CONST_SUPPORTED_PERSON_PHOTO_FILE_TYPES
+
+# Set up bootstrap5 compatible forms
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+# Don't disable the snapshot feature _yet_
+SNAPSHOT_DISABLE = False

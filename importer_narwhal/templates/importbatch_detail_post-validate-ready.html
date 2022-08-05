@@ -1,0 +1,42 @@
+{% extends "importer_narwhal/templates/importbatch_detail_base.html" %}
+{% load i18n admin_urls static compress crispy_forms_tags changing_extras %}
+{% block inner_content %}
+<div class="row">
+  <div class="col-md-6">
+    <div class="importer-info-card card">
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item"><div class="datum datum-submitted_file_name"><span class="label">File name</span>  <span class="value">{{object.import_sheet.file.name|basename}}</span></div></li>
+          <li class="list-group-item"><div class="datum datum-number_of_rows"><span class="label">Rows</span>  <span class="value">{{object.number_of_rows}}</span></div></li>
+          <li class="list-group-item"><div class="datum datum-target_model_name"><span class="label">Model name</span>  <span class="value">{{object.target_model_name}}</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="importer-status-guide">
+            <p>No errors were encountered during validation. Ready to import.</p>
+          <div class="text-end">
+              <form method="post" action="{% url 'importer_narwhal:records' object.pk %}">
+                {% csrf_token %}
+                <input class="btn btn-primary" type="submit" value="Import {{object.number_of_rows}} rows">
+              </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script-bottom %}
+$('form').submit(function(event) {
+  $.post('/changing/importer/batch/{{object.pk}}/records')
+  setTimeout(() => {
+    window.location.replace("/changing/importer/batch/{{object.pk}}")
+  }, 1000)
+  event.preventDefault()
+})
+{% endblock %}

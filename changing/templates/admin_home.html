@@ -44,9 +44,9 @@
     </div>
     {% if user.is_host or user.is_superuser %}
     <div class="column wholesale">
-        <a href="{%url 'wholesale:index' %}"><i class="fas fa-tasks"></i></a>
-        <h3><a href="{%url 'wholesale:index' %}">{% translate 'Importer' %}</a></h3>
-        <p>{% translate 'Add and update large volumes of data using a simplified and automated process.' %}</p>
+        <a href="{%url 'importer_narwhal:importer-landing' %}"><i class="fas fa-tasks"></i></a>
+        <h3><a href="{%url 'importer_narwhal:importer-landing' %}">{% translate 'Importer' %}</a></h3>
+        <p>{% translate 'Add and update large volumes of data using import sheets.' %}</p>
     </div>
     {% endif %}
     <div class="column advanced">
@@ -56,8 +56,13 @@
     </div>
     <div class="column profiles">
         <a href="{%url 'profiles:index' %}"><i class="far fa-address-card"></i></a>
-        <h3><a href="{%url 'profiles:index' %}">{% translate 'Profiles' %}</a></h3>
-        <p>{% translate 'Search for and view officer profiles and more.' %}</p>
+        <h3><a href="{%url 'profiles:index' %}">{% translate 'Person Profiles' %}</a></h3>
+        <p>{% translate 'Search for and view person profiles and more.' %}</p>
+    </div>
+    <div class="column site-settings">
+        <a href="{%url 'profiles:site_settings' %}"><i class="fas fa-cog"></i></a>
+        <h3><a href="{%url 'profiles:site_settings' %}">{% translate 'Site Settings' %}</a></h3>
+        <p>{% translate 'Customize the site that your users see.' %}</p>
     </div>
 </div>
 

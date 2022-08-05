@@ -20,19 +20,43 @@ button.logout:focus, button.logout:hover {
 /* element appearing on the modal dialogue that contains the exact time remaining until a user's session will expire */
 #sessiontoexpirytime { font-weight:bold; }
 
-/* Footer & Release number styling */
-div#footer-global {
-  text-align: right;
+/* inline alert cards */
+div.alert-inline {
+    box-shadow: 5px 5px 5px grey;
+    font-size: 16px;
+    border: 1px solid #e9e9e9;
+    border-radius: 1px;
+    border-left: 4px solid gray;
+    padding: 1rem 2rem 1rem 1.2rem;
+    margin-bottom: 2em;
 }
-span#release-number {
+.alert-inline-icon {
+    float: left;
+    font-size: 32px;
+    color: gray;
+}
+.alert-inline-message {
+    margin-left: 3rem;
+}
+.alert-inline-warning {
+    border-left: 4px solid #ffc107 !important;
+}
+.alert-inline-warning .alert-inline-icon {
+  color: #ffc107;
+}
+
+/* Footer & Release number styling */
+div#footer-global * {
+    box-sizing: border-box;
+}
+div#footer-global {
+    background-color: #f8f8f8;
+    border-top: 1px solid #f4f4f4;
+}
+div#release-number {
   color: #aaa;
   font-weight: bold;
-}
-/* Move footer to bottom when on 2fa pages, where body div becomes tiny window */
-body.login div#footer-global {
-  position: fixed;
-  bottom: 0;
-  right: 0;
+  text-align: right;
 }
 
 /* Help center button */
@@ -50,4 +74,60 @@ a.help-center-button {
 
 a.help-center-button .fa-question-circle {
     font-size: 120%;
+}
+
+/* Global custom text block footer*/
+div.footer-row {
+  display: flex;
+}
+.global-text-box {
+  padding: 2em 2em 2em 3em;
+  width: 50%;
+}
+#custom-text-block-global-left {
+  padding-right: 1em;
+}
+#custom-text-block-global-right {
+  padding-left: 1em;
+}
+a.custom-text-edit-link {
+    opacity: 0;
+    float: right;
+    margin-right: -1em;
+}
+.global-text-box:hover a.custom-text-edit-link {
+    transition-duration: .2s;
+    opacity: 100%;
+}
+@media only screen and (max-width: 480px) {
+  div.footer-row {
+    flex-direction: column;
+  }
+  .global-text-box {
+    width: 100%;
+  }
+  .global-text-box#custom-text-block-global-left {
+    padding: 2em;
+    padding-bottom: .5em;
+  }
+  .global-text-box#custom-text-block-global-right {
+    padding: 2em;
+    padding-top: .5em;
+  }
+}
+
+/* Misc Typography */
+
+/* use to force <pre> text to match the rest of the page */
+.body-font {
+  font-family: "Roboto","Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+
+.text-wrap {
+  /* https://stackoverflow.com/a/52130554 */
+  white-space: pre-wrap;
+  word-break: keep-all
+  word-wrap: break-word;
 }

@@ -1,7 +1,7 @@
 from django.urls import path
 from inheritable.models import AbstractUrlValidator
 from . import views
-
+from .views import SiteSettingsPage, OfficerSearchRoundupView
 
 app_name = 'profiles'
 
@@ -14,6 +14,7 @@ urlpatterns = [
         views.OfficerSearchResultsListView.as_view(),
         name='officer_search_results'
     ),
+    path('officer/search-roundup/', OfficerSearchRoundupView.as_view(), name='officer_search_roundup'),
     path('{u}<int:pk>'.format(u=AbstractUrlValidator.OFFICER_URL), views.OfficerDetailView.as_view(), name='officer'),
     path(
         '{u}<int:pk>'.format(u=AbstractUrlValidator.OFFICER_DOWNLOAD_ALL_FILES_URL),
@@ -31,5 +32,6 @@ urlpatterns = [
         '{u}<int:pk>'.format(u=AbstractUrlValidator.COMMAND_DOWNLOAD_ALL_FILES_URL),
         views.CommandDownloadAllFilesView.as_view(),
         name='command_download_all_files'
-    )
+    ),
+    path('admin/site-settings', SiteSettingsPage.as_view(), name='site_settings')
 ]

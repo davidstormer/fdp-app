@@ -77,7 +77,7 @@ class PersonTitleAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for person titles.
 
     """
-    _list_display = ['person', 'title', 'at_least_since_bounding_dates'] + ArchivableAdmin.list_display
+    _list_display = ['person', 'title', 'date_span_str'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     list_filter = ['title'] + PersonTitle.list_filter_fields + ArchivableAdmin.list_filter
@@ -90,7 +90,7 @@ class PersonRelationshipAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for relationships between people.
 
     """
-    _list_display = ['at_least_since_bounding_dates', 'subject_person', 'type', 'object_person'] + ArchivableAdmin.list_display
+    _list_display = ['date_span_str', 'subject_person', 'type', 'object_person'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     list_filter = ['type'] + PersonRelationship.list_filter_fields + ArchivableAdmin.list_filter
@@ -103,7 +103,7 @@ class PersonPaymentAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for person payments.
 
     """
-    _list_display = ['person', 'at_least_since_bounding_dates', 'county'] + ArchivableAdmin.list_display
+    _list_display = ['person', 'date_span_str', 'county'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     list_filter = PersonPayment.list_filter_fields + ['county'] + ArchivableAdmin.list_filter
@@ -116,10 +116,10 @@ class GroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for groupings of people.
 
     """
-    _list_display = ['name', 'is_law_enforcement', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_display
+    _list_display = ['name', 'is_law_enforcement', 'ended_unknown_date', 'belongs_to_grouping'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
-    list_filter = ['counties', 'is_law_enforcement', 'is_inactive', 'belongs_to_grouping'] + ArchivableAdmin.list_filter
+    list_filter = ['counties', 'is_law_enforcement', 'ended_unknown_date', 'belongs_to_grouping'] + ArchivableAdmin.list_filter
     search_fields = ['name', 'phone_number', 'email', 'address']
     ordering = ['name']
 
@@ -143,7 +143,7 @@ class GroupingRelationshipAdmin(FdpInheritableAdmin, ArchivableAdmin):
 
     """
     _list_display = [
-                       'at_least_since_bounding_dates', 'subject_grouping', 'type', 'object_grouping'
+                       'date_span_str', 'subject_grouping', 'type', 'object_grouping'
                    ] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
@@ -159,10 +159,10 @@ class PersonGroupingAdmin(FdpInheritableAdmin, ArchivableAdmin):
     """ Admin interface for links between persons and groupings.
 
     """
-    _list_display = ['person', 'at_least_since_bounding_dates', 'grouping', 'type', 'is_inactive'] + ArchivableAdmin.list_display
+    _list_display = ['person', 'date_span_str', 'grouping', 'type', 'ended_unknown_date'] + ArchivableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
-    list_filter = PersonGrouping.list_filter_fields + ['type', 'is_inactive'] + ArchivableAdmin.list_filter
+    list_filter = PersonGrouping.list_filter_fields + ['type'] + ArchivableAdmin.list_filter
     search_fields = ['person__name', 'grouping__name']
     ordering = ['person__name'] + PersonGrouping.order_by_date_fields + ['grouping__name']
 
@@ -172,7 +172,7 @@ class IncidentAdmin(FdpInheritableAdmin, ConfidentiableAdmin):
     """ Admin interface for incidents.
 
     """
-    _list_display = ['exact_bounding_dates', 'location', 'truncated_description'] + ConfidentiableAdmin.list_display
+    _list_display = ['date_span_str', 'location', 'truncated_description'] + ConfidentiableAdmin.list_display
     list_display = _list_display
     list_display_links = _list_display
     list_filter = Incident.list_filter_fields + [

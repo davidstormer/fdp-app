@@ -1,0 +1,29 @@
+@import "css/bootstrap-scss/functions";
+@import "css/bootstrap-scss/variables";
+@import "css/bootstrap-scss/mixins";
+@import "css/bootstrap-scss/utilities";
+
+.model-name,
+.heading-field-name {
+  font-family: monospace;
+}
+
+.heading-field-name {
+  font-size: $h5-font-size;
+  font-color: $secondary;
+}
+
+table.table.mapping-template {
+    overflow: auto;
+    display: block;
+    background-color: $light;
+    border: 1px solid $gray-200;
+    padding: 1rem;
+    code {
+      color: $secondary;
+    }
+}
+.importer-status-guide .spinner-border {
+    width: 7rem;
+    height: 7rem;
+}

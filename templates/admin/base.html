@@ -1,4 +1,4 @@
-{% load i18n static compress fdp_extras %}<!DOCTYPE html>
+{% load i18n static compress fdp_extras profiles_extras %}<!DOCTYPE html>
 {% get_current_language as LANGUAGE_CODE %}{% get_current_language_bidi as LANGUAGE_BIDI %}
 <html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>
 <head>
@@ -116,10 +116,11 @@
           <br class="clear">
         </div>
         <!-- END Content -->
+
         {% block footer %}<div id="footer"></div>{% endblock %}
       </div>
     </div>
-    <div id="footer-global">{% if user.is_authenticated %}<span id="release-number">FDP App 5.0.0</span>{% endif %}</div>
+    {% block footer_global %}{% endblock %}
     {% if user.has_admin_access %}
     <a href="https://fulldisclosure.zendesk.com/hc/en-us/categories/1500001087701-Administrator-Documentation" class="help-center-button" target="_blank">
     <i class="far fa-question-circle"></i> Help</a>

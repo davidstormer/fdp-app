@@ -1,0 +1,73 @@
+{% extends 'common/base-bootstrap.html' %}
+{% load static compress %}
+
+{% block head %}
+    {% compress css %}
+    <link rel="stylesheet" type="text/x-scss"  href="{% static 'importer_narwhal/style-importer-narwhal.scss' %}">
+    {% endcompress %}
+{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'changing:index' %}">Admin</a></li>
+<li class="breadcrumb-item"><a href="{% url 'importer_narwhal:importer-landing' %}">Importer</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+<nav class="col-md-3 pt-3 sidebar">
+  <ul class="nav nav-pills flex-column" id="toc">
+  {% for mapping_name in mappings %}
+  <li class="nav-item">
+    <a href="#mapping-{{mapping_name}}" class="nav-link">{{ mapping_name }}</a>
+  </li>
+  {% endfor %}
+  </ul>
+  <a href="#" class="btn btn-outline-secondary backdrop-filter-blur position-fixed bottom-0 mb-3 p-3"><i class="fas fa-angle-double-up"></i> Back to top</a>
+</nav>
+
+<div class="main-column col-md-9">
+{% for mapping_name, mapping in mappings.items %}
+  <article class="card mb-4" id="mapping-{{mapping_name}}">
+    <div class="card-body">
+  <h2 class="card-title model-name text-primary mb-4 display-5">{{ mapping_name }}</h2>
+  <h3 class="text-secondary">Import sheet template</h3>
+  <table class="table mapping-template">
+    <tr>
+      {% for field in mapping.fields %}
+      <td class="template-field-name"><code>{{ field }}</code></td>
+      {% endfor %}
+    </tr>
+  </table>
+  <p><small>Copy and past the above line into a spreadsheet to start a {{ mapping_name }} import sheet. (Remember to save as CSV format using UTF-8 encoding)</small></p>
+  <h3 class="text-secondary">Columns</h3>
+  <div class="m-3 model-fields">
+  {% for field_name, field_object in mapping.fields.items %}
+    <div class="model-field border p-3 mt-4">
+    <div class="row">
+      <div class="col col-md-8">
+        <h3 class="heading-field-name text-primary">{{ field_name }}</h3>
+        {% for extension in field_object.get_available_extensions %}
+        <h3 class="heading-field-name text-primary">{{ field_name }}{{extension}}</h3>
+        {% endfor %}
+        {% for extension in field_object.widget.get_available_extensions %}
+        <h3 class="heading-field-name text-primary">{{ field_name }}{{extension}}</h3>
+        {% endfor %}
+
+      </div>
+      <div class="col col-md-4 text-end">
+        <span class="text-secondary">{{field_object.django_field_type_name}}</span>
+      </div>
+    </div>
+    <p>{{field_object.django_field_help_text}}</p>
+    <small>{{ field_object.get_help_html|safe }}</small>
+    <small>{{ field_object.widget.get_help_html|safe }}</small>
+    </div>
+  {% endfor %}
+  </div>
+  </div>
+  </article>
+{% endfor %}
+</div>
+</div>
+{% endblock%}

@@ -13,6 +13,7 @@
     {% compress css %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/responsive_grid.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/collapsible.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/profile.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'profiles/css/command.css' %}">
     {% endcompress %}
 {% endblock %}
@@ -32,6 +33,17 @@
 {% endif %}
 
 {% block content %}
+    {% if custom_text_block_profile_top %}
+    <div id="custom-text-block-top" class="alert-inline">
+        {% if is_admin %}
+        <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+        {% endif %}
+        <div class="alert-inline-icon"><i class="fas fa-info-circle"></i></div>
+        <div class="alert-inline-message">
+            {{ custom_text_block_profile_top|sanitize_html|safe }}
+        </div>
+    </div>
+    {% endif %}
 
     <h2>
         <span class="h2main">{{ object.name }}</span>
@@ -125,7 +137,7 @@
                     {% else %}
                     <span class="offnm"><a href="{% url 'profiles:officer' pk=person_grouping.person_id %}">{{ person_grouping.person }}</a></span>
                     {% endif %}
-                    <span class="offdt">{{ person_grouping.at_least_since_bounding_dates }}</span>
+                    <span class="offdt">{{ person_grouping.date_span_str }}</span>
                 </li>
                 {% endfor %}
             </ul>
@@ -150,7 +162,7 @@
                     {% else %}
                     <span class="offnm"><a href="{% url 'profiles:officer' pk=person_grouping.person_id %}">{{ person_grouping.person }}</a></span>
                     {% endif %}
-                    <span class="offdt">{{ person_grouping.at_least_since_bounding_dates }}</span>
+                    <span class="offdt">{{ person_grouping.date_span_str }}</span>
                 </li>
                 {% endfor %}
             </ul>
@@ -165,9 +177,20 @@
     <button type="button" class="collapsible expanded">{% translate 'Misconduct' %}</button>
     <div class="collapsible">
         {% if object.command_misconducts %}
+        {% if custom_text_block_incidents %}
+        <div id="custom-text-block-incidents" class="alert-inline">
+            {% if is_admin %}
+            <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            {% endif %}
+            <div class="alert-inline-icon"><i class="fas fa-info-circle"></i></div>
+            <div class="alert-inline-message">
+                {{ custom_text_block_incidents|sanitize_html|safe }}
+            </div>
+        </div>
+        {% endif %}
         {% for command_misconduct in object.command_misconducts %}
-        <div class="mispad">
-            <button type="button" class="collapsible expanded">{% if not command_misconduct.incident.exact_bounding_dates %}{% translate 'On an unknown date' %}{% else %}{{ command_misconduct.incident.exact_bounding_dates|capfirst }}{% endif %}</button>
+        <div class="mispad command-misconduct">
+            <button type="button" class="collapsible expanded heading">{% if not command_misconduct.incident.date_span_str %}{% translate 'On an unknown date' %}{% else %}{{ command_misconduct.incident.date_span_str|capfirst }}{% endif %}</button>
             <div class="collapsible">
                 <div class="gridrow gridgroup">
                     <div class="gridcol gridcell_1_of_2">

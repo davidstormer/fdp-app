@@ -1,14 +1,23 @@
+import json
+
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.shortcuts import redirect
+from django.views.generic import TemplateView
+
+from fdpuser.models import FdpUser
 from inheritable.models import AbstractUrlValidator, AbstractSearchValidator, \
     AbstractFileValidator
 from inheritable.views import SecuredSyncFormView, SecuredSyncListView, SecuredSyncDetailView, SecuredSyncView, \
-    SecuredSyncTemplateView
+    SecuredSyncTemplateView, AdminSyncFormView
 from django.conf import settings
 from django.utils.translation import gettext as _
 from django.utils.http import urlquote, urlunquote
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.http import QueryDict, HttpResponse
-from .models import OfficerSearch, OfficerView, CommandSearch, CommandView
-from .forms import OfficerSearchForm, CommandSearchForm
+from .models import OfficerSearch, OfficerView, CommandSearch, CommandView, SiteSetting, get_site_setting, \
+    set_site_setting, SiteSettingKeys
+from .forms import OfficerSearchForm, CommandSearchForm, SiteSettingsForm
 from inheritable.models import Archivable, AbstractSql, AbstractImport
 from core.models import Person, PersonIdentifier, PersonGrouping, Grouping, GroupingAlias
 from sourcing.models import Content, ContentPerson, ContentPersonAllegation
@@ -44,7 +53,7 @@ class IndexTemplateView(SecuredSyncTemplateView):
         context = super(IndexTemplateView, self).get_context_data(**kwargs)
         context.update({
             'title': _('What are you searching for?'),
-            'description': _('Select whether to search for officers or commands.')
+            'description': _('Select whether to search for persons or commands.')
         })
         return context
 
@@ -103,8 +112,8 @@ class OfficerSearchFormView(SecuredSyncFormView):
         """
         context = super(OfficerSearchFormView, self).get_context_data(**kwargs)
         context.update({
-            'title': _('Officer Search'),
-            'description': _('Search for officers and corresponding information.')
+            'title': _('Person Search'),
+            'description': _('Search for persons and corresponding information.')
         })
         return context
 
@@ -120,6 +129,12 @@ class OfficerSearchFormView(SecuredSyncFormView):
         """
         self.form = form
         return super(OfficerSearchFormView, self).form_valid(form=form)
+
+    def get(self, request, *args, **kwargs):
+        if getattr(settings, 'LEGACY_OFFICER_SEARCH_ENABLE', False):
+            return super(OfficerSearchFormView, self).get(request, *args, **kwargs)
+        else:
+            return redirect(reverse('profiles:officer_search_roundup'), permanent=False)
 
 
 class OfficerSearchResultsListView(SecuredSyncListView):
@@ -292,8 +307,8 @@ class OfficerSearchResultsListView(SecuredSyncListView):
         querystring = QueryDict('', mutable=True)
         querystring.update({AbstractUrlValidator.GET_PREV_URL_PARAM: urlquote(current_search_querystring)})
         context.update({
-            'title': _('Officer Search Results'),
-            'description': _('Browse a list of officers matching the search criteria.'),
+            'title': _('Person Search Results'),
+            'description': _('Browse a list of persons matching the search criteria.'),
             'search': self.__search_class.parsed_search_criteria,
             'back_link_querystring': querystring.urlencode(),
             'queryset_count': self.__count,
@@ -309,6 +324,75 @@ class OfficerSearchResultsListView(SecuredSyncListView):
         """
         self.__get_officer_results()
         return self.__result_list
+
+
+class OfficerSearchRoundupView(SecuredSyncTemplateView):
+    template_name = "officer_search_roundup.html"
+
+    def get(self, request, *args, **kwargs):
+        # when the user first navigates to the page it will be a get request
+        # but all of our logic is in the post function. So just trick the view into
+        # handling the GET request as if it was a POST.
+        # So that we don't have to maintain logic in two places, it was causing bugs! now DRY
+        return self.post(request)
+
+    # Handle searches via POST so that the query string is kept out of the URL (security)
+    def post(self, request, *args, **kwargs):
+        query_string = request.POST.get('q') or ''
+        sort = request.POST.get('sort') or 'relevance'
+        page_number = request.POST.get('page')
+
+        try:
+            group = Grouping.objects.get(pk=request.POST.get('group'))
+        except Grouping.DoesNotExist:
+            group = None
+        except ValueError:
+            group = None
+
+        results = Person.objects.search_all_fields(query_string, request.user)
+
+        if group:
+            results = results.filter(person_grouping__grouping=group).distinct()
+
+        if sort == 'name':
+            results = results.order_by('name')
+        elif sort == 'relevance':
+            # Do nothing, because the results are already ordered by relevance by default
+            pass
+
+        # Log this query to the OfficerSearch log
+        if query_string:
+            OfficerSearch.objects.create_officer_search(
+                num_of_results=results.count(),
+                parsed_search_criteria=json.dumps({
+                    'query_string': query_string,
+                    'sort': sort,
+                    'group': group.name if group else '',
+                }),
+                fdp_user=request.user,
+                request=request
+            )
+
+        paginator = Paginator(results, 50)
+
+        related_groups = (
+            Grouping.objects.filter(is_law_enforcement=True)
+            .filter(person_grouping__person__in=results)
+            .order_by('name')
+            .distinct()
+        )
+        page_obj = paginator.get_page(page_number)
+        return self.render_to_response({
+            # Post requests don't call get_context_data() so add 'is_admin' manually here
+            'is_admin': FdpUser.can_view_admin(user=getattr(request, 'user', None)),
+            'title': 'Person Search',
+            'query': query_string,
+            'within_group': group,
+            'sort': sort,
+            'page_obj': page_obj,
+            'number_of_results': results.count(),
+            'groups': related_groups,
+        })
 
 
 class OfficerDetailView(SecuredSyncDetailView):
@@ -344,7 +428,7 @@ class OfficerDetailView(SecuredSyncDetailView):
         OfficerView.objects.create_officer_view(person=self.object, fdp_user=user, request=request)
         back_link = request.GET.get(AbstractUrlValidator.GET_PREV_URL_PARAM, None)
         context.update({
-            'title': _('Officer Profile'),
+            'title': _('Person Profile'),
             'description': _('Review an officer\'s profile, including corresponding information.'),
             'search_results_url': reverse('profiles:officer_search') if not back_link
             else '{url}?{querystring}'.format(
@@ -357,6 +441,9 @@ class OfficerDetailView(SecuredSyncDetailView):
             'attachments_key': self.__attachments_key,
             'strings_key': self.__strings_key,
             'links_key': self.__links_key,
+            'custom_text_block_profile_top': get_site_setting('custom_text_blocks-profile_page_top'),
+            'custom_text_block_incidents': get_site_setting('custom_text_blocks-profile_incidents'),
+
         })
         return context
 
@@ -603,7 +690,7 @@ class OfficerDownloadAllFilesView(SecuredSyncView):
         """
         user = request.user
         if not pk:
-            raise Exception(_('No officer was specified'))
+            raise Exception(_('No person was specified'))
         files_to_zip = Person.get_officer_attachments(pk=pk, user=user)
         # create ZIP archive for all attachments
         bytes_io = AbstractFileValidator.zip_files(files_to_zip=files_to_zip)
@@ -912,7 +999,9 @@ class CommandDetailView(SecuredSyncDetailView):
             'max_person_groupings': Grouping.max_person_groupings,
             'attachments_key': self.__attachments_key,
             'strings_key': self.__strings_key,
-            'links_key': self.__links_key
+            'links_key': self.__links_key,
+            'custom_text_block_profile_top': get_site_setting('custom_text_blocks-profile_page_top'),
+            'custom_text_block_incidents': get_site_setting('custom_text_blocks-profile_incidents'),
         })
         return context
 
@@ -1142,3 +1231,44 @@ class CommandDownloadAllFilesView(SecuredSyncView):
         :return: ZIP archive of all attachments.
         """
         return self.__get(request=request, pk=pk)
+
+
+class SiteSettingsPage(AdminSyncFormView):
+    template_name = 'site_settings.html'
+    form_class = SiteSettingsForm
+    success_url = reverse_lazy('profiles:site_settings')
+    # custom_text_blocks-profile_incidents
+    def get_context_data(self, **kwargs):
+        context = super(SiteSettingsPage, self).get_context_data(**kwargs)
+        context.update({
+            'title': _('Site settings'),
+        })
+        return context
+
+    def get_initial(self):
+        data = {}
+        data['profile_page_top'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__PROFILE_PAGE_TOP)
+        data['profile_incidents'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__PROFILE_INCIDENTS)
+        data['global_footer_left'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER_LEFT)
+        data['global_footer_right'] = get_site_setting(SiteSettingKeys.CUSTOM_TEXT_BLOCKS__GLOBAL_FOOTER_RIGHT)
+        return data
+
+    def form_valid(self, form):
+        set_site_setting(
+            'custom_text_blocks-profile_page_top',
+            form.cleaned_data['profile_page_top']
+        )
+        set_site_setting(
+            'custom_text_blocks-profile_incidents',
+            form.cleaned_data['profile_incidents']
+        )
+        set_site_setting(
+            'custom_text_blocks-global_footer_left',
+            form.cleaned_data['global_footer_left']
+        )
+        set_site_setting(
+            'custom_text_blocks-global_footer_right',
+            form.cleaned_data['global_footer_right']
+        )
+        messages.add_message(self.request, messages.SUCCESS, 'Site settings saved')
+        return super().form_valid(form)

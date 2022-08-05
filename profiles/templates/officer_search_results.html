@@ -15,7 +15,7 @@
 <div class="breadcrumbs">
     <a href="{% url 'profiles:index' %}">{% translate 'Searches' %}</a>
     &rsaquo;
-    <a href="{% url 'profiles:officer_search' %}">{% translate 'Officer Search' %}</a>
+    <a href="{% url 'profiles:officer_search' %}">{% translate 'Person Search' %}</a>
     &rsaquo;
     {{ title }}
 </div>
@@ -40,13 +40,13 @@
     <p>
         {% if has_more %}
             {% translate 'These are the top' %}
-            <strong>{{ max_results }} {% translate 'officers' %}</strong>
+            <strong>{{ max_results }} {% translate 'persons' %}</strong>
             {% translate 'matching your search criteria.' %}
             {% translate 'If you can not find what you are looking for, then try adding more search criteria.' %}
         {% else %}
             <strong>
                 {{ queryset_count }}
-                {% if queryset_count > 1 %}{% translate 'officers' %}{% else %}{% translate 'officer' %}{% endif %}
+                {% if queryset_count > 1 %}{% translate 'persons' %}{% else %}{% translate 'person' %}{% endif %}
             </strong>
             {% translate 'matched your search criteria.' %}
         {% endif %}

@@ -5,8 +5,8 @@ from django.db.utils import ProgrammingError
 from django.forms import formsets
 from django.forms.formsets import BaseFormSet
 from django.forms.fields import BoundField
-from django.forms.models import BaseInlineFormSet, BaseModelFormSet
-from django.forms.widgets import MultiWidget, NumberInput, HiddenInput, DateInput
+from django.forms.models import BaseInlineFormSet, BaseModelFormSet, ModelChoiceField
+from django.forms.widgets import MultiWidget, NumberInput, HiddenInput, DateInput, CheckboxInput
 from django.utils.translation import ugettext_lazy as _
 from .models import AbstractDateValidator
 
@@ -470,6 +470,8 @@ class DateWithComponentsField(MultiValueField):
             *args,
             **kwargs
         )
+        if not self.help_text:
+            self.help_text = "Enter a zero for day, month, or year when unknown. Enter all zeros if start date is unknown."
 
     @staticmethod
     def compress_vals(data_list):
@@ -487,6 +489,13 @@ class DateWithComponentsField(MultiValueField):
         :return: Single string in the format mm/dd/yyyy.
         """
         return self.compress_vals(data_list=data_list)
+
+
+class FuzzyDateSpanEndField(DateWithComponentsField):
+    def __init__(self, *args, **kwargs):
+        super(FuzzyDateSpanEndField, self).__init__(*args, **kwargs)
+        self.help_text = "Enter a zero for day, month, or year when unknown. Enter all zeros for 'until present' " \
+                         "or 'ongoing'."
 
 
 class DateWithCalendarAndSplitInput(DateWithCalendarInput):
@@ -562,26 +571,11 @@ class RelationshipWidget(MultiWidget):
         :param args:
         :param kwargs:
         """
-        queryset = kwargs.pop('queryset')
-        # try and access the queryset (whether a variable or a callable)
-        try:
-            choices = queryset() if callable(queryset) else queryset
-        # relationship "does not exist" may be raised during initial migrations because the data model has not been
-        # fully migrated into the database
-        except ProgrammingError as err:
-            # exception is expected, assumed to occur during the initial migrations, since data model for supporting app
-            # has not yet been created in the database
-            if 'does not exist' in str(err):
-                choices = []
-            # this is an unexpected exception, so raise it again
-            else:
-                raise
         super(RelationshipWidget, self).__init__(
             widgets=[
                 HiddenInput(attrs={'class': 'subjectid'}),
                 TextInput(attrs={'class': 'subjectname'}),
                 Select(
-                    choices=choices,
                     attrs={'class': 'relationshiptype'}),
                 HiddenInput(attrs={'class': 'objectid'}),
                 TextInput(attrs={'class': 'objectname'}),
@@ -665,16 +659,19 @@ class RelationshipField(MultiValueField):
         fields = (
             IntegerField(),
             CharField(),
-            ChoiceField(choices=queryset),
+            ModelChoiceField(queryset),
             IntegerField(),
             CharField()
         )
         super(RelationshipField, self).__init__(
             fields=fields,
-            widget=RelationshipWidget(queryset=queryset),
+            widget=RelationshipWidget(),
             *args,
             **kwargs
         )
+        # Sync dynamic choices from the ModelChoiceField to the widget choices
+        # https://stackoverflow.com/a/40005868/1585572
+        self.widget.widgets[2].choices = self.fields[2].widget.choices
 
     def compress(self, data_list):
         """ Combine field values into a single string.
@@ -682,7 +679,8 @@ class RelationshipField(MultiValueField):
         :param data_list: List of field values in the order of: subject_id, subject_str, type, object_id, object_str.
         :return: Single string.
         """
-        return RelationshipWidget.split_chars.join(['' if not d else str(d) for d in data_list])
+        subjectid, subjectname, relationshiptype, objectid, objectname = data_list
+        return f"{subjectid or ''}-----{subjectname}-----{relationshiptype.pk}-----{objectid or ''}-----{objectname}"
 
     def validate(self, value):
         """ Validate the relationship field by ensuring that:
