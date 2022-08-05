@@ -253,7 +253,8 @@ if EXT_AUTH == AAD_EXT_AUTH:
             # Verifies that the current auth process is valid within the current
             # project, this is where emails and domains whitelists are applied (if
             # defined).
-            'social_core.pipeline.social_auth.auth_allowed',
+            # Use custom auth_allowed, which creates audit logs on failure
+            'fdpuser.auth_pipeline.auth_allowed',
             # Checks if the current social-account is already associated in the site.
             'social_core.pipeline.social_auth.social_user',
             # Make up a username for this person, appends a random string at the end if

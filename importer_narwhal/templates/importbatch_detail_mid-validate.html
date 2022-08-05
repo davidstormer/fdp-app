@@ -1,0 +1,36 @@
+{% extends "importer_narwhal/templates/importbatch_detail_base.html" %}
+{% load i18n admin_urls static compress crispy_forms_tags changing_extras humanize %}
+{% block inner_content %}
+<div class="row">
+  <div class="col-md-6">
+    <div class="importer-info-card card">
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item"><div class="datum datum-submitted_file_name"><span class="label">File name</span>  <span class="value">{{object.import_sheet.file.name|basename}}</span></div></li>
+          <li class="list-group-item"><div class="datum datum-number_of_rows"><span class="label">Rows</span>  <span class="value">{{object.number_of_rows}}</span></div></li>
+          <li class="list-group-item"><div class="datum datum-target_model_name"><span class="label">Model name</span>  <span class="value">{{object.target_model_name}}</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="importer-status-guide">
+            <div class="text-center mt-5 mb-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Validating...</span>
+            </div>
+            <p>Validation in progress</p>
+            </div>
+            <p>Started: {{object.dry_run_started|naturaltime}}</p>
+            <p>Click the Check button to update status.</p>
+          <div class="text-end">
+            <a class="btn btn-primary importer-refresh-button" href="{{object.get_absolute_url}}"><i class="fas fa-redo"></i> Check</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

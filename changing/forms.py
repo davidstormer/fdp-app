@@ -1,4 +1,4 @@
-from django.forms import HiddenInput
+from django.forms import HiddenInput, TextInput
 from django import forms
 from django.core.validators import ValidationError
 from django.conf import settings
@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from inheritable.models import AbstractDateValidator
 from inheritable.forms import AbstractWizardModelForm, DateWithComponentsField, DateWithCalendarInput, \
     RelationshipField, AbstractWizardInlineFormSet, AbstractWizardModelFormSet, DateWithCalendarAndSplitInput, \
-    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField
+    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField, FuzzyDateSpanEndField
 from .models import LawEnforcementCategories
 from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPerson, Attachment, \
     ContentPersonAllegation, ContentPersonPenalty
@@ -80,7 +80,7 @@ class AbstractIsLawEnforcementModelForm(AbstractWizardModelForm):
     law_enforcement = forms.ChoiceField(
         required=True,
         label=_('Is law enforcement'),
-        help_text=_('Is this entity part of law enforcement'),
+        help_text=_('Only law enforcement are searchable to users and have profile pages)'),
         choices=LawEnforcementCategories.choices,
     )
 
@@ -146,21 +146,6 @@ grouping_relationship_form_fields.append('grouping_relationship_started')
 grouping_relationship_form_fields.append('grouping_relationship_ended')
 
 
-def deferred_get_grouping_relationship_types():
-    """ Retrieves the grouping relationship types when called.
-
-    Used in GroupingRelationshipModelForm so that queryset is only accessed  in the context of the view, rather than in
-    the context of the module loading.
-
-    Resolves following issue encountered during initial Django database migration for all FDP apps:
-
-        django.db.utils.ProgrammingError: relation "fdp_grouping_relationship_type" does not exist
-
-    :return: List of tuples representing active grouping relationship types.
-    """
-    return [(str(r.pk), r.__str__()) for r in GroupingRelationshipType.active_objects.all()]
-
-
 class GroupingRelationshipModelForm(AbstractWizardModelForm):
     """ Form used to create new and edit existing instances of grouping relationship models.
 
@@ -178,7 +163,7 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    grouping_relationship_ended = DateWithComponentsField(
+    grouping_relationship_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -189,8 +174,13 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
         # and custom validation on the individual field components will be used.
         required=True,
         label=_('Relationship'),
-        queryset=deferred_get_grouping_relationship_types,
-        fields=()  # ignored
+        queryset=GroupingRelationshipType.active_objects,
+        fields=(),  # ignored
+        help_text="Document a relationship between this group and another group (don't repeat the relationship in "
+                  "the 'Belongs to' field). Select the relationship type, select a group they relate to, "
+                  "and if needed "
+                  "change the direction of the relationship hierarchy. Only set the relationship for one group, it "
+                  "will display on both groups' profiles."
     )
 
     primary_key = forms.IntegerField(
@@ -204,6 +194,14 @@ class GroupingRelationshipModelForm(AbstractWizardModelForm):
     fields_to_show = [
                          'grouping_relationship_started', 'grouping_relationship_ended', 'grouping_relationship'
                      ] + GroupingRelationship.form_fields
+
+    field_order = [
+        'grouping_relationship',
+        'at_least_since',
+        'grouping_relationship_started',
+        'grouping_relationship_ended',
+        'ended_unknown_date',
+    ]
 
     #: Key in cleaned data dictionary indicating the grouping for whom the relationship form is saved.
     for_grouping_key = '_for_grouping'
@@ -289,6 +287,10 @@ class GroupingModelForm(AbstractIsLawEnforcementModelForm):
     belongs_to_grouping_name = AsyncSearchCharField(
         required=False,
         label=_('Belongs to'),
+        help_text="The top-level group that this group belongs to. For commands or precincts, this is the main law "
+                  "enforcement agency at the top of their hierarchy. All subgroups should have something in this "
+                  "field. Leave this field blank for top-level agencies (police departments, sheriff's offices, "
+                  "etc). All other relationships are defined in the 'Relationships' section below."
     )
 
     #: Fields to show in the form
@@ -375,7 +377,7 @@ class PersonIdentifierModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    identifier_ended = DateWithComponentsField(
+    identifier_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -383,6 +385,15 @@ class PersonIdentifierModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = person_identifier_form_fields.copy()
+
+    field_order = [
+        'identifier',
+        'person_identifier_type',
+        'at_least_since',
+        'identifier_started',
+        'identifier_ended',
+        'ended_unknown_date',
+    ]
 
     #: Prefix to use for form
     prefix = 'identifiers'
@@ -452,19 +463,31 @@ class PersonGroupingModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_grouping_ended = DateWithComponentsField(
+    person_grouping_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
-        fields=()  # ignored
+        fields=(), # ignored
+        help_text="Enter a zero for day, month, or year when unknown. Enter all zeros if group relationship is "
+                  "ongoing, i.e. 'until present'."
     )
 
     grouping_name = AsyncSearchCharField(
         required=True,
-        label=_('Grouping'),
+        label=_('Group'),
     )
 
     #: Fields to show in the form
     fields_to_show = ['grouping_name'] + person_grouping_form_fields.copy()
+
+    field_order = [
+        'grouping_name',
+        'type',
+        'at_least_since',
+        'person_grouping_started',
+        'person_grouping_ended',
+        'ended_unknown_date',
+        'person',
+    ]
 
     #: Prefix to use for form
     prefix = 'persongroupings'
@@ -541,14 +564,31 @@ class PersonTitleModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_title_ended = DateWithComponentsField(
+    person_title_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
     )
 
+    grouping_name = AsyncSearchCharField(
+        required=False,
+        label=_('Grouping'),
+        help_text='The command or group at which this rank or title was held.'
+    )
+
     #: Fields to show in the form
     fields_to_show = person_title_form_fields.copy()
+    fields_to_show.append('grouping_name')
+
+    field_order = [
+        'title',
+        'grouping_name',
+        'at_least_since',
+        'person_title_started',
+        'person_title_ended',
+        'ended_unknown_date',
+        'person',
+    ]
 
     #: Prefix to use for form
     prefix = 'titles'
@@ -579,6 +619,13 @@ class PersonTitleModelForm(AbstractWizardModelForm):
             end_field_name='person_title_ended'
         )
 
+        self.fields['grouping_name'].widget.attrs.update({'class': 'titlegroupingname'})
+        # instance of model exists
+        if hasattr(self, 'instance') and self.instance:
+            instance = self.instance
+            if hasattr(instance, 'grouping') and instance.grouping:
+                self.fields['grouping_name'].initial = instance.grouping.__str__()
+
     def save(self, commit=True):
         """ Ensure that individual date components are set for starting and ending dates.
 
@@ -597,7 +644,7 @@ class PersonTitleModelForm(AbstractWizardModelForm):
         model = PersonTitle
         fields = person_title_form_fields.copy()
         fields_order = person_title_form_fields.copy()
-
+        widgets = {'grouping': HiddenInput(attrs={'class': 'titlegrouping'})}
 
 #: Starting and ending date, and counties fields are added to person payments
 person_payment_form_fields = PersonPayment.form_fields.copy()
@@ -634,6 +681,21 @@ class PersonPaymentModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = person_payment_form_fields.copy()
+
+    field_order = [
+        'at_least_since',
+        'person_payment_started',
+        'person_payment_ended',
+        'ended_unknown_date',
+        'dynamic_county',
+        'leave_status',
+        'base_salary',
+        'regular_hours',
+        'regular_gross_pay',
+        'overtime_hours',
+        'overtime_pay',
+        'total_other_pay',
+    ]
 
     #: Prefix to use for form
     prefix = 'payments'
@@ -732,21 +794,6 @@ person_relationship_form_fields.append('person_relationship_started')
 person_relationship_form_fields.append('person_relationship_ended')
 
 
-def deferred_get_person_relationship_types():
-    """ Retrieves the person relationship types when called.
-
-    Used in PersonRelationshipModelForm so that queryset is only accessed  in the context of the view, rather than in
-    the context of the module loading.
-
-    Resolves following issue encountered during initial Django database migration for all FDP apps:
-
-        django.db.utils.ProgrammingError: relation "fdp_person_relationship_type" does not exist
-
-    :return: List of tuples representing active person relationship types.
-    """
-    return [(str(r.pk), r.__str__()) for r in PersonRelationshipType.active_objects.all()]
-
-
 class PersonRelationshipModelForm(AbstractWizardModelForm):
     """ Form used to create new and edit existing instances of person relationship models.
 
@@ -764,7 +811,7 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_relationship_ended = DateWithComponentsField(
+    person_relationship_ended = FuzzyDateSpanEndField(
         required=True,
         label=_('End date'),
         fields=()  # ignored
@@ -775,8 +822,11 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
         # and custom validation on the individual field components will be used.
         required=True,
         label=_('Relationship'),
-        queryset=deferred_get_person_relationship_types,
-        fields=()  # ignored
+        queryset=PersonRelationshipType.active_objects,
+        fields=(),  # ignored
+        help_text="Document a relationship between this person and another person. Select the relationship type, "
+                  "select the person they relate to, and if needed change the direction of the relationship. Note: you "
+                  "only need to set up the relationship for one person and it will display on both persons' profiles."
     )
 
     primary_key = forms.IntegerField(
@@ -788,6 +838,14 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
 
     #: Fields to show in the form
     fields_to_show = person_relationship_form_fields.copy()
+
+    field_order = [
+        'person_relationship',
+        'at_least_since',
+        'person_relationship_started',
+        'person_relationship_ended',
+        'ended_unknown_date',
+    ]
 
     #: Key in cleaned data dictionary indicating the person for whom the relationship form is saved.
     for_person_key = '_for_person'
@@ -1098,18 +1156,36 @@ class IncidentModelForm(AbstractWizardModelForm, PopupForm):
     """
     incident_started = DateWithComponentsField(
         required=True,
-        label=_('Incident started'),
+        label=_('Incident start date'),
         fields=()  # ignored
     )
 
     incident_ended = DateWithComponentsField(
         required=True,
-        label=_('Incident ended'),
+        label=_('Incident end date'),
+        help_text="Enter the same date for start and end if the incident happened on a single day. Typically "
+                  "the end date does not include resulting investigations cases, or reporting. Enter a zero for day, "
+                  "month, or year when unknown. Enter all zeros for 'until present' or 'ongoing'.",
         fields=()  # ignored
     )
 
     #: Fields to show in the form
     fields_to_show = incident_form_fields.copy()
+
+    field_order = [
+        'location',
+        'location_type',
+        'at_least_since',
+        'incident_started',
+        'incident_ended',
+        'ended_unknown_date',
+        'encounter_reason',
+        'tags',
+        'description',
+        'for_host_only',
+        'for_admin_only',
+        'fdp_organizations',
+    ]
 
     def __init__(self, *args, **kwargs):
         """ If we're editing an instance of a case content, then set the incident started and incident ended initial
@@ -1180,6 +1256,9 @@ class PersonIncidentModelForm(AbstractWizardModelForm):
     person_name = AsyncSearchCharField(
         required=True,
         label=_('Person'),
+        help_text="Any person related to the incident that your organization tracks, not only the officers involved. "
+                  "This incident will appear on profiles of linked persons. If person not on list <a "
+                  "href='/changing/persons/add/person/' target='_blank'>add them here</a>"
     )
 
     #: Fields to show in the form
@@ -1211,6 +1290,9 @@ class PersonIncidentModelForm(AbstractWizardModelForm):
             instance = self.instance
             if hasattr(instance, 'person') and instance.person:
                 self.fields['person_name'].initial = instance.person.__str__()
+        self.fields['description'].help_text = \
+            "Any further information about the person's relationship to the incident. Only visible to administrators," \
+            " but may be visible to users in the future."
 
     class Meta:
         model = PersonIncident
@@ -1227,7 +1309,9 @@ class GroupingIncidentModelForm(AbstractWizardModelForm):
     """
     grouping_name = AsyncSearchCharField(
         required=True,
-        label=_('Grouping'),
+        label=_('Group'),
+        help_text='Link groups involved in the incident. This incident will appear on profiles of linked groups. If '
+                  'group not on list <a href="/changing/groupings/add/grouping/" target="_blank">add them here</a>'
     )
 
     #: Fields to show in the form
@@ -1259,6 +1343,9 @@ class GroupingIncidentModelForm(AbstractWizardModelForm):
             instance = self.instance
             if hasattr(instance, 'grouping') and instance.grouping:
                 self.fields['grouping_name'].initial = instance.grouping.__str__()
+        self.fields['description'].help_text = \
+            "Any further information about the group’s relationship to the incident. Only visible to administrators," \
+            " but may be visible to users in the future."
 
     class Meta:
         model = GroupingIncident
@@ -1415,18 +1502,29 @@ class ContentCaseModelForm(AbstractWizardModelForm):
     """
     case_opened = DateWithComponentsField(
         required=True,
-        label=_('Case opened'),
+        label=_('Case opened date'),
         fields=()  # ignored
     )
 
-    case_closed = DateWithComponentsField(
+    case_closed = FuzzyDateSpanEndField(
         required=True,
-        label=_('Case closed'),
+        label=_('Case closed date'),
         fields=()  # ignored
     )
 
     #: Fields to show in the form
     fields_to_show = content_case_form_fields.copy()
+
+    field_order = [
+        'outcome',
+        'settlement_amount',
+        'court',
+        'at_least_since',
+        'case_opened',
+        'case_closed',
+        'ended_unknown_date',
+        'content',
+    ]
 
     #: Prefix to use for form
     prefix = 'cases'
@@ -1603,6 +1701,7 @@ class ContentIncidentModelForm(AbstractWizardModelForm):
     incident_name = AsyncSearchCharField(
         required=True,
         label=_('Incident'),
+        help_text="Incident related to this content"
     )
 
     #: Fields to show in the form

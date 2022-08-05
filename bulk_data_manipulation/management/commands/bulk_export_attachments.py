@@ -1,5 +1,5 @@
 import csv
-
+import os
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.core.management.base import BaseCommand
@@ -7,7 +7,7 @@ from sourcing.models import Attachment
 from supporting.models import AttachmentType
 
 help_text = """Generate a report of all attachments of a given type. Includes download links to be used by a 
-download utility like wget or curl"""
+download utility like wget or curl. Generates a simple script that downloads all the files one-by-one using curl."""
 
 
 class Command(BaseCommand):
@@ -37,29 +37,37 @@ class Command(BaseCommand):
                           .all()[page_num * page_size:page_num * page_size + page_size]
         if records:
             with open(options['output_file'], 'w') as csv_fd:
-                csv_writer = csv.DictWriter(csv_fd, ['pk', 'name', 'type', 'download_link'])
-                csv_writer.writeheader()
+                with open(options['output_file'] + '.download.sh', 'w') as script_fd:
+                    csv_writer = csv.DictWriter(csv_fd, ['pk', 'name', 'type', 'file_path', 'file_name', 'download_link'])
+                    csv_writer.writeheader()
 
-                for i, record in enumerate(records):
-                    try:
-                        attachment_type = record.type.name
-                    except AttributeError:
-                        attachment_type = ''
-                    try:
-                        download_link = get_storage_class(settings.DEFAULT_FILE_STORAGE)() \
-                            .get_sas_expiring_url(record.file.name, expiry=options['link_expiry'] * 60)
-                    except AttributeError as e:
-                        download_link = record.file.url
-                    except ValueError as e:
-                        download_link = str(e)
+                    for i, record in enumerate(records):
+                        try:
+                            attachment_type = record.type.name
+                        except AttributeError:
+                            attachment_type = ''
+                        try:
+                            download_link = get_storage_class(settings.DEFAULT_FILE_STORAGE)() \
+                                .get_sas_expiring_url(record.file.name, expiry=options['link_expiry'] * 60)
+                        except AttributeError as e:
+                            download_link = record.file.url
+                        except ValueError as e:
+                            download_link = str(e)
 
-                    row_data = {
-                        'pk': record.pk,
-                        'type': attachment_type,
-                        'name': record.name,
-                        'download_link': download_link,
-                    }
-                    csv_writer.writerow(row_data)
+                        row_data = {
+                            'pk': record.pk,
+                            'type': attachment_type,
+                            'name': record.name,
+                            'file_path': record.file.name,
+                            'file_name': os.path.basename(record.file.name),
+                            'download_link': download_link,
+                        }
+                        csv_writer.writerow(row_data)
+
+                        script_command = \
+                            'curl "%s" -o "files/%s-%s"\n' % \
+                            (row_data['download_link'], row_data['pk'], row_data['file_name'])
+                        script_fd.write(script_command)
         else:
             self.stdout.write(self.style.ERROR('No records found, quiting...'))
             exit(1)

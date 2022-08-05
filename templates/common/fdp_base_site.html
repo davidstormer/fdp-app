@@ -1,6 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n admin_urls static compress %}
-
+{% load i18n admin_urls static compress profiles_extras %}
 {% block extrastyle %}
     {{ block.super }}
     {% compress css %}
@@ -24,4 +23,28 @@
     {% else %}
         {% include "common/fdp_logout.html" %}
     {% endif %}
+{% endblock %}
+
+{% block footer_global %}
+    <div id="footer-global">
+        <div class="footer-row">
+              {% if custom_text_block_global_left %}
+        <div id="custom-text-block-global-left" class="global-text-box">
+            {% if is_admin %}
+            <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            {% endif %}
+            {{ custom_text_block_global_left|sanitize_html|safe }}
+        </div>
+        {% endif %}
+        {% if custom_text_block_global_right %}
+        <div id="custom-text-block-global-right" class="global-text-box">
+            {% if is_admin %}
+            <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            {% endif %}
+            {{ custom_text_block_global_right|sanitize_html|safe }}
+        </div>
+        {% endif %}
+        </div>
+      {% if user.is_authenticated %}<div id="release-number">FDP App 6.0.0</div>{% endif %}
+    </div>
 {% endblock %}

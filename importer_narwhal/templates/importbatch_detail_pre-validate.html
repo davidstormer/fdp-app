@@ -1,0 +1,155 @@
+{% extends "common/base-bootstrap.html" %}
+{% load i18n admin_urls static compress crispy_forms_tags changing_extras %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'changing:index' %}">Admin</a></li>
+<li class="breadcrumb-item"><a href="{% url 'importer_narwhal:importer-landing' %}">Importer</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+
+
+{% if state != 'done' %}
+<nav aria-label="Workflow">
+<ul class="fdp-stepper col-md-10 offset-md-1">
+  <li class="{% if stepper_number == 1 %}active{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 1 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      1
+      {% endif %}
+    </span>
+    <span>Set up</span>
+  </li>
+  <li class="fdp-stepper-line"></li>
+  <li class="{% if stepper_number == 2 %}active{% endif %} {% if stepper_number < 2 %}pending{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 2 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      2
+      {% endif %}
+    </span>
+    <span>Validate</span>
+  </li>
+  <li class="fdp-stepper-line"></li>
+  <li class="{% if stepper_number == 3 %}active{% endif %} {% if stepper_number < 3 %}pending{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 3 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      3
+      {% endif %}
+    </span>
+    <span>Import</span>
+  </li>
+  <li class="fdp-stepper-line"></li>
+  <li class="{% if stepper_number == 4 %}active{% endif %} {% if stepper_number < 4 %}pending{% endif %}">
+    <span class="stepper-step-number">
+      {% if stepper_number > 4 %}
+        <i class="fas fa-check"></i>
+      {% else %}
+      4
+      {% endif %}
+    </span>
+    <span>Review</span>
+  </li>
+</ul>
+</nav>
+<hr>
+{% endif %}
+
+  {% if state == 'pre-validate' %}
+  <div class="importer-csv-preview">
+  <div class="text-center border">{{ object.import_sheet|basename }}</div>
+  <div class="table-responsive fadeout-bottom hp-200">
+  <table class="table table-bordered">
+    <thead>
+    <tr>
+      {% for column_name in preview_data.headers %}
+      <th><code>{{ column_name }}</code></th>
+      {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for row in preview_data|slice:":10" %}
+    <tr>
+      {% for cell in row %}
+      <td><code>{{ cell }}</code></td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+    <tr>
+      {% for cell in preview_data.headers %}
+      <td><code> ... </code></td>
+      {% endfor %}
+    </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="text-end">First few rows out of {{preview_data|length}}</p>
+  </div>
+
+ {% elif state == 'post-validate-errors' %}
+  <p>Errors encountered during validation. Please correct errors and start a new batch.</p>
+  <a class="btn btn-primary" href="{% url 'importer_narwhal:importer-landing' %}">Start Over</a>
+
+
+  {% elif state == 'post-validate-ready' %}
+  Your batch has been validated. And there were no errors! Now it's time to actually import the records.
+  <form method="post" action="{% url 'importer_narwhal:records' object.pk %}">
+    {% csrf_token %}
+    <input class="btn btn-primary" type="submit" value="Import the records">
+  </form>
+
+
+  {% elif state == 'mid-import' %}
+  <p>Importing...</p>
+
+
+  {% elif state == 'complete' %}
+  <p>Import finished</p>
+  {% endif %}
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="importer-info-card card">
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item"><div class="datum datum-submitted_file_name"><span class="label">File name</span>  <span class="value">{{object.import_sheet.file.name|basename}}</span></div></li>
+          <li class="list-group-item"><div class="datum datum-number_of_rows"><span class="label">Rows</span>  <span class="value">{{preview_data|length}}</span></div></li>
+          <li class="list-group-item"><div class="datum datum-target_model_name"><span class="label">Model name</span>  <span class="value">{{object.target_model_name}}</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="importer-status-guide">
+          <p>Your batch has been set up. Now it needs to be validated.</p>
+          <div class="text-end">
+            <form method="post" action="{% url 'importer_narwhal:dry-run-report' object.pk %}">
+              {% csrf_token %}
+              <input class="btn btn-primary" type="submit" value="Validate Batch">
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block script-bottom %}
+$('form').submit(function(event) {
+  $.post('/changing/importer/batch/{{object.pk}}/dry-run-report')
+  setTimeout(() => {
+    window.location.replace("/changing/importer/batch/{{object.pk}}")
+  }, 1000)
+  event.preventDefault()
+})
+{% endblock %}

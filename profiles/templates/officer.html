@@ -28,9 +28,9 @@
 <div class="breadcrumbs">
     <a href="{% url 'profiles:index' %}">{% translate 'Searches' %}</a>
     &rsaquo;
-    <a href="{% url 'profiles:officer_search' %}">{% translate 'Officer Search' %}</a>
+    <a href="{% url 'profiles:officer_search' %}">{% translate 'Person Search' %}</a>
     &rsaquo;
-    <a href="{{ search_results_url }}">{% translate 'Officer Search Results' %}</a>
+    <a href="{{ search_results_url }}">{% translate 'Person Search Results' %}</a>
     &rsaquo;
     {{ title }}
 </div>
@@ -41,8 +41,17 @@
 
 {% block content %}
 
-
-
+    {% if custom_text_block_profile_top %}
+    <div id="custom-text-block-top" class="alert-inline">
+        {% if is_admin %}
+        <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+        {% endif %}
+        <div class="alert-inline-icon"><i class="fas fa-info-circle"></i></div>
+        <div class="alert-inline-message">
+            {{ custom_text_block_profile_top|sanitize_html|safe }}
+        </div>
+    </div>
+    {% endif %}
 
     <h1>{{ object.name }} </h1>
 
@@ -97,11 +106,12 @@
 
                 {% if object.officer_title %}
                 <h3>{% if object.officer_titles %}{% translate 'Ranks' %}{% else %}{% translate 'Rank' %}{% endif %}</h3>
-                <ul>
+                <ul class="titles">
                 <li>
                     <span>{{ object.officer_title.title.name }}</span>
                     <div class="identification-meta">
-                        <span class="dates">{% if object.officer_title.at_least_since_bounding_dates %}{{ object.officer_title.at_least_since_bounding_dates }}{% endif %}</span>
+                        {% if object.officer_title.date_span_str %}<span class="dates">{{ object.officer_title.date_span_str }}</span>{% endif %}
+                        {% if object.officer_title.grouping.name %}<p>{{ object.officer_title.grouping.name }}</p>{% endif %}
                     </div>
                 </li>
 
@@ -109,7 +119,8 @@
                 <li>
                     <span>{{ title.title.name }}</span>
                     <div class="identification-meta">
-                        <span class="dates">{% if title.at_least_since_bounding_dates %}{{ title.at_least_since_bounding_dates }}{% endif %}</span>
+                        {% if title.date_span_str %}<span class="dates">{{ title.date_span_str }}</span>{% endif %}
+                        {% if title.grouping.name %}<p>{{ title.grouping.name }}</p>{% endif %}
                     </div>
                 </li>
                 {% endfor %}
@@ -154,9 +165,9 @@
                 <li>
                     <span class="label">{{ identifier.person_identifier_type }}:</span>
                     <span>{{ identifier.identifier }}</span>
-                    {% if identifier.at_least_since_bounding_dates %}
+                    {% if identifier.date_span_str %}
                     <div class="identification-meta">
-                        <span class="dates">{{ identifier.at_least_since_bounding_dates }}</span>
+                        {% if identifier.date_span_str %}<span class="dates">{{ identifier.date_span_str }}</span>{% endif %}
                     </div>
                     {% endif %}
                 </li>
@@ -166,12 +177,12 @@
 
                 {% if object.officer_command %}
                 <h3>{% if object.officer_commands %}{% translate 'Commands' %}{% else %}{% translate 'Command' %}{% endif %}</h3>
-                <ul>
+                <ul id="commands">
                     <li>
                         <span><a href="{{ object.officer_command.grouping.get_profile_url }}">{{ object.officer_command.grouping.name }}</a></span>
                         <div class="identification-meta">
                             <span>{{ object.officer_command.type.name }}</span>
-                            {% if object.officer_command.at_least_since_bounding_dates %}<span class="dates">{{ object.officer_command.at_least_since_bounding_dates }}</span>{% endif %}
+                            {% if object.officer_command.date_span_str %}<span class="dates">{{ object.officer_command.date_span_str }}</span>{% endif %}
                         </div>
                     </li>
                 {% for command in object.officer_commands %}
@@ -179,7 +190,7 @@
                         <span><a href="{{ command.grouping.get_profile_url }}">{{ command.grouping.name }}</a></span>
                         <div class="identification-meta">
                             <span>{{ command.type.name }}</span>
-                            {% if command.at_least_since_bounding_dates %}<span class="dates">{{ command.at_least_since_bounding_dates }}</span>{% endif %}
+                            {% if command.date_span_str %}<span class="dates">{{ command.date_span_str }}</span>{% endif %}
                         </div>
                     </li>
                 {% endfor %}
@@ -211,15 +222,15 @@
                             <tbody>
                             {% for officer_payment in object.officer_payments %}
                                 <tr>
-                                    <td>{{ officer_payment.at_least_since_bounding_dates|capfirst }}</td>
-                                    <td>${{ officer_payment.base_salary }}</td>
-                                    <td>{{ officer_payment.regular_hours|table_cell }}</td>
-                                    <td>{{ officer_payment.regular_gross_pay|table_cell_currency }}</td>
-                                    <td>{{ officer_payment.overtime_hours|table_cell }}</td>
-                                    <td>{{ officer_payment.overtime_pay|table_cell_currency }}</td>
-                                    <td>{{ officer_payment.total_other_pay|table_cell_currency }}</td>
-                                    <td>{{ officer_payment.county|table_cell }}</td>
-                                    <td>{{ officer_payment.leave_status|table_cell }}</td>
+                                    <td class="field-date_span_str">{{ officer_payment.date_span_str|capfirst }}</td>
+                                    <td class="field-base_salary">{{ officer_payment.base_salary|table_cell_currency }}</td>
+                                    <td class="field-regular_hours">{{ officer_payment.regular_hours|table_cell }}</td>
+                                    <td class="field-regular_gross_pay">{{ officer_payment.regular_gross_pay|table_cell_currency }}</td>
+                                    <td class="field-overtime_hours">{{ officer_payment.overtime_hours|table_cell }}</td>
+                                    <td class="field-overtime_pay">{{ officer_payment.overtime_pay|table_cell_currency }}</td>
+                                    <td class="field-total_other_pay">{{ officer_payment.total_other_pay|table_cell_currency }}</td>
+                                    <td class="field-county">{{ officer_payment.county|table_cell }}</td>
+                                    <td class="field-leave_status">{{ officer_payment.leave_status|table_cell }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -252,7 +263,7 @@
         {% for relationship in object.relationships %}
             <li>
                 {% link_to_others relationship.subject_person %} {{ relationship.type.name }} {% link_to_others relationship.object_person %}
-                {% if relationship.at_least_since_bounding_dates %}({{ relationship.at_least_since_bounding_dates }}){% endif %}
+                {% if relationship.date_span_str %}({{ relationship.date_span_str }}){% endif %}
             </li>
         {% endfor %}
         </ul>
@@ -261,6 +272,8 @@
         {% endif %}
 
     </section> <!-- section.associates -->
+
+    {% if snapshot_enable %}
     <section class="snapshot">
         <div class="section-heading">
             <h2>{% translate 'Snapshot' %}</h2>
@@ -322,12 +335,27 @@
             </div> <!-- div.gridcol.gridcell_1_of_3 -->
         </div> <!-- div.gridrow.gridgroup -->
     </section> <!-- section.snapshot -->
+    {% endif %}
 
     <section class="misconduct">
 
         <div class="section-heading">
             <h2>Known Incidents</h2>
         </div>
+        {% if object.officer_misconducts or object.officer_contents %}
+        {% if custom_text_block_incidents %}
+        <div id="custom-text-block-incidents" class="alert-inline">
+            {% if is_admin %}
+            <a href="{%url 'profiles:site_settings' %}" class="custom-text-edit-link" target="_blank"> <i class="fas fa-edit" aria-hidden="true" title="edit"></i> <span class="sr-only">edit</span></a>
+            {% endif %}
+            <div class="alert-inline-icon"><i class="fas fa-info-circle"></i></div>
+            <div class="alert-inline-message">
+                {{ custom_text_block_incidents|sanitize_html|safe }}
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
         {% if has_attachments %}
         <p>
             <a href="{% url 'profiles:officer_download_all_files' object.pk %}"><span class="h2wrap">
@@ -353,7 +381,7 @@
         {% for officer_misconduct in object.officer_misconducts %}
         <div class="mispad incident incident-{{ officer_misconduct.incident.pk }}">
                 <h3>
-                    <button type="button" class="collapsible expanded">{% if not officer_misconduct.incident.exact_bounding_dates %}{% translate 'On an unknown date' %}{% else %}{{ officer_misconduct.incident.exact_bounding_dates|capfirst }}{% endif %}
+                    <button type="button" class="collapsible expanded">{% if not officer_misconduct.incident.date_span_str %}{% translate 'On an unknown date' %}{% else %}{{ officer_misconduct.incident.date_span_str|capfirst }}{% endif %}
                     {% if is_admin %}
                     &nbsp;
                     <span class="admin-actions">
@@ -369,7 +397,7 @@
                         {% if officer_misconduct.is_guess %}
                         <p class="warning">{% translate 'WARNING: A DIFFERENT OFFICER MAY BE INVOLVED' %}</p>
                         {% endif %}
-                        <p class="missummary">{{ officer_misconduct.incident.description }}</p>
+                        <pre class="missummary body-font text-wrap">{{ officer_misconduct.incident.description }}</pre>
                         {% if officer_misconduct.incident.officer_incident_tags %}
                         <p class="mistags">
                             {% for tag in officer_misconduct.incident.officer_incident_tags %}
@@ -483,8 +511,9 @@
                                 {{ content_identifier.identifier }}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         </span>
-                        <p class="missummary">
-                            {% if content.description %}{{ content.description }}{% else %}{% translate 'There is no summary available for this content.' %}{% endif %}</p>
+                        <pre class="missummary body-font text-wrap">{% if content.description %}{{ content.description }}
+                            {% else %}{% translate 'There is no summary available for this content.' %}{% endif %}
+                        </pre>
                         {% if content_person.content.officer_other_persons %}
                         <span class="mish1">{% translate 'Others Involved' %}</span>
                         <p class="mispeoples">
@@ -562,7 +591,7 @@
         {% endfor %}
 
         {% else %}
-            <p class="nodata">{% translate 'No misconduct is recorded for this officer.' %}</p>
+            <p class="nodata">{% translate 'No incidents or cases found for this officer.' %}</p>
         {% endif %}
     </section> <!-- section.misconduct -->
 

@@ -15,6 +15,9 @@ body.profile.officer div.main h2 {
     font-size: 32px !important;
     font-weight: normal;
 }
+button.collapsible {
+  margin-bottom: 1em;
+}
 
 /* Payroll */
 span.empty-table-field {
@@ -65,4 +68,21 @@ div.collapsible-controls {
 
 button.collapsible:before {
     display: none;
+}
+
+/* Custom header text box */
+a.custom-text-edit-link {
+    opacity: 0;
+    float: right;
+    margin-right: -1em;
+}
+div#custom-text-block-top:hover a.custom-text-edit-link {
+    transition-duration: .2s;
+    opacity: 100%;
+}
+
+/* Custom incidents text box */
+div#custom-text-block-incidents:hover a.custom-text-edit-link {
+    transition-duration: .2s;
+    opacity: 100%;
 }

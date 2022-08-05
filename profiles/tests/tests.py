@@ -9,7 +9,7 @@ from core.models import Person, PersonIncident, Incident, PersonRelationship, Gr
 from sourcing.models import Attachment, Content, ContentPerson, ContentIdentifier, ContentCase
 from supporting.models import PersonRelationshipType, ContentIdentifierType, Trait, TraitType
 from os.path import splitext
-from django.test import Client
+from django.test import override_settings
 from datetime import datetime, timedelta
 import logging
 
@@ -254,8 +254,8 @@ class ProfileTestCase(AbstractTestCase):
                 person.fdp_organizations.add(fdp_org)
             person_ids[name] = person.pk
             # connect person to data
-            PersonGrouping.objects.create(grouping=unrestricted_grouping, person=person, is_inactive=True)
-            PersonGrouping.objects.create(grouping=unrestricted_grouping, person=person, is_inactive=False)
+            PersonGrouping.objects.create(grouping=unrestricted_grouping, person=person, ended_unknown_date=True)
+            PersonGrouping.objects.create(grouping=unrestricted_grouping, person=person, ended_unknown_date=False)
             incident = Incident.objects.create(description='Desc1', **self._not_confidential_dict)
             GroupingIncident.objects.create(grouping=unrestricted_grouping, incident=incident)
             PersonIncident.objects.create(person=person, incident=incident)
@@ -1280,6 +1280,7 @@ class ProfileTestCase(AbstractTestCase):
         # remove content identifiers with different confidentiality levels
         self.__delete_content_identifiers_for_command_related_data()
 
+    @override_settings(LEGACY_OFFICER_SEARCH_ENABLE=True)
     def test_officer_profile_views(self):
         """ Test for Officer profile search results and profile views for all permutations of user roles,
         confidentiality levels and relevant models.

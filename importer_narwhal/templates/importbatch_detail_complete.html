@@ -1,0 +1,73 @@
+{% extends "importer_narwhal/templates/importbatch_detail_base.html" %}
+{% load i18n admin_urls static compress crispy_forms_tags changing_extras humanize %}
+{% block inner_content %}
+<div class="row mb-5">
+  <div class="col-md-6">
+    <div class="importer-info-card card">
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item"><div class="datum datum-submitted_file_name"><span class="label">File name</span>  <span class="value">{{object.import_sheet.file.name|basename}}</span></div></li>
+          <li class="list-group-item"><div class="datum datum-number_of_rows"><span class="label">Rows</span>  <span class="value">{{object.number_of_rows}}</span></div></li>
+          <li class="list-group-item"><div class="datum datum-target_model_name"><span class="label">Model name</span>  <span class="value">{{object.target_model_name}}</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="importer-status-guide">
+          <p>Import completed successfully</p>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item"><div class="datum datum-submitted_file_name"><span class="label">Started</span>  <span class="value">{{object.started}}</span></div></li>
+            <li class="list-group-item"><div class="datum datum-number_of_rows"><span class="label">Completed</span>  <span class="value">{{object.completed}}</span></div></li>
+            <li class="list-group-item"><div class="datum datum-target_model_name"><span class="label">Duration</span>  <span class="value">{{duration}}</span></div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="importer-imported-rows">
+  {% if imported_rows_paginated %}
+  <table class="table table-striped">
+  <tr>
+    <th>Row number</th>
+    <th>Action</th>
+    <th>PK</th>
+    <th>Name</th>
+    <th>Data</th>
+  </tr>
+  {% for imported_row in imported_rows_paginated %}
+  <tr class="imported-row-{{imported_row.action}}">
+    <td class="datum-row_number">{{ imported_row.row_number }}</td>
+    <td class="datum-action">{{ imported_row.action }}</td>
+    <td class="datum-pk">{{ imported_row.imported_record_pk }}</td>
+    <td class="datum-name">{{ imported_row.imported_record_name }}</td>
+    <td class="datum-info">
+      <button class="btn btn-link" type="button" data-bs-toggle="collapse"
+              data-bs-target="#collapse-{{ imported_row.row_number }}" aria-expanded="false"
+              aria-controls="multiCollapse{{ imported_row.row_number }}">show</button>
+    </td>
+  </tr>
+  <tr id="collapse-{{ imported_row.row_number }}" class="collapse">
+    <td colspan="5"><code>{{ imported_row.info }}</code></td>
+  </tr>
+  {% endfor %}
+  </table>
+  {% endif %}
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav aria-label="Pagination">
+    <ul class="pagination">
+      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}"><a class="page-link" href="?page=1">&laquo; First</a></li>
+      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}"><a class="page-link" href="?page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% endif %}">Previous</a></li>
+      <li class="page-item disabled"><a class="page-link" tabindex="-1" aria-disabled="true" href="#">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</a></li>
+      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}"><a class="page-link" href="?page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}">Next</a></li>
+      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}"><a class="page-link" href="?page={% if page_obj.has_next %}{{ page_obj.paginator.num_pages }}{% endif %}">Last &raquo;</a></li>
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+
+{% endblock %}

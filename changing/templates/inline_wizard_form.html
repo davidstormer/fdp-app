@@ -9,11 +9,9 @@
                             <div>
                                 {{ field.errors }}
                                 {{ field.label_tag }} {{ field }}
-                                {% comment 'Exclude help text' %}
                                 {% if field.help_text %}
                                 <div class="help">{{ field.help_text|safe }}</div>
                                 {% endif %}
-                                {% endcomment %}
                             </div>
                         </div>
                     {% endfor %}
@@ -26,11 +24,9 @@
                             <div>
                                 {{ field.errors }}
                                 {{ field.label_tag }} {{ field }}
-                                {% comment 'Exclude help text' %}
                                 {% if field.help_text %}
                                 <div class="help">{{ field.help_text|safe }}</div>
                                 {% endif %}
-                                {% endcomment %}
                             </div>
                         </div>
                     {% endfor %}
@@ -50,11 +46,9 @@
                             <div>
                                 {{ field.errors }}
                                 {{ field.label_tag }} {{ field }}
-                                {% comment 'Exclude help text' %}
                                 {% if field.help_text %}
                                 <div class="help">{{ field.help_text|safe }}</div>
                                 {% endif %}
-                                {% endcomment %}
                             </div>
                         </div>
                     {% endfor %}

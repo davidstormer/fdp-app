@@ -526,9 +526,9 @@ class AbstractTestCase(TestCase):
             password = cls._password
         if email is None:
             if email_counter is None:
-                email = 'donotreply@google.com'
+                email = 'nobody@example.com'
             else:
-                email = 'donotreply{i}@google.com'.format(i=email_counter)
+                email = 'nobody{i}@example.com'.format(i=email_counter)
         fdp_user = FdpUser.objects.create_user(
             email=email,
             password=password,

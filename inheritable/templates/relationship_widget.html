@@ -3,6 +3,7 @@
 {% for widget in widget.subwidgets %}
     {% include widget.template_name %}
 {% endfor %}
-<i class="fas fa-sign-out-alt subjectrelicon"></i>
-<i class="fas fa-sign-in-alt objectrelicon"></i>
+&nbsp;&nbsp;
+<button type="button" class="button subjectrelicon"><i class="fas fa-arrows-alt-h"></i> swap order</button>
+<button type="button" class="button objectrelicon"><i class="fas fa-arrows-alt-h"></i> swap order</button>
 {% endspaceless %}

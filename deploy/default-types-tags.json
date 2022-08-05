@@ -1,0 +1,1371 @@
+[
+{
+    "model": "supporting.traittype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Gender"
+    }
+},
+{
+    "model": "supporting.traittype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Race"
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Female",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Male",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Nonbinary",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Cisgender",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Transgender",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Self-identified / Other",
+        "type": 2
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Black or African American",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Hispanic or Latino",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Native Hawaiian or Other Pacific Islander",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Two or More / Some Other Race",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "White",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 45,
+    "fields": {
+        "is_archived": false,
+        "name": "Asian",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.trait",
+    "pk": 47,
+    "fields": {
+        "is_archived": false,
+        "name": "American Indian and Alaska Native",
+        "type": 5
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "\\",
+        "name": "Parent of"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Patrol partner with"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Relative / Family member with"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Sibling with"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Spouse of"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "\\",
+        "name": "Supervisor to"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Significant other with"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Sibling: Twins with"
+    }
+},
+{
+    "model": "supporting.personrelationshiptype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Friends with"
+    }
+},
+{
+    "model": "supporting.personidentifiertype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Shield/Badge Number"
+    }
+},
+{
+    "model": "supporting.personidentifiertype",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "POST Identification Number"
+    }
+},
+{
+    "model": "supporting.title",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Police Officer"
+    }
+},
+{
+    "model": "supporting.groupingrelationshiptype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "/",
+        "name": "Reports to"
+    }
+},
+{
+    "model": "supporting.groupingrelationshiptype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "\\",
+        "name": "Trains"
+    }
+},
+{
+    "model": "supporting.groupingrelationshiptype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "hierarchy": "-",
+        "name": "Operates In"
+    }
+},
+{
+    "model": "supporting.persongroupingtype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Member of"
+    }
+},
+{
+    "model": "supporting.persongroupingtype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Supervisor of"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "At Residence but not inside (Lobby, Stairwell, Yard, etc.)"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Bike"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Bus Stop/Subway Station"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Commercial Location"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Inside Residence"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Motor Vehicle"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Park"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Precinct"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Prison/Jail"
+    }
+},
+{
+    "model": "supporting.incidentlocationtype",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Street"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Demonstration/protest/parade/special event"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Execution of arrest/bench warrant"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Affordable Housing patrols"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "PD auto/transit checkpoint"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "PD initiates stop/question/frisk"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "PD off-duty encounter with subject"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "PD responds to report of crime/call for service"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "PD suspected subject of violation/crime"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject already in custody"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject at precinct (not in custody)"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject intervened on behalf of/observed encounter with third party"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject requested info from officer"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject was victim of crime"
+    }
+},
+{
+    "model": "supporting.encounterreason",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Execution of search warrant"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Biased-Based Profiling Alleged"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Baton/Asp/Object as Weapon"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Chokehold"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Mase/Chemical Spray/Pepper Spray"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Officer Discharged Firearm"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Physical"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Rough Ride"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Taser"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Tight Handcuffs"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Excessive Force- Unspecified"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "False Arrest"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Inappropriate, Biased, or Offensive Language"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Incredibility/False Testimony"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Ongoing Harassment"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Sexual Misconduct"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "Stolen Property"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "Suppression"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "name": "Unlawful Entry"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "name": "Unlawful Search"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 20,
+    "fields": {
+        "is_archived": false,
+        "name": "Unlawful Stop"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 21,
+    "fields": {
+        "is_archived": false,
+        "name": "Facial Insufficiency"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 22,
+    "fields": {
+        "is_archived": false,
+        "name": "Injuries Resulting In Hospitalization"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 23,
+    "fields": {
+        "is_archived": false,
+        "name": "No Controlled Substance/Kalin"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 24,
+    "fields": {
+        "is_archived": false,
+        "name": "Patrol Guide/Procedural Violation"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 25,
+    "fields": {
+        "is_archived": false,
+        "name": "Retaliation for Exercise of Rights to Free Speech/Recording"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 26,
+    "fields": {
+        "is_archived": false,
+        "name": "Unlawful/Suggestive Line-up"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 27,
+    "fields": {
+        "is_archived": false,
+        "name": "Wrongful Death"
+    }
+},
+{
+    "model": "supporting.incidenttag",
+    "pk": 28,
+    "fields": {
+        "is_archived": false,
+        "name": "Off Duty"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 35,
+    "fields": {
+        "is_archived": false,
+        "name": "Abuse of Authority -- Excessive Force"
+    }
+},
+{
+    "model": "supporting.allegation",
+    "pk": 36,
+    "fields": {
+        "is_archived": false,
+        "name": "Abuse of Authority -- Improper Frisk"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Administratively Closed"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Allegation Removed"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Complainant or Victim Unavailable/Uncooperative/Unidentified"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Complaint Withdrawn"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Dismissed"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Exonerated"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Guilty In Part"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Guilty/Pled Guilty"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Info and Intelligence"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Instructed"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Mediation"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Nolo Contendre"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Open/Pending"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Partially Substantiated"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Substantiated"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "Unfounded"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "Unknown"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 18,
+    "fields": {
+        "is_archived": false,
+        "name": "Unsubstantiated"
+    }
+},
+{
+    "model": "supporting.allegationoutcome",
+    "pk": 19,
+    "fields": {
+        "is_archived": false,
+        "name": "Other Misconduct"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Civil Rights Lawsuit"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Civilian Complaint"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Court Disclosure"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Criminal Case Finding"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Internal Investigation"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Media Article"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Note from Community Member"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Note from FDP User"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Officer's Criminal Case"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Public Social Media/Blog Post"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Relevant Cross-Examination/Testimony"
+    }
+},
+{
+    "model": "supporting.contenttype",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject's Social Media Post"
+    }
+},
+{
+    "model": "supporting.court",
+    "pk": 31,
+    "fields": {
+        "is_archived": false,
+        "name": "United States Supreme Court"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Docket Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Federal Civil Case Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Federal Criminal Case Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Indictment Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Supreme Court Reporter (S. Ct.)"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "United States Reports (U.S.)"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Westlaw Number"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Headline"
+    }
+},
+{
+    "model": "supporting.contentidentifiertype",
+    "pk": 23,
+    "fields": {
+        "is_archived": false,
+        "name": "URL"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Administrative Closing"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Dismissed without Prejudice"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Dismissed with Prejudice"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Judgment for Defendant"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Judgment for Plaintiff"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Pending"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Settled"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Closed"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Verdict for Defendant"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Verdict for Plaintiff"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Guilty"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 12,
+    "fields": {
+        "is_archived": false,
+        "name": "Not Guilty"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Plea-Other"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "No Prosecution / Dropped Charges"
+    }
+},
+{
+    "model": "supporting.contentcaseoutcome",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Mistrial"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Affidavit"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Brady/Garret/Rosario Letter"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Client Waiver"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 5,
+    "fields": {
+        "is_archived": false,
+        "name": "Criminal Complaint"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "IAB Investigation"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Lawsuit Complaint"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Lawsuit Docket Report"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Lawsuit Miscellaneous Documents"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 10,
+    "fields": {
+        "is_archived": false,
+        "name": "Lawsuit Stipulation/Order"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 11,
+    "fields": {
+        "is_archived": false,
+        "name": "Miscellaneous Criminal Court Documents"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 13,
+    "fields": {
+        "is_archived": false,
+        "name": "Related Photos/Videos/Audio"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 14,
+    "fields": {
+        "is_archived": false,
+        "name": "Social Media/Online Screenshots"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 15,
+    "fields": {
+        "is_archived": false,
+        "name": "Stipulation of Settlement"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 16,
+    "fields": {
+        "is_archived": false,
+        "name": "Body Cam Footage"
+    }
+},
+{
+    "model": "supporting.attachmenttype",
+    "pk": 17,
+    "fields": {
+        "is_archived": false,
+        "name": "Complaint"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Attorney"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Prosecuting Attorney"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Judge"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 4,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject Accused of Misconduct"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 6,
+    "fields": {
+        "is_archived": false,
+        "name": "Source of Information"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 7,
+    "fields": {
+        "is_archived": false,
+        "name": "Subject of Misconduct"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 8,
+    "fields": {
+        "is_archived": false,
+        "name": "Witness"
+    }
+},
+{
+    "model": "supporting.situationrole",
+    "pk": 9,
+    "fields": {
+        "is_archived": false,
+        "name": "Investigator"
+    }
+},
+{
+    "model": "supporting.leavestatus",
+    "pk": 1,
+    "fields": {
+        "is_archived": false,
+        "name": "Military Leave"
+    }
+},
+{
+    "model": "supporting.leavestatus",
+    "pk": 2,
+    "fields": {
+        "is_archived": false,
+        "name": "Suspended"
+    }
+},
+{
+    "model": "supporting.leavestatus",
+    "pk": 3,
+    "fields": {
+        "is_archived": false,
+        "name": "Separation Leave"
+    }
+}
+]
