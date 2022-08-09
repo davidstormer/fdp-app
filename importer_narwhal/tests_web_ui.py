@@ -14,7 +14,7 @@ from io import StringIO
 import tempfile
 import csv
 from uuid import uuid4
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, tag
 from core.models import Person
 from functional_tests.common import FunctionalTestCase, SeleniumFunctionalTestCase, wait
 from inheritable.tests import local_test_settings_required
@@ -177,6 +177,80 @@ class TestWebUI(SeleniumFunctionalTestCase):
             'there were no errors',
             self.browser.page_source
         )
+
+    def test_accept_csv_with_bom(self):
+        """Test that Microsoft Excel flavoured CSV files (with byte order mark) work correctly..."""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv') as csv_fd:
+
+            # Given there's a CSV file that starts with a Byte Order Mark (BOM)
+            # https://en.wikipedia.org/wiki/Byte_order_mark#UTF-8
+            #
+            #
+            csv_fd.write(b'\xef\xbb\xbf'.decode('utf-8'))  # <-- THIS
+
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            for i in range(5):
+                row = {}
+                row['name'] = f'Test Person {uuid4()}'
+                row['is_law_enforcement'] = 'checked'
+                csv_writer.writerow(row)
+                imported_records.append(row)
+            csv_fd.flush()  # Make sure it's actually written to the filesystem!
+
+            # When I validate the batch
+            #
+            #
+            self.log_in(is_administrator=True)
+            self.browser.get(self.live_server_url + reverse('importer_narwhal:new-batch'))
+            wait(self.browser.find_element_by_css_selector, 'input#id_import_sheet') \
+                .send_keys(csv_fd.name)
+            Select(self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name')) \
+                .select_by_visible_text('Person')
+            self.browser.find_element(By.CSS_SELECTOR, 'select#id_target_model_name').submit()
+            wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Validate Batch"]') \
+                .click()
+            wait_until_dry_run_is_done()
+            self.browser.get(self.live_server_url + f'/changing/importer/batch/{ImportBatch.objects.last().pk}')
+
+            # Then I should NOT see an error that says "ERROR ...not a valid column name..."
+            #
+            #
+            self.assertNotIn(
+                "ERROR",
+                self.el('main.container').text
+            )
+
+            # When I import the batch
+            #
+            #
+            wait(self.browser.find_element, By.CSS_SELECTOR, 'input[value="Import 5 rows"]') \
+                .click()
+
+            wait_until_import_is_done()
+            # ... Jump back to the detail page now that the import has completed in the background -- side stepping the
+            # ... mid-import page for this test.
+            self.browser.get(self.live_server_url + f'/changing/importer/batch/{ImportBatch.objects.last().pk}')
+
+            # Then I should NOT see an error that says "ERROR ...not a valid column name..."
+            #
+            #
+            self.assertNotIn(
+                "ERROR",
+                self.el('main.container').text
+            )
+            # and I should see that the import completed successfully
+            self.assertIn(
+                "Import completed successfully",
+                self.el('main.container').text
+            )
+            for record in imported_records:
+                self.assertIn(
+                    record['name'],
+                    self.el('main.container').text
+                )
 
 
 class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
