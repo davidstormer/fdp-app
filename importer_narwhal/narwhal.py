@@ -478,7 +478,7 @@ def create_batch_from_disk(model_name: str, input_file: str) -> ImportBatch:
 def do_dry_run(batch_record):
     batch_record.dry_run_started = timezone.now()
     batch_record.save()
-    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8")
+    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8-sig")
     input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
     # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
     # https://github.com/jazzband/tablib/issues/502
@@ -564,12 +564,13 @@ def run_import_batch(batch_record):
     """
     batch_record.started = timezone.now()
     batch_record.save()
-    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8")
+    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8-sig")
     input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
     # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
     # https://github.com/jazzband/tablib/issues/502
     resource_class = resource_model_mapping[batch_record.target_model_name]
     resource = resource_class()
+
     result = resource.import_data(input_sheet, dry_run=True)
     batch_record.number_of_rows = len(result.rows)
     import_report = ImportReport()
