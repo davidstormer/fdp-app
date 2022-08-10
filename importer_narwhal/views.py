@@ -112,7 +112,7 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
         # Additional prep
         if context['state'] == 'pre-validate':
             with context['object'].import_sheet.file.open() as import_sheet_raw:
-                context['preview_data'] = tablib.Dataset().load(import_sheet_raw.read().decode("utf-8"), "csv")
+                context['preview_data'] = tablib.Dataset().load(import_sheet_raw.read().decode("utf-8-sig"), "csv")
 
         if context['object'].completed:
             context['duration'] = context['object'].completed - context['object'].started
