@@ -212,10 +212,11 @@ class GroupingRelationshipField(fields.Field):
 
     def get_help_html(self):
         return f"""To related a group to another group while importing it, use the grouping_relationships column. 
-        Uses a special column name syntax: 
-        <code>grouping_relationships__[relationship name]</code> or <code>grouping_relationships__external_id__[
-        relationship name]</code>. Where [relationship name] is an existing GroupingRelationship set in all lower 
-        case with spaces replaced with hyphens.<br>Examples: <code>grouping_relationships__reports-to</code> or 
+        Uses a special column name syntax:<br>
+        <code>grouping_relationships__[relationship name]</code> or
+        <code>grouping_relationships__external_id__[relationship name]</code>. Where [relationship name] is an 
+        existing GroupingRelationship set in all lower case with spaces replaced with hyphens.<br>Examples: <br>
+        <code>grouping_relationships__reports-to</code> or 
         <code>grouping_relationships__external_id__reports-to</code>. The form without <code>__external_id</code> 
         expects PKs, the form with <code>__external_id</code> expects external IDs.
         """
@@ -478,7 +479,7 @@ def create_batch_from_disk(model_name: str, input_file: str) -> ImportBatch:
 def do_dry_run(batch_record):
     batch_record.dry_run_started = timezone.now()
     batch_record.save()
-    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8")
+    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8-sig")
     input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
     # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
     # https://github.com/jazzband/tablib/issues/502
@@ -564,12 +565,13 @@ def run_import_batch(batch_record):
     """
     batch_record.started = timezone.now()
     batch_record.save()
-    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8")
+    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8-sig")
     input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
     # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
     # https://github.com/jazzband/tablib/issues/502
     resource_class = resource_model_mapping[batch_record.target_model_name]
     resource = resource_class()
+
     result = resource.import_data(input_sheet, dry_run=True)
     batch_record.number_of_rows = len(result.rows)
     import_report = ImportReport()

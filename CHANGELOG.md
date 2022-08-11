@@ -2,6 +2,16 @@
 
 All releases will be logged in this file.
 
+## [6.0.2] - 2022-08-11
+
+### Changed
+- Minor typographical and user interface fixes
+
+## [6.0.1] - 2022-08-09
+
+### Changed
+- Importer: Handle Microsoft Byte Order Mark on CSV import sheets
+
 ## [6.0.0] - 2022-08-03
 
 ### Added
