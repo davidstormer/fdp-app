@@ -14,7 +14,6 @@
 <div class="col-lg-6">
 <form method="post" class="mb-5 roundup-officer-search">
     {% csrf_token %}
-    <label for="officer-search" class="form-label">Terms</label>
     <div class="input-group input-group-lg mb-3">
     <input type="text" name="q" value="{{ query }}" size="100" id="officer-search" class="form-control" aria-describedby="officer-search-help" autofocus>
     <input type="submit" value="Search" class="btn btn-primary">
