@@ -60,28 +60,33 @@
 
     <div class="search-facet-box border p-3">
     <p class="border-bottom">Commands</p>
-    <form method="post" class="search-facet-option">
-        {% csrf_token %}
-        <input type="hidden" name="q" value="{{ query }}">
-        <input type="hidden" name="sort" value={{ sort }}>
-        <input type="hidden" name="group" value="">
-        <input type="submit" value="All" class="btn btn-link">
-    </form>
-
-    {% for group in groups %}
-    <form method="post" class="search-facet-option">
-        {% csrf_token %}
-        <input type="hidden" name="q" value="{{ query }}">
-        <input type="hidden" name="sort" value={{ sort }}>
-        <input type="hidden" name="group" value="{{ group.pk }}">
-        {% if within_group.pk == group.pk %}
-        <i class="fas fa-check-square search-facet-status-indicator text-primary"></i>
-        <span class="sr-only">active</span>
-        {% endif %}
-        <input type="submit" value="{{ group.name }}"
-               class="btn btn-link" id="group-{{ group.pk }}">
-    </form>
-    {% endfor %}
+        <ul class="search-facet-box-options list-group list-group-flush">
+            <li class="list-group-item">
+            <form method="post" class="search-facet-option">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="sort" value={{ sort }}>
+                <input type="hidden" name="group" value="">
+                <input type="submit" value="All" class="btn btn-link">
+            </form>
+            </li>
+            {% for group in groups %}
+            <li class="list-group-item">
+            <form method="post" class="search-facet-option">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="sort" value={{ sort }}>
+                <input type="hidden" name="group" value="{{ group.pk }}">
+                {% if within_group.pk == group.pk %}
+                <i class="fas fa-check-square search-facet-status-indicator text-primary"></i>
+                <span class="sr-only">active</span>
+                {% endif %}
+                <input type="submit" value="{{ group.name }}"
+                       class="btn btn-link" id="group-{{ group.pk }}">
+            </form>
+            </li>
+            {% endfor %}
+        </ul>
     </div>
 
 </div>
