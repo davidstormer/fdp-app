@@ -379,6 +379,27 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             self.el('div#user-tools').text
         )
 
+    def test_commands_facet_scroll_overflow(self):
+        """Test that when there are a lot of commands the facet options scroll within a box, rather than extending
+        the page down"""
+
+        # Given there are a hundred groups, associated with officers
+        person_grouping_type = PersonGroupingType.objects.create(name="Test type")
+        for i in range(200):
+            grouping = Grouping.objects.create(is_law_enforcement=True, name=Faker().text(max_nb_chars=50))
+            person = Person.objects.create(is_law_enforcement=True, name=Faker().name())
+            PersonGrouping.objects.create(grouping=grouping, person=person, type=person_grouping_type)
+
+        # When I go to the search page
+        admin_client = self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+
+        # Then the whole page shouldn't be longer than 6000 pixels (measured 5870 pixels on version 6.0.1)
+        self.assertLess(
+            self.browser.execute_script("return document.body.scrollHeight"),
+            6000
+        )
+
 
 class SearchPageTestCaseRoundup(FunctionalTestCase):
     @staticmethod
