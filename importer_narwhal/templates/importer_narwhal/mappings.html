@@ -59,7 +59,7 @@
         <span class="text-secondary">{{field_object.django_field_type_name}}</span>
       </div>
     </div>
-    <p>{{field_object.django_field_help_text}}</p>
+    <p>{{field_object.django_field_help_text|safe}}</p>
     <small>{{ field_object.get_help_html|safe }}</small>
     <small>{{ field_object.widget.get_help_html|safe }}</small>
     </div>
