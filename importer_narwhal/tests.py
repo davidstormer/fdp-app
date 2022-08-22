@@ -14,7 +14,7 @@ from .models import validate_import_sheet_extension, validate_import_sheet_file_
 from .narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
     PersonGrouping, GroupingAlias, GroupingRelationship
-from django.test import TestCase, SimpleTestCase
+from django.test import TestCase, SimpleTestCase, tag
 from django.core.management import call_command
 from io import StringIO
 import tempfile
@@ -977,6 +977,26 @@ class NarwhalImportCommand(TestCase):
                 import_batch.general_errors
             )
 
+    def test_column_name_validation_external_id_columns(self):
+        """Test that simple foreign key column names with __external_id are recognized when doing dry run checks"""
+        # Given there's an import sheet containing the '__external_id' column
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['state__external_id'])
+            csv_writer.writeheader()
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # When I do a dry run
+            batch_record = create_batch_from_disk('County', csv_fd.name)
+            do_dry_run(batch_record)
+
+            # Then I should see no errors in the batch
+            self.assertFalse(
+                batch_record.general_errors
+            )
+            self.assertFalse(
+                batch_record.errors_encountered
+            )
 
     def test_grouping_sheet_add_relationships_by_external_id(self):
         # Given there's a grouping import sheet with relationships in a field patterned
