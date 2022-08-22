@@ -455,7 +455,6 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             self.browser.find_element(By.CSS_SELECTOR, 'section.associates ul#relationships').text
         )
 
-    @tag('wip')
     def test_person_identifier(self):
         # Given there's an existing Title type
         person_identifier_type = PersonIdentifierType.objects.create(name="person-identifier-type-ammocoetoid")

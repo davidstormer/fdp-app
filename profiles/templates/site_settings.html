@@ -2,8 +2,8 @@
 {% load i18n admin_urls static compress crispy_forms_tags %}
 
 {% block breadcrumbs %}
-<li><a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a></li>
-<li>{{ title }}</li>
+<li class="breadcrumb-item"><a href="{% url 'changing:index' %}">{% translate 'Admin' %}</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
 {% endblock %}
 
 {% block content %}

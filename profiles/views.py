@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
+from fdpuser.models import FdpUser
 from inheritable.models import AbstractUrlValidator, AbstractSearchValidator, \
     AbstractFileValidator
 from inheritable.views import SecuredSyncFormView, SecuredSyncListView, SecuredSyncDetailView, SecuredSyncView, \
@@ -382,6 +383,8 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
         )
         page_obj = paginator.get_page(page_number)
         return self.render_to_response({
+            # Post requests don't call get_context_data() so add 'is_admin' manually here
+            'is_admin': FdpUser.can_view_admin(user=getattr(request, 'user', None)),
             'title': 'Person Search',
             'query': query_string,
             'within_group': group,

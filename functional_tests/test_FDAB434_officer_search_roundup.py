@@ -1,6 +1,6 @@
 from unittest import skip
 from uuid import uuid4
-from django.test import override_settings
+from django.test import override_settings, tag
 
 from selenium.webdriver.common.by import By
 
@@ -352,6 +352,53 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
 
         # Then I should be taken to the new roundup officer search
         wait(self.browser.find_element, By.CSS_SELECTOR, 'form.roundup-officer-search')
+
+    def test_admin_link_visible_to_admins(self):
+        # Given I'm an admin
+        admin_client = self.log_in(is_administrator=True)
+
+        # When I go to the roundup officer search page
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+
+        # Then I should see an admin link in the top right bar
+        self.assertIn(
+            'ADMIN',
+            self.el('div#user-tools').text
+        )
+
+    def test_admin_link_not_visible_to_end_users(self):
+        # Given I'm not an admin
+        admin_client = self.log_in(is_administrator=False)
+
+        # When I go to the roundup officer search page
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+
+        # Then I should see an admin link in the top right bar
+        self.assertNotIn(
+            'ADMIN',
+            self.el('div#user-tools').text
+        )
+
+    def test_commands_facet_scroll_overflow(self):
+        """Test that when there are a lot of commands the facet options scroll within a box, rather than extending
+        the page down"""
+
+        # Given there are a hundred groups, associated with officers
+        person_grouping_type = PersonGroupingType.objects.create(name="Test type")
+        for i in range(200):
+            grouping = Grouping.objects.create(is_law_enforcement=True, name=Faker().text(max_nb_chars=50))
+            person = Person.objects.create(is_law_enforcement=True, name=Faker().name())
+            PersonGrouping.objects.create(grouping=grouping, person=person, type=person_grouping_type)
+
+        # When I go to the search page
+        admin_client = self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+
+        # Then the whole page shouldn't be longer than 6000 pixels (measured 5870 pixels on version 6.0.1)
+        self.assertLess(
+            self.browser.execute_script("return document.body.scrollHeight"),
+            6000
+        )
 
 
 class SearchPageTestCaseRoundup(FunctionalTestCase):

@@ -26,7 +26,7 @@
 
 <nav class="main navbar navbar-expand-md navbar">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">Full Disclosure Project</a>
+    <a class="navbar-brand" href="/">Full Disclosure Project</a>
     <div id="user-tools">
       Welcome,
       <strong>{% firstof user.get_short_name user.get_username %}</strong>.
@@ -107,7 +107,7 @@
       </div>
     </div>
 </div>
-<div id="footer-global">{% if user.is_authenticated %}<span id="release-number">FDP App 6.0.0</span>{% endif %}</div>
+<div id="footer-global">{% if user.is_authenticated %}<span id="release-number">FDP App 6.0.3</span>{% endif %}</div>
 {% if user.has_admin_access %}
 <a href="https://fulldisclosure.zendesk.com/hc/en-us/categories/1500001087701-Administrator-Documentation" class="help-center-button" target="_blank">
 <i class="far fa-question-circle"></i> Help</a>

@@ -18,8 +18,12 @@ a.profile-link:hover {
   color: rgb(33, 37, 41) !important; /* var(--bs-body-color) */
   text-decoration: none;
 }
+ul.search-facet-box-options {
+    max-height: 70rem;
+    overflow-y: auto;
+}
 .search-facet-option {
-  margin-left: 1.2rem;
+  margin-left: 0.3rem;
   padding-left: 0;
 }
 .search-facet-option input {

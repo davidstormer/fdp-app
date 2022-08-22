@@ -1,6 +1,21 @@
 # Changelog
 
-All releases will be logged in this file.
+All releases are logged in this file.
+
+## [6.0.3] - 2022-08-22
+
+### Changed
+- Importer: Fix unrecognized column error on simple foreign key fields with '__external_id' extension
+
+## [6.0.2] - 2022-08-11
+
+### Changed
+- Minor typographical and user interface fixes
+
+## [6.0.1] - 2022-08-09
+
+### Changed
+- Importer: Handle Microsoft Byte Order Mark on CSV import sheets
 
 ## [6.0.0] - 2022-08-03
 
@@ -31,7 +46,7 @@ All releases will be logged in this file.
 - Rename "Officer" to "Person" on homepage, and officer search pages
 
 ### Removed
-- "Snapshot" feature on person profile page now disabled by default, but reenablable via settings.py setting
+- "Snapshot" feature on person profile page now disableable via settings.py setting
 - Prior version of Officer search disabled by default, but reenablable via settings.py setting
 
 ### Security patches
