@@ -1,6 +1,11 @@
 # Changelog
 
-All releases will be logged in this file.
+All releases are logged in this file.
+
+## [6.0.3] - 2022-08-22
+
+### Changed
+- Importer: Fix unrecognized column error on simple foreign key fields with '__external_id' extension
 
 ## [6.0.2] - 2022-08-11
 

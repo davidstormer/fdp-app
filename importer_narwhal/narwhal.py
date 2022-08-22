@@ -500,6 +500,13 @@ def do_dry_run(batch_record):
                     valid_field_names.append(field_name + extension)
             except AttributeError:
                 pass
+            # Valid extensions can live at the widget level too, get them...
+            try:
+                extensions = field_object.widget.get_available_extensions()
+                for extension in extensions:
+                    valid_field_names.append(field_name + extension)
+            except AttributeError:
+                pass
 
         def column_name_in_available_column_names_with_extensions(column_name: str) -> bool:
             for valid_field_name in valid_field_names:
