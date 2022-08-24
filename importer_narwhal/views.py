@@ -1,3 +1,5 @@
+import os
+
 import tablib
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
@@ -112,7 +114,13 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
         # Additional prep
         if context['state'] == 'pre-validate':
             with context['object'].import_sheet.file.open() as import_sheet_raw:
-                context['preview_data'] = tablib.Dataset().load(import_sheet_raw.read().decode("utf-8-sig"), "csv")
+                try:
+                    context['preview_data'] = tablib.Dataset().load(import_sheet_raw.read().decode("utf-8-sig"), "csv")
+                except Exception as e:
+                    error_dataset = tablib.Dataset()
+                    error_dataset.headers = (f'Error cannot read CSV file "{os.path.basename(import_sheet_raw.name)}":'
+                                             f' {e.__repr__()}',)
+                    context['preview_data'] = error_dataset
 
         if context['object'].completed:
             context['duration'] = context['object'].completed - context['object'].started

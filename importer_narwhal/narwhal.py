@@ -477,93 +477,111 @@ def create_batch_from_disk(model_name: str, input_file: str) -> ImportBatch:
 
 
 def do_dry_run(batch_record):
-    batch_record.dry_run_started = timezone.now()
-    batch_record.save()
-    import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8-sig")
-    input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
-    # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
-    # https://github.com/jazzband/tablib/issues/502
-    resource_class = resource_model_mapping[batch_record.target_model_name]
-    resource = resource_class()
+    try:
+        batch_record.dry_run_started = timezone.now()
+        batch_record.save()
+        try:
+            import_sheet_raw = batch_record.import_sheet.file.open().read().decode("utf-8-sig")
+            input_sheet = tablib.Dataset().load(import_sheet_raw, "csv")
+        except Exception as e:
+            batch_record.general_errors = \
+                f'Error cannot read CSV file "{os.path.basename(batch_record.import_sheet.file.name)}": {e.__repr__()}'
+            batch_record.errors_encountered = True
+            batch_record.dry_run_completed = timezone.now()
+            batch_record.save()
+            return
 
-    def validate_field_names_mapping(resource, input_sheet):
-        """Do all of the fields in the import sheet line up with fields for the resource? If any don't match,
-        flag them to warn the user. TODO: If any are missing that are required flag them."""
-        error_messages = []
+        # Re "csv" fixes error/bug "Tablib has no format 'None' or it is not registered."
+        # https://github.com/jazzband/tablib/issues/502
+        resource_class = resource_model_mapping[batch_record.target_model_name]
+        resource = resource_class()
 
-        valid_field_names = []
-        for field_name, field_object in resource.fields.items():
-            valid_field_names.append(field_name)
-            try:
-                extensions = field_object.get_available_extensions()
-                for extension in extensions:
-                    valid_field_names.append(field_name + extension)
-            except AttributeError:
-                pass
-            # Valid extensions can live at the widget level too, get them...
-            try:
-                extensions = field_object.widget.get_available_extensions()
-                for extension in extensions:
-                    valid_field_names.append(field_name + extension)
-            except AttributeError:
-                pass
+        def validate_field_names_mapping(resource, input_sheet):
+            """Do all of the fields in the import sheet line up with fields for the resource? If any don't match,
+            flag them to warn the user. TODO: If any are missing that are required flag them."""
+            error_messages = []
 
-        def column_name_in_available_column_names_with_extensions(column_name: str) -> bool:
-            for valid_field_name in valid_field_names:
-                if re.match(valid_field_name + '$', column_name):
-                    return True
-            return False
+            valid_field_names = []
+            for field_name, field_object in resource.fields.items():
+                valid_field_names.append(field_name)
+                try:
+                    extensions = field_object.get_available_extensions()
+                    for extension in extensions:
+                        valid_field_names.append(field_name + extension)
+                except AttributeError:
+                    pass
+                # Valid extensions can live at the widget level too, get them...
+                try:
+                    extensions = field_object.widget.get_available_extensions()
+                    for extension in extensions:
+                        valid_field_names.append(field_name + extension)
+                except AttributeError:
+                    pass
 
-        for column_name in input_sheet.headers:
-            if column_name in valid_field_names:
-                continue
-            # If not then let's see if it matches available column name extensions...
-            if column_name_in_available_column_names_with_extensions(column_name):
-                continue
-            # Didn't find a match, record warning for user to alert them...
-            error_messages.append(f"ERROR: '{column_name}' not a valid column name for"
-                  f" {resource_class.Meta.model.__name__} imports.")
+            def column_name_in_available_column_names_with_extensions(column_name: str) -> bool:
+                for valid_field_name in valid_field_names:
+                    if re.match(valid_field_name + '$', column_name):
+                        return True
+                return False
 
-        return error_messages
+            for column_name in input_sheet.headers:
+                if column_name in valid_field_names:
+                    continue
+                # If not then let's see if it matches available column name extensions...
+                if column_name_in_available_column_names_with_extensions(column_name):
+                    continue
+                # Didn't find a match, record warning for user to alert them...
+                error_messages.append(f"ERROR: '{column_name}' not a valid column name for"
+                      f" {resource_class.Meta.model.__name__} imports.")
 
-    error_messages = validate_field_names_mapping(resource, input_sheet)
-    if len(error_messages) > 0:
-        batch_record.general_errors = '\n'.join(error_messages)
-        batch_record.errors_encountered = True
+            return error_messages
+
+        error_messages = validate_field_names_mapping(resource, input_sheet)
+        if len(error_messages) > 0:
+            batch_record.general_errors = '\n'.join(error_messages)
+            batch_record.errors_encountered = True
+            batch_record.save()
+
+        result = resource.import_data(input_sheet, dry_run=True)
+        batch_record.number_of_rows = len(result.rows)
+        import_report = ImportReport()
+
+        # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
+        # encounter any database level errors. We'll apply this pattern here:
+        if result.has_validation_errors():
+            batch_record.errors_encountered = True
+            batch_record.save()
+            for row_num, row in enumerate(result.rows):
+                ImportedRow.objects.create(
+                    row_number=row_num,
+                    import_batch=batch_record,
+                    action=row.import_type,
+                    errors=row.validation_error,
+                    info=clean_diff_html(str(row.diff)),
+                    imported_record_name=row.object_repr,
+                    imported_record_pk=row.object_id,
+                )
+            for invalid_row in result.invalid_rows:
+                # Nice error reports continued...
+                ErrorRow.objects.create(
+                    import_batch=batch_record,
+                    row_number=invalid_row.number,
+                    error_message=str(invalid_row.error_dict),
+                    row_data=str(invalid_row.values)
+                )
+                import_report.validation_errors.append(
+                    ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
+                )
+        batch_record.dry_run_completed = timezone.now()
         batch_record.save()
 
-    result = resource.import_data(input_sheet, dry_run=True)
-    batch_record.number_of_rows = len(result.rows)
-    import_report = ImportReport()
-
-    # django-import-export uses the dry-run pattern to first flush out validation errors, and then in a second step
-    # encounter any database level errors. We'll apply this pattern here:
-    if result.has_validation_errors():
+    except Exception as e:
+        # Something really unexpected happened...
+        batch_record.general_errors = e.__class__
         batch_record.errors_encountered = True
+        batch_record.dry_run_completed = timezone.now()
         batch_record.save()
-        for row_num, row in enumerate(result.rows):
-            ImportedRow.objects.create(
-                row_number=row_num,
-                import_batch=batch_record,
-                action=row.import_type,
-                errors=row.validation_error,
-                info=clean_diff_html(str(row.diff)),
-                imported_record_name=row.object_repr,
-                imported_record_pk=row.object_id,
-            )
-        for invalid_row in result.invalid_rows:
-            # Nice error reports continued...
-            ErrorRow.objects.create(
-                import_batch=batch_record,
-                row_number=invalid_row.number,
-                error_message=str(invalid_row.error_dict),
-                row_data=str(invalid_row.values)
-            )
-            import_report.validation_errors.append(
-                ErrorReportRow(invalid_row.number, str(invalid_row.error_dict), str(invalid_row.values))
-            )
-    batch_record.dry_run_completed = timezone.now()
-    batch_record.save()
+        return
 
 
 # The business
