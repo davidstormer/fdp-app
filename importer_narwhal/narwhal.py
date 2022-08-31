@@ -35,12 +35,15 @@ class ExternalIdField(fields.Field):
                 if row[import_field_name]:
                     destination_field_name = import_field_name[:-13]
                     model_class = resource_class.Meta.model._meta.get_field(destination_field_name).remote_field.model
-                    referenced_record = get_record_from_external_id(model_class, row[import_field_name])
-                    if resource_class.fields[destination_field_name].widget.field == 'name':
-                        # Field expects a natural key value, not a pk:
-                        row[destination_field_name] = referenced_record.name
-                    else:
-                        row[destination_field_name] = referenced_record.pk
+                    output = []
+                    for external_id in row[import_field_name].split(','):
+                        referenced_record = get_record_from_external_id(model_class, external_id.strip())
+                        if resource_class.fields[destination_field_name].widget.field == 'name':
+                            # Field expects a natural key value, not a pk:
+                            output.append(referenced_record.name)
+                        else:
+                            output.append(referenced_record.pk)
+                    row[destination_field_name] = ','.join(map(str, output))
 
     def after_import_row(self, resource_class, row, row_result, row_number, **kwargs):
         # TODO: I think this should maybe be a 'get or create' logic, rather than just always create...?
