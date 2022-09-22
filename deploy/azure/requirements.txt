@@ -38,7 +38,7 @@ msal==1.13.0
 msal-extensions==0.3.0
 msrest==0.6.21
 natural-keys==1.6.0
-oauthlib==3.1.1
+oauthlib==3.2.1
 phonenumberslite==8.12.29
 portalocker==1.7.1
 psycopg2==2.8.6
