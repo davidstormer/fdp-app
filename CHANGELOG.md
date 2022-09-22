@@ -2,6 +2,17 @@
 
 All releases are logged in this file.
 
+## [6.0.4] - 2022-08-22
+
+### Changed
+- Importer: Fix __external_id columns don't take multiple values
+- Tests CircleCi: Fix container build glitch
+- Officer profile picture: Fix CORS rule issue which breaks officer profile image on officer profile page
+- Importer: Show specific error message when user uploads improperly formatted CSV file
+
+### Security patches
+- Upgrade Oauthlib to version 3.2.1
+
 ## [6.0.3] - 2022-08-22
 
 ### Changed

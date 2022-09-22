@@ -11,7 +11,8 @@ from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
     Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
-from .narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run
+from .narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run, \
+    run_import_batch
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
     PersonGrouping, GroupingAlias, GroupingRelationship
 from django.test import TestCase, SimpleTestCase, tag
@@ -498,6 +499,36 @@ class NarwhalImportCommand(TestCase):
             0,
             PersonAlias.objects.all().count()
         )
+
+    def test_external_ids_multiple_success_scenario_m2m(self):
+        state_record = State.objects.create(name="mystate")
+        import_record_with_extid(County, {"name": 'gnathopod1', "state": state_record}, external_id='carbocinchomeronic1')
+        import_record_with_extid(County, {"name": 'gnathopod2', "state": state_record}, external_id='carbocinchomeronic2')
+        import_record_with_extid(County, {"name": 'gnathopod3', "state": state_record}, external_id='carbocinchomeronic3')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            csv_writer = csv.DictWriter(csv_fd, ['counties__external_id', 'name', 'is_law_enforcement'])
+            csv_writer.writeheader()
+            csv_writer.writerow({
+                'name': 'grouping test',
+                'counties__external_id': 'carbocinchomeronic1, carbocinchomeronic2, carbocinchomeronic3',
+                'is_law_enforcement': "True"
+            })
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            batch_record = create_batch_from_disk('Grouping', csv_fd.name)
+            run_import_batch(batch_record)
+
+            # Then I should see no errors in the batch
+            self.assertFalse(
+                batch_record.error_rows.all()
+            )
+            self.assertFalse(
+                batch_record.general_errors
+            )
+            self.assertFalse(
+                batch_record.errors_encountered
+            )
 
     def test_natural_keys_person_identifier_type(self):
         """Test that the importer can find person_identifier_type by its value, rather than pk
