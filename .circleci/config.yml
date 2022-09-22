@@ -53,7 +53,6 @@ jobs:
           pkg-manager: pip
           app-dir: ~/project/functional_tests/
       - run: |
-          mkdir ~/bin/
           cd ~/bin/
           wget https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux64.tar.gz
           tar xvzf geckodriver-*-linux64.tar.gz
