@@ -2,6 +2,7 @@
 
 if command -v xvfb-run &> /dev/null
 then
+  xvfb-run -a -e /dev/stdout python manage.py test --parallel 1 -v 2 --settings=fdp.configuration.test.test_local_settings --tag wip || exit
   xvfb-run -a -e /dev/stdout python manage.py test --parallel 4 -v 2 --settings=fdp.configuration.test.test_local_settings || exit
   xvfb-run -a -e /dev/stdout python manage.py test --parallel 4 -v 2 --pattern=azure_test* --settings=fdp.configuration.test.test_azure_settings || exit
   xvfb-run -a -e /dev/stdout python manage.py test --parallel 4 -v 2 --pattern=azure_only_test* --settings=fdp.configuration.test.test_azure_only_settings || exit

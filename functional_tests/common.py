@@ -51,7 +51,7 @@ def wait(fn, *args, **kwargs):
     """Call a given function repeatedly until it doesn't raise AssertionError or WebDriverException.
     Gives up after five seconds.
     """
-    max_wait = 20
+    max_wait = 5
     start_time = time.time()
     while True:
         try:
@@ -239,6 +239,10 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         for i in range(nth_result):
             group_input.send_keys(Keys.DOWN)
         group_input.send_keys(Keys.ENTER)
+
+    def wait_for(self, css_selector: str) -> WebElement:
+        """Block until element found by given css selector"""
+        wait(self.browser.find_element,By.CSS_SELECTOR, css_selector)
 
     def el(self, css_selector: str) -> WebElement:
         """Shorthand for self.browser.find_element(By.CSS_SELECTOR, css_selector)"""

@@ -116,6 +116,13 @@ a.custom-text-edit-link {
   }
 }
 
+/* Clearfix */
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
 /* Misc Typography */
 
 /* use to force <pre> text to match the rest of the page */
@@ -130,4 +137,12 @@ a.custom-text-edit-link {
   white-space: pre-wrap;
   word-break: keep-all
   word-wrap: break-word;
+}
+
+/* Bootstrap 5 backports */
+.text-muted, .text-secondary {
+  color: #6c757d;
+}
+.d-inline-block {
+  display: inline-block;
 }
