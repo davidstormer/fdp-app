@@ -1575,20 +1575,10 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
         :param filter_dict: Dictionary of search criteria.
         :return: Queryset of search results.
         """
-        # queryset filtered for direct confidentiality
-        # (will be filtered for indirect confidentiality in AbstractAsyncGetModelView)
-        accessible_queryset = Person.active_objects.all().filter_for_confidential_by_user(user=self.request.user)
-        # matching against list of terms entered by user
-        exact_terms = filter_dict[self._exact_terms_key]
-        # retrieve persons
-        persons = accessible_queryset.filter(
-            Q(name__icontains=exact_terms)
-            |
-            Q(person_alias__name__icontains=exact_terms)
-            |
-            Q(person_identifier__identifier__icontains=exact_terms)
+        return Person.objects.search_all_fields(
+            filter_dict[self._exact_terms_key],
+            self.request.user
         )
-        return persons
 
     def _get_specific_error_message(self):
         """ Retrieves an error message that is specific to the class inheriting from the parent abstract class.
@@ -1607,16 +1597,19 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
         the user entered search criteria.
         :return: List of dictionaries, each with a structure matching the JQuery Autocomplete tool.
         """
-        top_x = 5
-        pk = 'pk'
-        name = 'name'
-        return [
-            {
-                self._value_key: person_dict[pk],
-                self._label_key: person_dict[name],
-                "teaserHtml": render_to_string('person_teaser_select_list_jqueryui.html', {'pk': person_dict[pk]}),
-            } for person_dict in filtered_queryset.distinct().values(pk, name)[:top_x]
-        ]
+        output = []
+        for person in filtered_queryset[:35]:
+            context = {
+                'person': person
+            }
+            output.append(
+                {
+                    self._value_key: person.pk,
+                    self._label_key: person.name,
+                    "teaserHtml": render_to_string('person_teaser_select_list_jqueryui.html', context),
+                }
+            )
+        return output
 
 
 class AbstractIncidentView(AbstractPopupView):
