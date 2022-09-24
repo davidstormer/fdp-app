@@ -1594,7 +1594,15 @@ var Fdp = (function (fdpDef, $, w, d) {
                 event.preventDefault();
             }, /* select */
             response: commonDef.getAutocompleteResponseFunc("No matches found" /* noResultsMsg */) /* response */
-        });
+        })
+        .autocomplete( "instance" )._renderItem = function( ul, item ) {
+          return $( "<li>" )
+          .append( "<div>" + item.label + item.teaserHtml + "</div>" )
+          .appendTo( ul );
+        };
+        /*
+        <li class="ui-menu-item"><div id="ui-id-12" tabindex="-1" class="ui-menu-item-wrapper">Arthur Addams</div></li>
+        */
         // autocomplete fields are already populated during initialization
         if (idInputElem.val() && searchInputElem.val()) {
             // adds styling to search box, to indicate previous successful selection

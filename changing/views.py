@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
 from django.utils.http import unquote_plus
 from django.urls import reverse
@@ -1612,7 +1613,8 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
         return [
             {
                 self._value_key: person_dict[pk],
-                self._label_key: person_dict[name]
+                self._label_key: person_dict[name],
+                "teaserHtml": render_to_string('person_teaser_select_list_jqueryui.html', {'pk': person_dict[pk]}),
             } for person_dict in filtered_queryset.distinct().values(pk, name)[:top_x]
         ]
 
