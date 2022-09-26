@@ -1599,8 +1599,22 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
         """
         output = []
         for person in filtered_queryset[:35]:
+            # Aliases
+            aliases = [alias.name for alias in person.person_aliases.all()]
+            # Identifiers
+            identifiers = [identifier.identifier for identifier in person.person_identifiers.all()]
+            # Ranks
+            current_titles = [title.title.name for title in person.current_titles]
+            # Commands
+            groups = [person_grouping.grouping.name for person_grouping in person.groups_law_enforcement]
+
             context = {
-                'person': person
+                'profile_url': person.get_profile_url,
+                'name': person.name,
+                'aliases': aliases,
+                'identifiers': identifiers,
+                'current_titles': current_titles,
+                'groups': groups,
             }
             output.append(
                 {

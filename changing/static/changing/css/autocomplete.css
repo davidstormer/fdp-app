@@ -9,3 +9,4 @@
 /* CSS class that is automatically assigned to the searching element in the autocomplete widget when its status is OK */
 /* An example is when a user selects a record suggested by the widget */
 .okac { box-shadow: 0 0 4px 4px #45A26D; }
+

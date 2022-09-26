@@ -1597,7 +1597,7 @@ var Fdp = (function (fdpDef, $, w, d) {
         })
         .autocomplete( "instance" )._renderItem = function( ul, item ) {
           return $( "<li>" )
-          .append( "<div>" + item.label + item.teaserHtml + "</div>" )
+          .append( "<div>" + item.teaserHtml + "</div>" )
           .appendTo( ul );
         };
         /*
