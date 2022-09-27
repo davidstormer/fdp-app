@@ -5,7 +5,9 @@
       <span class="person-select-aliases text-muted">a.k.a. {{ aliases|join:', ' }}</span>
     {% endif %}
   </div>
-  {% if groups %}<div class="person-select-groups">{{ groups|join:', ' }}</div>{% endif %}
-  {% if identifiers %}<div class="person-select-identifiers">{{ identifiers|join:', ' }}</div>{% endif %}
-  {% if current_titles %}<div class="person-select-titles">{{ current_titles|join:', ' }}</div>{% endif %}
+  <div class="person-select-details">
+    {% if groups %}<div class="person-select-groups">{{ groups|join:', ' }}</div>{% endif %}
+    {% if identifiers %}<div class="person-select-identifiers">{{ identifiers|join:', ' }}</div>{% endif %}
+    {% if current_titles %}<div class="person-select-titles">{{ current_titles|join:', ' }}</div>{% endif %}
+  </div>
 </div>

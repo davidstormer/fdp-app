@@ -131,3 +131,8 @@ a.custom-text-edit-link {
   word-break: keep-all
   word-wrap: break-word;
 }
+
+/* Bootstrap backports */
+.text-muted, .text-secondary {
+  color: #6c757d;
+}

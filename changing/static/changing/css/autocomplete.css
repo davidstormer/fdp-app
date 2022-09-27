@@ -10,3 +10,18 @@
 /* An example is when a user selects a record suggested by the widget */
 .okac { box-shadow: 0 0 4px 4px #45A26D; }
 
+ul.ui-autocomplete.personac {
+  max-height: 20rem;
+  overflow-y: auto;
+}
+.ui-autocomplete.personac .ui-menu-item {
+  border-top: 1px solid #ccc;
+}
+.ui-autocomplete.personac .person-select-details,
+.ui-autocomplete.personac .person-select-aliases {
+  font-size: 90%;
+}
+
+.ui-autocomplete.personac, .ui-autocomplete.personac * {
+  box-sizing: border-box !important;
+}
