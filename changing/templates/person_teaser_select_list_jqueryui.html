@@ -1,13 +1,20 @@
 <div class="person-select-teaser">
-  <div class="person-select-names">
-    <span class="person-select-name"><strong>{{name}}</strong></span>
-    {% if aliases %}
-      <span class="person-select-aliases text-muted">a.k.a. {{ aliases|join:', ' }}</span>
-    {% endif %}
-  </div>
-  <div class="person-select-details">
-    {% if groups %}<div class="person-select-groups">{{ groups|join:', ' }}</div>{% endif %}
-    {% if identifiers %}<div class="person-select-identifiers">{{ identifiers|join:', ' }}</div>{% endif %}
-    {% if current_titles %}<div class="person-select-titles">{{ current_titles|join:', ' }}</div>{% endif %}
-  </div>
+  {% if aliases or groups or identifiers or current_titles %}
+    <div class="person-select-names">
+      <span class="person-select-name"><strong>{{name}}</strong></span>
+      {% if aliases %}
+        <span class="person-select-aliases text-muted">a.k.a. {{ aliases|join:', ' }}</span>
+      {% endif %}
+    </div>
+    <div class="person-select-details">
+      {% if groups %}<div class="person-select-groups">{{ groups|join:', ' }}</div>{% endif %}
+      {% if identifiers %}<div class="person-select-identifiers">{{ identifiers|join:', ' }}</div>{% endif %}
+      {% if current_titles %}<div class="person-select-titles">{{ current_titles|join:', ' }}</div>{% endif %}
+    </div>
+  {% else %}
+    <div class="person-select-names">
+      <span class="person-select-name"><strong>{{name}}</strong></span>
+      <span class="person-select-aliases text-muted">pk:{{ pk }}</span>
+    </div>
+  {% endif %}
 </div>

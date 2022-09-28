@@ -1615,11 +1615,18 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
                 'identifiers': identifiers,
                 'current_titles': current_titles,
                 'groups': groups,
+                'pk': person.pk,
             }
+
+            if identifiers:
+                verbose_name = f"{person.name} ({', '.join(identifiers)})"
+            else:
+                verbose_name = f"{person.name} (pk:{person.pk})"
+
             output.append(
                 {
                     self._value_key: person.pk,
-                    self._label_key: person.name,
+                    self._label_key: verbose_name,
                     "teaserHtml": render_to_string('person_teaser_select_list_jqueryui.html', context),
                 }
             )
