@@ -1577,7 +1577,8 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
         """
         return Person.objects.search_all_fields(
             filter_dict[self._exact_terms_key],
-            self.request.user
+            self.request.user,
+            is_law_enforcement_only=False
         )
 
     def _get_specific_error_message(self):
