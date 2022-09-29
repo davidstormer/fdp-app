@@ -1456,7 +1456,7 @@ var Fdp = (function (fdpDef, $, w, d) {
 	commonDef.getAutocompleteResponseFunc = function (noResultsMsg) {
         return function (event, ui) {
             if (!ui.content.length) {
-                var noResult = { value:"", label: noResultsMsg };
+                var noResult = { value:"", label: noResultsMsg, teaserHtml: noResultsMsg };
                 ui.content.push(noResult);
             }
         };

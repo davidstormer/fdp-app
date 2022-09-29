@@ -1626,8 +1626,8 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
 
             output.append(
                 {
-                    self._value_key: person.pk,
-                    self._label_key: verbose_name,
+                    'value': person.pk,
+                    'label': verbose_name,
                     "teaserHtml": render_to_string('person_teaser_select_list_jqueryui.html', context),
                 }
             )
