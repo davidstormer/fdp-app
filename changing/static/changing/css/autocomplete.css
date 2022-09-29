@@ -33,6 +33,14 @@ ul.ui-autocomplete.personac,
   font-size: 90%;
 }
 
+.person-select-identifiers {
+  float: right;
+  max-width: 49%;
+}
+.person-select-titles {
+  max-width: 49%;
+}
+
 /* Fix horizontal scroll bar appearing when hovering over select list items... */
 .ui-autocomplete.personac div.ui-menu-item-wrapper.ui-state-active {
   border: 0;

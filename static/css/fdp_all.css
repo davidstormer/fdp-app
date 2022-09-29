@@ -116,6 +116,13 @@ a.custom-text-edit-link {
   }
 }
 
+/* Clearfix */
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
 /* Misc Typography */
 
 /* use to force <pre> text to match the rest of the page */
