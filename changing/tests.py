@@ -1350,7 +1350,7 @@ class TristanTests(FunctionalTestCase):
 
     def test_AsyncGetPersonsView(self):
         # Given there's a person record in the system
-        Person.objects.create(name="ostreiculture")
+        person_record = Person.objects.create(name="ostreiculture")
 
         # When I query the persons ajax query endpoint by the name
         client = self.log_in(is_administrator=True)
@@ -1370,7 +1370,7 @@ class TristanTests(FunctionalTestCase):
         )
         # And the first item on the list should be a dictionary with the person's name
         self.assertEqual(
-            "ostreiculture",
+            f"ostreiculture (pk:{person_record.pk})",
             data[0]['label']
         )
 
