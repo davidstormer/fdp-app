@@ -15,7 +15,6 @@ from django.test import tag
 
 class SeleniumTestCase(SeleniumFunctionalTestCase):
 
-    @tag('wip')
     def test_person_lookup_tool_data_points(self):
         # Given there is a person record in the system with identifiers, groups, titles, aliases
         person = Person.objects.create(name="person-ultrafidianism")
@@ -40,35 +39,30 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
                 'path': '/changing/persons/add/person/',
                 'add_another_xpath': "//*[text()=' Add another relationship']",
                 'input_selector': '.personrelationshipform input#id_relationships-0-person_relationship_4',
-                'results_selector': 'ul.ui-autocomplete.personac li.ui-menu-item'
             },
             {
                 'scenario_name': 'Person edit page person relationship subject',
                 'path': '/changing/persons/add/person/',
                 'add_another_xpath': "//*[text()=' Add another relationship']",
                 'input_selector': '.personrelationshipform input#id_relationships-0-person_relationship_1',
-                'results_selector': 'ul.ui-autocomplete.personac li.ui-menu-item'
             },
             {
                 'scenario_name': 'Content page person content',
                 'path': '/changing/content/add/content/',
                 'add_another_xpath': "//*[text()=' Add another person']",
                 'input_selector': '.personform input#id_persons-0-person_name',
-                'results_selector': 'ul.ui-autocomplete.personac li.ui-menu-item'
             },
             {
                 'scenario_name': 'Incident page person incident',
                 'path': '/changing/incidents/add/incident/',
                 'add_another_xpath': "//*[text()=' Add another person']",
                 'input_selector': '.personincidentform input#id_personincidents-0-person_name',
-                'results_selector': 'ul.ui-autocomplete.personac li.ui-menu-item'
             },
             {
                 'scenario_name': 'Incident popup page person incident',
                 'path': '/changing/incidents/add/incident/',
                 'add_another_xpath': "//*[text()=' Add another person']",
                 'input_selector': '.personincidentform input#id_personincidents-0-person_name',
-                'results_selector': 'ul.ui-autocomplete.personac li.ui-menu-item'
             }
         ]
         for scenario in given_im_on:
@@ -82,7 +76,7 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
                 autocomplete_input.send_keys("person-ultrafidianism")
 
                 # Then I should see the following data points included in the results
-                results_list = self.el(scenario['results_selector'])
+                results_list = self.el('ul.ui-autocomplete.personac li.ui-menu-item')
                 # Name
                 self.assertIn(
                     "person-ultrafidianism",
