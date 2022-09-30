@@ -3,64 +3,115 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from core.models import (
     Grouping,
-    Person
+    Person, PersonTitle, PersonAlias, PersonIdentifier, PersonGrouping
 )
 from functional_tests.common import (
     SeleniumFunctionalTestCase,
     wait
 )
-from supporting.models import Title, PersonRelationshipType
+from supporting.models import Title, PersonRelationshipType, PersonIdentifierType, PersonGroupingType
 from django.test import tag
 
 
 class SeleniumTestCase(SeleniumFunctionalTestCase):
 
-    def test_person_lookup_tool_relationships(self):
-        # GIVEN
-        # Given there's a person relationship type record
-        # NOTE: 'Patrol Partner' necessary for test to pass if code in state before fix from FDAB-340
-        PersonRelationshipType.objects.create(name='Patrol Partner')
-        # Given there's a person record
-        Person.objects.create(name="person-naphthalenic", is_law_enforcement=True)
-        # Given I'm logged into the system as an Admin
-        b = self.browser
+    @tag('wip')
+    def test_person_lookup_tool_data_points(self):
+        # Given there is a person record in the system with identifiers, groups, titles, aliases
+        person = Person.objects.create(name="person-ultrafidianism")
+        PersonAlias.objects.create(name="alias-Tlakluit", person=person)
+        PersonIdentifier.objects.create(
+            identifier="identifier-bigeminal",
+            person=person,
+            person_identifier_type=PersonIdentifierType.objects.create(name="test PersonIdentifier Type"))
+        title = Title.objects.create(name="title-wryly")
+        PersonTitle.objects.create(person=person, title=title)
+        grouping_1 = Grouping.objects.create(name="grouping-septuplication", is_law_enforcement=True)
+        grouping_2 = Grouping.objects.create(name="grouping-condescendingness", is_law_enforcement=True)
+        PersonGrouping.objects.create(person=person, grouping=grouping_1)
+        PersonGrouping.objects.create(person=person, grouping=grouping_2)
+
+        # Given I'm on the person edit page and I'm interacting with the person relationships subject lookup tool
         self.log_in(is_administrator=True)
-        # Given I'm on the new person edit page
-        self.browser.get(self.live_server_url + '/changing/persons/add/person/')
+        # Given I'm on one of the various instances of the person lookup tool
+        given_im_on = [
+            {
+                'scenario_name': 'Person edit page person relationship object',
+                'path': '/changing/persons/add/person/',
+                'add_another_xpath': "//*[text()=' Add another relationship']",
+                'input_selector': '.personrelationshipform input#id_relationships-0-person_relationship_4',
+                'results_selector': 'ul.ui-autocomplete.personac li.ui-menu-item'
+            },
+            {
+                'scenario_name': 'Person edit page person relationship subject',
+                'path': '/changing/persons/add/person/',
+                'add_another_xpath': "//*[text()=' Add another relationship']",
+                'input_selector': '.personrelationshipform input#id_relationships-0-person_relationship_1',
+                'results_selector': 'ul.ui-autocomplete.personac li.ui-menu-item'
+            },
+            {
+                'scenario_name': 'Content page person content',
+                'path': '/changing/content/add/content/',
+                'add_another_xpath': "//*[text()=' Add another person']",
+                'input_selector': '.personform input#id_persons-0-person_name',
+                'results_selector': 'ul.ui-autocomplete.personac li.ui-menu-item'
+            },
+            {
+                'scenario_name': 'Incident page person incident',
+                'path': '/changing/incidents/add/incident/',
+                'add_another_xpath': "//*[text()=' Add another person']",
+                'input_selector': '.personincidentform input#id_personincidents-0-person_name',
+                'results_selector': 'ul.ui-autocomplete.personac li.ui-menu-item'
+            },
+            {
+                'scenario_name': 'Incident popup page person incident',
+                'path': '/changing/incidents/add/incident/',
+                'add_another_xpath': "//*[text()=' Add another person']",
+                'input_selector': '.personincidentform input#id_personincidents-0-person_name',
+                'results_selector': 'ul.ui-autocomplete.personac li.ui-menu-item'
+            }
+        ]
+        for scenario in given_im_on:
+            with self.subTest(msg=scenario['scenario_name']):
+                self.browser.get(self.live_server_url + scenario['path'])
+                self.browser.find_element(By.XPATH, scenario['add_another_xpath']) \
+                    .click()
+                autocomplete_input = self.el(scenario['input_selector'])
 
-        # WHEN on a new relationship I select a type and the person
-        self.browser.find_element(By.XPATH, "//*[text()=' Add another relationship']") \
-            .click()
-        Select(self.browser.find_element(
-            By.CSS_SELECTOR, '.personrelationshipform select#id_relationships-0-person_relationship_2')) \
-            .select_by_visible_text('Patrol Partner')
+                # When I enter the name of the person
+                autocomplete_input.send_keys("person-ultrafidianism")
 
-        self.enter_autocomplete_data(
-            '.personrelationshipform input#id_relationships-0-person_relationship_4',
-            'ul.ui-autocomplete.personac li.ui-menu-item',
-            "person-naphthalenic"
-        )
-
-        # ... and other necessary fields ...
-        Select(b.find_element(By.CSS_SELECTOR, 'select#id_law_enforcement')) \
-            .select_by_visible_text('Yes')
-        b.find_element(By.CSS_SELECTOR, 'input[name="name"]')\
-            .send_keys('Kidderminster')
-
-        # ...   and save
-        b.find_element(By.CSS_SELECTOR, "input[value='Save']").click()
-
-        # THEN there should be no validation errors reported by the system
-        with self.assertRaises(NoSuchElementException):
-            error = self.browser.find_element(By.CSS_SELECTOR, 'ul.errorlist').text
-            print(f"Validation error found: '{error}'")
-
-        # THEN the officer profile should show the relationship
-        self.browser.get(self.live_server_url + f'/officer/{Person.objects.last().pk}')
-        self.assertIn(
-            'Patrol Partner',
-            self.browser.find_element(By.CSS_SELECTOR, 'section.associates').text
-        )
+                # Then I should see the following data points included in the results
+                results_list = self.el(scenario['results_selector'])
+                # Name
+                self.assertIn(
+                    "person-ultrafidianism",
+                    results_list.text
+                )
+                # Alias
+                self.assertIn(
+                    "alias-Tlakluit",
+                    results_list.text
+                )
+                # Identifiers
+                self.assertIn(
+                    "identifier-bigeminal",
+                    results_list.text
+                )
+                # Titles
+                self.assertIn(
+                    "title-wryly",
+                    results_list.text
+                )
+                # Groups
+                self.assertIn(
+                    "grouping-septuplication",
+                    results_list.text
+                )
+                self.assertIn(
+                    "grouping-condescendingness",
+                    results_list.text
+                )
 
     def test_person_lookup_tool_relationships_no_results(self):
         # Given there are no person records in the system
