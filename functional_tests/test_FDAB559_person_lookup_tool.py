@@ -123,3 +123,22 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             "No matches found",
             results_list.text
         )
+
+    @tag('wip')
+    def test_person_lookup_tool_relationships_max_results(self):
+        for i in range(100):
+            Person.objects.create(name="acetabuliform")
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + '/changing/persons/add/person/')
+
+        self.browser.find_element(By.XPATH, "//*[text()=' Add another relationship']") \
+            .click()
+        autocomplete_input = self.el('.personrelationshipform input#id_relationships-0-person_relationship_4')
+        autocomplete_input.send_keys("acetabuliform")
+
+        self.wait_for('ul.ui-autocomplete.personac li.ui-menu-item')
+        results_elements = self.browser.find_elements(By.CSS_SELECTOR, 'ul.ui-autocomplete.personac li.ui-menu-item')
+        self.assertEqual(
+            35,
+            len(results_elements)
+        )

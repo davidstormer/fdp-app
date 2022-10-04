@@ -240,6 +240,10 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
             group_input.send_keys(Keys.DOWN)
         group_input.send_keys(Keys.ENTER)
 
+    def wait_for(self, css_selector: str) -> WebElement:
+        """Block until element found by given css selector"""
+        wait(self.browser.find_element,By.CSS_SELECTOR, css_selector)
+
     def el(self, css_selector: str) -> WebElement:
         """Shorthand for self.browser.find_element(By.CSS_SELECTOR, css_selector)"""
         return wait(self.browser.find_element,By.CSS_SELECTOR, css_selector)
