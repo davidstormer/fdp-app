@@ -1,3 +1,5 @@
+from time import sleep
+
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from inheritable.models import AbstractUrlValidator, AbstractConfiguration
@@ -54,6 +56,9 @@ class ShowImportTemplates(SecuredSyncView):
         :param request: Http request object.
         :return: Listing of registered serializers and their field mappings
         """
+
+        sleep(10)
+        
         user = request.user
         # verify that user has import access
         if not user.has_import_access:
