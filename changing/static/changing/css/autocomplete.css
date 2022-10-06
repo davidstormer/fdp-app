@@ -10,6 +10,9 @@
 /* An example is when a user selects a record suggested by the widget */
 .okac { box-shadow: 0 0 4px 4px #45A26D; }
 
+/* Person lookup tool
+ *
+ */
 @media (min-width: 767px) {
   .personform .ui-autocomplete-input,
   .personrelationshipform .ui-autocomplete-input,
@@ -45,4 +48,31 @@ ul.ui-autocomplete.personac,
 .ui-autocomplete.personac div.ui-menu-item-wrapper.ui-state-active {
   border: 0;
   margin: 0;
+}
+
+/* profile link */
+.person-select-link {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    padding-left: 1em;
+    padding-right: 1em;
+    box-sizing: border-box;
+    backdrop-filter: blur(3px);
+    opacity: 100%;
+    border-left: 1px dashed #666;
+}
+.ui-autocomplete.personac li:hover .person-select-link {
+    display: flex;
+}
+.ui-autocomplete.personac li div.person-select-link:hover {
+  background-color: rgba(0,0,0,.1);
+}
+
+ul.ui-autocomplete.personac > li {
+  padding: 0;
 }

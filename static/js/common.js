@@ -1576,6 +1576,14 @@ var Fdp = (function (fdpDef, $, w, d) {
                     request.term /* searchTerm */
                 );
             }, /* source */
+            create: function (event, ui) {
+                /* Behavior inspired by vuetify autocomplete */
+                $('.ui-autocomplete-input').click(function () { this.select() })
+            },
+            open: function (event, ui) {
+                /* Make the profile link work */
+                $('.person-select-link').click(function( event ) { event.stopPropagation() });
+            },
             select: function(event, ui) {
                 var item = ui.item;
                 var id = item.value;
@@ -1609,6 +1617,7 @@ var Fdp = (function (fdpDef, $, w, d) {
             commonDef.showAutocompleteOk(searchInputElem /* searchInputElem */);
         }
     };
+
 
     /**
      * Initializes a check that runs in the background and lets the user know if their session is close to expiring.
