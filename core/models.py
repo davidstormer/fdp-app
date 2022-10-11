@@ -20,10 +20,8 @@ from datetime import date
 
 
 class PersonManager(ConfidentiableManager):
-    def search_all_fields(self, query: str, user: FdpUser, is_law_enforcement_only=True):
+    def search_all_fields(self, query: str, user: FdpUser, pk=None, is_law_enforcement_only=True):
         """Searches multiple fields
-        name
-        identifiers
         """
         if query == '':
             results = (

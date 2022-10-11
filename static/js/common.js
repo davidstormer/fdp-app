@@ -677,8 +677,8 @@ var Fdp = (function (fdpDef, $, w, d) {
          * @param {string} name - String representation of selected record.
          */
         return function (id, name) {
-            idInputElem.val(id);
-            searchInputElem.val(name);
+            idInputElem.val(id).change();
+            searchInputElem.val(name).change();
         };
     };
 
@@ -1577,12 +1577,14 @@ var Fdp = (function (fdpDef, $, w, d) {
                 );
             }, /* source */
             create: function (event, ui) {
-                /* Behavior inspired by vuetify autocomplete */
+                /* Render info card */
+
+                /* Highlight text on click -- Behavior inspired by vuetify autocomplete */
                 $('.ui-autocomplete-input').click(function () { this.select() })
             },
             open: function (event, ui) {
                 /* Make the profile link work */
-                $('.person-select-link').click(function( event ) { event.stopPropagation() });
+                $('.ui-autocomplete-stop-propagation').click(function( event ) { event.stopPropagation() });
             },
             select: function(event, ui) {
                 var item = ui.item;

@@ -5,7 +5,7 @@ from django.utils.http import unquote_plus
 from django.urls import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.http import QueryDict
 from django.forms import formsets
 from inheritable.models import Archivable, AbstractImport, AbstractSql, AbstractUrlValidator, AbstractSearchValidator, \
@@ -26,7 +26,7 @@ from .forms import WizardSearchForm, GroupingModelForm, GroupingAliasModelFormSe
     ContentIncidentModelFormSet, ContentPersonAllegationModelFormSet, ContentPersonPenaltyModelFormSet, \
     ContentPersonAllegationModelForm, ContentPersonPenaltyModelForm, ReadOnlyContentModelForm, PersonPhotoModelFormSet
 from core.models import Person, PersonIdentifier, Grouping, GroupingAlias, GroupingRelationship, Incident, \
-    PersonGrouping, PersonRelationship, PersonIncident, GroupingIncident
+    PersonGrouping, PersonRelationship, PersonIncident, GroupingIncident, PersonTitle
 from abc import abstractmethod
 from urllib.parse import urlparse
 import logging
@@ -1632,6 +1632,38 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
                 }
             )
         return output
+
+
+class AsyncGetPersonsByPkView(AsyncGetPersonsView):
+    """ Asynchronously retrieves a single person while doing access controls and prefetching. Used for making info
+    cards of individual person records.
+    """
+    def _get_specific_queryset(self, filter_dict):
+        records = Person.objects.filter(pk__in=map(int, filter_dict['exact_terms'].split(','))) \
+            .filter_for_confidential_by_user(user=self.request.user) \
+            .prefetch_related('person_aliases') \
+            .prefetch_related('person_titles') \
+            .prefetch_related(
+                Prefetch(
+                    'person_titles',
+                    queryset=PersonTitle.objects.filter(end_year=0, end_month=0, end_day=0).select_related('title'),
+                    to_attr='current_titles'
+                )
+            ) \
+            .prefetch_related('person_identifiers') \
+            .prefetch_related('person_identifiers__person_identifier_type') \
+            .prefetch_related(
+                Prefetch(
+                    'person_groupings',
+                    queryset=PersonGrouping.objects.filter(grouping__is_law_enforcement=True).select_related(
+                        'grouping'),
+                    to_attr='groups_law_enforcement'
+                )
+            )
+        return records
+
+    def _get_specific_error_message(self):
+        return _('Could not retrieve persons by pk. Please reload the page.')
 
 
 class AbstractIncidentView(AbstractPopupView):

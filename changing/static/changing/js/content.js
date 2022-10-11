@@ -401,6 +401,7 @@ var Fdp = (function (fdpDef, $, w, d) {
      * @param {Object} formContainer - Element containing content person form. Must be wrapped in JQuery object.
     */
     function _initContentPersonForm(formContainer) {
+        console.log(formContainer)
         var delBtn = formContainer.find(".delperson");
         var id = delBtn.data("id");
         delBtn.one("click", function () {
