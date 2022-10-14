@@ -139,7 +139,10 @@ a.custom-text-edit-link {
   word-wrap: break-word;
 }
 
-/* Bootstrap backports */
+/* Bootstrap 5 backports */
 .text-muted, .text-secondary {
   color: #6c757d;
+}
+.d-inline-block {
+  display: inline-block;
 }

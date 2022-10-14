@@ -1610,14 +1610,78 @@ var Fdp = (function (fdpDef, $, w, d) {
           .append( "<div>" + item.teaserHtml + "</div>" )
           .appendTo( ul );
         };
-        /*
-        <li class="ui-menu-item"><div id="ui-id-12" tabindex="-1" class="ui-menu-item-wrapper">Arthur Addams</div></li>
-        */
         // autocomplete fields are already populated during initialization
         if (idInputElem.val() && searchInputElem.val()) {
             // adds styling to search box, to indicate previous successful selection
             commonDef.showAutocompleteOk(searchInputElem /* searchInputElem */);
         }
+    };
+
+
+    commonDef.initAutocompletePerson = function (searchInputElem, idInputElem, appendInfoCardTo, ajaxUrl, extraCssClass)
+     {
+        // searching with autocomplete
+        searchInputElem.autocomplete({
+            classes: {"ui-autocomplete": extraCssClass},
+            minLength: commonDef.autoCompleteChars,
+            source: function (request, response) {
+                _getAutocompleteClearHiddenInputIdFunc(idInputElem /* idInput */)();
+                // adds styling to search box, to indicate not yet a successful selection
+                commonDef.showAutocompleteNotOk(searchInputElem /* searchInputElem */);
+                _getAutocompleteLoadFunc(response /* callbackFunc */, ajaxUrl /* ajaxUrl */)(
+                    request.term /* searchTerm */
+                );
+            }, /* source */
+            create: function (event, ui) {
+                /* Render info card */
+
+                /* Highlight text on click -- Behavior inspired by vuetify autocomplete */
+                $('.ui-autocomplete-input').click(function () { this.select() })
+            },
+            open: function (event, ui) {
+                /* Make the profile link work */
+                $('.ui-autocomplete-stop-propagation').click(function( event ) { event.stopPropagation() });
+            },
+            select: function(event, ui) {
+                var item = ui.item;
+                var id = item.value;
+                var name = item.label;
+                if (id) {
+                    _getAutocompleteSetElements(idInputElem /* idInputElem */, searchInputElem /* searchInputElem */)(
+                        id, /* id */ name /* name */
+                    );
+                    // adds styling to search box, to indicate successful selection
+                    commonDef.showAutocompleteOk(searchInputElem /* searchInputElem */);
+                } else {
+                    _getAutocompleteClearHiddenInputIdFunc(idInputElem /* idInput */)();
+                    // adds styling to search box, to indicate not yet a successful selection
+                    commonDef.showAutocompleteNotOk(searchInputElem /* searchInputElem */);
+                }
+                event.preventDefault();
+            }, /* select */
+            response: commonDef.getAutocompleteResponseFunc("No matches found" /* noResultsMsg */) /* response */
+        })
+        .autocomplete( "instance" )._renderItem = function( ul, item ) {
+          return $( "<li>" )
+          .append( "<div>" + item.teaserHtml + "</div>" )
+          .appendTo( ul );
+        };
+        // autocomplete fields are already populated during initialization
+        if (idInputElem.val() && searchInputElem.val()) {
+            // adds styling to search box, to indicate previous successful selection
+            commonDef.showAutocompleteOk(searchInputElem /* searchInputElem */);
+        }
+
+        // update the info card when the hidden pk form field is updated
+        $(idInputElem).change(function() {
+          Fdp.Common.ajax(
+            '/changing/async/get/persons-by-pk/',
+            {"searchCriteria": $( this ).val()},
+            true,
+            function(response, type) {
+              $(appendInfoCardTo).find('.autocomplete-info-card').html(response[0].teaserHtml)
+            })
+        })
     };
 
 

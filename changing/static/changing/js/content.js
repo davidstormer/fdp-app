@@ -401,7 +401,6 @@ var Fdp = (function (fdpDef, $, w, d) {
      * @param {Object} formContainer - Element containing content person form. Must be wrapped in JQuery object.
     */
     function _initContentPersonForm(formContainer) {
-        console.log(formContainer)
         var delBtn = formContainer.find(".delperson");
         var id = delBtn.data("id");
         delBtn.one("click", function () {
@@ -412,9 +411,10 @@ var Fdp = (function (fdpDef, $, w, d) {
         var personSearchInput = Fdp.Common.getAutocompleteSearchElem(formContainer /* formContainer */, ".personname" /* selector */);
         var personIdInput = Fdp.Common.getAutocompleteIdElem(formContainer /* formContainer */, ".person" /* selector */);
         // person searching with autocomplete
-        Fdp.Common.initAutocomplete(
+        Fdp.Common.initAutocompletePerson(
             personSearchInput, /* searchInputElem */
             personIdInput, /* idInputElem */
+            formContainer,
             _getPersonsUrl, /* ajaxUrl */
             "personac" /* extraCssClass */
         );

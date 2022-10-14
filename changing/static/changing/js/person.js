@@ -677,16 +677,18 @@ var Fdp = (function (fdpDef, $, w, d) {
         var subjectIcon = formContainer.find(".subjectrelicon");
         var objectIcon = formContainer.find(".objectrelicon");
         // subject person searching with autocomplete
-        Fdp.Common.initAutocomplete(
+        Fdp.Common.initAutocompletePerson(
             subjectName, /* searchInputElem */
             subjectId, /* idInputElem */
+            formContainer.find('.autocomplete-person-wrapper.subject'),
             _getPersonsUrl, /* ajaxUrl */
             "personac" /* extraCssClass */
         );
         // object person searching with autocomplete
-        Fdp.Common.initAutocomplete(
+        Fdp.Common.initAutocompletePerson(
             objectName, /* searchInputElem */
             objectId, /* idInputElem */
+            formContainer.find('.autocomplete-person-wrapper.object'), /* appendInfoCardTo */
             _getPersonsUrl, /* ajaxUrl */
             "personac" /* extraCssClass */
         );
