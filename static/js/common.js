@@ -1618,7 +1618,8 @@ var Fdp = (function (fdpDef, $, w, d) {
     };
 
 
-    commonDef.initAutocompletePerson = function (searchInputElem, idInputElem, appendInfoCardTo, ajaxUrl, extraCssClass)
+    commonDef.initAutocompletePerson = function (searchInputElem, idInputElem, actualIdInputEl, appendInfoCardTo,
+    ajaxUrl, extraCssClass)
      {
         // searching with autocomplete
         searchInputElem.autocomplete({
@@ -1673,15 +1674,19 @@ var Fdp = (function (fdpDef, $, w, d) {
         }
 
         // update the info card when the hidden pk form field is updated
-        $(idInputElem).change(function() {
-          Fdp.Common.ajax(
-            '/changing/async/get/persons-by-pk/',
-            {"searchCriteria": $( this ).val()},
-            true,
-            function(response, type) {
-              $(appendInfoCardTo).find('.autocomplete-info-card').html(response[0].teaserHtml)
+        function updateInfoCard() {
+          if ($( this ).val()) {
+            Fdp.Common.ajax(
+              '/changing/async/get/persons-by-pk/',
+              {"searchCriteria": $( this ).val()},
+              true,
+              function(response, type) {
+                $(appendInfoCardTo).find('.autocomplete-info-card').html(response[0].teaserHtml)
             })
-        })
+          }
+        }
+        $(actualIdInputEl).change(updateInfoCard)
+        updateInfoCard.call($(actualIdInputEl))
     };
 
 

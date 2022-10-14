@@ -680,6 +680,7 @@ var Fdp = (function (fdpDef, $, w, d) {
         Fdp.Common.initAutocompletePerson(
             subjectName, /* searchInputElem */
             subjectId, /* idInputElem */
+            formContainer.find('input.subjectid'), /* actualIdInputEl */
             formContainer.find('.autocomplete-person-wrapper.subject'),
             _getPersonsUrl, /* ajaxUrl */
             "personac" /* extraCssClass */
@@ -688,6 +689,7 @@ var Fdp = (function (fdpDef, $, w, d) {
         Fdp.Common.initAutocompletePerson(
             objectName, /* searchInputElem */
             objectId, /* idInputElem */
+            formContainer.find('input.objectid'), /* actualIdInputEl */
             formContainer.find('.autocomplete-person-wrapper.object'), /* appendInfoCardTo */
             _getPersonsUrl, /* ajaxUrl */
             "personac" /* extraCssClass */

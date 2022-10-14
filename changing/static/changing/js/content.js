@@ -414,6 +414,7 @@ var Fdp = (function (fdpDef, $, w, d) {
         Fdp.Common.initAutocompletePerson(
             personSearchInput, /* searchInputElem */
             personIdInput, /* idInputElem */
+            formContainer.find('input.person'), /* actualIdInputEl */
             formContainer,
             _getPersonsUrl, /* ajaxUrl */
             "personac" /* extraCssClass */
