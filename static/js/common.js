@@ -1683,6 +1683,8 @@ var Fdp = (function (fdpDef, $, w, d) {
               function(response, type) {
                 $(appendInfoCardTo).find('.autocomplete-info-card').html(response[0].teaserHtml)
             })
+          } else {
+            $(appendInfoCardTo).find('.autocomplete-info-card').html('')
           }
         }
         $(actualIdInputEl).change(updateInfoCard)

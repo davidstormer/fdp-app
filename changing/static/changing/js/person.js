@@ -643,8 +643,8 @@ var Fdp = (function (fdpDef, $, w, d) {
      * @param {Object} bIcon - The icon to be faded out. Must be wrapped in JQuery object.
     */
     function _changePersonRelationshipFromIcon(aId, bId, aName, bName, aIcon, bIcon) {
-        aId.val(bId.val());
-        bId.val("");
+        aId.val(bId.val()).change();
+        bId.val("").change();
         aName.val(bName.val());
         bName.val("");
         _changePersonRelationshipOrder(
