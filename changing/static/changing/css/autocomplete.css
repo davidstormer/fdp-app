@@ -51,7 +51,7 @@ ul.ui-autocomplete.personac,
 }
 
 /* profile link */
-.person-select-link {
+.ui-autocomplete .person-select-link {
     display: none;
     position: absolute;
     top: 0;
@@ -75,4 +75,20 @@ ul.ui-autocomplete.personac,
 
 ul.ui-autocomplete.personac > li {
   padding: 0;
+}
+
+/* Info card */
+.autocomplete-info-card {
+  position: relative;
+}
+.autocomplete-info-card .person-select-name {
+  display: none;
+}
+.autocomplete-info-card .person-select-link {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.2rem;
+}
+.autocomplete-info-card .person-select-link a {
+  text-decoration: underline;
 }

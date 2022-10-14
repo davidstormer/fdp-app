@@ -1634,8 +1634,6 @@ var Fdp = (function (fdpDef, $, w, d) {
                 );
             }, /* source */
             create: function (event, ui) {
-                /* Render info card */
-
                 /* Highlight text on click -- Behavior inspired by vuetify autocomplete */
                 $('.ui-autocomplete-input').click(function () { this.select() })
             },
