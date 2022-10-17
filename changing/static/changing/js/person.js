@@ -642,14 +642,14 @@ var Fdp = (function (fdpDef, $, w, d) {
      * @param {Object} aIcon - The icon to be faded in. Must be wrapped in JQuery object.
      * @param {Object} bIcon - The icon to be faded out. Must be wrapped in JQuery object.
     */
-    function _changePersonRelationshipFromIcon(aId, bId, aName, bName, aIcon, bIcon) {
+    function _changePersonRelationshipFromIcon(aId, bId, aName, aWrapper, bName, bWrapper, aIcon, bIcon) {
         aId.val(bId.val()).change();
         bId.val("").change();
         aName.val(bName.val());
         bName.val("");
         _changePersonRelationshipOrder(
-            bName, /* aInput */
-            aName, /* bInput */
+            bWrapper, /* aInput */
+            aWrapper, /* bInput */
             bIcon, /* aIcon */
             aIcon /* bIcon */
         );
@@ -674,6 +674,8 @@ var Fdp = (function (fdpDef, $, w, d) {
         var objectId = Fdp.Common.getAutocompleteIdElem(formContainer /* formContainer */, ".objectid" /* selector */);
         var subjectName = Fdp.Common.getAutocompleteSearchElem(formContainer /* formContainer */, ".subjectname" /* selector */);
         var objectName = Fdp.Common.getAutocompleteSearchElem(formContainer /* formContainer */, ".objectname" /* selector */);
+        var subjectWrapper = formContainer.find('.autocomplete-person-wrapper.subject')
+        var objectWrapper = formContainer.find('.autocomplete-person-wrapper.object')
         var subjectIcon = formContainer.find(".subjectrelicon");
         var objectIcon = formContainer.find(".objectrelicon");
         // subject person searching with autocomplete
@@ -697,8 +699,8 @@ var Fdp = (function (fdpDef, $, w, d) {
         // subject person defined
         if (subjectName.val()) {
             _changePersonRelationshipOrder(
-                objectName, /* aInput */
-                subjectName, /* bInput */
+                objectWrapper, /* aInput */
+                subjectWrapper, /* bInput */
                 objectIcon, /* aIcon */
                 subjectIcon /* bIcon */
             );
@@ -706,8 +708,8 @@ var Fdp = (function (fdpDef, $, w, d) {
         // object person defined (or this a new relationship, so nothing is defined)
         else {
             _changePersonRelationshipOrder(
-                subjectName, /* aInput */
-                objectName, /* bInput */
+                subjectWrapper, /* aInput */
+                objectWrapper, /* bInput */
                 subjectIcon, /* aIcon */
                 objectIcon /* bIcon */
             );
@@ -717,7 +719,9 @@ var Fdp = (function (fdpDef, $, w, d) {
                 objectId, /* aId */
                 subjectId, /* bId */
                 objectName, /* aName */
+                objectWrapper, /* aWrapper */
                 subjectName, /* bName */
+                subjectWrapper, /* bWrapper */
                 objectIcon, /* aIcon */
                 subjectIcon /* bIcon */
             );
@@ -727,7 +731,9 @@ var Fdp = (function (fdpDef, $, w, d) {
                 subjectId, /* aId */
                 objectId, /* bId */
                 subjectName, /* aName */
+                subjectWrapper, /* aWrapper */
                 objectName, /* bName */
+                objectWrapper, /* bWrapper */
                 subjectIcon, /* aIcon */
                 objectIcon /* bIcon */
             );

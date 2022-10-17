@@ -660,7 +660,7 @@ var Fdp = (function (fdpDef, $, w, d) {
         /**
          * Clears a hidden input ID value for a person, attachment, incident, etc. populated through autocomplete.
          */
-        return function () { idInput.val(""); };
+        return function () { idInput.val("").change(); };
     };
 
     /**
@@ -1624,7 +1624,7 @@ var Fdp = (function (fdpDef, $, w, d) {
         // searching with autocomplete
         searchInputElem.autocomplete({
             classes: {"ui-autocomplete": extraCssClass},
-            minLength: commonDef.autoCompleteChars,
+            delay: 500,
             source: function (request, response) {
                 _getAutocompleteClearHiddenInputIdFunc(idInputElem /* idInput */)();
                 // adds styling to search box, to indicate not yet a successful selection
@@ -1682,7 +1682,8 @@ var Fdp = (function (fdpDef, $, w, d) {
                 $(appendInfoCardTo).find('.autocomplete-info-card').html(response[0].teaserHtml)
             })
           } else {
-            $(appendInfoCardTo).find('.autocomplete-info-card').html('')
+            $(appendInfoCardTo).find('.autocomplete-info-card')
+            .html('<p class="text-secondary">Search above by names, aliases, or identifiers.</p>')
           }
         }
         $(actualIdInputEl).change(updateInfoCard)

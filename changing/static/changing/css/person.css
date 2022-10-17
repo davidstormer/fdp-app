@@ -21,10 +21,10 @@ input[type="submit"] {
 button.collapsible {
     margin-top: 3em;
 }
-/* subject person search input in the relationship form */
-.subjectname { margin-right: 1em; }
-/* object person search input in the relationship form */
-.objectname { margin-left: 1em; }
+/* subject person search input in the relationship form
+.subjectname { margin-right: 1em; } */
+/* object person search input in the relationship form
+.objectname { margin-left: 1em; } */
 /* icons to switch between subject relationship and object relationship */
 i.subjectrelicon, i.objectrelicon { color: #45A26D; cursor: pointer; margin-left: 1em; }
 /* county selections filled in on-demand */
@@ -55,5 +55,6 @@ td.form-row div span.textday, td.form-row div span.textmonth, td.form-row div sp
 td.form-row.col2 > div, td.form-row.col3 > div { width: 13em; }
 /* payroll table cells */
 td.form-row { padding: 4px; }
-/* Hovering over an autocomplete suggestion */
+/* Hovering over an autocomplete suggestion
 .ui-autocomplete li:hover, .ui-autocomplete li div:hover { background: #FFECBB; }
+*/
