@@ -127,3 +127,8 @@ ul.ui-autocomplete.personac > li {
 .autocomplete-person-wrapper.object {
   margin-left: 1em;
 }
+
+.personrelationshipform button.subjectrelicon,
+.personrelationshipform button.objectrelicon {
+  vertical-align: top;
+}
