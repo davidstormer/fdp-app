@@ -1370,7 +1370,7 @@ class TristanTests(FunctionalTestCase):
         )
         # And the first item on the list should be a dictionary with the person's name
         self.assertEqual(
-            f"ostreiculture (pk:{person_record.pk})",
+            f"ostreiculture",
             data[0]['label']
         )
 
