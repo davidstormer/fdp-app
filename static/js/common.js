@@ -766,10 +766,10 @@ var Fdp = (function (fdpDef, $, w, d) {
             });
         }
         // ensure loading animation displayed
-	    var img = $("<img />", {
-	            class: "hidden",
+	    var img = $("<div />", {
+	            class: "spinner-border text-primary",
 	            id: "loading",
-                src: "{{ STATIC_URL|escapejs }}" + "img/ajaxloading.gif",
+	            role: "status",
                 alt: commonDef.locLoading,
                 title: commonDef.locLoading
 	        });
