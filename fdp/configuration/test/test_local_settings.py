@@ -20,3 +20,5 @@ FDP_EULA_SPLASH_ENABLE = True
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
 ]
+
+DEBUG = True
