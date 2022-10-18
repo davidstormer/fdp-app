@@ -124,7 +124,6 @@ class SeleniumTestCase(SeleniumFunctionalTestCase):
             results_list.text
         )
 
-    @tag('wip')
     def test_person_lookup_tool_relationships_max_results(self):
         for i in range(100):
             Person.objects.create(name="acetabuliform")
