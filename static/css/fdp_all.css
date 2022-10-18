@@ -131,3 +131,9 @@ a.custom-text-edit-link {
   word-break: keep-all
   word-wrap: break-word;
 }
+
+
+/* Data Entry Forms */
+body.fdpbody .submit-row {
+  margin-top: 3em;
+}
