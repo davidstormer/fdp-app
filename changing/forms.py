@@ -1285,6 +1285,7 @@ class PersonIncidentModelForm(AbstractWizardModelForm):
         super(PersonIncidentModelForm, self).__init__(*args, **kwargs)
         # CSS class names for fields in interface
         self.fields['person_name'].widget.attrs.update({'class': 'personname'})
+        self.fields['person_name'].widget.template_name = "widget_person_autocomplete.html"
         # instance of model exists
         if hasattr(self, 'instance') and self.instance:
             instance = self.instance
@@ -1631,6 +1632,7 @@ class ContentPersonModelForm(AbstractWizardModelForm):
         # CSS class names for fields in interface
         self.fields['situation_role'].widget.attrs.update({'class': 'situationrole'})
         self.fields['person_name'].widget.attrs.update({'class': 'personname'})
+        self.fields['person_name'].widget.template_name = "widget_person_autocomplete.html"
         # instance of model exists
         if hasattr(self, 'instance') and self.instance:
             instance = self.instance

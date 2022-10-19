@@ -39,7 +39,8 @@
                 {% endif %}
                 <fieldset class="module aligned">
                     {% for field in form %}
-                        <div class="form-row {% if field|is_management_field or field.is_hidden %}nevershow{% elif field.field|hide_in_html %}hidden{% endif %}" id="f_{{ field.id_for_label }}">
+                        <div
+                            class="form-row {% if field|is_management_field or field.is_hidden %}nevershow{% elif field.field|hide_in_html %}hidden{% endif %} {{ field.name }}" id="f_{{ field.id_for_label }}">
                             {% if has_delete and forloop.counter0 == 0 %}
                             <i class="fas fa-trash {{ del_icon_class }} clickable" data-id="{{ parent_counter }}"></i>
                             {% endif %}

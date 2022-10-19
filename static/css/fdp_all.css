@@ -116,6 +116,13 @@ a.custom-text-edit-link {
   }
 }
 
+/* Clearfix */
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
 /* Misc Typography */
 
 /* use to force <pre> text to match the rest of the page */
@@ -137,7 +144,12 @@ body.fdpbody .submit-row {
   margin-top: 3em;
 }
 
-/* Bootstrap backports */
+/* Bootstrap 5 backports */
+.text-muted, .text-secondary {
+  color: #6c757d;
+}
+.d-inline-block {
+  display: inline-block;
 .text-primary {
   color: #325D71 !important;
 }
