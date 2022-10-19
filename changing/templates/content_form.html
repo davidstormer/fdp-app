@@ -135,9 +135,14 @@
                 <span id="newincident" class="clickable"><i class="fas fa-plus-circle"></i> {% translate 'Add another incident' %}</span>
             </div>
         </div> <!-- div.collapsible for Content Incidents -->
-
-        <input type="submit" value="Save">
-
+        <div class="submit-row">
+            <input type="submit" value="Save" class="default">
+            {% if object %}
+            <p class="deletelink-box">
+                <a href="/admin/sourcing/content/{{ object.pk }}/delete/" class="deletelink">Delete</a>
+            </p>
+            {% endif %}
+        </div>
     </form>
 
     <div id="emptynewattachment" class="hidden">
