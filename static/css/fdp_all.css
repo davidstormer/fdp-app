@@ -132,8 +132,45 @@ a.custom-text-edit-link {
   word-wrap: break-word;
 }
 
-
 /* Data Entry Forms */
 body.fdpbody .submit-row {
   margin-top: 3em;
+}
+
+/* Bootstrap backports */
+.text-primary {
+  color: #325D71 !important;
+}
+.text-danger {
+  color: #cc1e06 !important;
+}
+.text-warning {
+  color: #FFB409 !important;
+}
+.text-info {
+  color: #afe6f8 !important;
+}
+.text-dark {
+  color: #212729 !important;
+}
+.text-code-color{
+  color: #666 !important;
+}
+
+@keyframes spinner-border {
+  to {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+.spinner-border {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    vertical-align: -0.125em;
+    border: 0.25em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    -webkit-animation: .75s linear infinite spinner-border;
+    animation: .75s linear infinite spinner-border;
 }
