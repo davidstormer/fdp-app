@@ -132,6 +132,11 @@ a.custom-text-edit-link {
   word-wrap: break-word;
 }
 
+/* Data Entry Forms */
+body.fdpbody .submit-row {
+  margin-top: 3em;
+}
+
 /* Bootstrap backports */
 .text-primary {
   color: #325D71 !important;
