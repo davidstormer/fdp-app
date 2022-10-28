@@ -9,16 +9,8 @@ django.setup()
 from core.models import Person
 
 
-celery_app = Celery(
-    'tasks',
-    broker='redis://',
-    backend='redis://',
-    task_serializer='json',
-    result_serializer='json',
-    accept_content=['json'],
-    enable_utc=True
-)
-# celery_app.config_from_object('celeryconfig')
+celery_app = Celery('tasks',)
+celery_app.config_from_object('django.conf:settings', namespace='CELERY')
 
 
 @celery_app.task

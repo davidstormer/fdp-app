@@ -75,3 +75,15 @@ FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
 #         'css_hover': {'color': '#f5dd5d'}
 #     }
 # ]
+
+#
+# Celery
+#
+# Celery is used for handling background processes.
+# By default the Celery broker and results backend is provided by a Redis server running as a daemon on the same
+# machine as the web service. If the broker or results backend are located on other servers or using other services
+# change them below.
+#
+# CELERY_BROKER_URL = 'redis://'
+# CELERY_BACKEND = 'redis://'
+#
