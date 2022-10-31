@@ -145,6 +145,7 @@
 {% endblock %}
 
 {% block script-bottom %}
+/*
 $('form').submit(function(event) {
   $.post('/changing/importer/batch/{{object.pk}}/dry-run-report')
   setTimeout(() => {
@@ -152,4 +153,5 @@ $('form').submit(function(event) {
   }, 1000)
   event.preventDefault()
 })
+*/
 {% endblock %}

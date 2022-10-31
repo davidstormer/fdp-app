@@ -731,8 +731,8 @@ SNAPSHOT_DISABLE = False
 #
 # Assume that broker and results backend are a locally running Redis server
 # These can be overridden by local settings.py for more advanced cloud configurations
-CELERY_BROKER_URL = 'redis://'
-CELERY_BACKEND = 'redis://'
+CELERY_BROKER_URL = 'redis://localhost'
+CELERY_BACKEND = 'redis://localhost'
 # Sane defaults for security and stability
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
