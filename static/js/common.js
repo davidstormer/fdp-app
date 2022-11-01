@@ -765,22 +765,24 @@ var Fdp = (function (fdpDef, $, w, d) {
                 }
             });
         }
-        // ensure loading animation displayed
-	    var img = $("<div />", {
-	            class: "spinner-border text-primary",
+        // add loading animation element to DOM
+	    var spinnerOverlay = $("<div />", {
+	            class: "text-primary hidden",
 	            id: "loading",
 	            role: "status",
                 alt: commonDef.locLoading,
                 title: commonDef.locLoading
 	        });
-	    $("body").append(img);
+	    spinnerOverlay.append($("<div />", { class: "spinner-border" }))
+	    spinnerOverlay.append($("<p>Loading...</p>"))
+	    $("body").append(spinnerOverlay);
         $(d).ajaxStart(function () {
-            img.fadeIn(_speed);
+            spinnerOverlay.fadeIn(_speed);
         }).ajaxStop(function () {
             // update the session expiry
             _updateSessionExpiry(false /* isLogout */);
             // fade out AJAX spinner
-            img.fadeOut(_speed);
+            spinnerOverlay.fadeOut(_speed);
         });
 	};
 
