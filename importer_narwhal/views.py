@@ -11,7 +11,7 @@ from django.http import HttpResponse, HttpResponseServerError
 from django.views.generic import DetailView, CreateView, ListView
 from tablib import Dataset
 
-from importer_narwhal.celerytasks import do_a_think, background_do_dry_run, celery_app
+from importer_narwhal.celerytasks import do_a_think, background_do_dry_run, celery_app, background_run_import_batch
 from importer_narwhal.models import ImportBatch
 from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping
 
@@ -79,7 +79,7 @@ class StartDryRun(HostAdminAccessMixin, View):
             messages.add_message(
                 self.request,
                 messages.WARNING,
-                f'Warning: "Celery" message broker misconfigured or missing. Falling back to synchronous mode. Long '
+                f'"Celery" message broker misconfigured or missing. Falling back to synchronous mode. Long '
                 f'running imports may fail quietly. Contact your systems administrator to address this issue. "{e}"'
             )
             do_dry_run(batch_record)
@@ -89,8 +89,25 @@ class StartDryRun(HostAdminAccessMixin, View):
 class RunImportBatch(HostAdminAccessMixin, View):
 
     def post(self, request, *args, **kwargs):
-        batch = ImportBatch.objects.get(pk=kwargs['pk'])
-        run_import_batch(batch)
+        # Record a provisional start time; this will be overwritten by run_import_batch().
+        batch_record = ImportBatch.objects.get(pk=kwargs['pk'])
+        batch_record.started = timezone.now()
+        batch_record.save()
+        # Execute the batch via Celery or fallback to synchronous if not
+        try:
+            celery_ping_result = celery_app.control.ping()  # Make sure that Celery is configured and working
+            if celery_ping_result:
+                celery_task = background_run_import_batch.delay(kwargs['pk'])
+            else:
+                raise Exception("No Celery workers found. Is the Celery daemon running?")
+        except Exception as e:
+            messages.add_message(
+                self.request,
+                messages.WARNING,
+                f'"Celery" message broker misconfigured or missing. Falling back to synchronous mode. Long '
+                f'running imports may fail quietly. Contact your systems administrator to address this issue. "{e}"'
+            )
+            run_import_batch(batch_record)
         return redirect(reverse('importer_narwhal:batch', kwargs={'pk': kwargs['pk']})
                         + '?show_workflow_after_completion=true')
 
