@@ -42,6 +42,98 @@
     </div>
   </div>
 </nav>
+    <nav class="menu-main">
+      <ul>
+        <li><a href="{% url 'profiles:officer_search' %}">Person search</a></li>
+        <li><a href="{% url 'profiles:command_search' %}">Command search</a></li>
+      </ul>
+    </nav>
+    <nav class="menu-user">
+      <ul>
+        <li>
+        {% firstof user.get_short_name user.get_username %}
+        <ul>
+          <li><a href="{% url 'fdpuser:settings' %}">Account</a></li>
+          <li><a href="{% url 'fdpuser:confirm_password_change' %}">Change password</a></li>
+          <li><a href="#">End user license agreement FIXME</a></li>
+          <li><a href="{% url 'fdpuser:confirm_2fa_reset' %}">Update 2FA device</a></li>
+          <li><a href="{% url 'two_factor:backup_tokens' %}">2FA backup tokens</a></li>
+        </ul>
+        </li>
+      </ul>
+    </nav>
+  {% if is_admin %}
+    <nav class="menu-admin">
+      <ul>
+        <li>Persons
+        <ul>
+          <li><a href="{% url 'changing:add_person' %}">New (or plus sign on section name)</a></li>
+          <li><a href="{% url 'profiles:officer_search' %}">Search</a></li>
+          <li><a href="/admin/core/personphoto/">Photos</a></li>
+          <li><a href="/admin/core/personrelationship/">Person-to-Person relationships</a></li>
+          <li><a href="/admin/core/persongrouping/">Person-to-Group relationships</a></li>
+          <li><a href="/admin/supporting/personidentifiertype/">Identifier types</a></li>
+          <li><a href="/admin/supporting/trait/">Traits</a></li>
+          <li><a href="/admin/core/personalias/">Aliases</a></li>
+          <li><a href="/admin/core/persontitle/">Titles</a></li>
+        </ul>
+        </li>
+        <li>Groups
+        <ul>
+          <li><a href="{% url 'changing:add_grouping' %}">New (or plus sign on section name)</a></li>
+          <li><a href="/admin/core/grouping/">Search</a></li>
+          <li><a href="/admin/core/groupingrelationship/">Group-to-Group relationships</a></li>
+          <li><a href="/admin/supporting/groupingrelationshiptype/">Group-to-Group relationship types</a></li>
+        </ul>
+        </li>
+        <li>Content
+        <ul>
+          <li><a href="{% url 'changing:add_content' %}">New (or plus sign on section name)</a></li>
+          <li><a href="{% url 'changing:content' %}">Search</a></li>
+          <li><a href="/admin/supporting/situationrole/">Situation roles</a></li>
+          <li><a href="/admin/sourcing/contentidentifier/">Content identifiers</a></li>
+          <li><a href="/admin/supporting/contentidentifiertype/">Content identifier types</a></li>
+          <li><a href="/admin/supporting/contenttype/">Content types</a></li>
+          <li><a href="/admin/supporting/contentcaseoutcome/">Content case outcomes</a></li>
+          <li><a href="/admin/supporting/encounterreason/">Encounter reasons</a></li>
+          <li><a href="/admin/supporting/allegationoutcome/">Allegation outcomes</a></li>
+          <li><a href="/admin/supporting/allegation/">Allegation types</a></li>
+          <li><a href="/admin/supporting/court/">Courts</a></li>
+          <li><a href="/admin/supporting/incidentlocationtype/">Incident location types</a></li>
+          <li><a href="/admin/supporting/incidenttag/">Incident tags</a></li>
+          <li><a href="/admin/core/incident/">Incidents</a></li>
+          <li><a href="/admin/supporting/attachmenttype/">Attachment types</a></li>
+          <li><a href="/admin/sourcing/attachment/">Attachments</a></li>
+          <li><a href="/admin/sourcing/attachment/add/">Attachments New (or plus sign on item)</a></li>
+        </ul>
+        </li>
+        <li>Advanced Admin
+        <ul>
+          <li><a href="/admin/core/person/">Persons</a></li>
+          <li><a href="/admin/sourcing/content/">Content</a></li>
+          <li><a href="/admin/core/incident/">Incidents</a></li>
+          <li><a href="/admin/core/grouping/">Groups</a></li>
+          <li><a href="/admin/">More ...</a></li>
+        </ul>
+        </li>
+        <li>System
+        <ul>
+          <li><a href="/admin/fdpuser/fdpuser/">Users</a></li>
+          <li><a href="/admin/axes/accessattempt/">Account lockouts & failed login attempts</a></li>
+          <li><a href="/admin/axes/accesslog/">User login history</a></li>
+          <li><a href="/admin/profiles/officerview/">Officer page view logs</a></li>
+          <li><a href="/admin/profiles/officersearch/">Officer search history logs</a></li>
+          <li><a href="/admin/profiles/commandview/">Command page view logs</a></li>
+          <li><a href="/admin/profiles/commandsearch/">Command search history logs</a></li>
+          <li><a href="/admin/site-settings">Site settings</a></li>
+          <li><a href="/admin/supporting/county/">Counties</a></li>
+          <li><a href="/changing/importer/">Importer</a></li>
+          <li><a href="/admin/bulk/bulkimport/">Importer External Identifiers</a></li>
+        </ul>
+        </li>
+      </ul>
+    </nav>
+  {% endif %}
 <nav class="breadcrumbs" aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="{% url 'profiles:index' %}">Home</a></li>

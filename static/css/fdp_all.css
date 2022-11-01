@@ -1,4 +1,41 @@
 /* *** GENERAL LAYOUT STYLES *** */
+/* Nav menus */
+
+/* User */
+nav.menu-user > ul > li {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 1rem;
+}
+nav.menu-user > ul > li ul {
+    padding-left: 0;
+}
+nav.menu-user > ul > li li {
+    list-style: none;
+}
+
+/* Main */
+nav.menu-main ul {
+}
+nav.menu-main li {
+  list-style: none;
+  display: inline-block;
+  margin-right: 1rem;
+}
+/* Admin */
+nav.menu-admin > ul > li {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 1rem;
+}
+nav.menu-admin > ul > li ul {
+    padding-left: 0;
+}
+nav.menu-admin > ul > li li {
+    list-style: none;
+}
+
+
 /* social authentication disconnect and user logout */
 form.logout { float: right; }
 button.logout {
