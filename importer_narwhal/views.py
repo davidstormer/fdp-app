@@ -61,6 +61,23 @@ class ImportBatchCreateView(HostAdminSyncCreateView):
         return context
 
 
+def try_celery_task_or_fallback_to_synchronous_call(celery_task, fallback_function, batch_record, request):
+    try:
+        celery_ping_result = celery_app.control.ping()  # Make sure that Celery is configured and working
+        if celery_ping_result:
+            celery_task = celery_task.delay(batch_record.pk)
+        else:
+            raise Exception("No Celery workers found. Is the Celery daemon running?")
+    except Exception as e:
+        messages.add_message(
+            request,
+            messages.WARNING,
+            f'"Celery" message broker misconfigured or missing. Falling back to synchronous mode. Long '
+            f'running imports may fail quietly. Contact your systems administrator to address this issue. "{e}"'
+        )
+        fallback_function(batch_record)
+
+
 class StartDryRun(HostAdminAccessMixin, View):
 
     def post(self, request, *args, **kwargs):
@@ -68,21 +85,12 @@ class StartDryRun(HostAdminAccessMixin, View):
         batch_record = ImportBatch.objects.get(pk=kwargs['pk'])
         batch_record.dry_run_started = timezone.now()
         batch_record.save()
-        # Execute the dry run via Celery or fallback to synchronous if not
-        try:
-            celery_ping_result = celery_app.control.ping()  # Make sure that Celery is configured and working
-            if celery_ping_result:
-                celery_task = background_do_dry_run.delay(kwargs['pk'])
-            else:
-                raise Exception("No Celery workers found. Is the Celery daemon running?")
-        except Exception as e:
-            messages.add_message(
-                self.request,
-                messages.WARNING,
-                f'"Celery" message broker misconfigured or missing. Falling back to synchronous mode. Long '
-                f'running imports may fail quietly. Contact your systems administrator to address this issue. "{e}"'
-            )
-            do_dry_run(batch_record)
+        try_celery_task_or_fallback_to_synchronous_call(
+            background_do_dry_run,
+            do_dry_run,
+            batch_record,
+            self.request
+        )
         return redirect(reverse('importer_narwhal:batch', kwargs={'pk': kwargs['pk']}))
 
 
@@ -93,21 +101,12 @@ class RunImportBatch(HostAdminAccessMixin, View):
         batch_record = ImportBatch.objects.get(pk=kwargs['pk'])
         batch_record.started = timezone.now()
         batch_record.save()
-        # Execute the batch via Celery or fallback to synchronous if not
-        try:
-            celery_ping_result = celery_app.control.ping()  # Make sure that Celery is configured and working
-            if celery_ping_result:
-                celery_task = background_run_import_batch.delay(kwargs['pk'])
-            else:
-                raise Exception("No Celery workers found. Is the Celery daemon running?")
-        except Exception as e:
-            messages.add_message(
-                self.request,
-                messages.WARNING,
-                f'"Celery" message broker misconfigured or missing. Falling back to synchronous mode. Long '
-                f'running imports may fail quietly. Contact your systems administrator to address this issue. "{e}"'
-            )
-            run_import_batch(batch_record)
+        try_celery_task_or_fallback_to_synchronous_call(
+            background_run_import_batch,
+            run_import_batch,
+            batch_record,
+            self.request
+        )
         return redirect(reverse('importer_narwhal:batch', kwargs={'pk': kwargs['pk']})
                         + '?show_workflow_after_completion=true')
 
