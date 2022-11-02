@@ -35,27 +35,6 @@
     {% if True %} {# Make this check if the user is an admin -- need to add context processor... #}
     <nav class="menu-admin">
       <ul>
-        <li>Persons
-        <ul>
-          <li><a href="{% url 'changing:add_person' %}">New (or plus sign on section name)</a></li>
-          <li><a href="{% url 'profiles:officer_search' %}">Search</a></li>
-          <li><a href="/admin/core/personphoto/">Photos</a></li>
-          <li><a href="/admin/core/personrelationship/">Person-to-Person relationships</a></li>
-          <li><a href="/admin/core/persongrouping/">Person-to-Group relationships</a></li>
-          <li><a href="/admin/supporting/personidentifiertype/">Identifier types</a></li>
-          <li><a href="/admin/supporting/trait/">Traits</a></li>
-          <li><a href="/admin/core/personalias/">Aliases</a></li>
-          <li><a href="/admin/core/persontitle/">Titles</a></li>
-        </ul>
-        </li>
-        <li>Groups
-        <ul>
-          <li><a href="{% url 'changing:add_grouping' %}">New (or plus sign on section name)</a></li>
-          <li><a href="/admin/core/grouping/">Search</a></li>
-          <li><a href="/admin/core/groupingrelationship/">Group-to-Group relationships</a></li>
-          <li><a href="/admin/supporting/groupingrelationshiptype/">Group-to-Group relationship types</a></li>
-        </ul>
-        </li>
         <li>Content
         <ul>
           <li><a href="{% url 'changing:add_content' %}">New (or plus sign on section name)</a></li>
@@ -77,13 +56,34 @@
           <li><a href="/admin/sourcing/attachment/add/">Attachments New (or plus sign on item)</a></li>
         </ul>
         </li>
+        <li>Persons
+        <ul>
+          <li><a href="{% url 'changing:add_person' %}">New (or plus sign on section name)</a></li>
+          <li><a href="{% url 'profiles:officer_search' %}">Search</a></li>
+          <li><a href="/admin/core/personphoto/">Photos</a></li>
+          <li><a href="/admin/core/personrelationship/">Person-to-Person relationships</a></li>
+          <li><a href="/admin/core/persongrouping/">Person-to-Group relationships</a></li>
+          <li><a href="/admin/supporting/personidentifiertype/">Identifier types</a></li>
+          <li><a href="/admin/supporting/trait/">Traits</a></li>
+          <li><a href="/admin/core/personalias/">Aliases</a></li>
+          <li><a href="/admin/core/persontitle/">Titles</a></li>
+        </ul>
+        </li>
+        <li>Groups
+        <ul>
+          <li><a href="{% url 'changing:add_grouping' %}">New (or plus sign on section name)</a></li>
+          <li><a href="/admin/core/grouping/">Search</a></li>
+          <li><a href="/admin/core/groupingrelationship/">Group-to-Group relationships</a></li>
+          <li><a href="/admin/supporting/groupingrelationshiptype/">Group-to-Group relationship types</a></li>
+        </ul>
+        </li>
         <li>Advanced Admin
         <ul>
           <li><a href="/admin/core/person/">Persons</a></li>
           <li><a href="/admin/sourcing/content/">Content</a></li>
           <li><a href="/admin/core/incident/">Incidents</a></li>
           <li><a href="/admin/core/grouping/">Groups</a></li>
-          <li><a href="/admin/">More ...</a></li>
+          <li><a href="/admin/">More <i class="fas fa-arrow-right"></i></a></li>
         </ul>
         </li>
         <li>System
