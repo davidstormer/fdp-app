@@ -8,6 +8,9 @@ $code-color: #666;
 @import "./bootstrap-scss/bootstrap";
 
 /* Nav menus */
+nav a, nav a:hover, nav a:visited {
+  text-decoration: none;
+}
 
 /* User */
 nav.menu-user > ul > li {
