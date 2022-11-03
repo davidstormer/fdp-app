@@ -1,6 +1,7 @@
 import os
 import tempfile
 from pathlib import Path
+from zipfile import ZipFile
 
 import kombu
 from django.contrib import messages
@@ -225,13 +226,15 @@ class ExportBatchCreateView(HostAdminSyncCreateView):
         self.object.started = timezone.now()
         self.object.save()
         with tempfile.TemporaryDirectory() as tempdir:
-            for model in self.object.models_to_export:
-                file_path = f"{tempdir}/{model}-{self.object.created:%s}.csv"
-                do_export(model, file_path)
-                path = Path(file_path)
-                with path.open(mode='rb') as f:
-                    self.object.export_file = File(f, name=path.name)
-                    self.object.save()
+            zipfile_name = f'{tempdir}/export-{self.object.created:%s}.zip'
+            with ZipFile(zipfile_name, 'w') as myzip:
+                for model in self.object.models_to_export:
+                    file_path = f"{tempdir}/{model}-{self.object.created:%s}.csv"
+                    do_export(model, file_path)
+                    myzip.write(file_path)
+            with Path(zipfile_name).open(mode='rb') as f:
+                self.object.export_file = File(f, name=Path(zipfile_name).name)
+                self.object.save()
         self.object.completed = timezone.now()
         self.object.save()
         return result
