@@ -1,3 +1,4 @@
+from django.contrib.postgres.fields import ArrayField
 from django.db.models.fields.files import FieldFile
 from django.template.defaultfilters import filesizeformat
 from django.core.exceptions import ValidationError
@@ -186,3 +187,15 @@ class ErrorRow(models.Model):
 
     def __str__(self):
         return f"{self.row_number} | {self.error_message} | {self.row_data}"
+
+
+class ExportBatch(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    started = models.DateTimeField(null=True, blank=True)
+    completed = models.DateTimeField(null=True, blank=True)
+    models_to_export = ArrayField(
+        models.CharField(max_length=256)
+    )
+
+    def get_absolute_url(self):
+        return f"/changing/importer/exports/{self.pk}"
