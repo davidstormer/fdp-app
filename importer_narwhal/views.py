@@ -4,13 +4,19 @@ import kombu
 from django.contrib import messages
 from django.utils import timezone
 import tablib
+from django import forms
 from django.core.paginator import Paginator
+from django.forms import MultipleChoiceField
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.utils import timezone
 from django.views import View
+from django.views.generic import DetailView, CreateView, ListView
+from tablib import Dataset
+
+from importer_narwhal.models import ImportBatch, ExportBatch, MODEL_ALLOW_LIST
+from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping, do_export
 from importer_narwhal.celerytasks import background_do_dry_run, celery_app, background_run_import_batch
-from importer_narwhal.models import ImportBatch
-from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping
 
 from inheritable.views import HostAdminSyncTemplateView, HostAdminSyncListView, HostAdminSyncDetailView, \
     HostAdminAccessMixin, HostAdminSyncCreateView
@@ -178,4 +184,49 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
         context['imported_rows_paginated'] = imported_rows_paginator.get_page(page_number or 1)
         context['page_obj'] = context['error_rows_paginated'] or context['imported_rows_paginated']
 
+        return context
+
+
+class ExporterLandingView(HostAdminSyncListView):
+    model = ExportBatch
+    paginate_by = 25
+    queryset = ExportBatch.objects.all().order_by('-pk')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Exporter'
+        return context
+
+
+class ExportBatchCreateView(HostAdminSyncCreateView):
+    model = ExportBatch
+    fields = ['models_to_export']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Export batch setup'
+        return context
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class=form_class)
+
+        form.fields['models_to_export'] = MultipleChoiceField(
+            choices=zip(MODEL_ALLOW_LIST, MODEL_ALLOW_LIST)
+        )
+        return form
+
+    def post(self, request, *args, **kwargs):
+        result = super().post(request, *args, **kwargs)
+        self.object.started = timezone.now()
+        self.object.save()
+        do_export()
+        return result
+
+
+class ExportBatchDetailView(HostAdminSyncDetailView):
+    model = ExportBatch
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = f"Export batch: {context['object'].pk}"
         return context
