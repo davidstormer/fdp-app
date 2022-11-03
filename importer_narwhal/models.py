@@ -194,8 +194,10 @@ class ExportBatch(models.Model):
     started = models.DateTimeField(null=True, blank=True)
     completed = models.DateTimeField(null=True, blank=True)
     models_to_export = ArrayField(
-        models.CharField(max_length=256)
+        models.CharField(max_length=256),
+        help_text="Choose which data models to include in the export. Allows multiple."
     )
+    export_file = models.FileField(upload_to='data-exports/', null=True, blank=True)
 
     def get_absolute_url(self):
         return f"/changing/importer/exports/{self.pk}"

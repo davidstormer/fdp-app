@@ -1,10 +1,13 @@
 import os
+import tempfile
+from pathlib import Path
 
 import kombu
 from django.contrib import messages
 from django.utils import timezone
 import tablib
 from django import forms
+from django.core.files import File
 from django.core.paginator import Paginator
 from django.forms import MultipleChoiceField
 from django.shortcuts import render, redirect
@@ -14,12 +17,14 @@ from django.views import View
 from django.views.generic import DetailView, CreateView, ListView
 from tablib import Dataset
 
+from fdp import settings
 from importer_narwhal.models import ImportBatch, ExportBatch, MODEL_ALLOW_LIST
 from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping, do_export
+from inheritable.models import AbstractUrlValidator, AbstractConfiguration
 from importer_narwhal.celerytasks import background_do_dry_run, celery_app, background_run_import_batch
 
 from inheritable.views import HostAdminSyncTemplateView, HostAdminSyncListView, HostAdminSyncDetailView, \
-    HostAdminAccessMixin, HostAdminSyncCreateView
+    HostAdminAccessMixin, HostAdminSyncCreateView, SecuredSyncView
 
 
 class MappingsView(HostAdminSyncTemplateView):
@@ -219,7 +224,16 @@ class ExportBatchCreateView(HostAdminSyncCreateView):
         result = super().post(request, *args, **kwargs)
         self.object.started = timezone.now()
         self.object.save()
-        do_export()
+        with tempfile.TemporaryDirectory() as tempdir:
+            for model in self.object.models_to_export:
+                file_path = f"{tempdir}/{model}-{self.object.created:%s}.csv"
+                do_export(model, file_path)
+                path = Path(file_path)
+                with path.open(mode='rb') as f:
+                    self.object.export_file = File(f, name=path.name)
+                    self.object.save()
+        self.object.completed = timezone.now()
+        self.object.save()
         return result
 
 
@@ -230,3 +244,42 @@ class ExportBatchDetailView(HostAdminSyncDetailView):
         context = super().get_context_data(**kwargs)
         context['title'] = f"Export batch: {context['object'].pk}"
         return context
+
+
+class DownloadExportFileView(SecuredSyncView):
+    """ View that allows users to download an import file.
+
+    """
+    def get(self, request, path):
+        """ Retrieve the requested import file.
+
+        :param request: Http request object.
+        :param path: Full path for the import file.
+        :return: Import file to download or link to download file.
+        """
+        if not path:
+            raise Exception('No import file path was specified')
+        else:
+            user = request.user
+            # verify that user has import access
+            if not user.has_import_access:
+                raise Exception('Access is denied to import file')
+            # value that will be in import file's file field
+            file_field_value = '{b}{p}'.format(b='data-exports/', p=path)
+            # import file filtered for whether it exists
+            unfiltered_queryset = ExportBatch.objects.all()
+            # import file does not exist
+            if file_field_value and not unfiltered_queryset.filter(export_file=file_field_value).exists():
+                raise Exception('User does not have access to import file')
+            # if hosted in Microsoft Azure, storing import files in an Azure Storage account is required
+            if AbstractConfiguration.is_using_azure_configuration():
+                return self.serve_azure_storage_static_file(name=file_field_value)
+            # otherwise use default mechanism to serve files
+            else:
+                return self.serve_static_file(
+                    request=request,
+                    path=path,
+                    absolute_base_url=settings.MEDIA_URL,
+                    relative_base_url='data-exports/',
+                    document_root=settings.MEDIA_ROOT
+                )
