@@ -1,12 +1,12 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import sleep
 
 from django.urls import reverse
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
-from .models import ImportBatch
+from .models import ImportBatch, MODEL_ALLOW_LIST
 from .narwhal import do_import_from_disk, ImportReport
 from django.test import TestCase
 from django.core.management import call_command
@@ -700,3 +700,60 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 imported_records[1]['name'],
                 imported_rows_element.text
             )
+
+
+class TestExporterUI(SeleniumFunctionalTestCase):
+    @tag('wip')
+    def test_export_page_success_scenario(self):
+        # GIVEN there's data in the system
+        for i in range(10):
+            Person.objects.create(name=f"Test Person {i}")
+
+        # When I go to the export page
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
+
+        # Then I select Person
+        Select(self.el('select[name=models_to_export]')) \
+            .select_by_visible_text('Person')
+
+        # And I click "Export" -- and take note of the time it started
+        self.submit_button_el('Export') \
+            .click()
+        import_start_time = datetime.now()
+
+        # Then I should see a page confirming that the export has begun and communicating the status of the export
+        # to me
+        self.assertIn(
+            "Export in progress",
+            self.el('h2').text
+        )
+
+        # And when I go back to the exporter landing page
+        # Then I should see a listing of past and present exports
+        # Showing the status of each
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/')
+        self.assertIn(
+            'Person',
+            self.el('.exports-listing .row-1 .cell-models-to-export').text
+        )
+        self.assertAlmostEqual(
+            import_start_time,
+            datetime.fromisoformat(self.el('.exports-listing .row-1 .cell-started').text),
+            delta=timedelta(10)
+        )
+        # ...
+
+    @tag('wip')
+    def test_export_page_model_options(self):
+        """Test that the list of available models is correct
+        """
+
+        # When I go to the export page
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
+
+        # Then I select Person
+        for model_name in MODEL_ALLOW_LIST:
+            Select(self.el('select[name=models_to_export]')) \
+                .select_by_visible_text(model_name)

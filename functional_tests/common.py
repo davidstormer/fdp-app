@@ -257,6 +257,9 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
     def submit_button(self, value: str) -> WebElement:
         return wait(self.browser.find_element, By.CSS_SELECTOR, f"input[value='{value}']")
 
+    def submit_button_el(self, value: str) -> WebElement:
+        return wait(self.browser.find_element, By.XPATH, f'//button[text()="{value}"]')
+
     def wait_for(self, css_selector: str):
         """Pause execution until the given element is found
         """
