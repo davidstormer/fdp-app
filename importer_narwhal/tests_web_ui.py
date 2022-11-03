@@ -704,6 +704,7 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
 
 class TestExporterUI(SeleniumFunctionalTestCase):
     @tag('wip')
+    @override_settings(DEBUG=True)
     def test_export_page_success_scenario(self):
         # GIVEN there's data in the system
         for i in range(10):
