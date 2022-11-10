@@ -23,14 +23,11 @@ jobs:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
         environment:
-          TEST_DATABASE_URL: postgresql://root@localhost/circle_test
+          TEST_DATABASE_URL: postgresql://postgres@localhost/circle_test
           FDP_SECRET_KEY: opensesame
           FDP_QUERYSTRING_PASSWORD: ymllgljp//NRW9W7INVajTBS46oBpt0NLPfr7yQ6PEw=
           FDP_DATABASE_PASSWORD: opensesame
-      - image: circleci/postgres:9.6.5-alpine-ram
-        auth:
-          username: mydockerhub-user
-          password: $DOCKERHUB_PASSWORD  # context / project UI env-var re
+      - image: cimg/postgres:11.16
     resource_class: large
     # Checkout the code as the first step. This is a dedicated CircleCI step.
     # The python orb's install-packages step will install the dependencies from a Pipfile via Pipenv by default.
