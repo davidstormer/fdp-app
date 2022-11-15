@@ -1,18 +1,30 @@
 import os
 
+import kombu
+from django.contrib import messages
+from django.utils import timezone
 import tablib
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
+from django.http import HttpResponse, HttpResponseServerError
 from django.views.generic import DetailView, CreateView, ListView
 from tablib import Dataset
 
+from importer_narwhal.celerytasks import do_a_think, background_do_dry_run, celery_app, background_run_import_batch
 from importer_narwhal.models import ImportBatch
 from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping
 
 from inheritable.views import HostAdminSyncTemplateView, HostAdminSyncListView, HostAdminSyncDetailView, \
     HostAdminAccessMixin, HostAdminSyncCreateView
+
+
+class TestMakePersonsView(View):
+
+    def get(self, request):
+        task_result = do_a_think.delay(6)
+        return HttpResponse(f"Hello World@! {task_result}")
 
 
 class MappingsView(HostAdminSyncTemplateView):
@@ -50,19 +62,61 @@ class ImportBatchCreateView(HostAdminSyncCreateView):
         return context
 
 
+def try_celery_task_or_fallback_to_synchronous_call(celery_task, fallback_function, batch_record: ImportBatch, request):
+    try:
+        celery_ping_result = celery_app.control.ping()  # Make sure that Celery is configured and working
+        if celery_ping_result:
+            celery_task = celery_task.delay(batch_record.pk)
+        else:
+            raise Exception("No Celery workers found. Is the Celery daemon running?")
+    except kombu.exceptions.OperationalError as e:
+        messages.add_message(
+            request,
+            messages.WARNING,
+            f'\'Celery\' background tasks misconfigured or missing. Falling back to synchronous mode. Long '
+            f'running imports may fail quietly. Contact your systems administrator to address this issue. Message '
+            f'broker unavailable: "{e}"'
+        )
+        fallback_function(batch_record)
+    except Exception as e:
+        messages.add_message(
+            request,
+            messages.WARNING,
+            f'\'Celery\' background tasks misconfigured or missing. Falling back to synchronous mode. Long '
+            f'running imports may fail quietly. Contact your systems administrator to address this issue. "{e}"'
+        )
+        fallback_function(batch_record)
+
+
 class StartDryRun(HostAdminAccessMixin, View):
 
     def post(self, request, *args, **kwargs):
-        batch = ImportBatch.objects.get(pk=kwargs['pk'])
-        do_dry_run(batch)
+        # Record a provisional start time; this will be overwritten by do_dry_run().
+        batch_record = ImportBatch.objects.get(pk=kwargs['pk'])
+        batch_record.dry_run_started = timezone.now()
+        batch_record.save()
+        try_celery_task_or_fallback_to_synchronous_call(
+            background_do_dry_run,
+            do_dry_run,
+            batch_record,
+            self.request
+        )
         return redirect(reverse('importer_narwhal:batch', kwargs={'pk': kwargs['pk']}))
 
 
 class RunImportBatch(HostAdminAccessMixin, View):
 
     def post(self, request, *args, **kwargs):
-        batch = ImportBatch.objects.get(pk=kwargs['pk'])
-        run_import_batch(batch)
+        # Record a provisional start time; this will be overwritten by run_import_batch().
+        batch_record = ImportBatch.objects.get(pk=kwargs['pk'])
+        batch_record.started = timezone.now()
+        batch_record.save()
+        try_celery_task_or_fallback_to_synchronous_call(
+            background_run_import_batch,
+            run_import_batch,
+            batch_record,
+            self.request
+        )
         return redirect(reverse('importer_narwhal:batch', kwargs={'pk': kwargs['pk']})
                         + '?show_workflow_after_completion=true')
 
