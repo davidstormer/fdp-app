@@ -1,16 +1,21 @@
+import io
 from datetime import datetime
 from unittest import skip
+from unittest.mock import patch
 
+import kombu
 import tablib
 from django.core.exceptions import ValidationError
+from django.core.files import File
 from django.db import models
 
 from bulk.models import BulkImport
+from functional_tests.common import FunctionalTestCase
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
     Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType
-from .models import validate_import_sheet_extension, validate_import_sheet_file_size
+from .models import validate_import_sheet_extension, validate_import_sheet_file_size, ImportBatch
 from .narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run, \
     run_import_batch
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
@@ -1502,3 +1507,36 @@ class NarwhalImportCommand(TestCase):
                 0,
                 Grouping.objects.all().count()
             )
+
+
+# TryCeleryTaskOrFallbackToSynchronousCallTestCase
+class CeleryFallback(FunctionalTestCase):
+
+    def test_celery_down(self):
+        self.fail("Finish me!")
+
+    @tag('wip')
+    # Given that the message broker is down (Redis)
+    @patch('importer_narwhal.celerytasks.celery_app.control.ping', side_effect=kombu.exceptions.OperationalError)
+    def test_message_broker_down(self, mock_ping):
+        # And there's an import batch record
+        batch = ImportBatch.objects.create(
+            import_sheet=File(io.BytesIO(b"This file left intentionally blank"), name="test_import_sheet.csv")
+        )
+
+        # When I call the run dry run view
+        client = self.log_in(is_administrator=True)
+        response = client.post(f'/changing/importer/batch/{batch.pk}/dry-run-report', follow=True)
+
+        # Then I should see a warning message saying...
+        messages = list(response.context['messages'])
+        self.assertIn(
+            "Message broker unavailable",
+            messages[0].message
+        )
+        # And "Falling back to synchronous mode"
+        self.assertIn(
+            "Falling back to synchronous mode",
+            messages[0].message
+        )
+        self.fail("Finish me!")

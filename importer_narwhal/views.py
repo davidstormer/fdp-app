@@ -1,5 +1,6 @@
 import os
 
+import kombu
 from django.contrib import messages
 from django.utils import timezone
 import tablib
@@ -61,18 +62,27 @@ class ImportBatchCreateView(HostAdminSyncCreateView):
         return context
 
 
-def try_celery_task_or_fallback_to_synchronous_call(celery_task, fallback_function, batch_record, request):
+def try_celery_task_or_fallback_to_synchronous_call(celery_task, fallback_function, batch_record: ImportBatch, request):
     try:
         celery_ping_result = celery_app.control.ping()  # Make sure that Celery is configured and working
         if celery_ping_result:
             celery_task = celery_task.delay(batch_record.pk)
         else:
             raise Exception("No Celery workers found. Is the Celery daemon running?")
+    except kombu.exceptions.OperationalError as e:
+        messages.add_message(
+            request,
+            messages.WARNING,
+            f'\'Celery\' background tasks misconfigured or missing. Falling back to synchronous mode. Long '
+            f'running imports may fail quietly. Contact your systems administrator to address this issue. Message '
+            f'broker unavailable: "{e}"'
+        )
+        fallback_function(batch_record)
     except Exception as e:
         messages.add_message(
             request,
             messages.WARNING,
-            f'"Celery" message broker misconfigured or missing. Falling back to synchronous mode. Long '
+            f'\'Celery\' background tasks misconfigured or missing. Falling back to synchronous mode. Long '
             f'running imports may fail quietly. Contact your systems administrator to address this issue. "{e}"'
         )
         fallback_function(batch_record)
