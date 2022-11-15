@@ -1,3 +1,5 @@
+import socket
+
 from celery import Celery, current_task
 from time import sleep
 
@@ -10,7 +12,8 @@ from core.models import Person
 from importer_narwhal.models import ImportBatch
 from importer_narwhal.narwhal import do_dry_run, run_import_batch
 
-celery_app = Celery('tasks', backend='redis://localhost', broker="redis://localhost")
+my_hostname = socket.gethostname()
+celery_app = Celery('tasks', backend=f'redis://{my_hostname}', broker=f"redis://{my_hostname}")
 # celery_app.config_from_object('django.conf:settings', namespace='CELERY')
 
 
