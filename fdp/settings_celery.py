@@ -51,16 +51,21 @@ FDP_CONTENT_GROUPING_SEARCH_CLASS = 'GroupingChangingSearch'
 # write to.
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': True,
+    'disable_existing_loggers': False,
     "handlers": {
         "console": {
             "level": "WARNING",
             "class": "logging.StreamHandler",
             "stream": sys.stdout,
          },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/celery/django.log',
+        },
     },
     'root': {
-        'handlers': ["console"],
-        'level': 'WARNING',
+        'handlers': ["console", "file"],
+        'level': 'INFO',
     },
 }
