@@ -3,7 +3,7 @@ from time import sleep
 
 import os
 import django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "fdp.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "fdp.settings_celery")
 django.setup()
 # ~~~~~~ Django dependencies below this line ~~~~~~~
 from core.models import Person
