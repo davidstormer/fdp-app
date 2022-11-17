@@ -21,7 +21,8 @@ mkdir /var/log/celery/
 chown celery.celery /var/log/celery/
 
 # Start Celery worker process
-start-stop-daemon --start --oknodo --pidfile /var/run/celery/celery.pid --chuid celery --user celery --group celery --chdir "$APP_PATH" --startas `which celery` -- multi start worker1 --workdir="$APP_PATH" --app=importer_narwhal.celerytasks --logfile=/var/log/celery/celery.log --pidfile=/var/run/celery/celery.pid
+start-stop-daemon --start --oknodo --pidfile /var/run/celery/celery.pid --chuid celery --user celery --group celery
+--chdir "$APP_PATH" --startas `which celery` -- multi start worker1 --workdir="$APP_PATH" --app=importer_narwhal.celerytasks --logfile=/var/log/celery/celery.log --pidfile=/var/run/celery/celery.pid --loglevel=INFO
 
 # Run web service
 gunicorn --bind=0.0.0.0 --timeout 60 --workers=4 fdp.wsgi
