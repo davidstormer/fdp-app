@@ -289,20 +289,25 @@ foreign_key_fields_get_or_create = \
         'PersonTitle': ['title', ],
         'PersonPayment': ['leave_status', ],  # No county because it requires a state value
         'PersonGrouping': ['type', ],
-        'Incident': ['encounter_reason', 'location_type', ]
+        'Incident': ['encounter_reason', 'location_type', ],
+        'ContentIdentifier': ['content_identifier_type', ],
+        'ContentCase': ['outcome', ],
+        'ContentPersonAllegation': ['allegation_outcome', 'allegation', ],
     }
 
 foreign_key_fields_get_only = \
     {
         'PersonPayment': ['county', ],
         'Grouping': ['counties', ],
+        'GroupingRelationship': ['type', ],
     }
 
 many_to_many_fields_get_only = \
     {
         'Person': ['traits', ],
         'Grouping': ['counties', ],
-        'Incident': ['tags', ]
+        'Incident': ['tags', ],
+        'PersonIncident': ['tags', ],
     }
 
 
