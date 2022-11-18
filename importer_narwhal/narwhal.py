@@ -289,6 +289,7 @@ foreign_key_fields_get_or_create = \
         'PersonTitle': ['title', ],
         'PersonPayment': ['leave_status', ],  # No county because it requires a state value
         'PersonGrouping': ['type', ],
+        'Incident': ['encounter_reason', 'location_type', ]
     }
 
 foreign_key_fields_get_only = \
@@ -301,6 +302,7 @@ many_to_many_fields_get_only = \
     {
         'Person': ['traits', ],
         'Grouping': ['counties', ],
+        'Incident': ['tags', ]
     }
 
 

@@ -9,12 +9,13 @@ from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
-    Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType
+    Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType, IncidentTag, \
+    EncounterReason, IncidentLocationType
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run, \
     run_import_batch
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
-    PersonGrouping, GroupingAlias, GroupingRelationship
+    PersonGrouping, GroupingAlias, GroupingRelationship, Incident
 from django.test import TestCase, SimpleTestCase, tag
 from django.core.management import call_command
 from io import StringIO
@@ -1502,3 +1503,78 @@ class NarwhalImportCommand(TestCase):
                 0,
                 Grouping.objects.all().count()
             )
+
+    @tag('wip')
+    def test_incidents_types_and_tags_encounter_reason(self):
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['encounter_reason'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['encounter_reason'] = 'emblemize'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Incident', csv_fd.name, stdout=command_output)
+
+        self.assertEqual(
+            1,
+            EncounterReason.objects.count(),
+            msg="New EncounterReason missing"
+        )
+
+    @tag('wip')
+    def test_incidents_types_and_tags_location_type(self):
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['location_type'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['location_type'] = 'unrebellious'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Incident', csv_fd.name, stdout=command_output)
+
+        self.assertEqual(
+            1,
+            IncidentLocationType.objects.count(),
+            msg="New IncidentLocationType missing"
+        )
+
+    @tag('wip')
+    def test_incidents_types_and_tags_tags(self):
+        # get-only many to many
+        incident_tag = IncidentTag.objects.create(name='Burberry')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['tags', 'description'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['tags'] = 'Burberry'
+                row['description'] = 'Hello World'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Incident', csv_fd.name, stdout=command_output)
+
+        self.assertEqual(
+            Incident.objects.last().tags.all()[0],
+            incident_tag
+        )
