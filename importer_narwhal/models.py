@@ -6,8 +6,8 @@ import os
 
 from django.urls import reverse
 
-# The mother list of models to be able to import to.
-# The options in the interface are based on this.
+# The mother list of models to be able to import to / export from.
+# The options on the UI come from this.
 MODEL_ALLOW_LIST = [
     # From the 'core' app
     'Person',
@@ -27,12 +27,21 @@ MODEL_ALLOW_LIST = [
     'GroupingIncident',
     # From the 'sourcing' app
     'Attachment',
+    'Allegation',
+    'AllegationOutcome',
     'Content',
     'ContentIdentifier',
     'ContentCase',
+    'ContentCaseOutcome',
+    'ContentIdentifierType',
     'ContentPerson',
     'ContentPersonAllegation',
     'ContentPersonPenalty',
+    'EncounterReason',
+    'GroupingRelationshipType',
+    'IncidentLocationType',
+    'IncidentTag',
+    'PersonIncidentTag',
     # From the 'supporting' app
     'State',
     'County',
@@ -41,6 +50,7 @@ MODEL_ALLOW_LIST = [
     'Trait',
     'TraitType',
 ]
+
 
 def validate_import_sheet_extension(file):
     allowed_extensions = ['csv']
