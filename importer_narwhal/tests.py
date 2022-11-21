@@ -9,12 +9,14 @@ from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
-    Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType
+    Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType, IncidentTag, \
+    EncounterReason, IncidentLocationType, PersonIncidentTag, ContentIdentifierType, ContentCaseOutcome, \
+    AllegationOutcome, Allegation
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
 from .narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run, \
     run_import_batch
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
-    PersonGrouping, GroupingAlias, GroupingRelationship
+    PersonGrouping, GroupingAlias, GroupingRelationship, Incident, PersonIncident
 from django.test import TestCase, SimpleTestCase, tag
 from django.core.management import call_command
 from io import StringIO
@@ -1502,3 +1504,272 @@ class NarwhalImportCommand(TestCase):
                 0,
                 Grouping.objects.all().count()
             )
+
+    def test_incidents_types_and_tags_encounter_reason(self):
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['encounter_reason'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['encounter_reason'] = 'emblemize'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Incident', csv_fd.name, stdout=command_output)
+
+        self.assertEqual(
+            1,
+            EncounterReason.objects.count(),
+            msg="New EncounterReason missing"
+        )
+
+    def test_incidents_types_and_tags_location_type(self):
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['location_type'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['location_type'] = 'unrebellious'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Incident', csv_fd.name, stdout=command_output)
+
+        self.assertEqual(
+            1,
+            IncidentLocationType.objects.count(),
+            msg="New IncidentLocationType missing"
+        )
+
+    def test_incidents_types_and_tags_tags(self):
+        # get-only many to many
+        incident_tag = IncidentTag.objects.create(name='Burberry')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['tags', 'description'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['tags'] = 'Burberry'
+                row['description'] = 'Hello World'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Incident', csv_fd.name, stdout=command_output)
+
+        self.assertEqual(
+            Incident.objects.last().tags.all()[0],
+            incident_tag
+        )
+
+    def test_grouping_relationship_type(self):
+        # get-only many to many
+        grouping_relationship_type = GroupingRelationshipType.objects.create(name='endocardium')
+        subject_grouping = Grouping.objects.create(name='Subject Grouping')
+        object_grouping = Grouping.objects.create(name='Object Grouping')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['type', 'subject_grouping', 'object_grouping'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['type'] = 'endocardium'
+                row['subject_grouping'] = subject_grouping.pk
+                row['object_grouping'] = object_grouping.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'GroupingRelationship', csv_fd.name, stdout=command_output)
+
+        self.assertEqual(
+            GroupingRelationship.objects.last().type,
+            grouping_relationship_type
+        )
+
+    def test_person_incidents_tags(self):
+        # get-only many to many
+        person_incident_tag = PersonIncidentTag.objects.create(name='parterred')
+        person = Person.objects.create(name="Test Person")
+        incident = Incident.objects.create(description="Test Incident")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['tags', 'incident', 'person'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['tags'] = 'parterred'
+                row['incident'] = incident.pk
+                row['person'] = person.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonIncident', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            PersonIncident.objects.last().tags.all()[0],
+            person_incident_tag
+        )
+
+    def test_incidents_types_and_tags_content_identifier_type(self):
+        content = Content.objects.create(description="Hello World")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['content_identifier_type', 'content'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['content_identifier_type'] = 'unrebellious'
+                row['content'] = content.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'ContentIdentifier', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            ContentIdentifierType.objects.count(),
+            msg="New ContentIdentifierType missing"
+        )
+
+    def test_content_case_outcome(self):
+        content = Content.objects.create(description="Hello World")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['outcome', 'content'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['outcome'] = 'playwrightry'
+                row['content'] = content.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'ContentCase', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            ContentCaseOutcome.objects.count(),
+            msg="New ContentCaseOutcome missing"
+        )
+
+    def test_allegation_outcome(self):
+        content = Content.objects.create(description="Hello World")
+        person = Person.objects.create(name="Test Person")
+        content_person = ContentPerson.objects.create(content=content, person=person)
+        allegation = Allegation.objects.create(name="Test Allegation")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['allegation_outcome', 'content_person', 'allegation'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['allegation_outcome'] = 'playwrightry'  # <- This
+                row['content_person'] = content_person.pk
+                row['allegation'] = allegation.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'ContentPersonAllegation', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            'NO RECORDS IMPORTED',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            AllegationOutcome.objects.count(),
+            msg="New AllegationOutcome missing"
+        )
+
+    def test_allegation_outcome(self):
+        content = Content.objects.create(description="Hello World")
+        person = Person.objects.create(name="Test Person")
+        content_person = ContentPerson.objects.create(content=content, person=person)
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['allegation_outcome', 'content_person', 'allegation'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['allegation_outcome'] = 'playwrightry'
+                row['content_person'] = content_person.pk
+                row['allegation'] = 'Bushman'  # <- This
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'ContentPersonAllegation', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            'NO RECORDS IMPORTED',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            Allegation.objects.count(),
+            msg="New Allegation missing"
+        )
