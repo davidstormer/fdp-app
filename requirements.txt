@@ -48,7 +48,8 @@ django-storages==1.11.1
 django-two-factor-auth==1.13
 djangorestframework==3.12.4
 et-xmlfile==1.1.0
-Faker==15.1.1
+factory-boy==3.2.1
+Faker==15.3.2
 graphlib-backport==1.0.3
 h11==0.12.0
 html-json-forms==1.1.1
