@@ -1792,7 +1792,6 @@ class NarwhalImportCommand(TestCase):
 
 class TryCeleryTaskOrFallbackToSynchronousCallTestCase(TestCase):
 
-    @tag('wip')
     # Given that the message broker is down (i.e. Redis is offline)
     # When Redis is down ping() raises an OperationalError exception
     @patch('importer_narwhal.celerytasks.celery_app.control.ping', side_effect=kombu.exceptions.OperationalError)
@@ -1834,7 +1833,6 @@ class TryCeleryTaskOrFallbackToSynchronousCallTestCase(TestCase):
         # And the fallback function should have been called
         fallback_function.assert_called()
 
-    @tag('wip')
     # Given that celery is down but the message broker is not (i.e. Redis is online, but the celery service isn't
     # running). When Celery is down, ping() returns an empty list.
     @patch('importer_narwhal.celerytasks.celery_app.control.ping', return_value=[])
