@@ -1,11 +1,20 @@
+import io
 from datetime import datetime
 from unittest import skip
+from unittest.mock import patch, MagicMock
 
+import kombu
 import tablib
+from django.contrib import messages as django_messages
+from django.contrib.messages.middleware import MessageMiddleware
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.exceptions import ValidationError
+from django.core.files import File
 from django.db import models
 
 from bulk.models import BulkImport
+from functional_tests.common import FunctionalTestCase
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
@@ -13,17 +22,21 @@ from supporting.models import PersonIdentifierType, PersonRelationshipType, Situ
     EncounterReason, IncidentLocationType, PersonIncidentTag, ContentIdentifierType, ContentCaseOutcome, \
     AllegationOutcome, Allegation
 from .models import validate_import_sheet_extension, validate_import_sheet_file_size
+from .celerytasks import celery_app
+from .models import validate_import_sheet_extension, validate_import_sheet_file_size, ImportBatch
 from .narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run, \
     run_import_batch
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
     PersonGrouping, GroupingAlias, GroupingRelationship, Incident, PersonIncident
 from django.test import TestCase, SimpleTestCase, tag
+from django.test import TestCase, SimpleTestCase, tag, RequestFactory
 from django.core.management import call_command
 from io import StringIO
 import tempfile
 import csv
 from uuid import uuid4
 from core.models import Person
+from .views import try_celery_task_or_fallback_to_synchronous_call
 
 
 class NarwhalSimpleTestCase(SimpleTestCase):
@@ -1504,6 +1517,91 @@ class NarwhalImportCommand(TestCase):
                 0,
                 Grouping.objects.all().count()
             )
+
+
+class TryCeleryTaskOrFallbackToSynchronousCallTestCase(TestCase):
+
+    # Given that the message broker is down (i.e. Redis is offline)
+    # When Redis is down ping() raises an OperationalError exception
+    @patch('importer_narwhal.celerytasks.celery_app.control.ping', side_effect=kombu.exceptions.OperationalError)
+    def test_message_broker_down(self, mock_ping):
+        # and there's a celery task
+        @celery_app.task
+        def test_celery_task(pk):
+            pass
+        # and there's a fallback function
+        fallback_function = MagicMock()
+        # And there's an import batch record
+        batch = ImportBatch.objects.create(
+            import_sheet=File(io.BytesIO(b"This file left intentionally blank"), name="test_import_sheet.csv")
+        )
+
+        # When I call try_celery_task_or_fallback_to_synchronous_call()
+        request = RequestFactory().get('/')
+        # https://stackoverflow.com/a/71066280/1585572
+        SessionMiddleware().process_request(request)
+        MessageMiddleware().process_request(request)
+        try_celery_task_or_fallback_to_synchronous_call(
+            test_celery_task,
+            fallback_function,
+            batch,
+            request
+        )
+
+        # Then I should see a warning message saying...
+        messages = list(django_messages.get_messages(request))
+        self.assertIn(
+            "Message broker unavailable",
+            messages[0].message
+        )
+        # And "Falling back to synchronous mode"
+        self.assertIn(
+            "Falling back to synchronous mode",
+            messages[0].message
+        )
+        # And the fallback function should have been called
+        fallback_function.assert_called()
+
+    # Given that celery is down but the message broker is not (i.e. Redis is online, but the celery service isn't
+    # running). When Celery is down, ping() returns an empty list.
+    @patch('importer_narwhal.celerytasks.celery_app.control.ping', return_value=[])
+    def test_celery_down(self, mock_ping):
+        # and there's a celery task
+        @celery_app.task
+        def test_celery_task(pk):
+            pass
+        # and there's a fallback function
+        fallback_function = MagicMock()
+        # And there's an import batch record
+        batch = ImportBatch.objects.create(
+            import_sheet=File(io.BytesIO(b"This file left intentionally blank"), name="test_import_sheet.csv")
+        )
+
+        # When I call try_celery_task_or_fallback_to_synchronous_call()
+        request = RequestFactory().get('/')
+        # https://stackoverflow.com/a/71066280/1585572
+        SessionMiddleware().process_request(request)
+        MessageMiddleware().process_request(request)
+        try_celery_task_or_fallback_to_synchronous_call(
+            test_celery_task,
+            fallback_function,
+            batch,
+            request
+        )
+
+        # Then I should see a warning message saying...
+        messages = list(django_messages.get_messages(request))
+        self.assertIn(
+            "No Celery workers found. Is the Celery daemon running?",
+            messages[0].message
+        )
+        # And "Falling back to synchronous mode"
+        self.assertIn(
+            "Falling back to synchronous mode",
+            messages[0].message
+        )
+        # And the fallback function should have been called
+        fallback_function.assert_called()
 
     def test_incidents_types_and_tags_encounter_reason(self):
         with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
