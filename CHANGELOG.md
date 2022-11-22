@@ -2,6 +2,27 @@
 
 All releases are logged in this file.
 
+## [6.1.1] - 2022-11-22
+
+## Changed
+- Fix Django log file permissions preventing Celery worker from startup up on Azure App Service instances.
+
+## [6.1.0] - 2022-11-22
+
+### Changed
+- Background tasks infrastructure: Implement "Celery" background tasks, adding Redis and Celery worker process to 
+  new Azure App Service startup scrip. Shortens connection timeout to 60 seconds.
+- Importer: Use "Celery" background tasks for handling the validation and import steps, allows for longer running 
+  imports.
+- Performance: Increase number of Gunicorn workers from one to four in new Azure App Service startup scrip. Makes 
+  system available to users while long-running requests are being fulfilled.
+
+### Upgrading notes
+To take advantage of the new Celery infrastructure, and increase the number of Gunicorn workers: on Azure App Service 
+instances set the "Startup Command" setting on Azure App Service under Configuration -> General settings to 
+`deploy/azure/startup-default.sh`. This will launch a Celery worker (and a Redis daemon which acts as the message 
+broker) on the web server. A custom configuration is required for more advanced cloud configurations.
+
 ## [6.0.4] - 2022-08-22
 
 ### Changed
