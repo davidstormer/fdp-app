@@ -68,6 +68,13 @@
             source /home/vagrant/venv-vagrant/bin/activate
             cd /vagrant
 
+      - name: "Install Redis server (used by Celery)"
+        shell: |
+          curl -fsSL https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb stretch main" | tee /etc/apt/sources.list.d/redis.list
+          apt-get update
+          apt-get install -y redis
+
       - name: "Add helpful instructions on next steps using local instance"
         blockinfile:
           path: /etc/motd
@@ -86,6 +93,9 @@
             'python manage.py runserver 0.0.0.0:8000'
 
             Then point your browser to 'localhost:8000' to see the FDP Application
+
+            To test the Celery background tasks manager on imports and exports run:
+            'celery -A importer_narwhal.celerytasks worker -l INFO'
 
       - name: "Install python tests dependencies"
         pip:
