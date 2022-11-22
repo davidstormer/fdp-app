@@ -196,22 +196,3 @@ li.pending span.stepper-step-number {
   background-color: lightgray;
   border: none;
 }
-
-/* Loading animated GIF displayed while asynchronous (AJAX) request is in progress */
-#loading {
-position: fixed;
-    top: 50%;
-    left: 50%;
-    margin-top: -16px;
-    margin-left: -16px;
-    z-index: 16777271;
-    backdrop-filter: blur(3px);
-    text-align: center;
-    padding: 1em;
-    border: 1px solid #325D71;
-    box-shadow: 0 0 15px #325D71;
-    border-radius: 3px;
-}
-#loading p {
-  margin-bottom: 0px;
-}

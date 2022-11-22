@@ -78,12 +78,9 @@
         </div>
         {% endif %}
         {% endblock %}
+        {% block nav-global %}{% endblock %}
     </div>
     <!-- END Header -->
-
-    {% block nav-global %}
-    {% endblock %}
-
     {% block breadcrumbs %}
     <div class="breadcrumbs">
     <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
@@ -92,7 +89,12 @@
     {% endblock %}
     {% endif %}
 
-    <div class="main" id="main">
+    <div class="main shifted" id="main">
+      {% if not is_popup and is_nav_sidebar_enabled %}
+        {% block nav-sidebar %}
+          {% include "admin/nav_sidebar.html" %}
+        {% endblock %}
+      {% endif %}
       <div class="content">
         {% block messages %}
           {% if messages %}

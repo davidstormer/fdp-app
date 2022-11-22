@@ -667,7 +667,7 @@ DATA_WIZARD_STATUS_CHECK_SECONDS = 3
 
 # Added in Django 3.2
 # Default model field for primary keys that are added to models automatically.
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Logging may be enabled in settings.py with: LOGGING = FDP_ERR_LOGGING
@@ -724,17 +724,3 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Don't disable the snapshot feature _yet_
 SNAPSHOT_DISABLE = False
-
-#
-# Celery
-#
-#
-# Assume that broker and results backend are a locally running Redis server
-# These can be overridden by local settings.py for more advanced cloud configurations
-CELERY_BROKER_URL = 'redis://localhost'
-CELERY_BACKEND = 'redis://localhost'
-# Sane defaults for security and stability
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_ENABLE_UTC = True

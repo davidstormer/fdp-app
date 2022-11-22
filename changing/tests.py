@@ -10,7 +10,6 @@ from sourcing.models import Content, ContentPerson, Attachment, ContentIdentifie
 from supporting.models import PersonRelationshipType, ContentIdentifierType, Allegation
 from .forms import WizardSearchForm
 import logging
-from django.test import tag
 
 logger = logging.getLogger(__name__)
 
@@ -1350,7 +1349,7 @@ class TristanTests(FunctionalTestCase):
 
     def test_AsyncGetPersonsView(self):
         # Given there's a person record in the system
-        person_record = Person.objects.create(name="ostreiculture")
+        Person.objects.create(name="ostreiculture")
 
         # When I query the persons ajax query endpoint by the name
         client = self.log_in(is_administrator=True)
@@ -1370,7 +1369,7 @@ class TristanTests(FunctionalTestCase):
         )
         # And the first item on the list should be a dictionary with the person's name
         self.assertEqual(
-            f"ostreiculture",
+            "ostreiculture",
             data[0]['label']
         )
 
@@ -1392,25 +1391,6 @@ class TristanTests(FunctionalTestCase):
         self.assertEqual(
             'Could not retrieve persons. Please reload the page. No search criteria specified.',
             response.json()['error']
-        )
-
-    def test_AsyncGetPersonsView_no_results_found(self):
-        # Given there are no person records in the system
-
-        # When I query the persons ajax query endpoint with an invalid search query
-        client = self.log_in(is_administrator=True)
-        response = client.post(
-            reverse('changing:async_get_persons'),
-            {
-                'searchCriteria': "Abracadabra",
-            },
-            content_type='application/json'
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            {},
-            response.json()['data']
         )
 
     def test_jsonify_error(self):

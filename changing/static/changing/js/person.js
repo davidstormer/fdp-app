@@ -642,14 +642,14 @@ var Fdp = (function (fdpDef, $, w, d) {
      * @param {Object} aIcon - The icon to be faded in. Must be wrapped in JQuery object.
      * @param {Object} bIcon - The icon to be faded out. Must be wrapped in JQuery object.
     */
-    function _changePersonRelationshipFromIcon(aId, bId, aName, aWrapper, bName, bWrapper, aIcon, bIcon) {
-        aId.val(bId.val()).change();
-        bId.val("").change();
+    function _changePersonRelationshipFromIcon(aId, bId, aName, bName, aIcon, bIcon) {
+        aId.val(bId.val());
+        bId.val("");
         aName.val(bName.val());
         bName.val("");
         _changePersonRelationshipOrder(
-            bWrapper, /* aInput */
-            aWrapper, /* bInput */
+            bName, /* aInput */
+            aName, /* bInput */
             bIcon, /* aIcon */
             aIcon /* bIcon */
         );
@@ -674,33 +674,27 @@ var Fdp = (function (fdpDef, $, w, d) {
         var objectId = Fdp.Common.getAutocompleteIdElem(formContainer /* formContainer */, ".objectid" /* selector */);
         var subjectName = Fdp.Common.getAutocompleteSearchElem(formContainer /* formContainer */, ".subjectname" /* selector */);
         var objectName = Fdp.Common.getAutocompleteSearchElem(formContainer /* formContainer */, ".objectname" /* selector */);
-        var subjectWrapper = formContainer.find('.autocomplete-person-wrapper.subject')
-        var objectWrapper = formContainer.find('.autocomplete-person-wrapper.object')
         var subjectIcon = formContainer.find(".subjectrelicon");
         var objectIcon = formContainer.find(".objectrelicon");
         // subject person searching with autocomplete
-        Fdp.Common.initAutocompletePerson(
+        Fdp.Common.initAutocomplete(
             subjectName, /* searchInputElem */
             subjectId, /* idInputElem */
-            formContainer.find('input.subjectid'), /* actualIdInputEl */
-            formContainer.find('.autocomplete-person-wrapper.subject'),
             _getPersonsUrl, /* ajaxUrl */
             "personac" /* extraCssClass */
         );
         // object person searching with autocomplete
-        Fdp.Common.initAutocompletePerson(
+        Fdp.Common.initAutocomplete(
             objectName, /* searchInputElem */
             objectId, /* idInputElem */
-            formContainer.find('input.objectid'), /* actualIdInputEl */
-            formContainer.find('.autocomplete-person-wrapper.object'), /* appendInfoCardTo */
             _getPersonsUrl, /* ajaxUrl */
             "personac" /* extraCssClass */
         );
         // subject person defined
         if (subjectName.val()) {
             _changePersonRelationshipOrder(
-                objectWrapper, /* aInput */
-                subjectWrapper, /* bInput */
+                objectName, /* aInput */
+                subjectName, /* bInput */
                 objectIcon, /* aIcon */
                 subjectIcon /* bIcon */
             );
@@ -708,8 +702,8 @@ var Fdp = (function (fdpDef, $, w, d) {
         // object person defined (or this a new relationship, so nothing is defined)
         else {
             _changePersonRelationshipOrder(
-                subjectWrapper, /* aInput */
-                objectWrapper, /* bInput */
+                subjectName, /* aInput */
+                objectName, /* bInput */
                 subjectIcon, /* aIcon */
                 objectIcon /* bIcon */
             );
@@ -719,9 +713,7 @@ var Fdp = (function (fdpDef, $, w, d) {
                 objectId, /* aId */
                 subjectId, /* bId */
                 objectName, /* aName */
-                objectWrapper, /* aWrapper */
                 subjectName, /* bName */
-                subjectWrapper, /* bWrapper */
                 objectIcon, /* aIcon */
                 subjectIcon /* bIcon */
             );
@@ -731,9 +723,7 @@ var Fdp = (function (fdpDef, $, w, d) {
                 subjectId, /* aId */
                 objectId, /* bId */
                 subjectName, /* aName */
-                subjectWrapper, /* aWrapper */
                 objectName, /* bName */
-                objectWrapper, /* bWrapper */
                 subjectIcon, /* aIcon */
                 objectIcon /* bIcon */
             );

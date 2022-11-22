@@ -33,8 +33,6 @@ urlpatterns = [
          views.PersonUpdateView.as_view(), name='edit_person'),
     path(AbstractUrlValidator.ASYNC_GET_PERSONS_URL,
          views.AsyncGetPersonsView.as_view(), name='async_get_persons'),
-    path(AbstractUrlValidator.ASYNC_GET_PERSONS_BY_PK_URL,
-         views.AsyncGetPersonsByPkView.as_view(), name='async_get_person'),
     # incident data wizard forms
     path(AbstractUrlValidator.ADD_INCIDENT_URL, views.IncidentCreateView.as_view(), name='add_incident'),
     path('{u}<int:pk>/<int:content_id>/'.format(u=AbstractUrlValidator.EDIT_INCIDENT_URL),

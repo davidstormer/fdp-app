@@ -411,11 +411,9 @@ var Fdp = (function (fdpDef, $, w, d) {
         var personSearchInput = Fdp.Common.getAutocompleteSearchElem(formContainer /* formContainer */, ".personname" /* selector */);
         var personIdInput = Fdp.Common.getAutocompleteIdElem(formContainer /* formContainer */, ".person" /* selector */);
         // person searching with autocomplete
-        Fdp.Common.initAutocompletePerson(
+        Fdp.Common.initAutocomplete(
             personSearchInput, /* searchInputElem */
             personIdInput, /* idInputElem */
-            formContainer.find('input.person'), /* actualIdInputEl */
-            formContainer,
             _getPersonsUrl, /* ajaxUrl */
             "personac" /* extraCssClass */
         );

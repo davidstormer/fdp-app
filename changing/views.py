@@ -1,11 +1,10 @@
 from django.core.exceptions import ValidationError
-from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
 from django.utils.http import unquote_plus
 from django.urls import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q, Prefetch
+from django.db.models import Q
 from django.http import QueryDict
 from django.forms import formsets
 from inheritable.models import Archivable, AbstractImport, AbstractSql, AbstractUrlValidator, AbstractSearchValidator, \
@@ -26,7 +25,7 @@ from .forms import WizardSearchForm, GroupingModelForm, GroupingAliasModelFormSe
     ContentIncidentModelFormSet, ContentPersonAllegationModelFormSet, ContentPersonPenaltyModelFormSet, \
     ContentPersonAllegationModelForm, ContentPersonPenaltyModelForm, ReadOnlyContentModelForm, PersonPhotoModelFormSet
 from core.models import Person, PersonIdentifier, Grouping, GroupingAlias, GroupingRelationship, Incident, \
-    PersonGrouping, PersonRelationship, PersonIncident, GroupingIncident, PersonTitle
+    PersonGrouping, PersonRelationship, PersonIncident, GroupingIncident
 from abc import abstractmethod
 from urllib.parse import urlparse
 import logging
@@ -1575,11 +1574,20 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
         :param filter_dict: Dictionary of search criteria.
         :return: Queryset of search results.
         """
-        return Person.objects.search_all_fields(
-            filter_dict[self._exact_terms_key],
-            self.request.user,
-            is_law_enforcement_only=False
+        # queryset filtered for direct confidentiality
+        # (will be filtered for indirect confidentiality in AbstractAsyncGetModelView)
+        accessible_queryset = Person.active_objects.all().filter_for_confidential_by_user(user=self.request.user)
+        # matching against list of terms entered by user
+        exact_terms = filter_dict[self._exact_terms_key]
+        # retrieve persons
+        persons = accessible_queryset.filter(
+            Q(name__icontains=exact_terms)
+            |
+            Q(person_alias__name__icontains=exact_terms)
+            |
+            Q(person_identifier__identifier__icontains=exact_terms)
         )
+        return persons
 
     def _get_specific_error_message(self):
         """ Retrieves an error message that is specific to the class inheriting from the parent abstract class.
@@ -1598,67 +1606,15 @@ class AsyncGetPersonsView(AbstractAsyncGetModelView):
         the user entered search criteria.
         :return: List of dictionaries, each with a structure matching the JQuery Autocomplete tool.
         """
-        output = []
-        for person in filtered_queryset[:35]:
-            # Aliases
-            aliases = [alias.name for alias in person.person_aliases.all()]
-            # Identifiers
-            identifiers = [identifier.identifier for identifier in person.person_identifiers.all()]
-            # Ranks
-            current_titles = [title.title.name for title in person.current_titles]
-            # Commands
-            groups = [person_grouping.grouping.name for person_grouping in person.groups_law_enforcement]
-
-            context = {
-                'profile_url': person.get_profile_url,
-                'name': person.name,
-                'aliases': aliases,
-                'identifiers': identifiers,
-                'current_titles': current_titles,
-                'groups': groups,
-                'pk': person.pk,
-            }
-
-            output.append(
-                {
-                    'value': person.pk,
-                    'label': person.name,
-                    "teaserHtml": render_to_string('person_teaser_select_list_jqueryui.html', context),
-                }
-            )
-        return output
-
-
-class AsyncGetPersonsByPkView(AsyncGetPersonsView):
-    """ Asynchronously retrieves a single person while doing access controls and prefetching. Used for making info
-    cards of individual person records.
-    """
-    def _get_specific_queryset(self, filter_dict):
-        records = Person.objects.filter(pk__in=map(int, filter_dict['exact_terms'].split(','))) \
-            .filter_for_confidential_by_user(user=self.request.user) \
-            .prefetch_related('person_aliases') \
-            .prefetch_related('person_titles') \
-            .prefetch_related(
-                Prefetch(
-                    'person_titles',
-                    queryset=PersonTitle.objects.filter(end_year=0, end_month=0, end_day=0).select_related('title'),
-                    to_attr='current_titles'
-                )
-            ) \
-            .prefetch_related('person_identifiers') \
-            .prefetch_related('person_identifiers__person_identifier_type') \
-            .prefetch_related(
-                Prefetch(
-                    'person_groupings',
-                    queryset=PersonGrouping.objects.filter(grouping__is_law_enforcement=True).select_related(
-                        'grouping'),
-                    to_attr='groups_law_enforcement'
-                )
-            )
-        return records
-
-    def _get_specific_error_message(self):
-        return _('Could not retrieve persons by pk. Please reload the page.')
+        top_x = 5
+        pk = 'pk'
+        name = 'name'
+        return [
+            {
+                self._value_key: person_dict[pk],
+                self._label_key: person_dict[name]
+            } for person_dict in filtered_queryset.distinct().values(pk, name)[:top_x]
+        ]
 
 
 class AbstractIncidentView(AbstractPopupView):

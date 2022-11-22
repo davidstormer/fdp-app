@@ -434,7 +434,7 @@ class PersonSearchAllFields(TestCase):
     def test_access_is_law_enforcement(self):
         Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=False)
 
-        with self.subTest(msg="admin cannot see"):
+        with self.subTest(msg="admin can see"):
             host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
             admin_results = Person.objects.search_all_fields("Mohammed Alabbadi", host_admin_user)
 
@@ -450,35 +450,6 @@ class PersonSearchAllFields(TestCase):
             0,
             len(non_admin_results)
         )
-
-    def test_access_law_enforcement_only_eq_false(self):
-        Person.objects.create(name="Mohammed Alabbadi", is_law_enforcement=False)
-
-        with self.subTest(msg="admin can see"):
-            host_admin_user = FdpUser.objects.create(email='userone@localhost', is_administrator=True)
-            admin_results = Person.objects.search_all_fields(
-                "Mohammed Alabbadi",
-                host_admin_user,
-                is_law_enforcement_only=False
-            )
-
-            self.assertEqual(
-                1,
-                len(admin_results)
-            )
-
-        with self.subTest(msg="non-admin can see"):
-            non_admin_user = FdpUser.objects.create(email='usertwo@localhost', is_administrator=False)
-            non_admin_results = Person.objects.search_all_fields(
-                "Mohammed Alabbadi",
-                non_admin_user,
-                is_law_enforcement_only=False
-            )
-
-            self.assertEqual(
-                1,
-                len(non_admin_results)
-            )
 
     def test_middle_initials_ranking(self):
         # Given there are two "Roger Hobbes" records with one containing a middle initial

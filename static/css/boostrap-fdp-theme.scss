@@ -7,47 +7,6 @@ $code-color: #666;
 
 @import "./bootstrap-scss/bootstrap";
 
-/* Nav menus */
-nav a, nav a:hover, nav a:visited {
-  text-decoration: none;
-}
-
-/* User */
-nav.menu-user > ul > li {
-    display: inline-block;
-    vertical-align: top;
-    margin-right: 1rem;
-}
-nav.menu-user > ul > li ul {
-    padding-left: 0;
-}
-nav.menu-user > ul > li li {
-    list-style: none;
-}
-
-/* Main */
-nav.menu-main ul {
-}
-nav.menu-main li {
-  list-style: none;
-  display: inline-block;
-  margin-right: 1rem;
-}
-/* Admin */
-nav.menu-admin > ul > li {
-    display: inline-block;
-    vertical-align: top;
-    margin-right: 1rem;
-}
-nav.menu-admin > ul > li ul {
-    padding-left: 0;
-}
-nav.menu-admin > ul > li li {
-    list-style: none;
-}
-
-
-
 .text-identifier {
   font-family: var(--bs-font-monospace);
   font-size: 0.875em;

@@ -18,7 +18,6 @@ from core.models import Person, PersonTitle, Title, PersonIdentifier, PersonGrou
     PersonPayment, GroupingRelationship
 from functional_tests.common import FunctionalTestCase, SeleniumFunctionalTestCase, wait
 from supporting.models import PersonIdentifierType, PersonGroupingType, PersonRelationshipType, GroupingRelationshipType
-from django.test import tag, override_settings
 
 
 class AtLeastSinceTestCase(FunctionalTestCase):

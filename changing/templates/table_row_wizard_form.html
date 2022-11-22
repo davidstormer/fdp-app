@@ -4,8 +4,7 @@
             <td class="form-row col0"><i class="fas fa-trash {{ del_icon_class }} clickable" data-id="__prefix__"></i></td>
         {% endif %}
         {% for field in form %}
-            <td
-                class="form-row col{{ forloop.counter }} {% if field|is_management_field or field.is_hidden %}nevershow{% endif %}" id="f_{{ field.id_for_label }}">
+            <td class="form-row col{{ forloop.counter }} {% if field|is_management_field or field.is_hidden %}nevershow{% endif %}" id="f_{{ field.id_for_label }}">
                 <div> {{ field.errors }} {{ field }} </div>
             </td>
         {% endfor %}

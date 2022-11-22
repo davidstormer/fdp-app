@@ -1,3 +1,8 @@
+# This is the default Azure App Service startup file. To use this file set the “Startup Command” setting on Azure
+# App Service under Configuration -> General settings to `deploy/azure/startup-default.sh`.
+# To make a custom startup file for different needs make a copy of this file and update the "Startup Command" setting
+# to call that file instead. (Note that it must be set to be executable e.g. `chmod a+x my-startup-file.sh`)
+#
 # https://learn.microsoft.com/en-us/azure/developer/python/configure-python-web-app-on-app-service
 
 # Install Redis locally on the app service VM

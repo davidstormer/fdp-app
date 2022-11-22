@@ -571,24 +571,14 @@ class RelationshipWidget(MultiWidget):
         :param args:
         :param kwargs:
         """
-
-        class AutocompletePerson(TextInput):
-            template_name = "widget_person_autocomplete.html"
-
-        class AutocompletePersonObject(TextInput):
-            template_name = "widget_person_autocomplete_object.html"
-
-        class AutocompletePersonSubject(TextInput):
-            template_name = "widget_person_autocomplete_subject.html"
-
         super(RelationshipWidget, self).__init__(
             widgets=[
                 HiddenInput(attrs={'class': 'subjectid'}),
-                AutocompletePersonSubject(attrs={'class': 'subjectname'}),
+                TextInput(attrs={'class': 'subjectname'}),
                 Select(
                     attrs={'class': 'relationshiptype'}),
                 HiddenInput(attrs={'class': 'objectid'}),
-                AutocompletePersonObject(attrs={'class': 'objectname'}),
+                TextInput(attrs={'class': 'objectname'}),
             ],
             *args,
             **kwargs

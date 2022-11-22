@@ -20,12 +20,15 @@ from datetime import date
 
 
 class PersonManager(ConfidentiableManager):
-    def search_all_fields(self, query: str, user: FdpUser, pk=None, is_law_enforcement_only=True):
+    def search_all_fields(self, query: str, user: FdpUser, is_law_enforcement=True):
         """Searches multiple fields
+        name
+        identifiers
         """
         if query == '':
             results = (
                 self.all()
+                .filter(is_law_enforcement=is_law_enforcement)
                 .filter_for_confidential_by_user(user=user)
                 .order_by('-pk')
             )
@@ -34,6 +37,7 @@ class PersonManager(ConfidentiableManager):
             query = normalize_search_text(query)
             results = (
                 self.all()
+                .filter(is_law_enforcement=is_law_enforcement)
                 .filter_for_confidential_by_user(user=user)
                 .annotate(search_full_text_rank=SearchRank('search_full_text', query) * 10)
                 .annotate(search_name_rank=TrigramSimilarity('name', query))
@@ -42,9 +46,6 @@ class PersonManager(ConfidentiableManager):
                 .order_by('-search_rank',
                           'name', '-pk')  # <- for consistent order when ranks match
             )
-
-        if is_law_enforcement_only:
-            results = results.filter(is_law_enforcement=True)
 
         # PERFORMANCE
         # Do some prefetching of one-to-many relationships for performance,
