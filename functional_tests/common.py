@@ -1,5 +1,4 @@
 import pdb
-
 from django.test import Client
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -49,16 +48,17 @@ def setup_user(is_host: bool = True,
 
 def wait(fn, *args, **kwargs):
     """Call a given function repeatedly until it doesn't raise AssertionError or WebDriverException.
-    Gives up after five seconds.
+    Gives up after a few tries.
     """
-    max_wait = 20
+    max_tries = 20
+
     start_time = time.time()
     while True:
         try:
             return fn(*args, **kwargs)
         except (AssertionError, WebDriverException, NoSuchElementException) as e:
-            if time.time() - start_time > max_wait:
-                print(f"Tried {max_wait} times. Raising exception...")
+            if time.time() - start_time > max_tries:
+                print(f"Tried {max_tries} times. Raising exception...")
                 raise e
             time.sleep(0.5)
 
@@ -240,11 +240,15 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
             group_input.send_keys(Keys.DOWN)
         group_input.send_keys(Keys.ENTER)
 
-    def el(self, css_selector: str) -> WebElement:
-        """Shorthand for self.browser.find_element(By.CSS_SELECTOR, css_selector)"""
-        return wait(self.browser.find_element,By.CSS_SELECTOR, css_selector)
+    def wait_for(self, css_selector: str) -> WebElement:
+        """Block until element found by given css selector"""
+        wait(self.browser.find_element,By.CSS_SELECTOR, css_selector)
 
-    def select_list(self, name: str) -> WebElement:
+    def el(self, css_selector: str) -> WebElement:
+        """Shorthand for wait(self.browser.find_element, By.CSS_SELECTOR, css_selector)"""
+        return wait(self.browser.find_element, By.CSS_SELECTOR, css_selector)
+
+    def select_list(self, name: str) -> Select:
         return Select(wait(self.browser.find_element, By.CSS_SELECTOR, f'select[name="{name}"]'))
 
     def input(self, name: str) -> WebElement:
@@ -252,3 +256,8 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
 
     def submit_button(self, value: str) -> WebElement:
         return wait(self.browser.find_element, By.CSS_SELECTOR, f"input[value='{value}']")
+
+    def wait_for(self, css_selector: str):
+        """Pause execution until the given element is found
+        """
+        self.el(css_selector)
