@@ -5,11 +5,8 @@ version: 2.1
 # Orbs are reusable packages of CircleCI configuration that you may share across projects, enabling you to create encapsulated, parameterized commands, jobs, and executors that can be used across multiple projects.
 # See: https://circleci.com/docs/2.0/orb-intro/
 orbs:
-  # The python orb contains a set of prepackaged CircleCI configuration you can use repeatedly in your configuration files
-  # Orb commands and jobs help you with common scripting around a language/tool
-  # so you dont have to copy and paste it everywhere.
-  # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
   python: circleci/python@1.2
+  browser-tools: circleci/browser-tools@1.4.0
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
@@ -26,14 +23,11 @@ jobs:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
         environment:
-          TEST_DATABASE_URL: postgresql://root@localhost/circle_test
+          TEST_DATABASE_URL: postgresql://postgres@localhost/circle_test
           FDP_SECRET_KEY: opensesame
           FDP_QUERYSTRING_PASSWORD: ymllgljp//NRW9W7INVajTBS46oBpt0NLPfr7yQ6PEw=
           FDP_DATABASE_PASSWORD: opensesame
-      - image: circleci/postgres:9.6.5-alpine-ram
-        auth:
-          username: mydockerhub-user
-          password: $DOCKERHUB_PASSWORD  # context / project UI env-var re
+      - image: cimg/postgres:11.16
     resource_class: large
     # Checkout the code as the first step. This is a dedicated CircleCI step.
     # The python orb's install-packages step will install the dependencies from a Pipfile via Pipenv by default.
@@ -42,8 +36,9 @@ jobs:
     # CircleCI will report the results back to your VCS provider.
     steps:
       - checkout
+      - browser-tools/install-browser-tools
       - run: sudo apt-get update
-      - run: sudo apt-get install postgresql-client firefox xvfb
+      - run: sudo apt-get install postgresql-client xvfb
       - run: |
           psql -d $TEST_DATABASE_URL < deploy/local/init_db.sql
           cp fdp/settings_example.py fdp/settings.py
@@ -52,17 +47,14 @@ jobs:
       - python/install-packages:
           pkg-manager: pip
           app-dir: ~/project/functional_tests/
-      - run: |
-          cd ~/bin/
-          wget https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux64.tar.gz
-          tar xvzf geckodriver-*-linux64.tar.gz
       - run:
           name: Run tests
-          # This assumes pytest is installed via the install-package step above
           command: ./run-all-tests.sh
           no_output_timeout: 30m
       - store_artifacts:
           path: ~/project/functional_tests/screendumps
+      - store_artifacts:
+          path: ~/project/geckodriver.log
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
