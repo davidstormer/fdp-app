@@ -29,4 +29,4 @@ chown celery.celery /var/log/celery/
 start-stop-daemon --start --oknodo --pidfile /var/run/celery/celery.pid --chuid celery --user celery --group celery --chdir "$APP_PATH" --startas `which celery` -- multi start worker1 --workdir="$APP_PATH" --app=importer_narwhal.celerytasks --logfile=/var/log/celery/celery.log --pidfile=/var/run/celery/celery.pid --loglevel=INFO
 
 # Run web service
-gunicorn --bind=0.0.0.0 --timeout 60 --workers=4 fdp.wsgi
+gunicorn --bind=0.0.0.0 --timeout 600 --workers=4 fdp.wsgi

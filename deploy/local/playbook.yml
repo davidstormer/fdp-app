@@ -68,12 +68,14 @@
             source /home/vagrant/venv-vagrant/bin/activate
             cd /vagrant
 
-      - name: "Install Redis server (used by Celery)"
+      - name: "Install Redis server (used by Celery) and set up celery log path"
         shell: |
           curl -fsSL https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb stretch main" | tee /etc/apt/sources.list.d/redis.list
           apt-get update
           apt-get install -y redis
+          mkdir /var/log/celery
+          chown vagrant.vagrant /var/log/celery
 
       - name: "Add helpful instructions on next steps using local instance"
         blockinfile:

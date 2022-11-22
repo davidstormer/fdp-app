@@ -1,7 +1,7 @@
 from celery import Celery, current_task
 import os
 import django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "fdp.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "fdp.settings_celery")
 django.setup()
 # ~~~~~~ Django dependencies below this line ~~~~~~~
 from importer_narwhal.models import ImportBatch
