@@ -1,0 +1,19 @@
+{% extends 'common/base-bootstrap.html' %}
+{% load i18n admin_urls static compress crispy_forms_tags %}
+
+{% block head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form|crispy }}
+  <button type="submit" class="btn btn-primary">Export</button>
+</form>
+{% endblock %}
+
+{% block script-bottom %}
+$('select.selectmultiple').select2()
+{% endblock %}
