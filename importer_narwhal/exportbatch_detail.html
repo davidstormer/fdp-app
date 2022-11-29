@@ -1,0 +1,23 @@
+{% extends "common/base-bootstrap.html" %}
+{% load i18n admin_urls static compress changing_extras %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'changing:index' %}">Admin</a></li>
+<li class="breadcrumb-item"><a href="{% url 'importer_narwhal:importer-landing' %}">Importer</a></li>
+<li class="breadcrumb-item"><a href="{% url 'importer_narwhal:exporter-landing' %}">Exports</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+{% if object.started and not object.completed %}
+<h2>Export in progress</h2>
+{% elif object.created and not object.started %}
+<h2>Export batch created; awaiting start</h2>
+{% elif object.completed %}
+<h2>Completed</h2>
+<p class="cell-models-to-export">Data models: {{ object.models_to_export }}</p>
+<p class="cell-started">Started: {{ object.started }}</p>
+<p>Completed: {{ object.completed }}</p>
+<p>Download: <a href="{{ object.export_file.url }}">{{ object.export_file|basename }}</a></p>
+{% endif %}
+{% endblock %}
