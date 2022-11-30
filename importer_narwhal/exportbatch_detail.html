@@ -9,25 +9,26 @@
 {% endblock %}
 
 {% block content %}
+
 {% if object.started and not object.completed %}
 <h2>Export in progress</h2>
-<p class="datum datum-batch-number"><span class="label">Batch number:</span>
-  <span class="value">{{object.pk}}</span></p>
-<p class="datum datum-models-to-export"><span class="label">Data models:</span> <span class="value">{{
-  object.models_to_export }}</span></p>
-<p class="datum datum-started"><span class="label">Started:</span> <span class="value">{{ object.started }}</span></p>
 {% elif object.created and not object.started %}
 <h2>Export batch created; awaiting start</h2>
-<p class="datum datum-batch-number"><span class="label">Batch number:</span> <span class="value">{{object.pk}}</span></p>
-<p class="datum datum-models-to-export"><span class="label">Data models:</span> <span class="value">{{ object.models_to_export }}</span></p>
-<p class="datum datum-started"><span class="label">Started:</span> <span class="value">{{ object.started }}</span></p>
 {% elif object.completed %}
 <h2>Completed</h2>
+{% endif %}
+
+{% if object.created %}
 <p class="datum datum-batch-number"><span class="label">Batch number:</span> <span class="value">{{object.pk}}</span></p>
 <p class="datum datum-models-to-export"><span class="label">Data models:</span> <span class="value">{{ object.models_to_export }}</span></p>
+{% endif %}
+{% if object.started %}
 <p class="datum datum-started"><span class="label">Started:</span> <span class="value">{{ object.started }}</span></p>
+{% endif %}
+{% if object.completed %}
 <p class="datum datum-completed"><span class="label">Completed:</span> <span class="value">{{ object.completed }}</span></p>
 <p class="datum datum-download-link"><span class="label">Download:</span> <span class="value"><a href="{{ object.export_file.url }}">{{
   object.export_file|basename }}</a></span></p>
 {% endif %}
+
 {% endblock %}
