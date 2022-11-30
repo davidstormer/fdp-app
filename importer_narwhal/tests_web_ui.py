@@ -2,11 +2,13 @@ import os
 from datetime import datetime, timedelta
 from time import sleep
 
+import dateparser
+from django.db import models
 from django.urls import reverse
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
-from .models import ImportBatch, MODEL_ALLOW_LIST
+from .models import ImportBatch, MODEL_ALLOW_LIST, ExportBatch
 from .narwhal import do_import_from_disk, ImportReport
 from django.test import TestCase
 from django.core.management import call_command
@@ -38,6 +40,17 @@ def wait_until_import_is_done():
             break
         else:
             sleep(1)
+
+
+def wait_until_true(model_instance: models.Model, attribute_name: str, seconds: int):
+    """Checks an attribute of a model until it is 'truthy.' Raises an exception after a given number of seconds of
+    trying."""
+    for _ in range(seconds):
+        if getattr(model_instance, attribute_name):
+            return
+        else:
+            sleep(1)
+    raise Exception(f"'{model_instance}'.'{attribute_name}' never became true after {seconds} seconds.")
 
 
 class TestWebUI(SeleniumFunctionalTestCase):
@@ -724,8 +737,9 @@ class TestExporterUI(SeleniumFunctionalTestCase):
 
         # Then I should see a page confirming that the export has begun and communicating the status of the export
         # to me
+        wait_until_true(ExportBatch.objects.last(), 'completed', 6)
         self.assertIn(
-            "Export in progress",
+            "Completed",
             self.el('h2').text
         )
 
@@ -739,7 +753,7 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         )
         self.assertAlmostEqual(
             import_start_time,
-            datetime.fromisoformat(self.el('.exports-listing .row-1 .cell-started').text),
+            dateparser.parse(self.el('.exports-listing .row-1 .cell-started').text),
             delta=timedelta(10)
         )
         # ...
