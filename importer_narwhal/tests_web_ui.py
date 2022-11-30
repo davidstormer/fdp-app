@@ -715,8 +715,7 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
 
         # Then I select Person
-        Select(self.el('select[name=models_to_export]')) \
-            .select_by_visible_text('Person')
+        self.select2_select_by_visible_text('id_models_to_export', 'Person')
 
         # And I click "Export" -- and take note of the time it started
         self.submit_button_el('Export') \
@@ -756,5 +755,4 @@ class TestExporterUI(SeleniumFunctionalTestCase):
 
         # Then I select Person
         for model_name in MODEL_ALLOW_LIST:
-            Select(self.el('select[name=models_to_export]')) \
-                .select_by_visible_text(model_name)
+            self.select2_select_by_visible_text('id_models_to_export', model_name)
