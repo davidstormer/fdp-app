@@ -755,6 +755,13 @@ class TestExporterUI(SeleniumFunctionalTestCase):
             self.el('h2').text
         )
 
+        # And I should see info like start time
+        self.assertAlmostEqual(
+            import_start_time,
+            dateparser.parse(self.el('.datum-started span.value').text),
+            delta=timedelta(10)
+        )
+
         # And I take note of the batch number for later reference...
         my_first_batch_number = self.el('.datum-batch-number span.value').text
 
