@@ -1,5 +1,6 @@
 import pdb
 from django.test import Client
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
@@ -239,6 +240,16 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         for i in range(nth_result):
             group_input.send_keys(Keys.DOWN)
         group_input.send_keys(Keys.ENTER)
+
+    def select2_select_by_visible_text(self, field_name: str, option_to_select_text: str):
+        select2_input = self.el(f'div#div_{field_name} input.select2-search__field')
+        ActionChains(self.browser).move_to_element(select2_input).click().perform()
+        options = self.el(f'ul#select2-{field_name}-results')
+        option_to_select = options.find_element(By.XPATH, f'//li[contains(text(), "{option_to_select_text}")]')
+        self.browser.execute_script("arguments[0].scrollIntoView();", option_to_select)
+        ActionChains(self.browser).move_to_element(option_to_select).click().perform()
+        if option_to_select_text not in self.el(f"div#div_{field_name} .select2-selection__rendered").text:
+            raise Exception(f"Failed to select '{option_to_select_text}' in Select2 select dropdown '{field_name}'")
 
     def wait_for(self, css_selector: str) -> WebElement:
         """Block until element found by given css selector"""
