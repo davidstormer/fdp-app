@@ -26,20 +26,20 @@
             <td>Link</td>
         </tr>
     </thead>
-{% for batch in object_list %}
     <tbody>
+{% for batch in object_list %}
     <tr class="row-{{ forloop.counter }}">
-        <td>{{ batch.pk }}</td>
+        <td class="cell-batch-number">{{ batch.pk }}</td>
         <td class="cell-models-to-export">{{ batch.models_to_export }}</td>
         <td class="cell-started">{{ batch.started }}</td>
-        <td>{{ batch.completed }}</td>
-        <td><a href="{{ batch.export_file.url }}">{{ batch.export_file|basename }}</a></td>
-        <td><a href="{{ batch.get_absolute_url }}">details</a></td>
+        <td class="cell-completed">>{{ batch.completed }}</td>
+        <td class="cell-file-link">><a href="{{ batch.export_file.url }}">{{ batch.export_file|basename }}</a></td>
+        <td class="cell-details-link">><a href="{{ batch.get_absolute_url }}">details</a></td>
     </tr>
-    </tbody>
 {% empty %}
-    <p>No exports batches yet.</p>
+    <p>No export batches yet.</p>
 {% endfor %}
+    </tbody>
 </table>
 
   {% if page_obj.paginator.num_pages > 1 %}

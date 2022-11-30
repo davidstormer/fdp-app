@@ -5,8 +5,11 @@ from time import sleep
 import dateparser
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.wait import WebDriverWait
 
 from .models import ImportBatch, MODEL_ALLOW_LIST, ExportBatch
 from .narwhal import do_import_from_disk, ImportReport
@@ -723,11 +726,20 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         for i in range(10):
             Person.objects.create(name=f"Test Person {i}")
 
-        # When I go to the export page
+        # When I go to the exporter landing page
         self.log_in(is_administrator=True)
-        self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/')
 
-        # Then I select Person
+        # It being our first time, there should be a message that says "No exports batches yet"
+        self.assertIn(
+            "No export batches yet",
+            self.el('main.container').text
+        )
+
+        # And I click the "Start Export" link
+        self.browser.find_element(By.XPATH, '//a[contains(text(), "Start Export")]').click()
+
+        # Then I select Person in the models multiselect
         self.select2_select_by_visible_text('id_models_to_export', 'Person')
 
         # And I click "Export" -- and take note of the time it started
@@ -735,7 +747,7 @@ class TestExporterUI(SeleniumFunctionalTestCase):
             .click()
         import_start_time = datetime.now()
 
-        # Then I should see a page confirming that the export has begun and communicating the status of the export
+        # Then I should see a page confirming that the export is complete and communicating the status of the export
         # to me
         wait_until_true(ExportBatch.objects.last(), 'completed', 6)
         self.assertIn(
@@ -743,9 +755,13 @@ class TestExporterUI(SeleniumFunctionalTestCase):
             self.el('h2').text
         )
 
+        # And I take note of the batch number for later reference...
+        my_first_batch_number = self.el('.datum-batch-number span.value').text
+
         # And when I go back to the exporter landing page
         # Then I should see a listing of past and present exports
         # Showing the status of each
+        # And when they happened
         self.browser.get(self.live_server_url + f'/changing/importer/exports/')
         self.assertIn(
             'Person',
@@ -756,9 +772,35 @@ class TestExporterUI(SeleniumFunctionalTestCase):
             dateparser.parse(self.el('.exports-listing .row-1 .cell-started').text),
             delta=timedelta(10)
         )
-        # ...
 
-    @tag('wip')
+        # And after doing dozens of batches
+        # When I go to the exports landing page
+        # I should see a paginator
+        for _ in range(36):
+            # For expedience make a bunch of phony export batch records
+            ExportBatch.objects.create(
+                models_to_export=['Grouping', ],  # Not "Person" to distinguish from first batch
+                started=timezone.now(),
+                completed=timezone.now(),
+                export_file=ExportBatch.objects.last().export_file  # Reuse the file from the first import
+            )
+
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/')
+        self.assertIn(
+            "Next",
+            self.el('main.container ul.pagination').text
+        )
+
+        # And if I go to the last page I see my first export batch
+        last_link = self.el('main.container ul.pagination') \
+            .find_element(By.XPATH, '//a[contains(text(), "Last")]')
+        wait(last_link.click)
+
+        self.assertIn(
+            my_first_batch_number,
+            self.el('.exports-listing tr:last-child .cell-batch-number').text
+        )
+
     def test_export_page_model_options(self):
         """Test that the list of available models is correct
         """
@@ -767,6 +809,6 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         self.log_in(is_administrator=True)
         self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
 
-        # Then I select Person
+        # Then I should see all of the exportable models available
         for model_name in MODEL_ALLOW_LIST:
             self.select2_select_by_visible_text('id_models_to_export', model_name)
