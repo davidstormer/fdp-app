@@ -876,3 +876,24 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         # Then I should be able to select all of the exportable models available
         for model_name in MODEL_ALLOW_LIST:
             self.select2_select_by_visible_text('id_models_to_export', model_name)
+
+    @tag('visual')
+    def dormant_test_listing_with_lots_of_models_selected(self):
+        """DORMANT visual test. Requires manual inspection. To use:
+        Remove 'dormant_' from the beginning of the function name.
+        Then check the captured screenshot to evaluate.
+        """
+        # Given I run an import with LOTS of models select...
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
+        for model_name in MODEL_ALLOW_LIST:
+            self.select2_select_by_visible_text('id_models_to_export', model_name)
+        self.submit_button_el('Export') \
+            .click()
+        wait_until_true(ExportBatch.objects.last(), 'completed', 6)
+
+        # When I go to the listing page
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/')
+
+        # Does it screw up the layout of the page?
+        self.take_screenshot_and_dump_html()
