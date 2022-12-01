@@ -1,5 +1,5 @@
 {% extends "common/base-bootstrap.html" %}
-{% load i18n admin_urls static compress changing_extras %}
+{% load i18n admin_urls static compress changing_extras humanize %}
 
 {% block breadcrumbs %}
 <li class="breadcrumb-item"><a href="{% url 'changing:index' %}">Admin</a></li>
@@ -17,18 +17,49 @@
 {% elif object.completed %}
 <h2>Completed</h2>
 {% endif %}
-
-{% if object.created %}
-<p class="datum datum-batch-number"><span class="label">Batch number:</span> <span class="value">{{object.pk}}</span></p>
-<p class="datum datum-models-to-export"><span class="label">Data models:</span> <span class="value">{{ object.models_to_export }}</span></p>
-{% endif %}
-{% if object.started %}
-<p class="datum datum-started"><span class="label">Started:</span> <span class="value">{{ object.started }}</span></p>
-{% endif %}
-{% if object.completed %}
-<p class="datum datum-completed"><span class="label">Completed:</span> <span class="value">{{ object.completed }}</span></p>
-<p class="datum datum-download-link"><span class="label">Download:</span> <span class="value"><a href="{{ object.export_file.url }}">{{
-  object.export_file|basename }}</a></span></p>
-{% endif %}
-
+<div class="row">
+  <div class="col-md-6 export-batch-details">
+    <div class="importer-info-card card">
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+        {% if object.created %}
+        <li class="list-group-item"><p class="datum datum-batch-number"><span class="label">Batch number:</span> <span
+            class="value">{{object.pk}}</span></p></li>
+        <li class="list-group-item"><p class="datum datum-models-to-export"><span class="label">Data models:</span> <span
+            class="value">{{ object.models_to_export }}</span></p></li>
+        {% endif %}
+        {% if object.started %}
+        <li class="list-group-item"><p class="datum datum-started"><span class="label">Started:</span> <span
+            class="value">{{ object.started }}</span></p></li>
+        {% endif %}
+        {% if object.completed %}
+        <li class="list-group-item"><p class="datum datum-completed"><span class="label">Completed:</span> <span
+            class="value">{{ object.completed }}</span></p></li>
+        <li class="list-group-item"><p class="datum datum-download-link"><span class="label">Download:</span>
+          <span class="value"><a href="{{ object.export_file.url }}">{{ object.export_file|basename }}</a></span></p></li>
+        {% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    {% if object.started and not object.completed %}
+      <div class="card">
+        <div class="card-body">
+            <div class="text-center mt-5 mb-5">
+            <div class="spinner-border text-primary spinner-giant" role="status">
+              <span class="visually-hidden">Validating...</span>
+            </div>
+            <p>Validation in progress</p>
+            </div>
+            <p>Started: {{object.started|naturaltime}}</p>
+            <p>Click the Check button to update status.</p>
+          <div class="text-end">
+            <a class="btn btn-primary importer-refresh-button" href="{{object.get_absolute_url}}"><i class="fas fa-redo"></i> Check</a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}
