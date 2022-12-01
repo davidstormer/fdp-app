@@ -26,7 +26,7 @@
         <li class="list-group-item"><p class="datum datum-batch-number"><span class="label">Batch number:</span> <span
             class="value">{{object.pk}}</span></p></li>
         <li class="list-group-item"><p class="datum datum-models-to-export"><span class="label">Data models:</span> <span
-            class="value">{{ object.models_to_export }}</span></p></li>
+            class="value">{{ object.models_to_export|join:', ' }}</span></p></li>
         {% endif %}
         {% if object.started %}
         <li class="list-group-item"><p class="datum datum-started"><span class="label">Started:</span> <span

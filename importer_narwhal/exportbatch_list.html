@@ -30,7 +30,7 @@
 {% for batch in object_list %}
     <tr class="row-{{ forloop.counter }}">
         <td class="cell-batch-number">{{ batch.pk }}</td>
-        <td class="cell-models-to-export">{{ batch.models_to_export }}</td>
+        <td class="cell-models-to-export">{{ batch.models_to_export|join:', ' }}</td>
         <td class="cell-started">{{ batch.started }}</td>
         <td class="cell-completed">{{ batch.completed }}</td>
         <td class="cell-file-link"><a href="{{ batch.export_file.url }}">{{ batch.export_file|basename }}</a></td>
