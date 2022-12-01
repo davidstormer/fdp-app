@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from time import sleep
+from unittest.mock import patch
 
 import dateparser
 from django.db import models
@@ -12,7 +13,7 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
 from .models import ImportBatch, MODEL_ALLOW_LIST, ExportBatch
-from .narwhal import do_import_from_disk, ImportReport
+from .narwhal import do_import_from_disk, ImportReport, do_export
 from django.test import TestCase
 from django.core.management import call_command
 from io import StringIO
@@ -49,7 +50,8 @@ def wait_until_true(model_instance: models.Model, attribute_name: str, seconds: 
     """Checks an attribute of a model until it is 'truthy.' Raises an exception after a given number of seconds of
     trying."""
     for _ in range(seconds):
-        if getattr(model_instance, attribute_name):
+        model_instance.refresh_from_db()
+        if getattr(model_instance, attribute_name) is not None:
             return
         else:
             sleep(1)
@@ -826,7 +828,7 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         import_start_time = datetime.now()
 
         # Then GIVEN the batch is not complete yet...
-        wait_until_true(ExportBatch.objects.last(), 'completed', 6)
+        wait_until_true(ExportBatch.objects.last(), 'completed', 16)
         batch = ExportBatch.objects.last()
         batch.completed = None
         batch.save()
