@@ -116,8 +116,9 @@
 
             Then point your browser to 'localhost:8000' to see the FDP Application
 
-            To test the Celery background tasks manager on imports and exports run:
-            'celery -A importer_narwhal.celerytasks worker -l INFO'
+            > To test the Celery background tasks manager on imports and exports run:
+            > 'sudo service redis-server start'
+            > 'celery --app importer_narwhal.celerytasks worker -l INFO'
 
       - name: "Install python tests dependencies"
         pip:

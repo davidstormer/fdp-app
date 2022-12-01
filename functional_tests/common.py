@@ -222,7 +222,6 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
     def log_out(self):
         self.browser.get(self.live_server_url + '/account/logout/')
 
-
     def enter_autocomplete_data(self, input_css_selector: str, results_css_selector: str, search_string: str,
                                 nth_result: int = 1) -> None:
         """Interacts with the autocomplete widget to select a database entity.
@@ -253,7 +252,7 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
 
     def wait_for(self, css_selector: str) -> WebElement:
         """Block until element found by given css selector"""
-        wait(self.browser.find_element,By.CSS_SELECTOR, css_selector)
+        wait(self.browser.find_element, By.CSS_SELECTOR, css_selector)
 
     def el(self, css_selector: str) -> WebElement:
         """Shorthand for wait(self.browser.find_element, By.CSS_SELECTOR, css_selector)"""

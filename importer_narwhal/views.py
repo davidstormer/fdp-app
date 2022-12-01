@@ -20,9 +20,10 @@ from tablib import Dataset
 
 from fdp import settings
 from importer_narwhal.models import ImportBatch, ExportBatch, MODEL_ALLOW_LIST
-from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping, do_export
+from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping, do_export, run_export_batch
 from inheritable.models import AbstractUrlValidator, AbstractConfiguration
-from importer_narwhal.celerytasks import background_do_dry_run, celery_app, background_run_import_batch
+from importer_narwhal.celerytasks import background_do_dry_run, celery_app, background_run_import_batch, \
+    background_run_export_batch
 
 from inheritable.views import HostAdminSyncTemplateView, HostAdminSyncListView, HostAdminSyncDetailView, \
     HostAdminAccessMixin, HostAdminSyncCreateView, SecuredSyncView
@@ -63,7 +64,11 @@ class ImportBatchCreateView(HostAdminSyncCreateView):
         return context
 
 
-def try_celery_task_or_fallback_to_synchronous_call(celery_task, fallback_function, batch_record: ImportBatch, request):
+def try_celery_task_or_fallback_to_synchronous_call(
+        celery_task,
+        fallback_function,
+        batch_record: ImportBatch or ExportBatch,
+        request):
     try:
         celery_ping_result = celery_app.control.ping()  # Make sure that Celery is configured and working
         if celery_ping_result:
@@ -225,19 +230,13 @@ class ExportBatchCreateView(HostAdminSyncCreateView):
         result = super().post(request, *args, **kwargs)
         self.object.started = timezone.now()
         self.object.save()
-        with tempfile.TemporaryDirectory() as tempdir:
-            zipfile_name = f'{tempdir}/export-{self.object.created:%s}.zip'
-            with ZipFile(zipfile_name, 'w') as myzip:
-                for model in self.object.models_to_export:
-                    file_path = f"{tempdir}/{model}-{self.object.created:%s}.csv"
-                    do_export(model, file_path)
-                    myzip.write(file_path)
-            with Path(zipfile_name).open(mode='rb') as f:
-                self.object.export_file = File(f, name=Path(zipfile_name).name)
-                self.object.save()
-        self.object.completed = timezone.now()
-        self.object.save()
-        return result
+        try_celery_task_or_fallback_to_synchronous_call(
+            background_run_export_batch,
+            run_export_batch,
+            self.object,
+            self.request
+        )
+        return redirect(reverse('importer_narwhal:exporter-batch', kwargs={'pk': self.object.pk}))
 
 
 class ExportBatchDetailView(HostAdminSyncDetailView):
