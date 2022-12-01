@@ -720,7 +720,6 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
 
 class TestExporterUI(SeleniumFunctionalTestCase):
     @tag('wip')
-    @override_settings(DEBUG=True)
     def test_export_page_success_scenario(self):
         # GIVEN there's data in the system
         for i in range(10):
@@ -745,7 +744,7 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         # And I click "Export" -- and take note of the time it started
         self.submit_button_el('Export') \
             .click()
-        import_start_time = datetime.now()
+        start_time = datetime.now()
 
         # Then I should see a page confirming that the export is complete and communicating the status of the export
         # to me
@@ -757,7 +756,7 @@ class TestExporterUI(SeleniumFunctionalTestCase):
 
         # And I should see info like start time
         self.assertAlmostEqual(
-            import_start_time,
+            start_time,
             dateparser.parse(self.el('.datum-started span.value').text),
             delta=timedelta(10)
         )
@@ -775,7 +774,7 @@ class TestExporterUI(SeleniumFunctionalTestCase):
             self.el('.exports-listing .row-1 .cell-models-to-export').text
         )
         self.assertAlmostEqual(
-            import_start_time,
+            start_time,
             dateparser.parse(self.el('.exports-listing .row-1 .cell-started').text),
             delta=timedelta(10)
         )
@@ -808,6 +807,64 @@ class TestExporterUI(SeleniumFunctionalTestCase):
             self.el('.exports-listing tr:last-child .cell-batch-number').text
         )
 
+    @tag('wip')
+    def test_detail_page_export_in_progress(self):
+        # GIVEN there's data in the system
+        for i in range(10):
+            Person.objects.create(name=f"Test Person {i}")
+
+        # When I go to the exporter start page
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
+
+        # Then I select Person in the models multiselect
+        self.select2_select_by_visible_text('id_models_to_export', 'Person')
+
+        # And I click "Export" -- and take note of the time it started
+        self.submit_button_el('Export') \
+            .click()
+        import_start_time = datetime.now()
+
+        # Then GIVEN the batch is not complete yet...
+        wait_until_true(ExportBatch.objects.last(), 'completed', 6)
+        batch = ExportBatch.objects.last()
+        batch.completed = None
+        batch.save()
+
+        # And I go to the detail page
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/{batch.pk}')
+
+        # Then I should see a progress spinner and a "check" button so I can check the status after a while
+        self.assertIn(
+            "Export in progress",
+            self.el('h2').text
+        )
+        self.assertIn(
+            "Click the Check button to update status",
+            self.el('main.container').text
+        )
+
+        # Then GIVEN the batch has completed...
+        batch = ExportBatch.objects.last()
+        batch.completed = timezone.now()
+        batch.save()
+        # And I take note of the time that it completed (non-timezone aware)
+        end_time = datetime.now()
+
+        # And I click the Check button...
+        self.browser.find_element(By.XPATH, '//a[contains(text(), "Check")]').click()
+
+        # Then the page should show that the batch is complete...
+        self.assertIn(
+            "Completed",
+            self.el('h2').text
+        )
+        self.assertAlmostEqual(
+            end_time,
+            dateparser.parse(self.el('.datum-completed span.value').text),
+            delta=timedelta(10)
+        )
+
     def test_export_page_model_options(self):
         """Test that the list of available models is correct
         """
@@ -816,6 +873,6 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         self.log_in(is_administrator=True)
         self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
 
-        # Then I should see all of the exportable models available
+        # Then I should be able to select all of the exportable models available
         for model_name in MODEL_ALLOW_LIST:
             self.select2_select_by_visible_text('id_models_to_export', model_name)
