@@ -23,7 +23,6 @@ class TryCeleryTaskOrFallbackToSynchronousCallTestCase(TestCase):
 
     # Given that the message broker is down (i.e. Redis is offline)
     # When Redis is down ping() raises an OperationalError exception
-    @tag('wip')
     @patch('importer_narwhal.celerytasks.celery_app.control.ping', side_effect=kombu.exceptions.OperationalError)
     def test_message_broker_down(self, mock_ping):
         # and there's a celery task
@@ -65,7 +64,6 @@ class TryCeleryTaskOrFallbackToSynchronousCallTestCase(TestCase):
 
     # Given that celery is down but the message broker is not (i.e. Redis is online, but the celery service isn't
     # running). When Celery is down, ping() returns an empty list.
-    @tag('wip')
     @patch('importer_narwhal.celerytasks.celery_app.control.ping', return_value=[])
     def test_celery_down(self, mock_ping):
         # and there's a celery task
@@ -138,7 +136,6 @@ class TestBackgroundTasks(SeleniumFunctionalTestCase):
                     )
                 time.sleep(1)
 
-    @tag('wip')
     @patch('importer_narwhal.views.run_export_batch', mock_expensive_run_export_batch)
     @patch('importer_narwhal.celerytasks.run_export_batch', mock_expensive_run_export_batch)
     @patch('importer_narwhal.views.celery_app.control.ping', return_value=[])  # <- no Celery workers
@@ -179,7 +176,6 @@ class TestBackgroundTasks(SeleniumFunctionalTestCase):
             self.browser.page_source
         )
 
-    @tag('wip')
     @patch('importer_narwhal.views.run_export_batch', mock_expensive_run_export_batch)
     @patch('importer_narwhal.celerytasks.run_export_batch', mock_expensive_run_export_batch)
     @patch('importer_narwhal.views.celery_app.control.ping', return_value=['phony_worker1'])
