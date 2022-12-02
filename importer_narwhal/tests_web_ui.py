@@ -721,7 +721,6 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
 
 
 class TestExporterUI(SeleniumFunctionalTestCase):
-    @tag('wip')
     def test_export_page_success_scenario(self):
         # GIVEN there's data in the system
         for i in range(10):
@@ -809,7 +808,6 @@ class TestExporterUI(SeleniumFunctionalTestCase):
             self.el('.exports-listing tr:last-child .cell-batch-number').text
         )
 
-    @tag('wip')
     def test_detail_page_export_in_progress(self):
         # GIVEN there's data in the system
         for i in range(10):
