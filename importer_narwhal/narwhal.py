@@ -789,7 +789,7 @@ def run_export_batch(export_batch):
             for model in export_batch.models_to_export:
                 file_path = f"{tempdir}/{model}-{export_batch.created:%s}.csv"
                 do_export(model, file_path)
-                myzip.write(file_path)
+                myzip.write(file_path, arcname=os.path.basename(file_path))
         with Path(zipfile_name).open(mode='rb') as f:
             export_batch.export_file = File(f, name=Path(zipfile_name).name)
             export_batch.save()

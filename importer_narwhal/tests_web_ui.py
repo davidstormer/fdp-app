@@ -1,4 +1,5 @@
 import os
+import zipfile
 from datetime import datetime, timedelta
 from time import sleep
 from unittest.mock import patch
@@ -721,10 +722,11 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
 
 
 class TestExporterUI(SeleniumFunctionalTestCase):
+    @tag('wip')
     def test_export_page_success_scenario(self):
-        # GIVEN there's data in the system
+        # GIVEN there are Person records in the system with the string "coalmouse" in the name fields
         for i in range(10):
-            Person.objects.create(name=f"Test Person {i}")
+            Person.objects.create(name=f"Test Person coalmouse {i}")
 
         # When I go to the exporter landing page
         self.log_in(is_administrator=True)
@@ -754,6 +756,32 @@ class TestExporterUI(SeleniumFunctionalTestCase):
             "Completed",
             self.el('h2').text
         )
+
+        # And I should be able to download the file
+        self.el('.datum-download-link a').click()
+        sleep(5)
+        downloaded_file_name = os.listdir(self.downloads_folder)[0]
+        self.assertRegex(
+            downloaded_file_name,
+            r"export-.+\.zip"
+        )
+        # and it should be a zip file that contains a CSV file named after the model
+        with tempfile.TemporaryDirectory() as tempdir:
+            with zipfile.ZipFile(self.downloads_folder + '/' + downloaded_file_name) as zip_fd:
+                zip_fd.extractall(tempdir)
+                zipfile_listing = os.listdir(tempdir)
+                self.assertRegex(
+                    zipfile_listing[0],
+                    r"Person-.+\.csv"
+                )
+                # and the name field should have the string "coalmouse" in it
+                with open(tempdir + '/' + zipfile_listing[0]) as csv_fd:
+                    csv_reader = csv.DictReader(csv_fd)
+                    for row in csv_reader:
+                        self.assertIn(
+                            'coalmouse',
+                            row['name']
+                        )
 
         # And I should see info like start time
         self.assertAlmostEqual(
