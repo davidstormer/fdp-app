@@ -1,6 +1,9 @@
 import pdb
+import shutil
+import tempfile
+
 from django.test import Client
-from selenium.webdriver import ActionChains
+from selenium.webdriver import ActionChains, FirefoxProfile
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
@@ -143,7 +146,13 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
 
     def setUp(self):
         try:
-            self.browser = webdriver.Firefox()
+            self.downloads_folder = tempfile.mkdtemp()
+            firefox_profile = FirefoxProfile()
+            firefox_profile.set_preference("browser.download.dir", self.downloads_folder)
+            firefox_profile.set_preference("browser.download.folderList", 2)
+            firefox_profile.set_preference("browser.download.manager.showWhenStarting", False)
+            firefox_profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
+            self.browser = webdriver.Firefox(firefox_profile=firefox_profile)
         except (SessionNotCreatedException, WebDriverException) as e:
             self.skipTest(f"WARNING skipping test, couldn't start Selenium web driver -- {e}")
 
@@ -151,6 +160,7 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         if self._test_has_failed():
             self.take_screenshot_and_dump_html()
         self.browser.quit()
+        shutil.rmtree(self.downloads_folder)
         super().tearDown()
 
     def _test_has_failed(self):
