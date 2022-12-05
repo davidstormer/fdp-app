@@ -722,7 +722,6 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
 
 
 class TestExporterUI(SeleniumFunctionalTestCase):
-    @tag('wip')
     def test_export_page_success_scenario(self):
         # GIVEN there are Person records in the system with the string "coalmouse" in the name fields
         for i in range(10):
