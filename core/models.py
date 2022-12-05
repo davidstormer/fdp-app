@@ -526,8 +526,10 @@ class Person(Confidentiable, Descriptable):
 
         :return: Filtered queryset from which officer will be retrieved.
         """
-        # ensure that only officers are retrieved
-        qs = cls.active_objects.filter(is_law_enforcement=True)
+        # Don't filter for is_law_enforcement=True anymore FDAB-492
+        # ~~ensure that only officers are retrieved~~
+        # qs = cls.active_objects.filter(is_law_enforcement=True)
+        qs = cls.active_objects.filter()
         # ensure that user has privileges for officer
         qs = qs.filter_for_confidential_by_user(user=user)
         # include the related data

@@ -349,7 +349,7 @@ class OfficerSearchRoundupView(SecuredSyncTemplateView):
         except ValueError:
             group = None
 
-        results = Person.objects.search_all_fields(query_string, request.user)
+        results = Person.objects.search_all_fields(query_string, request.user, is_law_enforcement_only=False)
 
         if group:
             results = results.filter(person_grouping__grouping=group).distinct()
