@@ -21,10 +21,10 @@ from supporting.models import PersonIdentifierType, PersonRelationshipType, Situ
     Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType, IncidentTag, \
     EncounterReason, IncidentLocationType, PersonIncidentTag, ContentIdentifierType, ContentCaseOutcome, \
     AllegationOutcome, Allegation
-from .models import validate_import_sheet_extension, validate_import_sheet_file_size
-from .celerytasks import celery_app
-from .models import validate_import_sheet_extension, validate_import_sheet_file_size, ImportBatch
-from .narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run, \
+from importer_narwhal.models import validate_import_sheet_extension, validate_import_sheet_file_size
+from importer_narwhal.celerytasks import celery_app
+from importer_narwhal.models import validate_import_sheet_extension, validate_import_sheet_file_size, ImportBatch
+from importer_narwhal.narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run, \
     run_import_batch
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
     PersonGrouping, GroupingAlias, GroupingRelationship, Incident, PersonIncident
@@ -36,7 +36,7 @@ import tempfile
 import csv
 from uuid import uuid4
 from core.models import Person
-from .views import try_celery_task_or_fallback_to_synchronous_call
+from importer_narwhal.views import try_celery_task_or_fallback_to_synchronous_call
 
 
 class NarwhalSimpleTestCase(SimpleTestCase):

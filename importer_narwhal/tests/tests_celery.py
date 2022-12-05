@@ -1,9 +1,9 @@
 from django.test import TestCase, SimpleTestCase, tag, RequestFactory, override_settings
 from selenium.webdriver.common.by import By
 from functional_tests.common import SeleniumFunctionalTestCase
-from .models import ImportBatch
-from .narwhal import do_export, run_export_batch
-from .views import try_celery_task_or_fallback_to_synchronous_call
+from importer_narwhal.models import ImportBatch
+from importer_narwhal.narwhal import do_export, run_export_batch
+from importer_narwhal.views import try_celery_task_or_fallback_to_synchronous_call
 import io
 from unittest.mock import patch, MagicMock
 import kombu
@@ -11,7 +11,7 @@ from django.contrib import messages as django_messages
 from django.contrib.messages.middleware import MessageMiddleware
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.files import File
-from .celerytasks import celery_app
+from importer_narwhal.celerytasks import celery_app
 import time
 from time import sleep
 
