@@ -13,8 +13,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
-from .models import ImportBatch, MODEL_ALLOW_LIST, ExportBatch
-from .narwhal import do_import_from_disk, ImportReport, do_export
+from importer_narwhal.models import ImportBatch, MODEL_ALLOW_LIST, ExportBatch
+from importer_narwhal.narwhal import do_import_from_disk, ImportReport, do_export
 from django.test import TestCase
 from django.core.management import call_command
 from io import StringIO
