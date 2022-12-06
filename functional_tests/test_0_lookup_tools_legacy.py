@@ -157,7 +157,7 @@ class LegacyLookUpToolsTestCase(SeleniumFunctionalTestCase):
             grouping_record.name
         )
 
-    def test_content_attachments(self):
+    def test_content_edit_page_attachments(self):
         attachment_record = Attachment.objects.create(
             name='Test Attachment faciolingual',
             type=AttachmentType.objects.create(name='Test Attachment Type')
@@ -198,8 +198,7 @@ class LegacyLookUpToolsTestCase(SeleniumFunctionalTestCase):
             attachment_record.name
         )
 
-    @tag('wip')
-    def test_content_incidents(self):
+    def test_content_edit_page_incidents(self):
         incident_record = Incident.objects.create(description="Test Incident villakin")
 
         self.log_in(is_administrator=True)

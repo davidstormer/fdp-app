@@ -1578,16 +1578,6 @@ var Fdp = (function (fdpDef, $, w, d) {
                     request.term /* searchTerm */
                 );
             }, /* source */
-            create: function (event, ui) {
-                /* Render info card */
-
-                /* Highlight text on click -- Behavior inspired by vuetify autocomplete */
-                $('.ui-autocomplete-input').click(function () { this.select() })
-            },
-            open: function (event, ui) {
-                /* Make the profile link work */
-                $('.ui-autocomplete-stop-propagation').click(function( event ) { event.stopPropagation() });
-            },
             select: function(event, ui) {
                 var item = ui.item;
                 var id = item.value;
@@ -1606,12 +1596,7 @@ var Fdp = (function (fdpDef, $, w, d) {
                 event.preventDefault();
             }, /* select */
             response: commonDef.getAutocompleteResponseFunc("No matches found" /* noResultsMsg */) /* response */
-        })
-        .autocomplete( "instance" )._renderItem = function( ul, item ) {
-          return $( "<li>" )
-          .append( "<div>" + item.teaserHtml + "</div>" )
-          .appendTo( ul );
-        };
+        });
         // autocomplete fields are already populated during initialization
         if (idInputElem.val() && searchInputElem.val()) {
             // adds styling to search box, to indicate previous successful selection
