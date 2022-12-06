@@ -2,7 +2,9 @@ import hashlib
 import json
 import os
 import re
+import tempfile
 from pathlib import Path
+from zipfile import ZipFile
 
 import tablib
 from axes.models import AccessLog
@@ -775,6 +777,24 @@ def do_export(model_name, file_name):
     data_set = model_resource.export()
     with open(file_name, 'w') as fd:
         fd.write(data_set.csv)
+
+
+def run_export_batch(export_batch):
+    """Process a batch of exports into a single Zip file and attach it to an ExportBatch record"""
+    export_batch.started = timezone.now()
+    export_batch.save()
+    with tempfile.TemporaryDirectory() as tempdir:
+        zipfile_name = f'{tempdir}/export-{export_batch.created:%s}.zip'
+        with ZipFile(zipfile_name, 'w') as myzip:
+            for model in export_batch.models_to_export:
+                file_path = f"{tempdir}/{model}-{export_batch.created:%s}.csv"
+                do_export(model, file_path)
+                myzip.write(file_path, arcname=os.path.basename(file_path))
+        with Path(zipfile_name).open(mode='rb') as f:
+            export_batch.export_file = File(f, name=Path(zipfile_name).name)
+            export_batch.save()
+    export_batch.completed = timezone.now()
+    export_batch.save()
 
 
 class BatchDeleteFoundUpdates(Exception):

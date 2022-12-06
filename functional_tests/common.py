@@ -1,5 +1,9 @@
 import pdb
+import shutil
+import tempfile
+
 from django.test import Client
+from selenium.webdriver import ActionChains, FirefoxProfile
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
@@ -142,7 +146,13 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
 
     def setUp(self):
         try:
-            self.browser = webdriver.Firefox()
+            self.downloads_folder = tempfile.mkdtemp()
+            firefox_profile = FirefoxProfile()
+            firefox_profile.set_preference("browser.download.dir", self.downloads_folder)
+            firefox_profile.set_preference("browser.download.folderList", 2)
+            firefox_profile.set_preference("browser.download.manager.showWhenStarting", False)
+            firefox_profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
+            self.browser = webdriver.Firefox(firefox_profile=firefox_profile)
         except (SessionNotCreatedException, WebDriverException) as e:
             self.skipTest(f"WARNING skipping test, couldn't start Selenium web driver -- {e}")
 
@@ -150,6 +160,7 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
         if self._test_has_failed():
             self.take_screenshot_and_dump_html()
         self.browser.quit()
+        shutil.rmtree(self.downloads_folder)
         super().tearDown()
 
     def _test_has_failed(self):
@@ -221,7 +232,6 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
     def log_out(self):
         self.browser.get(self.live_server_url + '/account/logout/')
 
-
     def enter_autocomplete_data(self, input_css_selector: str, results_css_selector: str, search_string: str,
                                 nth_result: int = 1) -> None:
         """Interacts with the autocomplete widget to select a database entity.
@@ -240,9 +250,19 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
             group_input.send_keys(Keys.DOWN)
         group_input.send_keys(Keys.ENTER)
 
+    def select2_select_by_visible_text(self, field_name: str, option_to_select_text: str):
+        select2_input = self.el(f'div#div_{field_name} input.select2-search__field')
+        ActionChains(self.browser).move_to_element(select2_input).click().perform()
+        options = self.el(f'ul#select2-{field_name}-results')
+        option_to_select = options.find_element(By.XPATH, f'//li[contains(text(), "{option_to_select_text}")]')
+        self.browser.execute_script("arguments[0].scrollIntoView();", option_to_select)
+        ActionChains(self.browser).move_to_element(option_to_select).click().perform()
+        if option_to_select_text not in self.el(f"div#div_{field_name} .select2-selection__rendered").text:
+            raise Exception(f"Failed to select '{option_to_select_text}' in Select2 select dropdown '{field_name}'")
+
     def wait_for(self, css_selector: str) -> WebElement:
         """Block until element found by given css selector"""
-        wait(self.browser.find_element,By.CSS_SELECTOR, css_selector)
+        wait(self.browser.find_element, By.CSS_SELECTOR, css_selector)
 
     def el(self, css_selector: str) -> WebElement:
         """Shorthand for wait(self.browser.find_element, By.CSS_SELECTOR, css_selector)"""
@@ -256,6 +276,9 @@ class SeleniumFunctionalTestCase(StaticLiveServerTestCase):
 
     def submit_button(self, value: str) -> WebElement:
         return wait(self.browser.find_element, By.CSS_SELECTOR, f"input[value='{value}']")
+
+    def submit_button_el(self, value: str) -> WebElement:
+        return wait(self.browser.find_element, By.XPATH, f'//button[text()="{value}"]')
 
     def wait_for(self, css_selector: str):
         """Pause execution until the given element is found
