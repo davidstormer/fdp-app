@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from inheritable.models import AbstractDateValidator
 from inheritable.forms import AbstractWizardModelForm, DateWithComponentsField, DateWithCalendarInput, \
     RelationshipField, AbstractWizardInlineFormSet, AbstractWizardModelFormSet, DateWithCalendarAndSplitInput, \
-    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField, FuzzyDateSpanEndField
+    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField, FuzzyDateSpanEndField, PersonRelationshipField
 from .models import LawEnforcementCategories
 from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPerson, Attachment, \
     ContentPersonAllegation, ContentPersonPenalty
@@ -817,7 +817,7 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_relationship = RelationshipField(
+    person_relationship = PersonRelationshipField(
         # Note that required=True will be overwritten in __init__(...), the field label will be styled as if required,
         # and custom validation on the individual field components will be used.
         required=True,
