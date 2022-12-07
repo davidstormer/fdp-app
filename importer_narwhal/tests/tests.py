@@ -11,7 +11,9 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models
+from django.utils import timezone
 
 from bulk.models import BulkImport
 from functional_tests.common import FunctionalTestCase
@@ -21,7 +23,7 @@ from supporting.models import PersonIdentifierType, PersonRelationshipType, Situ
     Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType, IncidentTag, \
     EncounterReason, IncidentLocationType, PersonIncidentTag, ContentIdentifierType, ContentCaseOutcome, \
     AllegationOutcome, Allegation
-from importer_narwhal.models import validate_import_sheet_extension, validate_import_sheet_file_size
+from importer_narwhal.models import validate_import_sheet_extension, validate_import_sheet_file_size, ExportBatch
 from importer_narwhal.celerytasks import celery_app
 from importer_narwhal.models import validate_import_sheet_extension, validate_import_sheet_file_size, ImportBatch
 from importer_narwhal.narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run, \
@@ -1785,4 +1787,26 @@ class NarwhalImportCommand(TestCase):
             1,
             Allegation.objects.count(),
             msg="New Allegation missing"
+        )
+
+
+class ExporterViews(FunctionalTestCase):
+    def test_ExportBatchDetailView_permissions_non_host_admin(self):
+        batch = ExportBatch.objects.create(
+            models_to_export=['Grouping', ],  # Not "Person" to distinguish from first batch
+            started=timezone.now(),
+            completed=timezone.now(),
+            export_file=SimpleUploadedFile("dummy_file.txt", b"You shouldn't be able to see this file...")
+        )
+        admin_client = self.log_in(
+            is_host=False,  # <- THIS
+            is_administrator=True,
+            is_superuser=False
+        )
+
+        response_admin_client = admin_client.get(batch.get_download_url(), follow=True)
+
+        self.assertEqual(
+            403,
+            response_admin_client.status_code
         )

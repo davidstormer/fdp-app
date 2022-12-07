@@ -35,7 +35,7 @@
         <li class="list-group-item"><p class="datum datum-completed"><span class="label">Completed:</span> <span
             class="value">{{ object.completed }}</span></p></li>
         <li class="list-group-item"><p class="datum datum-download-link"><span class="label">Download:</span>
-          <span class="value"><a href="{{ object.export_file.url }}">{{ object.export_file|basename }}</a></span></p></li>
+          <span class="value"><a href="{{ object.get_download_url }}">{{ object.export_file|basename }}</a></span></p></li>
         {% endif %}
         </ul>
       </div>

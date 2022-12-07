@@ -11,7 +11,7 @@ from django import forms
 from django.core.files import File
 from django.core.paginator import Paginator
 from django.forms import MultipleChoiceField
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
@@ -26,7 +26,7 @@ from importer_narwhal.celerytasks import background_do_dry_run, celery_app, back
     background_run_export_batch
 
 from inheritable.views import HostAdminSyncTemplateView, HostAdminSyncListView, HostAdminSyncDetailView, \
-    HostAdminAccessMixin, HostAdminSyncCreateView, SecuredSyncView
+    HostAdminAccessMixin, HostAdminSyncCreateView, SecuredSyncView, HostAdminSyncView
 
 
 class MappingsView(HostAdminSyncTemplateView):
@@ -248,40 +248,18 @@ class ExportBatchDetailView(HostAdminSyncDetailView):
         return context
 
 
-class DownloadExportFileView(SecuredSyncView):
-    """ View that allows users to download an import file.
-
-    """
-    def get(self, request, path):
-        """ Retrieve the requested import file.
-
-        :param request: Http request object.
-        :param path: Full path for the import file.
-        :return: Import file to download or link to download file.
-        """
-        if not path:
-            raise Exception('No import file path was specified')
+class DownloadExportFileView(HostAdminSyncView):
+    def get(self, request, pk):
+        batch = get_object_or_404(ExportBatch, pk=pk)
+        # if hosted in Microsoft Azure, serve from Azure Storage account
+        if AbstractConfiguration.is_using_azure_configuration():
+            return self.serve_azure_storage_static_file(name=batch.export_file.url)
+        # otherwise use default mechanism to serve files
         else:
-            user = request.user
-            # verify that user has import access
-            if not user.has_import_access:
-                raise Exception('Access is denied to import file')
-            # value that will be in import file's file field
-            file_field_value = '{b}{p}'.format(b='data-exports/', p=path)
-            # import file filtered for whether it exists
-            unfiltered_queryset = ExportBatch.objects.all()
-            # import file does not exist
-            if file_field_value and not unfiltered_queryset.filter(export_file=file_field_value).exists():
-                raise Exception('User does not have access to import file')
-            # if hosted in Microsoft Azure, storing import files in an Azure Storage account is required
-            if AbstractConfiguration.is_using_azure_configuration():
-                return self.serve_azure_storage_static_file(name=file_field_value)
-            # otherwise use default mechanism to serve files
-            else:
-                return self.serve_static_file(
-                    request=request,
-                    path=path,
-                    absolute_base_url=settings.MEDIA_URL,
-                    relative_base_url='data-exports/',
-                    document_root=settings.MEDIA_ROOT
-                )
+            return self.serve_static_file(
+                request=request,
+                path=batch.export_file.url,
+                absolute_base_url=settings.MEDIA_URL,
+                relative_base_url='data-exports/',
+                document_root=settings.MEDIA_ROOT
+            )

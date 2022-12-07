@@ -906,14 +906,13 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         for model_name in MODEL_ALLOW_LIST:
             self.select2_select_by_visible_text('id_models_to_export', model_name)
 
-    @tag('wip')
     def test_export_page_permissions_non_host_admin(self):
         # Given I'm a non-host administrator
-        user = self.log_in(is_administrator=True)
-        user.is_host = False
-        user.save()
-
-        # And there's an existing batch
+        user = self.log_in(
+            is_host=False,  # <- THIS
+            is_administrator=True,
+            is_superuser=False
+        )
 
         # When I go to the admin home page
         self.browser.get(self.live_server_url + "/changing/home/")
@@ -955,15 +954,12 @@ class TestExporterUI(SeleniumFunctionalTestCase):
             re.compile('FORBIDDEN', re.IGNORECASE)
         )
 
-        # Even if I try downloading the file directly
-        self.browser.get(self.live_server_url + batch.export_file.url)
+        # Even if I happen to have the URL, and try downloading the file directly
+        self.browser.get(self.live_server_url + batch.get_download_url())
         self.assertRegex(
             self.el('body').text,
             re.compile('FORBIDDEN', re.IGNORECASE)
         )
-
-        self.take_screenshot_and_dump_html()
-        import pdb; pdb.set_trace()
 
     @tag('visual')
     def dormant_test_listing_with_lots_of_models_selected(self):

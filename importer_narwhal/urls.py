@@ -13,5 +13,6 @@ urlpatterns = [
     path('batch/new', views.ImportBatchCreateView.as_view(), name="new-batch"),
     path('exports/', views.ExporterLandingView.as_view(), name="exporter-landing"),
     path('exports/<int:pk>', views.ExportBatchDetailView.as_view(), name="exporter-batch"),
+    path('exports/<int:pk>/download', views.DownloadExportFileView.as_view(), name="exporter-batch-download"),
     path('exports/new', views.ExportBatchCreateView.as_view(), name="exporter-new-batch"),
 ]

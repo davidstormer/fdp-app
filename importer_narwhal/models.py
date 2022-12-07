@@ -201,3 +201,6 @@ class ExportBatch(models.Model):
 
     def get_absolute_url(self):
         return f"/changing/importer/exports/{self.pk}"
+
+    def get_download_url(self):
+        return f"/changing/importer/exports/{self.pk}/download"
