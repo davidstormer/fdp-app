@@ -1,7 +1,5 @@
 from django.urls import re_path
 from django.conf import settings
-
-from importer_narwhal.views import DownloadExportFileView
 from inheritable.models import AbstractUrlValidator
 from . import views
 
@@ -17,6 +15,5 @@ urlpatterns = [
         ),
         view=views.DownloadPersonPhotoView.as_view(),
         name='download_person_photo'
-    ),
-    re_path('media/data-exports/(?P<path>.*)', DownloadExportFileView.as_view(), name="download-export")
+    )
 ]
