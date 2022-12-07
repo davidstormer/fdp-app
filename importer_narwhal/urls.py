@@ -11,4 +11,7 @@ urlpatterns = [
     path('batch/<int:pk>/dry-run-report', views.StartDryRun.as_view(), name="dry-run-report"),
     path('batch/<int:pk>/records', views.RunImportBatch.as_view(), name="records"),
     path('batch/new', views.ImportBatchCreateView.as_view(), name="new-batch"),
+    path('exports/', views.ExporterLandingView.as_view(), name="exporter-landing"),
+    path('exports/<int:pk>', views.ExportBatchDetailView.as_view(), name="exporter-batch"),
+    path('exports/new', views.ExportBatchCreateView.as_view(), name="exporter-new-batch"),
 ]

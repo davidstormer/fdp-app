@@ -1,11 +1,11 @@
 from celery import Celery, current_task
 import os
 import django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "fdp.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "fdp.settings_celery")
 django.setup()
 # ~~~~~~ Django dependencies below this line ~~~~~~~
-from importer_narwhal.models import ImportBatch
-from importer_narwhal.narwhal import do_dry_run, run_import_batch
+from importer_narwhal.models import ImportBatch, ExportBatch
+from importer_narwhal.narwhal import do_dry_run, run_import_batch, run_export_batch
 
 # TODO: FIX THIS SO THAT THE REDIS HOST IS CONFIGURABLE FROM settings.py...
 celery_app = Celery('tasks', backend='redis://localhost', broker="redis://localhost")
@@ -49,3 +49,9 @@ def background_do_dry_run(batch_pk: int):
 def background_run_import_batch(batch_pk: int):
     batch = ImportBatch.objects.get(pk=batch_pk)
     run_import_batch(batch)
+
+
+@celery_app.task
+def background_run_export_batch(batch_pk: int):
+    batch = ExportBatch.objects.get(pk=batch_pk)
+    run_export_batch(batch)

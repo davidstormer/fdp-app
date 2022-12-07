@@ -1,0 +1,56 @@
+{% extends 'common/base-bootstrap.html' %}
+{% load humanize changing_extras crispy_forms_tags %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'changing:index' %}">Admin</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-md-center">
+    <div class="col-md-3 text-center">
+        <a class="text-decoration-none fw-bold d-block" href="{%url 'importer_narwhal:exporter-new-batch' %}"><i
+            class="fas fa-download display-6"></i><br>Start Export</a>
+    </div>
+</div>
+
+<h2>Export History</h2>
+<table class="table exports-listing">
+    <thead>
+        <tr>
+            <td>Batch</td>
+            <td>Models</td>
+            <td>Started</td>
+            <td>Ended</td>
+            <td>File</td>
+            <td>Link</td>
+        </tr>
+    </thead>
+    <tbody>
+{% for batch in object_list %}
+    <tr class="row-{{ forloop.counter }}">
+        <td class="cell-batch-number">{{ batch.pk }}</td>
+        <td class="cell-models-to-export">{{ batch.models_to_export|join:', ' }}</td>
+        <td class="cell-started">{{ batch.started }}</td>
+        <td class="cell-completed">{{ batch.completed }}</td>
+        <td class="cell-file-link"><a href="{{ batch.export_file.url }}">{{ batch.export_file|basename }}</a></td>
+        <td class="cell-details-link"><a href="{{ batch.get_absolute_url }}">details</a></td>
+    </tr>
+{% empty %}
+    <p>No export batches yet.</p>
+{% endfor %}
+    </tbody>
+</table>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav aria-label="Pagination">
+    <ul class="pagination">
+      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}"><a class="page-link" href="?page=1">&laquo; First</a></li>
+      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}"><a class="page-link" href="?page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% endif %}">Previous</a></li>
+      <li class="page-item disabled"><a class="page-link" tabindex="-1" aria-disabled="true" href="#">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</a></li>
+      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}"><a class="page-link" href="?page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}">Next</a></li>
+      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}"><a class="page-link" href="?page={% if page_obj.has_next %}{{ page_obj.paginator.num_pages }}{% endif %}">Last &raquo;</a></li>
+    </ul>
+  </nav>
+  {% endif %}
+{% endblock %}

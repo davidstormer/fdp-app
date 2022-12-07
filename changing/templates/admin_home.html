@@ -48,6 +48,11 @@
         <h3><a href="{%url 'importer_narwhal:importer-landing' %}">{% translate 'Importer' %}</a></h3>
         <p>{% translate 'Add and update large volumes of data using import sheets.' %}</p>
     </div>
+    <div class="column exporter">
+        <a href="{%url 'importer_narwhal:exporter-landing' %}"><i class="fas fa-download"></i></a>
+        <h3><a href="{%url 'importer_narwhal:exporter-landing' %}">{% translate 'Exporter' %}</a></h3>
+        <p>{% translate 'Export large volumes of data from the system as CSV files.' %}</p>
+    </div>
     {% endif %}
     <div class="column advanced">
         <a href="{%url 'admin:index' %}"><i class="fas fa-database"></i></a>
