@@ -1,32 +1,19 @@
 import os
-import tempfile
-from pathlib import Path
-from zipfile import ZipFile
 
 import kombu
 from django.contrib import messages
 from django.utils import timezone
 import tablib
-from django import forms
-from django.core.files import File
 from django.core.paginator import Paginator
-from django.forms import MultipleChoiceField
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.utils import timezone
 from django.views import View
-from django.views.generic import DetailView, CreateView, ListView
-from tablib import Dataset
-
-from fdp import settings
-from importer_narwhal.models import ImportBatch, ExportBatch, MODEL_ALLOW_LIST
-from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping, do_export, run_export_batch
-from inheritable.models import AbstractUrlValidator, AbstractConfiguration
-from importer_narwhal.celerytasks import background_do_dry_run, celery_app, background_run_import_batch, \
-    background_run_export_batch
+from importer_narwhal.celerytasks import background_do_dry_run, celery_app, background_run_import_batch
+from importer_narwhal.models import ImportBatch
+from importer_narwhal.narwhal import do_dry_run, run_import_batch, resource_model_mapping
 
 from inheritable.views import HostAdminSyncTemplateView, HostAdminSyncListView, HostAdminSyncDetailView, \
-    HostAdminAccessMixin, HostAdminSyncCreateView, SecuredSyncView, HostAdminSyncView
+    HostAdminAccessMixin, HostAdminSyncCreateView
 
 
 class MappingsView(HostAdminSyncTemplateView):
@@ -64,11 +51,7 @@ class ImportBatchCreateView(HostAdminSyncCreateView):
         return context
 
 
-def try_celery_task_or_fallback_to_synchronous_call(
-        celery_task,
-        fallback_function,
-        batch_record: ImportBatch or ExportBatch,
-        request):
+def try_celery_task_or_fallback_to_synchronous_call(celery_task, fallback_function, batch_record: ImportBatch, request):
     try:
         celery_ping_result = celery_app.control.ping()  # Make sure that Celery is configured and working
         if celery_ping_result:
@@ -196,70 +179,3 @@ class ImportBatchDetailView(HostAdminSyncDetailView):
         context['page_obj'] = context['error_rows_paginated'] or context['imported_rows_paginated']
 
         return context
-
-
-class ExporterLandingView(HostAdminSyncListView):
-    model = ExportBatch
-    paginate_by = 25
-    queryset = ExportBatch.objects.all().order_by('-pk')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Exporter'
-        return context
-
-
-class ExportBatchCreateView(HostAdminSyncCreateView):
-    model = ExportBatch
-    fields = ['models_to_export']
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Export batch setup'
-        return context
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class=form_class)
-
-        form.fields['models_to_export'] = MultipleChoiceField(
-            choices=zip(MODEL_ALLOW_LIST, MODEL_ALLOW_LIST)
-        )
-        return form
-
-    def post(self, request, *args, **kwargs):
-        result = super().post(request, *args, **kwargs)
-        self.object.started = timezone.now()
-        self.object.save()
-        try_celery_task_or_fallback_to_synchronous_call(
-            background_run_export_batch,
-            run_export_batch,
-            self.object,
-            self.request
-        )
-        return redirect(reverse('importer_narwhal:exporter-batch', kwargs={'pk': self.object.pk}))
-
-
-class ExportBatchDetailView(HostAdminSyncDetailView):
-    model = ExportBatch
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = f"Export batch: {context['object'].pk}"
-        return context
-
-
-class DownloadExportFileView(HostAdminSyncView):
-    def get(self, request, pk):
-        batch = get_object_or_404(ExportBatch, pk=pk)
-        # if hosted in Microsoft Azure, serve from Azure Storage account
-        if AbstractConfiguration.is_using_azure_configuration():
-            return self.serve_azure_storage_static_file(name=batch.export_file.url)
-        # otherwise use default mechanism to serve files
-        else:
-            return self.serve_static_file(
-                request=request,
-                path=batch.export_file.url,
-                absolute_base_url=settings.MEDIA_URL,
-                relative_base_url='data-exports/',
-                document_root=settings.MEDIA_ROOT
-            )

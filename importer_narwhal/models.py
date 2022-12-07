@@ -1,4 +1,3 @@
-from django.contrib.postgres.fields import ArrayField
 from django.db.models.fields.files import FieldFile
 from django.template.defaultfilters import filesizeformat
 from django.core.exceptions import ValidationError
@@ -7,8 +6,8 @@ import os
 
 from django.urls import reverse
 
-# The mother list of models to be able to import to / export from.
-# The options on the UI come from this.
+# The mother list of models to be able to import to.
+# The options in the interface are based on this.
 MODEL_ALLOW_LIST = [
     # From the 'core' app
     'Person',
@@ -28,21 +27,12 @@ MODEL_ALLOW_LIST = [
     'GroupingIncident',
     # From the 'sourcing' app
     'Attachment',
-    'Allegation',
-    'AllegationOutcome',
     'Content',
     'ContentIdentifier',
     'ContentCase',
-    'ContentCaseOutcome',
-    'ContentIdentifierType',
     'ContentPerson',
     'ContentPersonAllegation',
     'ContentPersonPenalty',
-    'EncounterReason',
-    'GroupingRelationshipType',
-    'IncidentLocationType',
-    'IncidentTag',
-    'PersonIncidentTag',
     # From the 'supporting' app
     'State',
     'County',
@@ -51,7 +41,6 @@ MODEL_ALLOW_LIST = [
     'Trait',
     'TraitType',
 ]
-
 
 def validate_import_sheet_extension(file):
     allowed_extensions = ['csv']
@@ -187,20 +176,3 @@ class ErrorRow(models.Model):
 
     def __str__(self):
         return f"{self.row_number} | {self.error_message} | {self.row_data}"
-
-
-class ExportBatch(models.Model):
-    created = models.DateTimeField(auto_now_add=True)
-    started = models.DateTimeField(null=True, blank=True)
-    completed = models.DateTimeField(null=True, blank=True)
-    models_to_export = ArrayField(
-        models.CharField(max_length=256),
-        help_text="Choose which data models to include in the export. Allows multiple."
-    )
-    export_file = models.FileField(upload_to='data-exports/', null=True, blank=True)
-
-    def get_absolute_url(self):
-        return f"/changing/importer/exports/{self.pk}"
-
-    def get_download_url(self):
-        return f"/changing/importer/exports/{self.pk}/download"

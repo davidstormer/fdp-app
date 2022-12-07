@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
-from importer_narwhal.models import ImportBatch
-from importer_narwhal.narwhal import do_import_from_disk
+from .models import ImportBatch
+from .narwhal import do_import_from_disk
 from django.test import TestCase
 from django.core.management import call_command
 from io import StringIO

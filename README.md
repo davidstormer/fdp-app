@@ -40,7 +40,4 @@ Then run the testing web server:
 
 Then point your browser to 'localhost:8000' to see the FDP Application
 
-> To test the Celery background tasks manager on imports and exports run:
-> 'sudo service redis-server start'
-> 'celery -A importer_narwhal.celerytasks worker -l INFO'
 ```
