@@ -26,7 +26,7 @@ from importer_narwhal.celerytasks import background_do_dry_run, celery_app, back
     background_run_export_batch
 
 from inheritable.views import HostAdminSyncTemplateView, HostAdminSyncListView, HostAdminSyncDetailView, \
-    HostAdminAccessMixin, HostAdminSyncCreateView, SecuredSyncView
+    HostAdminAccessMixin, HostAdminSyncCreateView, SecuredSyncView, HostAdminSyncView
 
 
 class MappingsView(HostAdminSyncTemplateView):
@@ -248,7 +248,7 @@ class ExportBatchDetailView(HostAdminSyncDetailView):
         return context
 
 
-class DownloadExportFileView(SecuredSyncView):
+class DownloadExportFileView(HostAdminSyncView):
     """ View that allows users to download an import file.
 
     """
@@ -263,9 +263,6 @@ class DownloadExportFileView(SecuredSyncView):
             raise Exception('No import file path was specified')
         else:
             user = request.user
-            # verify that user has import access
-            if not user.has_import_access:
-                raise Exception('Access is denied to import file')
             # value that will be in import file's file field
             file_field_value = '{b}{p}'.format(b='data-exports/', p=path)
             # import file filtered for whether it exists
