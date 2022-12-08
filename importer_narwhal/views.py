@@ -262,7 +262,6 @@ class DownloadExportFileView(HostAdminSyncView):
         if not path:
             raise Exception('No import file path was specified')
         else:
-            user = request.user
             # value that will be in import file's file field
             file_field_value = '{b}{p}'.format(b='data-exports/', p=path)
             # import file filtered for whether it exists
