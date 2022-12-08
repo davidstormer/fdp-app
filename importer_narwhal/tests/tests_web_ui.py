@@ -906,7 +906,6 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         for model_name in MODEL_ALLOW_LIST:
             self.select2_select_by_visible_text('id_models_to_export', model_name)
 
-    @tag('wip')
     def test_export_page_permissions_non_host_admin(self):
         # Given I'm a non-host administrator
         user = self.log_in(

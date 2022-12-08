@@ -1791,7 +1791,6 @@ class NarwhalImportCommand(TestCase):
 
 
 class ExporterViews(FunctionalTestCase):
-    @tag('wip')
     def test_DownloadExportFileView_permissions_non_host_admin(self):
         batch = ExportBatch.objects.create(
             models_to_export=['Grouping', ],  # Not "Person" to distinguish from first batch
