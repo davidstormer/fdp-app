@@ -1,10 +1,12 @@
 import os
+import re
 import zipfile
 from datetime import datetime, timedelta
 from time import sleep
 from unittest.mock import patch
 
 import dateparser
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -903,6 +905,62 @@ class TestExporterUI(SeleniumFunctionalTestCase):
         # Then I should be able to select all of the exportable models available
         for model_name in MODEL_ALLOW_LIST:
             self.select2_select_by_visible_text('id_models_to_export', model_name)
+
+    @tag('wip')
+    def test_export_page_permissions_non_host_admin(self):
+        # Given I'm a non-host administrator
+        user = self.log_in(
+            is_host=False,  # <- THIS
+            is_administrator=True,
+            is_superuser=False
+        )
+
+        # When I go to the admin home page
+        self.browser.get(self.live_server_url + "/changing/home/")
+        self.assertNotRegex(
+            self.el('body').text,
+            re.compile('EXPORT', re.IGNORECASE)
+        )
+
+        # When I go to the exporter landing page
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/')
+        self.assertRegex(
+            self.el('body').text,
+            re.compile('FORBIDDEN', re.IGNORECASE)
+        )
+
+        with self.assertRaises(NoSuchElementException):
+            self.browser.find_element(By.XPATH, '//a[contains(text(), "Start Export")]')
+
+        # Even when I try going directly to the start import batch page
+        self.browser.get(self.live_server_url + f"/changing/importer/exports/new")
+        self.assertRegex(
+            self.el('body').text,
+            re.compile('FORBIDDEN', re.IGNORECASE)
+        )
+
+        with self.assertRaises(NoSuchElementException):
+            self.select2_select_by_visible_text('id_models_to_export', 'Person')
+
+        # Even if I try going directly to a batch detail page
+        batch = ExportBatch.objects.create(
+            models_to_export=['Grouping', ],  # Not "Person" to distinguish from first batch
+            started=timezone.now(),
+            completed=timezone.now(),
+            export_file=SimpleUploadedFile("dummy_file.txt", b"This is a test file")
+        )
+        self.browser.get(self.live_server_url + f"/changing/importer/exports/{batch.pk}")
+        self.assertRegex(
+            self.el('body').text,
+            re.compile('FORBIDDEN', re.IGNORECASE)
+        )
+
+        # Even if I happen to have the URL, and try downloading the file directly
+        self.browser.get(self.live_server_url + batch.export_file.url)
+        self.assertRegex(
+            self.el('body').text,
+            re.compile('FORBIDDEN', re.IGNORECASE)
+        )
 
     @tag('visual')
     def dormant_test_listing_with_lots_of_models_selected(self):
