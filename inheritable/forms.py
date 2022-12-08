@@ -546,6 +546,65 @@ class PopupForm:
 
 class RelationshipWidget(MultiWidget):
     """ Widget representing a relationship.
+    See: https://docs.djangoproject.com/en/2.2/ref/forms/widgets/#multiwidget
+    """
+    #: template used to render the widget for the relationship field in HTML
+    template_name = 'relationship_widget.html'
+
+    #: Separator characters used to divide the field values when they are all concatenated into a single string.
+    split_chars = '-----'
+
+    #: Index of subject ID when field values are represented as a list.
+    subject_index = 0
+
+    #: Index of object ID when field values are represented as a list.
+    object_index = 3
+
+    #: Index of relationship type when field values are represented as a list.
+    verb_index = 2
+
+    def __init__(self, *args, **kwargs):
+        """ Initialize inputs representing relationship.
+        :param args:
+        :param kwargs:
+        """
+
+        super(RelationshipWidget, self).__init__(
+            widgets=[
+                HiddenInput(attrs={'class': 'subjectid'}),
+                TextInput(attrs={'class': 'subjectname'}),
+                Select(
+                    attrs={'class': 'relationshiptype'}),
+                HiddenInput(attrs={'class': 'objectid'}),
+                TextInput(attrs={'class': 'objectname'}),
+            ],
+            *args,
+            **kwargs
+        )
+
+    @classmethod
+    def split_field_value_into_list(cls, value):
+        """ Splits the field value into a list of values.
+        :param value: Field value in string representation.
+        :return: Field value in list representation
+        """
+        if value:
+            list_of_vals = value.split(cls.split_chars)
+            if len(list_of_vals) != 5:
+                raise Exception(_('Decompression failed because RelationshipWidget value has invalid formatting'))
+            return list_of_vals
+        return ['', '', '', '', '']
+
+    def decompress(self, value):
+        """ Break the string into its individual relationship components.
+        :param value: String representing relationship.
+        :return: List of relationship components in the order of: subject_id, subject_str, type, object_id, object_str.
+        """
+        return self.split_field_value_into_list(value=value)
+
+
+class PersonRelationshipWidget(MultiWidget):
+    """ Widget representing a relationship.
 
     See: https://docs.djangoproject.com/en/2.2/ref/forms/widgets/#multiwidget
 
@@ -581,7 +640,7 @@ class RelationshipWidget(MultiWidget):
         class AutocompletePersonSubject(TextInput):
             template_name = "widget_person_autocomplete_subject.html"
 
-        super(RelationshipWidget, self).__init__(
+        super(PersonRelationshipWidget, self).__init__(
             widgets=[
                 HiddenInput(attrs={'class': 'subjectid'}),
                 AutocompletePersonSubject(attrs={'class': 'subjectname'}),
@@ -647,15 +706,12 @@ class RequiredBoundField(BoundField):
 
 class RelationshipField(MultiValueField):
     """ A collection of fields that represents a relationship.
-
     See: https://docs.djangoproject.com/en/2.2/ref/forms/fields/#multivaluefield
-
     """
     widget = RelationshipWidget
 
     def __init__(self, fields, queryset, *args, **kwargs):
         """ Overrides the fields parameter.
-
         :param fields: Saved as _prev_fields attribute.
         :param args:
         :param kwargs:
@@ -685,6 +741,80 @@ class RelationshipField(MultiValueField):
 
     def compress(self, data_list):
         """ Combine field values into a single string.
+        :param data_list: List of field values in the order of: subject_id, subject_str, type, object_id, object_str.
+        :return: Single string.
+        """
+        subjectid, subjectname, relationshiptype, objectid, objectname = data_list
+        return f"{subjectid or ''}-----{subjectname}-----{relationshiptype.pk}-----{objectid or ''}-----{objectname}"
+
+    def validate(self, value):
+        """ Validate the relationship field by ensuring that:
+         - relationship type is defined
+         - at least the subject or object in the relationship is defined
+        :param value: Field value for relationship represented as a string.
+        :return: Nothing.
+        """
+        super(RelationshipField, self).validate(value=value)
+        relationship_widget = self.widget
+        decompressed = relationship_widget.split_field_value_into_list(value=value)
+        # relationship type missing
+        if not decompressed[relationship_widget.verb_index]:
+            raise ValidationError(_('The type of relationship is required'))
+        # subject or object missing
+        if not (decompressed[relationship_widget.subject_index] or decompressed[relationship_widget.object_index]):
+            raise ValidationError(_('Other part of relationship is missing'))
+
+    def get_bound_field(self, form, field_name):
+        """ Uses a wrapper class for the BoundField so that the label corresponding to the field is always styled
+        as required.
+        Derived from the get_bound_field(...) method in the Field class in django/forms/fields.py.
+        :param form: Form containing bound field.
+        :param field_name: Name of field.
+        :return: Wrapped bound field instance.
+        """
+        return RequiredBoundField(form, self, field_name)
+
+
+class PersonRelationshipField(MultiValueField):
+    """ A collection of fields that represents a relationship.
+
+    See: https://docs.djangoproject.com/en/2.2/ref/forms/fields/#multivaluefield
+
+    """
+    widget = PersonRelationshipWidget
+
+    def __init__(self, fields, queryset, *args, **kwargs):
+        """ Overrides the fields parameter.
+
+        :param fields: Saved as _prev_fields attribute.
+        :param args:
+        :param kwargs:
+        """
+        # overwrite required attribute, and replace it with custom validation and styling of field label as if required
+        required_key = 'required'
+        if required_key in kwargs:
+            kwargs[required_key] = False
+        # store previous fields parameter, because we will overwrite it
+        self._prev_fields = fields
+        fields = (
+            IntegerField(),
+            CharField(),
+            ModelChoiceField(queryset),
+            IntegerField(),
+            CharField()
+        )
+        super(PersonRelationshipField, self).__init__(
+            fields=fields,
+            widget=PersonRelationshipWidget(),
+            *args,
+            **kwargs
+        )
+        # Sync dynamic choices from the ModelChoiceField to the widget choices
+        # https://stackoverflow.com/a/40005868/1585572
+        self.widget.widgets[2].choices = self.fields[2].widget.choices
+
+    def compress(self, data_list):
+        """ Combine field values into a single string.
 
         :param data_list: List of field values in the order of: subject_id, subject_str, type, object_id, object_str.
         :return: Single string.
@@ -700,7 +830,7 @@ class RelationshipField(MultiValueField):
         :param value: Field value for relationship represented as a string.
         :return: Nothing.
         """
-        super(RelationshipField, self).validate(value=value)
+        super(PersonRelationshipField, self).validate(value=value)
         relationship_widget = self.widget
         decompressed = relationship_widget.split_field_value_into_list(value=value)
         # relationship type missing

@@ -22,11 +22,16 @@
   }
 }
 
+.person-select-teaser {
+  padding: 0.5em;
+}
+
 ul.ui-autocomplete.personac,
 .ui-autocomplete.personname
 {
   max-height: 20rem;
   overflow-y: auto;
+  box-shadow: 0px 10px 15px gray;
 }
 .ui-autocomplete.personac .ui-menu-item {
   border-top: 1px solid #ccc;
