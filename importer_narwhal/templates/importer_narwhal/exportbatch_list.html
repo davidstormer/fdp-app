@@ -32,8 +32,8 @@
         <td class="cell-batch-number">{{ batch.pk }}</td>
         <td class="cell-models-to-export">{{ batch.models_to_export|join:', ' }}</td>
         <td class="cell-started">{{ batch.started }}</td>
-        <td class="cell-completed">{{ batch.completed }}</td>
-        <td class="cell-file-link"><a href="{{ batch.export_file.url }}">{{ batch.export_file|basename }}</a></td>
+        <td class="cell-completed">{{ batch.completed or "Pending" }}</td>
+        <td class="cell-file-link">{% if object.completed %}<a href="{{ batch.export_file.url }}">{{ batch.export_file|basename }}</a>{% endif %}</td>
         <td class="cell-details-link"><a href="{{ batch.get_absolute_url }}">details</a></td>
     </tr>
 {% empty %}
