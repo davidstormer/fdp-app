@@ -16,6 +16,8 @@
 <form method="post" enctype="multipart/form-data">
   {% csrf_token %}
   {{ form|crispy }}
+  <p class="text-secondary"><strong>Privacy warning</strong>: This tool is only available to host administrator.
+     Exports include all records <em>regardless of access controls</em> like 'FDP Organization' and 'Host Only.'</p>
   <button type="submit" class="btn btn-primary">Export</button>
 </form>
 {% endblock %}
