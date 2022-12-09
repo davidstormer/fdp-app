@@ -295,6 +295,8 @@ foreign_key_fields_get_or_create = \
         'ContentIdentifier': ['content_identifier_type', ],
         'ContentCase': ['outcome', ],
         'ContentPersonAllegation': ['allegation_outcome', 'allegation', ],
+        'PersonContact': ['state', ],
+        'County': ['state', ],
     }
 
 foreign_key_fields_get_only = \

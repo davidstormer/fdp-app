@@ -1752,7 +1752,7 @@ class NarwhalImportCommand(TestCase):
             msg="New AllegationOutcome missing"
         )
 
-    def test_allegation_outcome(self):
+    def test_allegation(self):
         content = Content.objects.create(description="Hello World")
         person = Person.objects.create(name="Test Person")
         content_person = ContentPerson.objects.create(content=content, person=person)
@@ -1789,6 +1789,71 @@ class NarwhalImportCommand(TestCase):
             msg="New Allegation missing"
         )
 
+    def test_county_state(self):
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'state'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = 'playwrightry'
+                row['state'] = 'Test state Corycian'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'County', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            'NO RECORDS IMPORTED',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            State.objects.count(),
+            msg="New State missing"
+        )
+
+    def test_person_contact_state(self):
+        person_record = Person.objects.create(name="test Person")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'state'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['person'] = person_record.pk
+                row['state'] = 'Test state Corycian'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonContact', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            'NO RECORDS IMPORTED',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            State.objects.count(),
+            msg="New State missing"
+        )
 
 class ExporterViews(FunctionalTestCase):
     def test_DownloadExportFileView_permissions_non_host_admin(self):
