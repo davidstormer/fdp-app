@@ -1855,6 +1855,40 @@ class NarwhalImportCommand(TestCase):
             msg="New State missing"
         )
 
+    def test_location_county(self):
+        county_record = County.objects.create(name="Shakyamuni", state=State.objects.create(name='Test State'))
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['county'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['county'] = 'Shakyamuni'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Location', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            'NO RECORDS IMPORTED',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            County.objects.count(),
+            msg="New State missing"
+        )
+
+
 class ExporterViews(FunctionalTestCase):
     def test_DownloadExportFileView_permissions_non_host_admin(self):
         batch = ExportBatch.objects.create(

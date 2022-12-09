@@ -304,6 +304,7 @@ foreign_key_fields_get_only = \
         'PersonPayment': ['county', ],
         'Grouping': ['counties', ],
         'GroupingRelationship': ['type', ],
+        'Location': ['county', ],
     }
 
 many_to_many_fields_get_only = \
