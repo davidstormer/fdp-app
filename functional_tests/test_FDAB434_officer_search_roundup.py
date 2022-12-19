@@ -1,6 +1,8 @@
+from time import sleep
 from unittest import skip
 from uuid import uuid4
 from django.test import override_settings, tag
+from selenium.webdriver import ActionChains
 
 from selenium.webdriver.common.by import By
 
@@ -9,6 +11,7 @@ from fdpuser.models import FdpUser
 from functional_tests.common import wait, SeleniumFunctionalTestCase, FunctionalTestCase
 from faker import Faker
 
+from functional_tests.factories import factories
 from profiles.models import OfficerSearch
 from supporting.models import PersonIdentifierType, PersonGroupingType, Title
 
@@ -399,6 +402,63 @@ class MySeleniumTestCase(SeleniumFunctionalTestCase):
             self.browser.execute_script("return document.body.scrollHeight"),
             6000
         )
+
+
+class SearchPagePagination(SeleniumFunctionalTestCase):
+
+    @staticmethod
+    def generate_test_records():
+        """Make this a separate function so that I can run this manually on my local for exploratory testing.
+        E.g.:
+        ./manage.py shell
+        from functional_tests.test_FDAB434_officer_search_roundup import SearchPagePagination
+        SearchPagePagination.generate_test_records()
+        """
+        # Given there are numerous officer records, associated with a grouping
+        grouping = Grouping.objects.create(name=f"Test Group flashproof", is_law_enforcement=True)
+        for i in range(200):
+            person = Person.objects.create(name=f"Test Person {i}", is_law_enforcement=True)
+            PersonGrouping.objects.create(person=person, grouping=grouping)
+        # And also a number of person records not associated with that group
+        for i in range(200):
+            person = Person.objects.create(name=f"Test Person {i} (no group affiliation)",
+                                           is_law_enforcement=True)
+
+    def test_command_filtered_pagination(self):
+        # Given there are numerous officer records, associated with a grouping
+        # And also a number of person records not associated with that group
+        self.generate_test_records()
+        # and I'm on the search results page
+        self.log_in(is_administrator=False)
+        self.browser.get(self.live_server_url + '/officer/search-roundup')
+        # and I've clicked on the group to limit the results to those associated with it
+        self.el('.search-filter-bar input[value="Test Group flashproof"]') \
+            .click()
+
+        test_cases = ['next', 'previous', "last »", "« first"]
+
+        for test_case in test_cases:
+            with self.subTest(msg=test_case):
+                # When I click the next button on the paginator
+                next_button = self.el(f'div.search-pagination input[value="{test_case}"]')
+                self.browser.execute_script("arguments[0].scrollIntoView();", next_button)
+                sleep(1)
+                next_button.click()
+
+                # Then I should see the remaining results, not the second page of results with the filter disabled
+                self.assertNotIn(
+                    "400 results",
+                    self.el('div.search-query-details').text,
+                    msg="Expected 200 results, got 400"
+                )
+                self.assertIn(
+                    'within command "Test Group flashproof"',
+                    self.el('div.search-query-details').text
+                )
+                self.assertNotIn(
+                    "no group affiliation",
+                    self.browser.page_source
+                )
 
 
 class SearchPageTestCaseRoundup(FunctionalTestCase):
