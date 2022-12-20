@@ -870,6 +870,19 @@
     - Methods (non-private/internal):
 
 
+# importer_narwhal.ExportBatch
+    - Fields:
+        - id - AutoField
+        - created - DateTimeField
+        - started - DateTimeField
+        - completed - DateTimeField
+        - models_to_export - ArrayField
+        - export_file - FileField
+    - Methods (non-private/internal):
+        - get_next_by_created()
+        - get_previous_by_created()
+
+
 # importer_narwhal.ImportBatch
     - Fields:
         - imported_rows - ManyToOneRel
@@ -1805,4 +1818,4 @@
         - get_verbose_name_plural()
 
 
-# Total Models Listed: 94
+# Total Models Listed: 95
