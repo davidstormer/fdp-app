@@ -27,12 +27,14 @@
             DATABASES['default']['PASSWORD'] = 'opensesame'
             SECRET_KEY = 'opensesame'
             QUERYSTRING_PASSWORD = 'ymllgljp//NRW9W7INVajTBS46oBpt0NLPfr7yQ6PEw='
+            SESSION_COOKIE_AGE = 60 * 60 * 24 * 14 # So that I don’t have to authenticate over and over again while I’m doing work
 
       - name: "Set up python runtime environment"
         shell: |
-          sudo -u vagrant bash
           cd /home/vagrant
           python3 -m venv /home/vagrant/venv-vagrant
+        become: true
+        become_user: vagrant
         args:
           creates: /home/vagrant/venv-vagrant
 
@@ -50,11 +52,29 @@
         shell: |
           /home/vagrant/venv-vagrant/bin/python /vagrant/manage.py migrate
 
+      - name: "Set up media directory"
+        file:
+          state: directory
+          path: /media
+          owner: vagrant
+          group: vagrant
+
+      - name: "Set up static directory"
+        file:
+          state: directory
+          path: /static
+          owner: vagrant
+          group: vagrant
+
       - name: "Load demo data records"
+        become: true
+        become_user: vagrant
         shell: |
           /home/vagrant/venv-vagrant/bin/python /vagrant/manage.py loaddata --ignorenonexistent /vagrant/deploy/local/demo_data/fixture.json
 
       - name: "Load demo data files"
+        become: true
+        become_user: vagrant
         copy:
           src: /vagrant/deploy/local/demo_data/media/
           dest: /media/
@@ -96,16 +116,21 @@
 
             Then point your browser to 'localhost:8000' to see the FDP Application
 
-            To test the Celery background tasks manager on imports and exports run:
-            'celery -A importer_narwhal.celerytasks worker -l INFO'
+            > To test the Celery background tasks manager on imports and exports run:
+            > 'sudo service redis-server start'
+            > 'celery --app importer_narwhal.celerytasks worker -l INFO'
 
       - name: "Install python tests dependencies"
         pip:
           requirements: "/vagrant/functional_tests/requirements.txt"
           virtualenv: "/home/vagrant/venv-vagrant"
+        become: true
+        become_user: vagrant
 
       - name: "Install selenium driver"
         shell: |
           cd /home/vagrant/venv-vagrant/bin/
           wget https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux64.tar.gz
           tar xvzf geckodriver-*-linux64.tar.gz
+        become: true
+        become_user: vagrant

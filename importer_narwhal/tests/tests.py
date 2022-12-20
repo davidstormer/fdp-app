@@ -11,21 +11,25 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models
+from django.utils import timezone
 
 from bulk.models import BulkImport
 from functional_tests.common import FunctionalTestCase
 from functional_tests.common_import_export import import_record_with_extid
 from sourcing.models import Content, ContentPerson, Attachment
 from supporting.models import PersonIdentifierType, PersonRelationshipType, SituationRole, ContentType, TraitType, \
-    Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType
-from .models import validate_import_sheet_extension, validate_import_sheet_file_size
-from .celerytasks import celery_app
-from .models import validate_import_sheet_extension, validate_import_sheet_file_size, ImportBatch
-from .narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run, \
+    Trait, Title, County, LeaveStatus, State, PersonGroupingType, GroupingRelationshipType, AttachmentType, IncidentTag, \
+    EncounterReason, IncidentLocationType, PersonIncidentTag, ContentIdentifierType, ContentCaseOutcome, \
+    AllegationOutcome, Allegation
+from importer_narwhal.models import validate_import_sheet_extension, validate_import_sheet_file_size, ExportBatch
+from importer_narwhal.celerytasks import celery_app
+from importer_narwhal.models import validate_import_sheet_extension, validate_import_sheet_file_size, ImportBatch
+from importer_narwhal.narwhal import BooleanWidgetValidated, resource_model_mapping, create_batch_from_disk, do_dry_run, \
     run_import_batch
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship, PersonTitle, PersonPayment, Grouping, \
-    PersonGrouping, GroupingAlias, GroupingRelationship
+    PersonGrouping, GroupingAlias, GroupingRelationship, Incident, PersonIncident
 from django.test import TestCase, SimpleTestCase, tag
 from django.test import TestCase, SimpleTestCase, tag, RequestFactory
 from django.core.management import call_command
@@ -34,7 +38,7 @@ import tempfile
 import csv
 from uuid import uuid4
 from core.models import Person
-from .views import try_celery_task_or_fallback_to_synchronous_call
+from importer_narwhal.views import try_celery_task_or_fallback_to_synchronous_call
 
 
 class NarwhalSimpleTestCase(SimpleTestCase):
@@ -1516,87 +1520,392 @@ class NarwhalImportCommand(TestCase):
                 Grouping.objects.all().count()
             )
 
+    def test_incidents_types_and_tags_encounter_reason(self):
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['encounter_reason'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['encounter_reason'] = 'emblemize'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
 
-class TryCeleryTaskOrFallbackToSynchronousCallTestCase(TestCase):
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Incident', csv_fd.name, stdout=command_output)
 
-    # Given that the message broker is down (i.e. Redis is offline)
-    # When Redis is down ping() raises an OperationalError exception
-    @patch('importer_narwhal.celerytasks.celery_app.control.ping', side_effect=kombu.exceptions.OperationalError)
-    def test_message_broker_down(self, mock_ping):
-        # and there's a celery task
-        @celery_app.task
-        def test_celery_task(pk):
-            pass
-        # and there's a fallback function
-        fallback_function = MagicMock()
-        # And there's an import batch record
-        batch = ImportBatch.objects.create(
-            import_sheet=File(io.BytesIO(b"This file left intentionally blank"), name="test_import_sheet.csv")
-        )
-
-        # When I call try_celery_task_or_fallback_to_synchronous_call()
-        request = RequestFactory().get('/')
-        # https://stackoverflow.com/a/71066280/1585572
-        SessionMiddleware().process_request(request)
-        MessageMiddleware().process_request(request)
-        try_celery_task_or_fallback_to_synchronous_call(
-            test_celery_task,
-            fallback_function,
-            batch,
-            request
+        self.assertEqual(
+            1,
+            EncounterReason.objects.count(),
+            msg="New EncounterReason missing"
         )
 
-        # Then I should see a warning message saying...
-        messages = list(django_messages.get_messages(request))
-        self.assertIn(
-            "Message broker unavailable",
-            messages[0].message
-        )
-        # And "Falling back to synchronous mode"
-        self.assertIn(
-            "Falling back to synchronous mode",
-            messages[0].message
-        )
-        # And the fallback function should have been called
-        fallback_function.assert_called()
+    def test_incidents_types_and_tags_location_type(self):
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['location_type'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['location_type'] = 'unrebellious'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
 
-    # Given that celery is down but the message broker is not (i.e. Redis is online, but the celery service isn't
-    # running). When Celery is down, ping() returns an empty list.
-    @patch('importer_narwhal.celerytasks.celery_app.control.ping', return_value=[])
-    def test_celery_down(self, mock_ping):
-        # and there's a celery task
-        @celery_app.task
-        def test_celery_task(pk):
-            pass
-        # and there's a fallback function
-        fallback_function = MagicMock()
-        # And there's an import batch record
-        batch = ImportBatch.objects.create(
-            import_sheet=File(io.BytesIO(b"This file left intentionally blank"), name="test_import_sheet.csv")
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Incident', csv_fd.name, stdout=command_output)
+
+        self.assertEqual(
+            1,
+            IncidentLocationType.objects.count(),
+            msg="New IncidentLocationType missing"
         )
 
-        # When I call try_celery_task_or_fallback_to_synchronous_call()
-        request = RequestFactory().get('/')
-        # https://stackoverflow.com/a/71066280/1585572
-        SessionMiddleware().process_request(request)
-        MessageMiddleware().process_request(request)
-        try_celery_task_or_fallback_to_synchronous_call(
-            test_celery_task,
-            fallback_function,
-            batch,
-            request
+    def test_incidents_types_and_tags_tags(self):
+        # get-only many to many
+        incident_tag = IncidentTag.objects.create(name='Burberry')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['tags', 'description'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['tags'] = 'Burberry'
+                row['description'] = 'Hello World'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Incident', csv_fd.name, stdout=command_output)
+
+        self.assertEqual(
+            Incident.objects.last().tags.all()[0],
+            incident_tag
         )
 
-        # Then I should see a warning message saying...
-        messages = list(django_messages.get_messages(request))
-        self.assertIn(
-            "No Celery workers found. Is the Celery daemon running?",
-            messages[0].message
+    def test_grouping_relationship_type(self):
+        # get-only many to many
+        grouping_relationship_type = GroupingRelationshipType.objects.create(name='endocardium')
+        subject_grouping = Grouping.objects.create(name='Subject Grouping')
+        object_grouping = Grouping.objects.create(name='Object Grouping')
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['type', 'subject_grouping', 'object_grouping'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['type'] = 'endocardium'
+                row['subject_grouping'] = subject_grouping.pk
+                row['object_grouping'] = object_grouping.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'GroupingRelationship', csv_fd.name, stdout=command_output)
+
+        self.assertEqual(
+            GroupingRelationship.objects.last().type,
+            grouping_relationship_type
         )
-        # And "Falling back to synchronous mode"
-        self.assertIn(
-            "Falling back to synchronous mode",
-            messages[0].message
+
+    def test_person_incidents_tags(self):
+        # get-only many to many
+        person_incident_tag = PersonIncidentTag.objects.create(name='parterred')
+        person = Person.objects.create(name="Test Person")
+        incident = Incident.objects.create(description="Test Incident")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['tags', 'incident', 'person'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['tags'] = 'parterred'
+                row['incident'] = incident.pk
+                row['person'] = person.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonIncident', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
         )
-        # And the fallback function should have been called
-        fallback_function.assert_called()
+        self.assertEqual(
+            PersonIncident.objects.last().tags.all()[0],
+            person_incident_tag
+        )
+
+    def test_incidents_types_and_tags_content_identifier_type(self):
+        content = Content.objects.create(description="Hello World")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['content_identifier_type', 'content'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['content_identifier_type'] = 'unrebellious'
+                row['content'] = content.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'ContentIdentifier', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            ContentIdentifierType.objects.count(),
+            msg="New ContentIdentifierType missing"
+        )
+
+    def test_content_case_outcome(self):
+        content = Content.objects.create(description="Hello World")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['outcome', 'content'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['outcome'] = 'playwrightry'
+                row['content'] = content.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'ContentCase', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            ContentCaseOutcome.objects.count(),
+            msg="New ContentCaseOutcome missing"
+        )
+
+    def test_allegation_outcome(self):
+        content = Content.objects.create(description="Hello World")
+        person = Person.objects.create(name="Test Person")
+        content_person = ContentPerson.objects.create(content=content, person=person)
+        allegation = Allegation.objects.create(name="Test Allegation")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['allegation_outcome', 'content_person', 'allegation'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['allegation_outcome'] = 'playwrightry'  # <- This
+                row['content_person'] = content_person.pk
+                row['allegation'] = allegation.pk
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'ContentPersonAllegation', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            'NO RECORDS IMPORTED',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            AllegationOutcome.objects.count(),
+            msg="New AllegationOutcome missing"
+        )
+
+    def test_allegation(self):
+        content = Content.objects.create(description="Hello World")
+        person = Person.objects.create(name="Test Person")
+        content_person = ContentPerson.objects.create(content=content, person=person)
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['allegation_outcome', 'content_person', 'allegation'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['allegation_outcome'] = 'playwrightry'
+                row['content_person'] = content_person.pk
+                row['allegation'] = 'Bushman'  # <- This
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'ContentPersonAllegation', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            'NO RECORDS IMPORTED',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            Allegation.objects.count(),
+            msg="New Allegation missing"
+        )
+
+    def test_county_state(self):
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['name', 'state'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['name'] = 'playwrightry'
+                row['state'] = 'Test state Corycian'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'County', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            'NO RECORDS IMPORTED',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            State.objects.count(),
+            msg="New State missing"
+        )
+
+    def test_person_contact_state(self):
+        person_record = Person.objects.create(name="test Person")
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['person', 'state'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['person'] = person_record.pk
+                row['state'] = 'Test state Corycian'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'PersonContact', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            'NO RECORDS IMPORTED',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            State.objects.count(),
+            msg="New State missing"
+        )
+
+    def test_location_county(self):
+        county_record = County.objects.create(name="Shakyamuni", state=State.objects.create(name='Test State'))
+
+        with tempfile.NamedTemporaryFile(mode='w') as csv_fd:
+            imported_records = []
+            csv_writer = csv.DictWriter(csv_fd, ['county'])
+            csv_writer.writeheader()
+            for i in range(1):
+                row = {}
+                row['county'] = 'Shakyamuni'
+                imported_records.append(row)
+            for row in imported_records:
+                csv_writer.writerow(row)
+            csv_fd.flush()  # ... Make sure it's actually written to the filesystem!
+
+            # WHEN I run the command on the sheet
+            command_output = StringIO()
+            call_command('narwhal_import', 'Location', csv_fd.name, stdout=command_output)
+
+        self.assertNotIn(
+            'NO RECORDS IMPORTED',
+            command_output.getvalue()
+        )
+        self.assertNotIn(
+            "expected a number",
+            command_output.getvalue()
+        )
+        self.assertEqual(
+            1,
+            County.objects.count(),
+            msg="New State missing"
+        )
+
+
+class ExporterViews(FunctionalTestCase):
+    def test_DownloadExportFileView_permissions_non_host_admin(self):
+        batch = ExportBatch.objects.create(
+            models_to_export=['Grouping', ],  # Not "Person" to distinguish from first batch
+            started=timezone.now(),
+            completed=timezone.now(),
+            export_file=SimpleUploadedFile("dummy_file.txt", b"You shouldn't be able to see this file...")
+        )
+        admin_client = self.log_in(
+            is_host=False,  # <- THIS
+            is_administrator=True,
+            is_superuser=False
+        )
+
+        response_admin_client = admin_client.get(batch.export_file.url, follow=True)
+
+        self.assertEqual(
+            403,
+            response_admin_client.status_code
+        )

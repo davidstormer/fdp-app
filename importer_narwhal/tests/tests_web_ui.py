@@ -1,13 +1,22 @@
 import os
-from datetime import datetime
+import re
+import zipfile
+from datetime import datetime, timedelta
 from time import sleep
+from unittest.mock import patch
 
+import dateparser
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.wait import WebDriverWait
 
-from .models import ImportBatch
-from .narwhal import do_import_from_disk, ImportReport
+from importer_narwhal.models import ImportBatch, MODEL_ALLOW_LIST, ExportBatch
+from importer_narwhal.narwhal import do_import_from_disk, ImportReport, do_export
 from django.test import TestCase
 from django.core.management import call_command
 from io import StringIO
@@ -38,6 +47,18 @@ def wait_until_import_is_done():
             break
         else:
             sleep(1)
+
+
+def wait_until_true(model_instance: models.Model, attribute_name: str, seconds: int):
+    """Checks an attribute of a model until it is 'truthy.' Raises an exception after a given number of seconds of
+    trying."""
+    for _ in range(seconds):
+        model_instance.refresh_from_db()
+        if getattr(model_instance, attribute_name) is not None:
+            return
+        else:
+            sleep(1)
+    raise Exception(f"'{model_instance}'.'{attribute_name}' never became true after {seconds} seconds.")
 
 
 class TestWebUI(SeleniumFunctionalTestCase):
@@ -700,3 +721,286 @@ class TestImportWorkflowPageElementsExist(SeleniumFunctionalTestCase):
                 imported_records[1]['name'],
                 imported_rows_element.text
             )
+
+
+class TestExporterUI(SeleniumFunctionalTestCase):
+    def test_export_page_success_scenario(self):
+        # GIVEN there are Person records in the system with the string "coalmouse" in the name fields
+        for i in range(10):
+            Person.objects.create(name=f"Test Person coalmouse {i}")
+
+        # When I go to the exporter landing page
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/')
+
+        # It being our first time, there should be a message that says "No exports batches yet"
+        self.assertIn(
+            "No export batches yet",
+            self.el('main.container').text
+        )
+
+        # And I click the "Start Export" link
+        self.browser.find_element(By.XPATH, '//a[contains(text(), "Start Export")]').click()
+
+        # Then I select Person in the models multiselect
+        self.select2_select_by_visible_text('id_models_to_export', 'Person')
+
+        # And I click "Export" -- and take note of the time it started
+        self.submit_button_el('Export') \
+            .click()
+        start_time = datetime.now()
+
+        # Then I should see a page confirming that the export is complete and communicating the status of the export
+        # to me
+        wait_until_true(ExportBatch.objects.last(), 'completed', 6)
+        self.assertIn(
+            "Completed",
+            self.el('h2').text
+        )
+
+        # And I should be able to download the file
+        self.el('.datum-download-link a').click()
+        sleep(5)
+        downloaded_file_name = os.listdir(self.downloads_folder)[0]
+        self.assertRegex(
+            downloaded_file_name,
+            r"export-.+\.zip"
+        )
+        # and it should be a zip file that contains a CSV file named after the model
+        with tempfile.TemporaryDirectory() as tempdir:
+            with zipfile.ZipFile(self.downloads_folder + '/' + downloaded_file_name) as zip_fd:
+                zip_fd.extractall(tempdir)
+                zipfile_listing = os.listdir(tempdir)
+                self.assertRegex(
+                    zipfile_listing[0],
+                    r"Person-.+\.csv"
+                )
+                # and the name field should have the string "coalmouse" in it
+                with open(tempdir + '/' + zipfile_listing[0]) as csv_fd:
+                    csv_reader = csv.DictReader(csv_fd)
+                    for row in csv_reader:
+                        self.assertIn(
+                            'coalmouse',
+                            row['name']
+                        )
+
+        # And I should see info like start time
+        self.assertAlmostEqual(
+            start_time,
+            dateparser.parse(self.el('.datum-started span.value').text),
+            delta=timedelta(10)
+        )
+
+        # And I take note of the batch number for later reference...
+        my_first_batch_number = self.el('.datum-batch-number span.value').text
+
+        # And when I go back to the exporter landing page
+        # Then I should see a listing of past and present exports
+        # Showing the status of each
+        # And when they happened
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/')
+        self.assertIn(
+            'Person',
+            self.el('.exports-listing .row-1 .cell-models-to-export').text
+        )
+        self.assertAlmostEqual(
+            start_time,
+            dateparser.parse(self.el('.exports-listing .row-1 .cell-started').text),
+            delta=timedelta(10)
+        )
+
+        # And after doing dozens of batches
+        # When I go to the exports landing page
+        # I should see a paginator
+        for _ in range(36):
+            # For expedience make a bunch of phony export batch records
+            ExportBatch.objects.create(
+                models_to_export=['Grouping', ],  # Not "Person" to distinguish from first batch
+                started=timezone.now(),
+                completed=timezone.now(),
+                export_file=ExportBatch.objects.last().export_file  # Reuse the file from the first import
+            )
+
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/')
+        self.assertIn(
+            "Next",
+            self.el('main.container ul.pagination').text
+        )
+
+        # And if I go to the last page I see my first export batch
+        last_link = self.el('main.container ul.pagination') \
+            .find_element(By.XPATH, '//a[contains(text(), "Last")]')
+        wait(last_link.click)
+
+        self.assertIn(
+            my_first_batch_number,
+            self.el('.exports-listing tr:last-child .cell-batch-number').text
+        )
+
+    def test_detail_page_export_in_progress(self):
+        # GIVEN there's data in the system
+        for i in range(10):
+            Person.objects.create(name=f"Test Person {i}")
+
+        # When I go to the exporter start page
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
+
+        # Then I select Person in the models multiselect
+        self.select2_select_by_visible_text('id_models_to_export', 'Person')
+
+        # And I click "Export" -- and take note of the time it started
+        self.submit_button_el('Export') \
+            .click()
+        import_start_time = datetime.now()
+
+        # Then GIVEN the batch is not complete yet...
+        wait_until_true(ExportBatch.objects.last(), 'completed', 16)
+        batch = ExportBatch.objects.last()
+        batch.completed = None
+        batch.save()
+
+        # And I go to the detail page
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/{batch.pk}')
+
+        # Then I should see a progress spinner and a "check" button so I can check the status after a while
+        self.assertIn(
+            "Export in progress",
+            self.el('h2').text
+        )
+        self.assertIn(
+            "Click the Check button to update status",
+            self.el('main.container').text
+        )
+
+        # Then GIVEN the batch has completed...
+        batch = ExportBatch.objects.last()
+        batch.completed = timezone.now()
+        batch.save()
+        # And I take note of the time that it completed (non-timezone aware)
+        end_time = datetime.now()
+
+        # And I click the Check button...
+        self.browser.find_element(By.XPATH, '//a[contains(text(), "Check")]').click()
+
+        # Then the page should show that the batch is complete...
+        self.assertIn(
+            "Completed",
+            self.el('h2').text
+        )
+        self.assertAlmostEqual(
+            end_time,
+            dateparser.parse(self.el('.datum-completed span.value').text),
+            delta=timedelta(10)
+        )
+
+    def test_export_page_model_options(self):
+        """Test that the list of available models is correct
+        """
+
+        # When I go to the export page
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
+
+        # Then I should be able to select all of the exportable models available
+        for model_name in MODEL_ALLOW_LIST:
+            self.select2_select_by_visible_text('id_models_to_export', model_name)
+
+    def test_export_page_permissions_non_host_admin(self):
+        # Given I'm a non-host administrator
+        user = self.log_in(
+            is_host=False,  # <- THIS
+            is_administrator=True,
+            is_superuser=False
+        )
+
+        # When I go to the admin home page
+        self.browser.get(self.live_server_url + "/changing/home/")
+        self.assertNotRegex(
+            self.el('body').text,
+            re.compile('EXPORT', re.IGNORECASE)
+        )
+
+        # When I go to the exporter landing page
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/')
+        self.assertRegex(
+            self.el('body').text,
+            re.compile('FORBIDDEN', re.IGNORECASE)
+        )
+
+        with self.assertRaises(NoSuchElementException):
+            self.browser.find_element(By.XPATH, '//a[contains(text(), "Start Export")]')
+
+        # Even when I try going directly to the start import batch page
+        self.browser.get(self.live_server_url + f"/changing/importer/exports/new")
+        self.assertRegex(
+            self.el('body').text,
+            re.compile('FORBIDDEN', re.IGNORECASE)
+        )
+
+        with self.assertRaises(NoSuchElementException):
+            self.select2_select_by_visible_text('id_models_to_export', 'Person')
+
+        # Even if I try going directly to a batch detail page
+        batch = ExportBatch.objects.create(
+            models_to_export=['Grouping', ],  # Not "Person" to distinguish from first batch
+            started=timezone.now(),
+            completed=timezone.now(),
+            export_file=SimpleUploadedFile("dummy_file.txt", b"This is a test file")
+        )
+        self.browser.get(self.live_server_url + f"/changing/importer/exports/{batch.pk}")
+        self.assertRegex(
+            self.el('body').text,
+            re.compile('FORBIDDEN', re.IGNORECASE)
+        )
+
+    # This test is failing when run on Tristan's local dev. The file is served, ignoring the access control!
+    # Note: The access control works fine when run via runserver, and on the Azure dev instance
+    # TODO: figure out why DownloadExportFileView is being bypassed when system is run via StaticLiveServerTestCase
+    @skip
+    def test_export_downloads_permissions_non_host_admin(self):
+        # Given I'm a non-host administrator
+        user = self.log_in(
+            is_host=False,  # <- THIS
+            is_administrator=True,
+            is_superuser=False
+        )
+        # and there's an export batch
+        batch = ExportBatch.objects.create(
+            models_to_export=['Grouping', ],  # Not "Person" to distinguish from first batch
+            started=timezone.now(),
+            completed=timezone.now(),
+            export_file=SimpleUploadedFile("dummy_file.txt", b"This is a test file")
+        )
+        # and I happen to have the export file URL
+        export_file_url = self.live_server_url + batch.export_file.url
+
+        # When I try downloading the file directly
+        self.browser.get(export_file_url)
+
+        # Then I should see a forbidden message
+        self.assertRegex(
+            self.el('body').text,
+            re.compile('FORBIDDEN', re.IGNORECASE)
+        )
+
+    @tag('visual')
+    def dormant_test_listing_with_lots_of_models_selected(self):
+        """DORMANT visual test. Requires manual inspection. To use:
+        Remove 'dormant_' from the beginning of the function name.
+        Then check the captured screenshot to evaluate.
+        """
+        # Given I run an import with LOTS of models select...
+        self.log_in(is_administrator=True)
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/new')
+        for model_name in MODEL_ALLOW_LIST:
+            self.select2_select_by_visible_text('id_models_to_export', model_name)
+        self.submit_button_el('Export') \
+            .click()
+        wait_until_true(ExportBatch.objects.last(), 'completed', 6)
+
+        # When I go to the listing page
+        self.browser.get(self.live_server_url + f'/changing/importer/exports/')
+
+        # Does it screw up the layout of the page?
+        self.take_screenshot_and_dump_html()

@@ -2,6 +2,40 @@
 
 All releases are logged in this file.
 
+## [7.0.0] - 2022-12-19
+
+### Added
+- Person linking tool in Person fields on edit pages
+- Data exporter with user-friendly Web interface
+- Delete buttons on edit pages
+- Importer: make more columns reference by name (rather than PK)
+
+### Changed
+
+Minor fixes:
+- Fix missing img/ajaxloading.gif
+- Fix loading spinner shows all the time on bootstrap themed pages
+
+Developer experience improvements:
+- Vagrant improvements -- fix bugs
+- Fix broken Selenium tests on CircleCI Oct 2022
+- Fix migrations being generated for dependency packages on 'makemigrations'...
+- Update requirements.txt with a fresh freeze
+- Demo data fixture: set groups is_law_enforcement=True
+
+### Security patches
+- Upgrade Django to Django 3.2.16
+- Upgrade certifi to 2022.12.07
+
+### Upgrading notes
+
+The new data exporter feature requires a database migration. Run:
+```shell
+python3 manage.py migrate
+```
+to apply these migrations to the database. You may get a 500 error until you do this.
+
+
 ## [6.1.1] - 2022-11-22
 
 ## Changed

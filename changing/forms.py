@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from inheritable.models import AbstractDateValidator
 from inheritable.forms import AbstractWizardModelForm, DateWithComponentsField, DateWithCalendarInput, \
     RelationshipField, AbstractWizardInlineFormSet, AbstractWizardModelFormSet, DateWithCalendarAndSplitInput, \
-    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField, FuzzyDateSpanEndField
+    DateWithCalendarAndCombineInput, PopupForm, AsyncSearchCharField, FuzzyDateSpanEndField, PersonRelationshipField
 from .models import LawEnforcementCategories
 from sourcing.models import ContentIdentifier, ContentCase, Content, ContentPerson, Attachment, \
     ContentPersonAllegation, ContentPersonPenalty
@@ -817,7 +817,7 @@ class PersonRelationshipModelForm(AbstractWizardModelForm):
         fields=()  # ignored
     )
 
-    person_relationship = RelationshipField(
+    person_relationship = PersonRelationshipField(
         # Note that required=True will be overwritten in __init__(...), the field label will be styled as if required,
         # and custom validation on the individual field components will be used.
         required=True,
@@ -1285,6 +1285,7 @@ class PersonIncidentModelForm(AbstractWizardModelForm):
         super(PersonIncidentModelForm, self).__init__(*args, **kwargs)
         # CSS class names for fields in interface
         self.fields['person_name'].widget.attrs.update({'class': 'personname'})
+        self.fields['person_name'].widget.template_name = "widget_person_autocomplete.html"
         # instance of model exists
         if hasattr(self, 'instance') and self.instance:
             instance = self.instance
@@ -1631,6 +1632,7 @@ class ContentPersonModelForm(AbstractWizardModelForm):
         # CSS class names for fields in interface
         self.fields['situation_role'].widget.attrs.update({'class': 'situationrole'})
         self.fields['person_name'].widget.attrs.update({'class': 'personname'})
+        self.fields['person_name'].widget.template_name = "widget_person_autocomplete.html"
         # instance of model exists
         if hasattr(self, 'instance') and self.instance:
             instance = self.instance

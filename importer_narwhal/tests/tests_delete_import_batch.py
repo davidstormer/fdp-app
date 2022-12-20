@@ -4,8 +4,8 @@ import tablib
 from bulk.models import BulkImport
 from functional_tests.common_import_export import import_record_with_extid
 from supporting.models import PersonIdentifierType, PersonRelationshipType
-from .models import ImportBatch
-from .narwhal import BooleanWidgetValidated, resource_model_mapping
+from importer_narwhal.models import ImportBatch
+from importer_narwhal.narwhal import BooleanWidgetValidated, resource_model_mapping
 from core.models import PersonAlias, PersonIdentifier, PersonRelationship
 from django.test import TestCase
 from django.core.management import call_command
