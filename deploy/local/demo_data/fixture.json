@@ -1181,6 +1181,7 @@
     "pk": 101,
     "fields": {
         "is_archived": false,
+        "is_law_enforcement": true,
         "description": "",
         "name": "Cadet Department 4D",
         "phone_number": "",
@@ -1198,6 +1199,7 @@
     "pk": 109,
     "fields": {
         "is_archived": false,
+        "is_law_enforcement": true,
         "description": "",
         "name": "Investigations Branch",
         "phone_number": "",
@@ -1215,6 +1217,7 @@
     "pk": 129,
     "fields": {
         "is_archived": false,
+        "is_law_enforcement": true,
         "description": "",
         "name": "3D Substation",
         "phone_number": "",
@@ -1232,6 +1235,7 @@
     "pk": 260,
     "fields": {
         "is_archived": false,
+        "is_law_enforcement": true,
         "description": "",
         "name": "Bronx Division",
         "phone_number": "",
@@ -1249,6 +1253,7 @@
     "pk": 264,
     "fields": {
         "is_archived": false,
+        "is_law_enforcement": true,
         "description": "",
         "name": "4th District NYPD (4D)",
         "phone_number": "2029566725",
@@ -1269,6 +1274,7 @@
     "pk": 271,
     "fields": {
         "is_archived": false,
+        "is_law_enforcement": true,
         "description": "",
         "name": "Gun Recovery Branch",
         "phone_number": "",
@@ -1286,6 +1292,7 @@
     "pk": 294,
     "fields": {
         "is_archived": false,
+        "is_law_enforcement": true,
         "description": "",
         "name": "Office of the Attorney General",
         "phone_number": "",
@@ -1311,6 +1318,7 @@
     "pk": 315,
     "fields": {
         "is_archived": false,
+        "is_law_enforcement": true,
         "description": "",
         "name": "New York Police Department",
         "phone_number": "",

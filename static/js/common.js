@@ -660,7 +660,7 @@ var Fdp = (function (fdpDef, $, w, d) {
         /**
          * Clears a hidden input ID value for a person, attachment, incident, etc. populated through autocomplete.
          */
-        return function () { idInput.val(""); };
+        return function () { idInput.val("").change(); };
     };
 
     /**
@@ -677,8 +677,8 @@ var Fdp = (function (fdpDef, $, w, d) {
          * @param {string} name - String representation of selected record.
          */
         return function (id, name) {
-            idInputElem.val(id);
-            searchInputElem.val(name);
+            idInputElem.val(id).change();
+            searchInputElem.val(name).change();
         };
     };
 
@@ -765,22 +765,24 @@ var Fdp = (function (fdpDef, $, w, d) {
                 }
             });
         }
-        // ensure loading animation displayed
-	    var img = $("<img />", {
-	            class: "hidden",
+        // add loading animation element to DOM
+	    var spinnerOverlay = $("<div />", {
+	            class: "text-primary hidden",
 	            id: "loading",
-                src: "{{ STATIC_URL|escapejs }}" + "img/ajaxloading.gif",
+	            role: "status",
                 alt: commonDef.locLoading,
                 title: commonDef.locLoading
 	        });
-	    $("body").append(img);
+	    spinnerOverlay.append($("<div />", { class: "spinner-border" }))
+	    spinnerOverlay.append($("<p>Loading...</p>"))
+	    $("body").append(spinnerOverlay);
         $(d).ajaxStart(function () {
-            img.fadeIn(_speed);
+            spinnerOverlay.fadeIn(_speed);
         }).ajaxStop(function () {
             // update the session expiry
             _updateSessionExpiry(false /* isLogout */);
             // fade out AJAX spinner
-            img.fadeOut(_speed);
+            spinnerOverlay.fadeOut(_speed);
         });
 	};
 
@@ -1456,7 +1458,7 @@ var Fdp = (function (fdpDef, $, w, d) {
 	commonDef.getAutocompleteResponseFunc = function (noResultsMsg) {
         return function (event, ui) {
             if (!ui.content.length) {
-                var noResult = { value:"", label: noResultsMsg };
+                var noResult = { value:"", label: noResultsMsg, teaserHtml: noResultsMsg };
                 ui.content.push(noResult);
             }
         };
@@ -1601,6 +1603,80 @@ var Fdp = (function (fdpDef, $, w, d) {
             commonDef.showAutocompleteOk(searchInputElem /* searchInputElem */);
         }
     };
+
+
+    commonDef.initAutocompletePerson = function (searchInputElem, idInputElem, actualIdInputEl, appendInfoCardTo,
+    ajaxUrl, extraCssClass)
+     {
+        // searching with autocomplete
+        searchInputElem.autocomplete({
+            classes: {"ui-autocomplete": extraCssClass},
+            delay: 500,
+            source: function (request, response) {
+                _getAutocompleteClearHiddenInputIdFunc(idInputElem /* idInput */)();
+                // adds styling to search box, to indicate not yet a successful selection
+                commonDef.showAutocompleteNotOk(searchInputElem /* searchInputElem */);
+                _getAutocompleteLoadFunc(response /* callbackFunc */, ajaxUrl /* ajaxUrl */)(
+                    request.term /* searchTerm */
+                );
+            }, /* source */
+            create: function (event, ui) {
+                /* Highlight text on click -- Behavior inspired by vuetify autocomplete */
+                $('.ui-autocomplete-input').click(function () { this.select() })
+            },
+            open: function (event, ui) {
+                /* Make the profile link work */
+                $('.ui-autocomplete-stop-propagation').click(function( event ) { event.stopPropagation() });
+            },
+            select: function(event, ui) {
+                var item = ui.item;
+                var id = item.value;
+                var name = item.label;
+                if (id) {
+                    _getAutocompleteSetElements(idInputElem /* idInputElem */, searchInputElem /* searchInputElem */)(
+                        id, /* id */ name /* name */
+                    );
+                    // adds styling to search box, to indicate successful selection
+                    commonDef.showAutocompleteOk(searchInputElem /* searchInputElem */);
+                } else {
+                    _getAutocompleteClearHiddenInputIdFunc(idInputElem /* idInput */)();
+                    // adds styling to search box, to indicate not yet a successful selection
+                    commonDef.showAutocompleteNotOk(searchInputElem /* searchInputElem */);
+                }
+                event.preventDefault();
+            }, /* select */
+            response: commonDef.getAutocompleteResponseFunc("No matches found" /* noResultsMsg */) /* response */
+        })
+        .autocomplete( "instance" )._renderItem = function( ul, item ) {
+          return $( "<li>" )
+          .append( "<div>" + item.teaserHtml + "</div>" )
+          .appendTo( ul );
+        };
+        // autocomplete fields are already populated during initialization
+        if (idInputElem.val() && searchInputElem.val()) {
+            // adds styling to search box, to indicate previous successful selection
+            commonDef.showAutocompleteOk(searchInputElem /* searchInputElem */);
+        }
+
+        // update the info card when the hidden pk form field is updated
+        function updateInfoCard() {
+          if ($( this ).val()) {
+            Fdp.Common.ajax(
+              '/changing/async/get/persons-by-pk/',
+              {"searchCriteria": $( this ).val()},
+              true,
+              function(response, type) {
+                $(appendInfoCardTo).find('.autocomplete-info-card').html(response[0].teaserHtml)
+            })
+          } else {
+            $(appendInfoCardTo).find('.autocomplete-info-card')
+            .html('<p class="text-secondary">Search above by names, aliases, or identifiers.</p>')
+          }
+        }
+        $(actualIdInputEl).change(updateInfoCard)
+        updateInfoCard.call($(actualIdInputEl))
+    };
+
 
     /**
      * Initializes a check that runs in the background and lets the user know if their session is close to expiring.

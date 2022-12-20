@@ -1411,6 +1411,9 @@ class AbstractUrlValidator(models.Model):
     # relative URL for asynchronously retrieving persons through the data management tool
     ASYNC_GET_PERSONS_URL = '{b}get/persons/'.format(b=ASYNC_CHANGING_BASE_URL)
 
+    # relative URL for asynchronously retrieving persons through the data management tool
+    ASYNC_GET_PERSONS_BY_PK_URL = '{b}get/persons-by-pk/'.format(b=ASYNC_CHANGING_BASE_URL)
+
     # relative URL for asynchronously retrieving incidents through the data management tool
     ASYNC_GET_INCIDENTS_URL = '{b}get/incidents/'.format(b=ASYNC_CHANGING_BASE_URL)
 

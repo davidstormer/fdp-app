@@ -226,7 +226,14 @@
             </div>
         </div> <!-- div.collapsible for Relationships -->
 
-        <input type="submit" value="Save">
+        <div class="submit-row">
+            <input type="submit" value="Save" class="default">
+            {% if object %}
+            <p class="deletelink-box">
+                <a href="/admin/core/person/{{ object.pk }}/delete/" class="deletelink">Delete</a>
+            </p>
+            {% endif %}
+        </div>
 
         <div class="hidden">
             <select id="allcounties">
