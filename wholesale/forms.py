@@ -3,7 +3,6 @@ from django.utils.translation import gettext as _
 from django.core.exceptions import ValidationError
 from inheritable.models import AbstractConfiguration
 from .models import WholesaleImport, ModelHelper
-from graphlib.graphlib import TopologicalSorter
 
 
 class WholesaleTemplateForm(forms.Form):
@@ -173,33 +172,6 @@ class WholesaleTemplateForm(forms.Form):
         return dict_of_list_indices
 
     @classmethod
-    def __order_model_classes(cls, models_with_apps_and_classes):
-        """ Attempts to order the list of models so that their dependencies such as foreign keys are respected during
-        the order of import.
-
-        This is not an guaranteed ordering: some model combinations may generate incorrect ordering.
-
-        :param models_with_apps_and_classes: List of tuples where:
-                    [0] App name to which model belongs, as a string;
-                    [1] Model name as a string;
-                    [2] Model class; and
-                    [3] List of model classes upon which model depends.
-        :return: List of model classes that is attempted to be ordered to respect their dependencies.
-        """
-        #: TODO: Once Python 3.9 is supported, the graphlib module can be added.
-        #: TODO: See: https://docs.python.org/3/library/graphlib.html
-        #: TODO: Also, the graphlib backport can be removed.
-        #: TODO: See: https://pypi.org/project/graphlib-backport/
-        # dictionary will be in the form of: {'3': {'2', '7'}, '1': {}, '2': {'7'}, ....}
-        dict_of_list_indices = cls.__get_model_dependencies(models_with_apps_and_classes=models_with_apps_and_classes)
-        # perform topological sorting
-        topological_sorter = TopologicalSorter(graph=dict_of_list_indices)
-        # retrieve the order list
-        sorted_indices_list = list(topological_sorter.static_order())
-        # ordered list of model classes
-        return [models_with_apps_and_classes[int(index)][2] for index in sorted_indices_list]
-
-    @classmethod
     def __get_column_headings(cls, ordered_model_classes):
         """ Retrieves the column headings for the wholesale import tool template for a particular combination of the
         data model.
@@ -246,10 +218,8 @@ class WholesaleTemplateForm(forms.Form):
         models = self.cleaned_data['models']
         # identify the apps for the models
         models_with_apps_and_classes = self.__load_model_classes(models=models)
-        # order models to respect dependencies such as foreign keys during import
-        ordered_model_classes = self.__order_model_classes(models_with_apps_and_classes=models_with_apps_and_classes)
         # retrieve the columns for the wholesale import tool template
-        col_headings = self.__get_column_headings(ordered_model_classes=ordered_model_classes)
+        col_headings = self.__get_column_headings(ordered_model_classes=models_with_apps_and_classes)
         return col_headings
 
     @classmethod
