@@ -27,7 +27,7 @@ from importer_narwhal.models import ImportBatch, ImportedRow, ErrorRow, MODEL_AL
 from importer_narwhal.widgets import BooleanWidgetValidated
 from profiles.models import OfficerSearch, CommandSearch, OfficerView, CommandView
 from supporting.models import GroupingRelationshipType
-from wholesale.models import ModelHelper
+from importer_narwhal.models import ModelHelper
 
 
 class ExternalIdField(fields.Field):

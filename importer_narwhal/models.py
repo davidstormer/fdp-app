@@ -1,3 +1,5 @@
+from operator import attrgetter
+from django.apps import apps
 from django.contrib.postgres.fields import ArrayField
 from django.db.models.fields.files import FieldFile
 from django.template.defaultfilters import filesizeformat
@@ -51,6 +53,84 @@ MODEL_ALLOW_LIST = [
     'Trait',
     'TraitType',
 ]
+
+
+class ModelHelper(models.Model):
+    """ Abstract class defining constants and methods used to load and process models from various apps.
+    """
+    #: Name of 'sourcing' app that contains relevant models.
+    __sourcing_app_name = 'sourcing'
+
+    #: Name of 'core' app that contains relevant models.
+    __core_app_name = 'core'
+
+    #: Name of 'supporting' app that contains relevant models.
+    __supporting_app_name = 'supporting'
+
+    #: Name of attribute storing model name as a string representation.
+    __model_name_attribute = '__name__'
+
+    @staticmethod
+    def __get_model_options(model):
+        """ Retrieves the options for a particular Django model.
+        Uses the '_meta' attribute.
+        :param model: Model for which to retrieve options.
+        :return: Object representing options for model.
+        """
+        return getattr(model, '_meta')
+
+    @staticmethod
+    def __get_models(app):
+        """ Retrieves a list of models for a specific app.
+        :param app: App for which to retrieve list of models.
+        :return: List of models for app.
+        """
+        return list(apps.get_app_config(app).get_models())
+
+    @classmethod
+    def __get_sourcing_models(cls):
+        """ Retrieves list of models for 'sourcing' app.
+        :return: List of models in 'sourcing' app.
+        """
+        return cls.__get_models(app=cls.__sourcing_app_name)
+
+    @classmethod
+    def __get_core_models(cls):
+        """ Retrieves list of models for 'core' app.
+        :return: List of models in 'core' app.
+        """
+        return cls.__get_models(app=cls.__core_app_name)
+
+    @classmethod
+    def __get_supporting_models(cls):
+        """ Retrieves list of models for 'supporting' app.
+        :return: List of models in 'supporting' app.
+        """
+        return cls.__get_models(app=cls.__supporting_app_name)
+
+    @classmethod
+    def get_app_name(cls, model):
+        # check if model is in the sourcing app
+        if model in map(attrgetter(cls.__model_name_attribute), cls.__get_sourcing_models()):
+            app_name = cls.__sourcing_app_name
+        # check if model is in the core app
+        elif model in map(attrgetter(cls.__model_name_attribute), cls.__get_core_models()):
+            app_name = cls.__core_app_name
+        # check if model is in the supporting app
+        elif model in map(attrgetter(cls.__model_name_attribute), cls.__get_supporting_models()):
+            app_name = cls.__supporting_app_name
+        else:
+            app_name = None
+        return app_name
+
+    @classmethod
+    def get_model_class(cls, app_name, model_name):
+        """ Retrieves the class for a model in an app.
+        :param app_name: Name of app.
+        :param model_name: Name of model.
+        :return: Class for model in app.
+        """
+        return apps.get_model(app_label=app_name, model_name=model_name)
 
 
 def validate_import_sheet_extension(file):
