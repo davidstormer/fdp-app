@@ -55,7 +55,7 @@ MODEL_ALLOW_LIST = [
 ]
 
 
-class ModelHelper(models.Model):
+class ModelHelper:
     """ Abstract class defining constants and methods used to load and process models from various apps.
     """
     #: Name of 'sourcing' app that contains relevant models.
