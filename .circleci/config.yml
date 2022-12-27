@@ -11,7 +11,7 @@ orbs:
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  run-tests: # This is the name of the job, feel free to change it to better match what you're trying to do!
+  run-tests-python-3_8: &test-template
     # These next lines defines a Docker executors: https://circleci.com/docs/2.0/executor-types/
     # You can specify an image from Dockerhub or use one of the convenience images from CircleCI's Developer Hub
     # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
@@ -56,10 +56,40 @@ jobs:
       - store_artifacts:
           path: ~/project/geckodriver.log
 
+  run-tests-python-3_9:
+    <<: *test-template
+    docker:
+      - image: cimg/python:3.9
+        auth:
+          username: mydockerhub-user
+          password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+        environment:
+          TEST_DATABASE_URL: postgresql://postgres@localhost/circle_test
+          FDP_SECRET_KEY: opensesame
+          FDP_QUERYSTRING_PASSWORD: ymllgljp//NRW9W7INVajTBS46oBpt0NLPfr7yQ6PEw=
+          FDP_DATABASE_PASSWORD: opensesame
+      - image: cimg/postgres:11.16
+
+  run-tests-python-3_10:
+    <<: *test-template
+    docker:
+      - image: cimg/python:3.10
+        auth:
+          username: mydockerhub-user
+          password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+        environment:
+          TEST_DATABASE_URL: postgresql://postgres@localhost/circle_test
+          FDP_SECRET_KEY: opensesame
+          FDP_QUERYSTRING_PASSWORD: ymllgljp//NRW9W7INVajTBS46oBpt0NLPfr7yQ6PEw=
+          FDP_DATABASE_PASSWORD: opensesame
+      - image: cimg/postgres:11.16
+
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
   automated-tests: # This is the name of the workflow, feel free to change it to better match your workflow.
     # Inside the workflow, you define the jobs you want to run.
     jobs:
-      - run-tests
+      - run-tests-python-3_8
+      - run-tests-python-3_9
+      - run-tests-python-3_10
