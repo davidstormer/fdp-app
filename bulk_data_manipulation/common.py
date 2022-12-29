@@ -47,9 +47,9 @@ def get_record_from_external_id(model, external_id):
           table_imported_to=model.get_db_table()
           )
     except BulkImport.DoesNotExist as e:
-        raise ExternalIdMissing(f"Can't find external id {external_id} for model {model}")
+        raise ExternalIdMissing(f"Can't find external id '{external_id}' for model {model}")
     except BulkImport.MultipleObjectsReturned as e:
-        raise ExternalIdDuplicates(f"Multiple external ids found! for {external_id} for model "
+        raise ExternalIdDuplicates(f"Multiple external ids found! for '{external_id}' for model "
                                    f"{model}")
 
     pk = bulk_import_record.pk_imported_to
