@@ -44,8 +44,3 @@ Then point your browser to 'localhost:8000' to see the FDP Application
 > 'sudo service redis-server start'
 > 'celery -A importer_narwhal.celerytasks worker -l INFO'
 ```
-
-small change
-small change
-small chang
-small change
