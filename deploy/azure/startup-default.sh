@@ -6,9 +6,9 @@
 # https://learn.microsoft.com/en-us/azure/developer/python/configure-python-web-app-on-app-service
 
 # Install Redis locally on the app service VM
-# "stretch" may need to be updated with newer versions of debian. Use `lsb_release -cs` to get the appropriate value.
+DEBIAN_VERSION=`grep -oP '(?<=^VERSION_CODENAME=).+' /etc/os-release | tr -d '"'`
 curl -fsSL https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb stretch main" | tee /etc/apt/sources.list.d/redis.list
+echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $DEBIAN_VERSION main" | tee /etc/apt/sources.list.d/redis.list
 apt-get update
 apt-get install -y redis
 
