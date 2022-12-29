@@ -64,11 +64,10 @@ ul.ui-autocomplete.personac,
   border: 0;
   margin: 0;
 }
-.ui-autocomplete.personac div.ui-menu-item-wrapper.ui-state-active *
+.ui-autocomplete.personac div.ui-menu-item-wrapper.ui-state-active .person-select-teaser
 {
-  background-color: #ddf4ff;
+  background-color: #ffc;
 }
-
 
 /* profile link */
 .ui-autocomplete .person-select-link {

@@ -330,8 +330,9 @@ class ForeignKeyWidgetGetOrCreate(ForeignKeyWidget):
             return None
 
     def get_help_html(self):
-        return f"""Accepts <code>{ self.model.__name__ }</code> { self.field }s rather than 
-        PKs by default. Accepts external ids using the <code>__external_id</code> extension.
+        return f"""Get-or-create by Natural Key: Accepts <code>{self.model.__name__}</code> {self.field}s rather 
+        than PKs by default. Creates a new record if the <code>{self.model.__name__}</code> doesn't exist. Accepts 
+        external ids using the <code>__external_id</code> extension.
         """
 
     def get_available_extensions(self):
@@ -348,8 +349,9 @@ def foreign_key_widget_help_html(self):
         Accepts external ids using <code>__external_id</code> extension.
         """
     elif self.field == 'name':
-        return f"""Accepts <a href="#mapping-{ self.model.__name__ }"><code>{ self.model.__name__ }</code></a>
-        { self.field }s rather than PKs by default. Accepts external ids using the <code>__external_id</code> extension.
+        return f"""Natural Key: Accepts <a href="#mapping-{self.model.__name__}"><code>{self.model.__name__
+        }</code></a> {self.field}s rather than PKs by default. <em>Does not auto-create record if it doesn't 
+        exist</em>. Accepts external ids using the <code>__external_id</code> extension.
         """
 
 
