@@ -3,7 +3,12 @@ from django.utils.translation import gettext as _
 from django.core.exceptions import ValidationError
 from inheritable.models import AbstractConfiguration
 from .models import WholesaleImport, ModelHelper
-from graphlib.graphlib import TopologicalSorter
+import sys
+if sys.version_info < (3, 9):
+    # requires `graphlib-backport==1.0.3` to be present in requirements.txt
+    from graphlib.graphlib import TopologicalSorter
+else:
+    from graphlib import TopologicalSorter
 
 
 class WholesaleTemplateForm(forms.Form):
