@@ -2,6 +2,15 @@
 
 All releases are logged in this file.
 
+## [7.0.1] - 2022-01-01
+
+### Changed
+- Fix bug in search results pagination, when filtered by command
+- Numerous small typographic and visual styling fixes
+- Make startup-default.ssh compatible with Azure Bullseye and Buster images
+- Fix issues discovered when running automated and manual regression tests on Python version 9.10
+- Add CircleCI jobs to run tests on Python 3.8, 3.9, and 3.10
+
 ## [7.0.0] - 2022-12-19
 
 ### Added
