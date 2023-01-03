@@ -470,7 +470,7 @@ class NarwhalImportCommand(TestCase):
 
         # Then I should see an error message
         self.assertIn(
-            "Can't find external id carbocinchomeronic",
+            "Can't find external id 'carbocinchomeronic'",
             command_output.getvalue()
         )
         # Then the records from the sheet shouldn't be imported

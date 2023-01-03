@@ -19,7 +19,7 @@
     <input type="submit" value="Search" class="btn btn-primary">
     </div>
     <div id="officer-search-help" class="form-text">
-      Search by names and identifiers
+      Search by names, aliases, and identifiers
     </div>
 </form>
 </div>
@@ -107,12 +107,14 @@
             <form method="post" class="d-inline-block">
                 {% csrf_token %}
                 <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="group" value="{{ within_group.pk }}">
                 <input type="hidden" name="sort" value={{ sort }}>
                 <input type="submit" value="&laquo; first" class="btn btn-link">
             </form>
             <form method="post" class="d-inline-block">
                 {% csrf_token %}
                 <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="group" value="{{ within_group.pk }}">
                 <input type="hidden" name="page" value="{{ page_obj.previous_page_number }}">
                 <input type="hidden" name="sort" value={{ sort }}>
                 <input type="submit" value="previous" class="btn btn-link">
@@ -129,6 +131,7 @@
             <form method="post" class="d-inline-block">
                 {% csrf_token %}
                 <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="group" value="{{ within_group.pk }}">
                 <input type="hidden" name="page" value="{{ page_obj.next_page_number }}">
                 <input type="hidden" name="sort" value={{ sort }}>
                 <input type="submit" value="next" class="btn btn-link">
@@ -136,6 +139,7 @@
             <form method="post" class="d-inline-block">
                 {% csrf_token %}
                 <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="group" value="{{ within_group.pk }}">
                 <input type="hidden" name="page" value="{{ page_obj.paginator.num_pages }}">
                 <input type="hidden" name="sort" value={{ sort }}>
                 <input type="submit" value="last &raquo;" class="btn btn-link">
